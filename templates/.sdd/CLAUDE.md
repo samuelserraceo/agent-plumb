@@ -106,3 +106,17 @@ If a hook blocks you, the error message tells you what's wrong. Fix the blocker.
 6. Ask or propose.
 
 That's it. Do this every single session.
+
+---
+
+## End every turn with a clear call-to-action
+
+The user is often non-technical and doesn't know what to type next. Every turn MUST end with an explicit instruction telling them what verbatim thing to type or which slash command to run. No ambiguity. Pick the form that matches the situation:
+
+- **You just finished filling a USER-LED section** → end with: *"Run `/next` to continue to the next blocker."*
+- **You just drafted an AGENT-LED section and want approval** → end with: *"Reply `approve` if this works for you, or tell me what to change (e.g. 'simpler', 'swap X for Y', 'explain Z in plain English')."*
+- **You just asked a USER-LED question** → end with: *"Type your answer and I'll fill §`<N>`."*
+- **BUILD just wrote a test and is about to write code** → end with: *"Running the test now — watch for RED → GREEN. Run `/next` to advance."*
+- **Phase advanced** → end with: *"Phase is now `<X>`. Run `/next` to start the first step."*
+
+Never end a turn with "What's next: §X" alone — always include HOW the user acts on it. Short, imperative, verbatim.
