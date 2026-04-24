@@ -191,6 +191,8 @@ _One task per atomic commit. Each task references its acceptance criterion and t
 
 ## PHASE: BUILD   _(TDD, task-by-task)_
 
+**Run mode:** _(set at phase entry — e.g. "step-by-step", "checkpoint every 5", "full autonomous". Universal halting rules from CLAUDE.md always apply.)_
+
 _The PLAN section's task statuses are the live build state. Each task:_
 
 1. _Agent writes (or confirms exists) the test file named in `tests/`._
@@ -198,6 +200,7 @@ _The PLAN section's task statuses are the live build state. Each task:_
 3. _Agent writes the code._
 4. _Agent runs the test → must be **GREEN**._
 5. _Agent commits with `[SDD:<id>][T<n>] <msg>` and updates status to `GREEN` in the task line above._
+6. _Agent moves to next task per the recorded run mode — pause or auto-continue._
 
 _Feature cannot advance to VERIFY until every task is `GREEN`._
 

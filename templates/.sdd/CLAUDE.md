@@ -81,16 +81,40 @@ One commit per section or task. No giant commits. Small and atomic — the PR re
 
 ## Test-first (BUILD phase)
 
-Non-negotiable order:
+Non-negotiable order per task:
 
 1. Test file exists at path named in the task line (e.g., `features/<id>/tests/task-001.mjs`).
 2. Run test → must be **RED**. If GREEN before you wrote code, the test is wrong — rewrite it.
 3. Write code.
 4. Run test → must be **GREEN**.
 5. Commit. Update task status from `RED` → `GREEN` in `spec.md`.
-6. Move to next task.
+6. Move to next task per the **run mode** (see below).
 
-If a test stays RED after 3 attempts at fixing the code, stop and ask the user. Something is wrong with your understanding — don't spiral.
+### Universal halting rules (apply in every run mode, never skip)
+
+Stop and ask the user before continuing if ANY of these fire:
+- A test stays RED after 3 attempts at fixing the code → don't spiral
+- Pre-commit hook blocks a commit → read the error, fix the blocker, don't work around
+- You discover a gap in §5 (proposed approach) or §6 (data contract) that requires a real design decision — not a small naming choice
+- An environment/infrastructure step requires credentials, keys, or account setup the user hasn't provided
+
+### BUILD phase entry protocol
+
+When a feature transitions PLAN → BUILD **for the first time**, do NOT start executing tasks. First, ask the user how they want to run BUILD. Verbatim, paste this choice:
+
+> Before we start BUILD, how do you want to run it? (Universal halting rules always apply — these options just control pace.)
+>
+> 1. **Step-by-step** — I pause after every task GREEN, you reply `/next` to continue. Best for learning the workflow or high-risk tasks.
+> 2. **Checkpoint every 5** (recommended) — I auto-loop, but pause every 5 tasks for your review. You reply `go` to continue. Good for trust-but-verify.
+> 3. **Full autonomous** — I only stop on the universal halting rules. Best when you want to walk away for an hour.
+>
+> Reply `1`, `2`, `3`, or adjust (e.g. `checkpoint every 3 tasks`, `autonomous but stop on any DB migration`).
+
+Record the chosen mode into `spec.md` as a `**Run mode:**` line in the `## PHASE: BUILD` section. Commit: `[SDD:<id>] build: run mode = <choice>`. Every subsequent `/next` in BUILD phase honours that mode until the user changes it.
+
+### Progress reporting during auto-loop
+
+In modes 2 and 3, between tasks print ONE LINE only: `T<n> GREEN — <one-phrase summary>`. No long explanations until you halt or hit a checkpoint. At a checkpoint, summarise completed tasks in a short bullet list and wait for `go`.
 
 ## Data contract discipline
 

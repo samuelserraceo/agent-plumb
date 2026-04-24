@@ -19,7 +19,8 @@ You are running the SDD workflow. Do exactly one step — no more, no less.
 4. Take ONE action:
    - **[USER-LED] section** → ask the user a single plain-English question about this blocker. Do NOT fill from assumption. Push for specifics if the answer is vague.
    - **[AGENT-LED] section** → propose a concrete answer with tradeoffs. Explain in plain English. Show ≥2 alternatives and what each gives up. Ask the user "does this work for you?" Iterate until they agree, then write the agreed answer into spec.md.
-   - **BUILD task (status: RED)** → ensure the test file exists, run it (must be RED), write code, run again (must be GREEN), then update the task line to `status: GREEN` and commit.
+   - **BUILD task (status: RED)** → ensure the test file exists, run it (must be RED), write code, run again (must be GREEN), then update the task line to `status: GREEN` and commit. **Honour the recorded `Run mode`** in the PHASE: BUILD section — step-by-step pauses after each task; checkpoint/autonomous loops per the CLAUDE.md protocol.
+   - **Entering BUILD phase for the first time** (no `Run mode` recorded yet) → do NOT execute T1. Instead, ask the user for the run mode per the BUILD phase entry protocol in CLAUDE.md, record their choice, commit, then the NEXT `/next` starts T1.
    - **All [ ] in current phase filled** → advance `[PHASE: X]` to the next phase, update INDEX.md's pointer line, and commit with `[SDD:<id>] phase: <from> → <to>`. Then run `/next` again (or tell the user to).
 
 5. Commit your changes using the convention in `.sdd/CLAUDE.md`:
