@@ -132,7 +132,7 @@ Pushes the branch, opens a PR, watches CI. On pass, marks shipped. On fail, capt
 │   ├── .claude/
 │   │   ├── settings.json
 │   │   ├── hooks/          # session-start, user-prompt-submit, pre-commit-block
-│   │   └── commands/       # /next, /status, /ship, /compress
+│   │   └── commands/       # /next, /status, /ship, /compress, /skip
 │   └── dashboard.html
 └── scripts/
     ├── init.sh
@@ -151,16 +151,19 @@ See [`rubric.md`](rubric.md) for the full canonical version. Summary:
 | 1. Problem | user-led | Who, why now, what breaks without it |
 | 2. Success | user-led | Verifiable outcomes |
 | 3. User stories | user-led | As X, I want Y, so that Z |
-| 4. **Proposed approach** | **agent-led** | **Recommended solution + alternatives + tradeoffs** |
-| 5. **Data contract** | **agent-led** | **Every entity, field, transition, edge case** |
-| 6. Flows | agent-led | Happy path + 3 edge cases |
-| 7. Dependencies | agent-led | APIs, auth, third parties |
-| 8. Out of scope | user-led | Explicit exclusions |
-| 9. Non-functional | agent-led | Perf, security, a11y |
-| 10. Acceptance criteria | agent-led | One test file per criterion |
-| 11. Human sign-off | user-led | Manual test steps |
+| 4. **UX & Design brief** | **user-led** | **Tone, references, voice, emotional goal** — _skippable for non-UI features_ |
+| 5. **Proposed approach** | **agent-led** | **Recommended solution + alternatives + tradeoffs** |
+| 6. **Data contract** | **agent-led** | **Every entity, field, transition, edge case** |
+| 7. Flows | agent-led | Happy path + 3 edge cases |
+| 8. Dependencies | agent-led | APIs, auth, third parties — _skippable if nothing paid_ |
+| 9. Out of scope | user-led | Explicit exclusions |
+| 10. Non-functional | agent-led | Perf, security, a11y — _skippable if nothing relevant_ |
+| 11. Acceptance criteria | agent-led | One test file per criterion |
+| 12. Human sign-off | user-led | Manual test steps |
 
-The depth of sections 4 and 5 is what makes this different from "the agent asks some questions." Each proposal shows alternatives, tradeoffs, and unknowns — *you don't need to know the technology, you just need to read plain-English tradeoffs and say what feels right.*
+The depth of sections 5 and 6 is what makes this different from "the agent asks some questions." Each proposal shows alternatives, tradeoffs, and unknowns — *you don't need to know the technology, you just need to read plain-English tradeoffs and say what feels right.*
+
+Skippable sections (§4, §8, §10, wireframe) are offered with a reason — type `/skip <reason>` to skip, or push back if they do apply.
 
 ---
 

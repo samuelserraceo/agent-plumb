@@ -43,6 +43,26 @@ Each rubric section is tagged. Obey the tag:
 
 The non-technical user brings the *what*. You propose the *how*. They adjust together.
 
+---
+
+## Skippable sections — proactively offer, don't force
+
+Some rubric sections are marked `[SKIPPABLE: <condition>]`. That means they don't apply to every kind of feature. Your job on those sections:
+
+1. **Assess first.** Read the skip condition plus the feature's §1-3 context. Does this section meaningfully apply?
+   - Example: feature is "nightly data-retention cron job" → §4 UX & Design and the wireframe are `[SKIPPABLE: non-UI features]` → they do not apply.
+2. **Proactively offer to skip** before asking any question:
+   > "§4 UX & Design brief is marked skippable for non-UI features. This feature is a backend cron job with no user interface, so I think we should skip it. Reply `/skip no UI surface — backend cron only` to skip, or tell me what UI considerations do apply."
+3. **Respect the user's skip.** When the user invokes `/skip <reason>`, or replies with "skip" + a reason:
+   - Replace every `[ ]` in that section with: `⏭ skipped — <reason captured verbatim>`
+   - Add a `[SKIPPED]` marker at the end of the section heading line
+   - Commit: `[SDD:<id>] spec: skip §<N> — <reason>`
+   - Advance to the next blocker
+4. **Never skip a non-skippable section.** §1, §2, §3, §5, §6, §7, §11, §12 are required always. If the user insists, push back once — it usually means they're tired, not that the section actually doesn't apply.
+5. **Don't offer skip for sections not marked skippable.** And don't offer skip just because a question is hard — the whole point of the rubric is to surface the hard questions.
+
+After a skip, the section still appears in the dashboard and in the PR body — shown as "skipped (reason)" rather than hidden, so the history is transparent.
+
 ## Commit conventions
 
 Every commit prefix:
@@ -75,7 +95,7 @@ If a test stays RED after 3 attempts at fixing the code, stop and ask the user. 
 ## Data contract discipline
 
 - `.sdd/data-model.md` is the single source of truth for entities, fields, relations.
-- When SPEC Section 5 adds or modifies an entity/field, propose the exact diff. On user approval, apply it to `data-model.md` in the same commit.
+- When SPEC §6 adds or modifies an entity/field, propose the exact diff. On user approval, apply it to `data-model.md` in the same commit.
 - Never duplicate a schema definition. Reference by name.
 - If `data-model.md` is getting unwieldy (>500 lines), convert to `data-model/` directory with one file per entity + `manifest.md`. Announce the migration to the user first.
 
@@ -104,7 +124,7 @@ If a hook blocks you, the error message tells you what's wrong. Fix the blocker.
 - ❌ Writing code before the test file exists
 - ❌ Large batched commits
 - ❌ Editing `main` directly
-- ❌ Introducing a new framework/library without a Section 4 "Alternatives considered" note
+- ❌ Introducing a new framework/library without a §5 "Alternatives considered" note
 - ❌ Duplicating schema — it all lives in `data-model.md`
 
 ## Permitted (by the user, explicitly)
@@ -133,5 +153,6 @@ The user is often non-technical and doesn't know what to type next. Every turn M
 - **You just asked a USER-LED question** → end with: *"Type your answer and I'll fill §`<N>`."*
 - **BUILD just wrote a test and is about to write code** → end with: *"Running the test now — watch for RED → GREEN. Run `/next` to advance."*
 - **Phase advanced** → end with: *"Phase is now `<X>`. Run `/next` to start the first step."*
+- **Current section is `[SKIPPABLE]` and the skip condition applies** → end with: *"Reply `/skip <one-line reason>` to skip §`<N>` — or tell me why it does apply and we'll fill it."*
 
 Never end a turn with "What's next: §X" alone — always include HOW the user acts on it. Short, imperative, verbatim.

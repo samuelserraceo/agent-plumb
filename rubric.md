@@ -41,8 +41,39 @@ _Ask: "As `<who>`, I want `<what>`, so that `<why>`"? Usually 2–5 stories. Age
 
 ---
 
-### 4. Proposed approach   [AGENT-LED]
-_Agent drafts a concrete solution. Must be plain English — no jargon without explaining it. Show tradeoffs and alternatives so the user can push back from a position of understanding, not blind trust. This is the non-technical user's biggest lever — do not skimp._
+### 4. UX & Design brief   [USER-LED, agent asks one at a time]   [SKIPPABLE: non-UI features only — e.g. APIs, cron jobs, data migrations]
+_Purpose: capture how the thing should look and feel BEFORE proposing tech or drawing the wireframe. The agent cannot invent taste — this is where your aesthetic preferences, brand constraints, and references go on record. Every downstream decision (tech choices, copy voice, wireframe polish) is informed by this._
+
+_Ask each bullet in plain English, one at a time. Push past lazy answers — "clean" and "modern" are not answers; "like Linear's homepage but warmer" is._
+
+- **Tone / feel:** [ ]
+  _Pick 2-3 descriptors: minimal, professional, playful, bold, elegant, warm, technical, confident, editorial, luxe — or describe in your own words._
+
+- **Reference sites / apps you love (1-3):** [ ]
+  _Names + URLs or screenshots of products whose UI or vibe you want to match. "Linear", "Stripe checkout", "Notion marketing pages"._
+
+- **References you want to AVOID (0-2):** [ ]
+  _"Don't make it look like [X]." Helpful for bracketing taste._
+
+- **Brand assets on hand:** [ ]
+  _Logo / color palette / typeface already chosen? Starting fresh? If fresh, one-line brand idea so the agent can pick sensible defaults._
+
+- **Primary screen size:** [ ]
+  _Where will most users see this — mobile, desktop, or split?_
+
+- **Copy voice:** [ ]
+  _How should the words feel — formal, friendly, concise, witty, technical, warm? One-sentence example of a headline you'd personally write, if you have one._
+
+- **Emotional goal:** [ ]
+  _What should the user FEEL after using this feature? (confident, excited, reassured, in control, impressed, calm…) Guides microcopy, animation, pacing decisions later._
+
+- **Accessibility intent beyond baseline:** [ ]
+  _Default is WCAG 2.1 AA via §10. This is where you raise the bar — high-contrast audience, large-type, keyboard-only, screen-reader-first, low-bandwidth regions. Write "baseline only" if none apply._
+
+---
+
+### 5. Proposed approach   [AGENT-LED]
+_Agent drafts a concrete solution. Must be plain English — no jargon without explaining it. Show tradeoffs and alternatives so the user can push back from a position of understanding, not blind trust. This is the non-technical user's biggest lever — do not skimp. Let §4 UX brief inform framework/library choices (e.g., "you picked 'warm + playful' so we'll use Framer Motion for small entrances rather than a heavier animation lib")._
 
 - **Recommended solution:** [ ]
   _What we'll build. Which pattern. Why this over other options. One paragraph._
@@ -61,7 +92,7 @@ _Agent drafts a concrete solution. Must be plain English — no jargon without e
 
 ---
 
-### 5. Data contract   [AGENT-LED]
+### 6. Data contract   [AGENT-LED]
 _Agent proposes the schema impact. User confirms. Be ruthless here — this is where prior workflows fell short. Every entity, every field, every transition, every edge case._
 
 - **Entities used from `data-model.md`:** [ ]
@@ -78,7 +109,7 @@ _Agent proposes the schema impact. User confirms. Be ruthless here — this is w
 
 ---
 
-### 6. Flows   [AGENT-LED]
+### 7. Flows   [AGENT-LED]
 _Agent drafts user journeys step-by-step. User confirms or adjusts. Must include happy path + at least 3 edge cases._
 
 - **Happy path:** [ ]
@@ -88,7 +119,7 @@ _Agent drafts user journeys step-by-step. User confirms or adjusts. Must include
 
 ---
 
-### 7. Dependencies   [AGENT-LED]
+### 8. Dependencies   [AGENT-LED]   [SKIPPABLE: feature uses nothing paid or external]
 _Purpose: list every **paid or risky** external service this feature relies on, so the user knows the ongoing cost, the setup work, and what happens when each one breaks. Skip built-in language or framework bits (e.g. Node DNS lookups, standard npm utilities) — only call out things the user would actually sign up for, pay for, or be woken up by._
 
 _Format every entry in this exact shape so a non-technical reader can scan it:_
@@ -108,39 +139,39 @@ _Then end the section with a **Total monthly cost** line showing the sum and the
 
 ---
 
-### 8. Out of scope   [USER-LED]
+### 9. Out of scope   [USER-LED]
 _Ask: What are we explicitly NOT doing in this feature? Makes future scope creep visible. Better to list 5 things here than have them silently creep in._
 
 - [ ]
 
 ---
 
-### 9. Non-functional   [AGENT-LED, skip if not relevant]
-_Agent raises performance / security / accessibility / observability / compliance concerns relevant to this feature. User decides which are in-scope._
+### 10. Non-functional   [AGENT-LED]   [SKIPPABLE: no perf / security / compliance concerns — rare]
+_Agent raises performance / security / accessibility / observability / compliance concerns relevant to this feature. User decides which are in-scope. Apply the non-technical lens from CLAUDE.md: translate every technical term on first use, describe failures in user-impact language, show math for any threshold ("10 req/min/IP = blocks ≥170 rapid submits from a single IP in 17s")._
 
 - [ ]
 
 ---
 
-### 10. Acceptance criteria   [AGENT-LED]
-_Agent derives from user stories (Section 3). Each criterion must be testable by agent-browser. Each maps to one test file in `features/<id>/tests/`._
+### 11. Acceptance criteria   [AGENT-LED]
+_Agent derives from user stories (§3) and the UX brief (§4). Each criterion must be testable by agent-browser. Each maps to one test file in `features/<id>/tests/`._
 
 - [ ] AC1: `<criterion>` → `tests/task-001.mjs`
 
 ---
 
-### 11. Human sign-off steps   [USER-LED, agent drafts checklist]
+### 12. Human sign-off steps   [USER-LED, agent drafts checklist]
 _Ask: After automated tests pass, what will YOU test manually? These become a checklist in VERIFY. Keep it short — 3-5 steps usually._
 
 - [ ]
 
 ---
 
-### Wireframe
+### Wireframe   [SKIPPABLE: non-UI features — auto-skipped if §4 was skipped]
 - **File:** `wireframe.html`
 - **Status:** [ ] drafted / [ ] approved
 
-_Agent generates a static HTML + Tailwind mockup for every screen in the user stories. User opens the file in a browser. User gives feedback in chat. Agent iterates until user says "approved". Then checks the `approved` box._
+_Agent generates a static HTML + Tailwind mockup for every screen in the user stories (§3), styled to match the UX brief (§4). User opens the file in a browser. User gives feedback in chat. Agent iterates until user says "approved". Then checks the `approved` box._
 
 ---
 
@@ -175,9 +206,9 @@ _Populated by `/verify`: output of agent-browser for every test in `features/<id
 - [ ]
 
 ### Human sign-off checklist
-_Rendered from Section 11. User ticks each box after testing manually. Feature cannot ship until all ticked._
+_Rendered from §12. User ticks each box after testing manually. Feature cannot ship until all ticked._
 
-- [ ] (copied from Section 11)
+- [ ] (copied from §12)
 
 ---
 
