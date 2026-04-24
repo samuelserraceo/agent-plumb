@@ -106,13 +106,48 @@ npx serve .
 
 Shows current phase, active blocker, rendered spec. Refreshes every 5s.
 
-### 5. Ship
+### 5. BUILD run modes
+
+When the feature crosses PLAN → BUILD the agent asks how you want to run it:
+
+1. **Step-by-step** — pause after every task.
+2. **Checkpoint every 5** — auto-loop with periodic pauses (recommended).
+3. **Full autonomous (conversation mode)** — agent loops in the session until blocked or done.
+4. **Shell Ralph (headless)** — run `./scripts/ralph.sh` in a terminal. Each task gets a **fresh Claude invocation** with clean context — no bloat, no token creep. Best for 2+ hour unattended runs. See *Shell Ralph* below.
+
+Universal halting rules apply in every mode (stuck after 3 attempts, hook block, real design gap, missing credentials).
+
+### 6. Ship
 
 ```
 /ship
 ```
 
 Pushes the branch, opens a PR, watches CI. On pass, marks shipped. On fail, captures the error as a bug task and flips phase back to BUILD.
+
+---
+
+## Shell Ralph (the headless loop)
+
+The original Ralph pattern: a shell `while` loop that spawns a **fresh** Claude invocation per iteration. Agent reads state files, does one task, exits. Context never bloats. Interrupt-resumable.
+
+```bash
+cd <project-root>
+./scripts/ralph.sh                   # default: 50 iter max, 10 min/iter
+MAX_ITERS=20 ./scripts/ralph.sh      # override
+```
+
+Only operates in BUILD phase. For SPEC / PLAN / VERIFY / LEARN, use conversation mode — those phases need discussion, not a loop.
+
+Stops on:
+- All tasks GREEN → advances to VERIFY, exits 0
+- Halting rule fires (stuck after 3 attempts, hook block, design gap, missing creds) → exits 1 with the reason
+- `MAX_ITERS` reached → exits 1 (re-run to continue; state is safe in files)
+- Ctrl-C → exits 130 cleanly
+
+Output is one line per iteration (`RALPH_STATUS: CONTINUE T3 duplicate email`). For detail, tail `git log` in another window.
+
+**Caveat:** shell Ralph uses `--dangerously-skip-permissions` under the hood so the agent doesn't block on interactive approvals. That's safe here because the workflow's own enforcement (pre-commit hook, rubric `[ ]` gates, atomic commits, test-first) is doing the guardrail work — but you should only run it on a project you're OK letting the agent edit freely.
 
 ---
 
@@ -137,6 +172,7 @@ Pushes the branch, opens a PR, watches CI. On pass, marks shipped. On fail, capt
 └── scripts/
     ├── init.sh
     ├── install-agent-browser.sh
+    ├── ralph.sh                # shell Ralph loop for headless BUILD
     └── ship.sh
 ```
 

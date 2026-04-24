@@ -104,11 +104,17 @@ When a feature transitions PLAN → BUILD **for the first time**, do NOT start e
 
 > Before we start BUILD, how do you want to run it? (Universal halting rules always apply — these options just control pace.)
 >
-> 1. **Step-by-step** — I pause after every task GREEN, you reply `/next` to continue. Best for learning the workflow or high-risk tasks.
-> 2. **Checkpoint every 5** (recommended) — I auto-loop, but pause every 5 tasks for your review. You reply `go` to continue. Good for trust-but-verify.
-> 3. **Full autonomous** — I only stop on the universal halting rules. Best when you want to walk away for an hour.
+> 1. **Step-by-step (conversation mode)** — I pause after every task GREEN, you reply `/next` to continue. Best for learning the workflow or high-risk tasks.
+> 2. **Checkpoint every 5 (conversation mode, recommended)** — I auto-loop in this session, but pause every 5 tasks for your review. You reply `go` to continue.
+> 3. **Full autonomous (conversation mode)** — I only stop on the universal halting rules. Best for 30-60 min unattended in one session.
+> 4. **Shell Ralph (headless)** — you run `./scripts/ralph.sh` in a terminal instead of talking to me. Each task is a fresh Claude invocation with clean context (no bloat, no token creep). Best for long unattended runs — walk away for 2+ hours. You lose conversation UX; you watch terminal output.
 >
-> Reply `1`, `2`, `3`, or adjust (e.g. `checkpoint every 3 tasks`, `autonomous but stop on any DB migration`).
+> Reply `1`, `2`, `3`, `4`, or adjust (e.g. `checkpoint every 3`, `autonomous but stop on any DB migration`).
+
+If the user picks `4`, tell them exactly: *"BUILD is ready. Close this Claude Code window or leave it. In your terminal, run:*
+> `cd <project-root> && ./scripts/ralph.sh`
+>
+> *Ralph will loop until all 14 tasks are GREEN, then advance to VERIFY and exit. Come back to this conversation (or start a new one) for VERIFY."* — then end your turn; do not execute any tasks yourself.
 
 Record the chosen mode into `spec.md` as a `**Run mode:**` line in the `## PHASE: BUILD` section. Commit: `[SDD:<id>] build: run mode = <choice>`. Every subsequent `/next` in BUILD phase honours that mode until the user changes it.
 

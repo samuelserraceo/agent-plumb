@@ -1,0 +1,145 @@
+#!/usr/bin/env bash
+# Ralph loop — the real thing. Runs headless, one fresh Claude invocation per iteration.
+#
+# Best for BUILD phase auto-loop where context continuity doesn't matter and you
+# want to walk away for a long time. For SPEC / PLAN / VERIFY / LEARN, use
+# conversation mode (/next inside Claude Code) — those phases need discussion.
+#
+# Usage:
+#   cd <project-root>
+#   ./scripts/ralph.sh                # default: 50 iter max, 10 min/iter timeout
+#   MAX_ITERS=20 ./scripts/ralph.sh   # override
+#
+# Requires: claude CLI in PATH, git, agent-browser, .sdd/ with active feature in BUILD phase.
+#
+# Halts on: all tasks GREEN (phase advances), halting rule fires, max iterations, Ctrl-C.
+
+set -euo pipefail
+
+MAX_ITERS="${MAX_ITERS:-50}"
+TIMEOUT_PER_ITER="${TIMEOUT_PER_ITER:-600}"
+
+# ─── Preflight ──────────────────────────────────────────────────────
+
+if ! command -v claude >/dev/null 2>&1; then
+  echo "ERROR: claude CLI not found. Install Claude Code first." >&2
+  exit 1
+fi
+
+if [ ! -d .sdd ] || [ ! -f .sdd/INDEX.md ]; then
+  echo "ERROR: run from the project root (.sdd/ + INDEX.md must exist)." >&2
+  exit 1
+fi
+
+active=$(grep -m1 -E '^\*\*Active:\*\*' .sdd/INDEX.md | grep -oE 'features/[A-Za-z0-9._-]+' | head -1 || echo "")
+if [ -z "$active" ]; then
+  echo "ERROR: no active feature in .sdd/INDEX.md" >&2
+  exit 1
+fi
+
+spec=".sdd/$active/spec.md"
+[ -f "$spec" ] || { echo "ERROR: $spec not found" >&2; exit 1; }
+
+phase=$(grep -m1 -oE '\[PHASE: [A-Z]+\]' "$spec" | grep -oE '[A-Z]+' | tail -1 || echo "")
+if [ "$phase" != "BUILD" ]; then
+  echo "ERROR: ralph only operates in BUILD phase. Current phase: $phase" >&2
+  echo "       For $phase, use conversation mode (/next in Claude Code)." >&2
+  exit 1
+fi
+
+# ─── The prompt — minimum viable contract ──────────────────────────
+
+read -r -d '' PROMPT <<'PROMPT_EOF' || true
+You are one iteration of a Ralph shell loop. You have FRESH context. You MUST re-read state from files this turn — do NOT rely on memory of any previous iterations.
+
+Your job this iteration is to do exactly ONE task and exit.
+
+1. Read .sdd/INDEX.md → find the active feature.
+2. Read .sdd/features/<active>/spec.md → find current phase and the first RED task in the PHASE: PLAN Tasks list.
+3. Read .sdd/CLAUDE.md → refresh on TDD order, commit conventions, universal halting rules, non-technical lens.
+
+Then do EXACTLY ONE of these:
+
+A) Phase is BUILD and there is a RED task (the common case):
+   - Write the agent-browser test file at the path named in the task line (if missing).
+   - Run the test → must be RED (no code yet).
+   - Write the code to make it GREEN.
+   - Run the test → must be GREEN.
+   - Commit the code atomically: [SDD:<id>][T<n>] <short message>
+   - Flip the task line status RED → GREEN in spec.md.
+   - Commit the spec update: [SDD:<id>] task: T<n> GREEN
+   - On your VERY LAST LINE, print exactly: RALPH_STATUS: CONTINUE T<n> <short phrase>
+   - End your turn.
+
+B) Phase is BUILD and ALL tasks are now GREEN:
+   - Advance phase to VERIFY in spec.md. Update INDEX.md Active line.
+   - Commit: [SDD:<id>] phase: BUILD -> VERIFY
+   - On your VERY LAST LINE, print exactly: RALPH_STATUS: PHASE_ADVANCE VERIFY
+   - End your turn.
+
+C) Halting rule fires (test stays RED after 3 attempts, pre-commit hook blocks you, you discover a §5/§6 gap that needs a real design decision, or the next task needs credentials/infra the user hasn't provided):
+   - Do NOT force through. Do NOT commit broken state.
+   - On your VERY LAST LINE, print exactly: RALPH_STATUS: HALT <one-line reason>
+   - End your turn.
+
+Do exactly ONE task per iteration. Do not chain. Do not continue after CONTINUE. That is the Ralph contract.
+PROMPT_EOF
+
+# ─── Loop ───────────────────────────────────────────────────────────
+
+trap 'echo ""; echo "Ralph interrupted by user."; exit 130' INT TERM
+
+iter=0
+while [ "$iter" -lt "$MAX_ITERS" ]; do
+  iter=$((iter + 1))
+  echo ""
+  echo "───── Ralph iteration $iter / $MAX_ITERS ─────"
+
+  set +e
+  output=$(timeout "$TIMEOUT_PER_ITER" claude -p "$PROMPT" --dangerously-skip-permissions 2>&1)
+  claude_exit=$?
+  set -e
+
+  if [ $claude_exit -ne 0 ]; then
+    echo "Claude invocation failed (exit $claude_exit). Last 30 lines:"
+    echo "$output" | tail -30
+    exit 1
+  fi
+
+  status=$(echo "$output" | grep -oE 'RALPH_STATUS:.*' | tail -1 || echo "")
+
+  if [ -z "$status" ]; then
+    echo "No RALPH_STATUS in output. The agent may have not finished a task."
+    echo "Last 30 lines:"
+    echo "$output" | tail -30
+    exit 1
+  fi
+
+  echo "$status"
+
+  case "$status" in
+    "RALPH_STATUS: CONTINUE"*)
+      continue
+      ;;
+    "RALPH_STATUS: PHASE_ADVANCE"*)
+      echo ""
+      echo "✓ BUILD complete. Phase advanced to VERIFY."
+      echo "  Next: switch to conversation mode in Claude Code → /verify"
+      exit 0
+      ;;
+    "RALPH_STATUS: HALT"*)
+      echo ""
+      echo "✗ Ralph halted."
+      echo "  Read the reason above, fix the blocker, then re-run ./scripts/ralph.sh"
+      exit 1
+      ;;
+    *)
+      echo "Unknown RALPH_STATUS — investigate."
+      exit 1
+      ;;
+  esac
+done
+
+echo ""
+echo "Ralph hit max iterations ($MAX_ITERS) without completing. Re-run to continue."
+exit 1
