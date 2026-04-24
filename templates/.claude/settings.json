@@ -20,7 +20,9 @@
       {
         "matcher": "Bash",
         "hooks": [
-          { "type": "command", "command": ".claude/hooks/pre-commit-block.sh" }
+          { "type": "command", "command": ".claude/hooks/pre-commit-block.sh" },
+          { "type": "command", "command": ".claude/hooks/pre-commit-learn-sync.sh" },
+          { "type": "command", "command": ".claude/hooks/pre-commit-schema-sync.sh" }
         ]
       }
     ]
