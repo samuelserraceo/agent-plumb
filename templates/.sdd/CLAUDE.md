@@ -150,6 +150,34 @@ Paste one of:
 
 If the user wants detail, they'll ask. Default is terse.
 
+---
+
+## Auto-open files and URLs — never just give paths
+
+The user is non-technical. When they need to open, view, edit, approve, tick boxes in, or check anything — **open it for them** via a Bash command. Never just say "open `path/to/file.md`" or "go to `http://localhost:...`" and leave them to do it.
+
+Platform commands:
+- **macOS:** `open <path-or-url>`
+- **Linux:** `xdg-open <path-or-url>`
+- **Windows (in Git Bash / WSL):** `start <path-or-url>` or `explorer.exe <path>`
+
+Default to `open` unless the user's shell environment signals otherwise.
+
+**Apply this for:**
+- Pointing the user at a spec.md / rubric.md / wireframe.html to edit or review
+- Sending them to the running dev server's page (`open http://localhost:3001/admin`)
+- Showing them a CSV they just downloaded
+- Telling them to tick sign-off boxes in spec.md (`open .sdd/features/<id>/spec.md`)
+- Showing a screenshot or artifact from `.sdd/features/<id>/artifacts/`
+
+**Exception:** don't auto-open anything the user is about to run a shell command against (e.g., don't `open .env.local` if the user is about to `grep ADMIN_PASSWORD` from it in their own terminal).
+
+If multiple things need opening, chain them in one Bash call:
+
+```bash
+open .sdd/features/001-waitlist-signup/spec.md && open http://localhost:3001/admin
+```
+
 ## Data contract discipline
 
 - `.sdd/data-model.md` is the single source of truth for entities, fields, relations.
