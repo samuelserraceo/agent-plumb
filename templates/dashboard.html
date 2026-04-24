@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SDD Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    .blocker { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 8px 12px; font-family: ui-monospace, monospace; }
+    .phase-pill { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; letter-spacing: 0.05em; }
+    .phase-SPEC   { background: #dbeafe; color: #1e40af; }
+    .phase-PLAN   { background: #ddd6fe; color: #5b21b6; }
+    .phase-BUILD  { background: #fed7aa; color: #9a3412; }
+    .phase-VERIFY { background: #bbf7d0; color: #14532d; }
+    .phase-LEARN  { background: #fce7f3; color: #9f1239; }
+    .md h1, .md h2, .md h3 { font-weight: 600; margin-top: 1em; }
+    .md h1 { font-size: 1.5rem; }
+    .md h2 { font-size: 1.15rem; border-top: 1px solid #e5e7eb; padding-top: 0.75em; }
+    .md h3 { font-size: 1rem; }
+    .md ul { list-style: disc; padding-left: 1.25rem; }
+    .md code { background: #f1f5f9; padding: 1px 5px; border-radius: 3px; font-size: 0.9em; }
+    .md a { color: #2563eb; text-decoration: underline; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen">
+
+  <header class="bg-white border-b border-slate-200">
+    <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div>
+        <div class="text-xs uppercase tracking-wider text-slate-500">Spec-Driven Dev</div>
+        <h1 class="text-xl font-semibold">Dashboard</h1>
+      </div>
+      <div class="text-xs text-slate-500" id="last-refresh">Last refresh: —</div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-6 py-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <section class="lg:col-span-1 bg-white rounded-lg border border-slate-200 p-5 space-y-3">
+      <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-500">Active</h2>
+      <div id="active-banner" class="space-y-2">
+        <div class="text-slate-400">loading…</div>
+      </div>
+      <div id="blocker" class="blocker hidden"></div>
+      <div class="text-xs text-slate-500 pt-2 border-t border-slate-200">
+        Terminal commands: <code>/next</code> <code>/status</code> <code>/ship</code> <code>/compress</code>
+      </div>
+    </section>
+
+    <section class="lg:col-span-2 bg-white rounded-lg border border-slate-200 p-5">
+      <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-500 mb-3">INDEX.md</h2>
+      <div id="index-md" class="md text-sm"><div class="text-slate-400">loading…</div></div>
+    </section>
+
+    <section class="lg:col-span-3 bg-white rounded-lg border border-slate-200 p-5">
+      <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-500 mb-3">Active spec.md (current phase)</h2>
+      <div id="spec-md" class="md text-sm"><div class="text-slate-400">no active feature</div></div>
+    </section>
+
+  </main>
+
+  <footer class="max-w-6xl mx-auto px-6 pb-8 text-xs text-slate-500">
+    Serve this via <code>npx serve</code> or any static server at the project root so <code>fetch()</code> can read <code>.sdd/*.md</code>.
+  </footer>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const tryFetch = async (path) => {
+      try { const r = await fetch(path, { cache: "no-store" }); return r.ok ? await r.text() : null; }
+      catch { return null; }
+    };
+
+    const extractActive = (indexMd) => {
+      const m = indexMd.match(/\*\*Active:\*\*\s+(features\/[A-Za-z0-9._-]+)(?:\s+\[([A-Z]+)\])?(?:\s+blocker:\s*(.+))?/);
+      if (!m) return null;
+      return { path: m[1], phase: m[2] || "?", blocker: (m[3] || "").trim() };
+    };
+
+    const extractPhaseSection = (specMd, phase) => {
+      const re = new RegExp(`## PHASE: ${phase}[\\s\\S]*?(?=\\n## PHASE: |$)`, "m");
+      const m = specMd.match(re);
+      if (!m) return "";
+      // Include the header lines (above the first ## PHASE:) plus the phase section
+      const head = specMd.split(/## PHASE:/)[0];
+      return head + m[0];
+    };
+
+    const refresh = async () => {
+      const indexMd = await tryFetch(".sdd/INDEX.md");
+      if (!indexMd) {
+        $("index-md").innerHTML = '<div class="text-red-600">Cannot read .sdd/INDEX.md. Serve this with <code>npx serve</code> at the project root.</div>';
+        return;
+      }
+      $("index-md").innerHTML = marked.parse(indexMd);
+
+      const active = extractActive(indexMd);
+      const banner = $("active-banner");
+      const blocker = $("blocker");
+      if (!active) {
+        banner.innerHTML = '<div class="text-slate-500">No active feature. Start one with <code>/next</code>.</div>';
+        blocker.classList.add("hidden");
+        $("spec-md").innerHTML = '<div class="text-slate-400">no active feature</div>';
+      } else {
+        banner.innerHTML = `
+          <div class="font-medium">${active.path}</div>
+          <div><span class="phase-pill phase-${active.phase}">${active.phase}</span></div>
+        `;
+        if (active.blocker) {
+          blocker.textContent = "Blocker: " + active.blocker;
+          blocker.classList.remove("hidden");
+        } else {
+          blocker.classList.add("hidden");
+        }
+        const specMd = await tryFetch(`.sdd/${active.path}/spec.md`);
+        if (specMd) {
+          const section = extractPhaseSection(specMd, active.phase);
+          $("spec-md").innerHTML = marked.parse(section || specMd);
+        } else {
+          $("spec-md").innerHTML = '<div class="text-red-600">spec.md not readable</div>';
+        }
+      }
+
+      $("last-refresh").textContent = "Last refresh: " + new Date().toLocaleTimeString();
+    };
+
+    refresh();
+    setInterval(refresh, 5000);
+  </script>
+</body>
+</html>

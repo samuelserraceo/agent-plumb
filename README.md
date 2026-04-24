@@ -1,0 +1,194 @@
+# Spec-Driven Development Workflow (SDD)
+
+> A stupidly simple, agent-driven workflow for building software with AI.
+> **The state file is the program. The rubric is the questioning agent. The filesystem is the retrieval system.**
+> No orchestrator, no database, no RAG.
+
+---
+
+## Who this is for
+
+Solo builders and small teams — especially non-technical founders — who want to ship real software with AI agents without the agent drifting, assuming, or skipping the hard questions.
+
+If you've ever had an AI agent build something that technically works but fundamentally misunderstood your intent — this fixes it.
+
+---
+
+## The loop
+
+```
+SPEC → PLAN → BUILD → VERIFY → LEARN → SHIPPED
+  ↑                       ↓
+  └── (bug task) ← CI fail
+```
+
+One feature moves through five phases. You **cannot** skip a phase. You cannot advance while any blocker (`[ ]`) in the current phase is unanswered.
+
+1. **SPEC** — the agent walks a rubric. Some sections it asks you about in plain English (problem, success, user stories, sign-off). Other sections it *proposes* a concrete answer and explains tradeoffs (technical approach, data contract, flows, acceptance criteria). You bring the *what*, the agent proposes the *how*, you adjust together.
+2. **PLAN** — once the spec is complete, the agent breaks it into atomic tasks, each linked to a test file.
+3. **BUILD** — strictly test-first. For each task: write the test (must fail), write the code, test passes, commit. Move on.
+4. **VERIFY** — runs every test via [agent-browser](https://agent-browser.dev). Generates a human sign-off checklist from your spec.
+5. **LEARN** — on CI green, capture lessons, update the project's `patterns.md`, mark shipped.
+
+---
+
+## Why it works
+
+### The state file *is* the program
+
+Every feature has one `spec.md` file. That file is both the PRD and the state machine. Its sections have `[ ]` placeholders that the agent must fill — honestly, with your input — before it can do anything else. When all `[ ]` in the current phase are filled, the phase advances. That's the entire workflow logic.
+
+No orchestrator. No engine. Just markdown and a tiny rubric.
+
+### The filesystem *is* retrieval
+
+Instead of a vector store:
+
+```
+.sdd/
+  INDEX.md              # table of contents — one line per feature
+  data-model.md         # canonical schema — every entity, every field
+  patterns.md           # cross-feature learnings
+  CLAUDE.md             # agent instructions
+  features/
+    001-user-auth/spec.md
+    002-payments/spec.md
+    ...
+```
+
+The agent's working context is bounded: `INDEX.md` + one active `spec.md` + `patterns.md`. Shipped features sit in the tree but out of context until referenced. Scales to hundreds of features without RAG.
+
+### Enforcement without fragile hooks
+
+Three tiny hooks:
+
+1. `SessionStart` — prints the current state banner.
+2. `UserPromptSubmit` — injects the state into every turn. The agent *cannot* forget where it is.
+3. `PreToolUse(git commit)` — refuses commits if the current phase has open `[ ]`.
+
+Each hook does one thing. None are clever. All are idempotent. That's why they work.
+
+---
+
+## Quick start
+
+### 1. Install
+
+```bash
+git clone https://github.com/<you>/spec-driven-dev-workflow sdd-template
+cd <your-project>
+<path-to>/sdd-template/scripts/init.sh
+```
+
+This drops `.sdd/`, `.claude/`, `dashboard.html`, and `rubric.md` into your project. It also installs `agent-browser` globally for UAT (skip with `--no-browser` if you prefer Playwright).
+
+### 2. Open Claude Code in your project
+
+The `SessionStart` hook prints the workflow state. On a fresh install it'll say "no active feature" and tell you how to start one.
+
+### 3. Work your first feature
+
+```
+You: "Let's work on user auth"
+Claude: (creates features/001-user-auth/, asks you Section 1.1: who has this problem?)
+You: "People without accounts who want to sign up"
+Claude: (writes it in, asks Section 1.2, and so on)
+```
+
+After SPEC, Claude proposes the tech approach (Section 4) with alternatives and tradeoffs — in plain English. You push back or agree. Then PLAN, BUILD, VERIFY, LEARN.
+
+### 4. Watch the dashboard (optional)
+
+```bash
+npx serve .
+# open http://localhost:3000/dashboard.html
+```
+
+Shows current phase, active blocker, rendered spec. Refreshes every 5s.
+
+### 5. Ship
+
+```
+/ship
+```
+
+Pushes the branch, opens a PR, watches CI. On pass, marks shipped. On fail, captures the error as a bug task and flips phase back to BUILD.
+
+---
+
+## Layout of this repo
+
+```
+.
+├── README.md               # you are here
+├── rubric.md               # the canonical SPEC rubric — the heart of the system
+├── templates/              # what init.sh drops into your project
+│   ├── .sdd/
+│   │   ├── INDEX.md
+│   │   ├── CLAUDE.md
+│   │   ├── data-model.md
+│   │   ├── patterns.md
+│   │   └── features/_template/
+│   ├── .claude/
+│   │   ├── settings.json
+│   │   ├── hooks/          # session-start, user-prompt-submit, pre-commit-block
+│   │   └── commands/       # /next, /status, /ship, /compress
+│   └── dashboard.html
+└── scripts/
+    ├── init.sh
+    ├── install-agent-browser.sh
+    └── ship.sh
+```
+
+---
+
+## The rubric (what the agent *actually* asks)
+
+See [`rubric.md`](rubric.md) for the full canonical version. Summary:
+
+| Section | Mode | What it captures |
+|---|---|---|
+| 1. Problem | user-led | Who, why now, what breaks without it |
+| 2. Success | user-led | Verifiable outcomes |
+| 3. User stories | user-led | As X, I want Y, so that Z |
+| 4. **Proposed approach** | **agent-led** | **Recommended solution + alternatives + tradeoffs** |
+| 5. **Data contract** | **agent-led** | **Every entity, field, transition, edge case** |
+| 6. Flows | agent-led | Happy path + 3 edge cases |
+| 7. Dependencies | agent-led | APIs, auth, third parties |
+| 8. Out of scope | user-led | Explicit exclusions |
+| 9. Non-functional | agent-led | Perf, security, a11y |
+| 10. Acceptance criteria | agent-led | One test file per criterion |
+| 11. Human sign-off | user-led | Manual test steps |
+
+The depth of sections 4 and 5 is what makes this different from "the agent asks some questions." Each proposal shows alternatives, tradeoffs, and unknowns — *you don't need to know the technology, you just need to read plain-English tradeoffs and say what feels right.*
+
+---
+
+## Customizing
+
+- **The rubric** is just a markdown file. Edit it. Rename sections. Add/remove items. Your workflow.
+- **Commands** in `templates/.claude/commands/` are Claude Code slash commands — edit the prompts to fit your style.
+- **Hooks** are three shell scripts. Each ~30–80 lines. Read them, edit them, remove them.
+- **Tests** use agent-browser by default. To swap to Playwright, change the task template in `rubric.md` and your `tests/` conventions.
+
+---
+
+## Honest caveats
+
+- **The rubric is 80% of the product.** If its questions are weak, the system is weak. Fork and iterate.
+- **"Non-technical" has limits.** The agent proposes technical options; you decide what feels right. If you don't know what you *want the feature to do*, no workflow saves you.
+- **The commit-block hook can be annoying.** Disable it in `settings.json` if you find the soft enforcement (context injection) sufficient.
+- **This scales to roughly 50 in-flight features / 500 total.** Beyond that, you want real tooling.
+- **Not a silver bullet.** It makes drift expensive and deep questioning cheap. It doesn't turn a bad idea into a good one.
+
+---
+
+## Contributing
+
+The rubric and the slash-command prompts are the most valuable things to improve. If a new section or a sharper question saves someone from a bad assumption, it pays for itself 100x. PRs welcome.
+
+---
+
+## License
+
+MIT.
