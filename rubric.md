@@ -41,34 +41,39 @@ _Ask: "As `<who>`, I want `<what>`, so that `<why>`"? Usually 2–5 stories. Age
 
 ---
 
-### 4. UX & Design brief   [USER-LED, agent asks one at a time]   [SKIPPABLE: non-UI features only — e.g. APIs, cron jobs, data migrations]
-_Purpose: capture how the thing should look and feel BEFORE proposing tech or drawing the wireframe. The agent cannot invent taste — this is where your aesthetic preferences, brand constraints, and references go on record. Every downstream decision (tech choices, copy voice, wireframe polish) is informed by this._
+### 4. UX & Design brief   [AGENT-LED, proposes with reasoning from §1-3 context]   [SKIPPABLE: non-UI features only — e.g. APIs, cron jobs, data migrations]
+_Purpose: capture how the thing should look and feel BEFORE proposing tech (§5) or drawing the wireframe. The user is non-technical and visual — don't ask blank open-ended questions, propose concrete candidates with reasoning that references what §1-3 already told you. The user's job is to pick, mix, reject, or push back — not to invent taste from scratch._
 
-_Ask each bullet in plain English, one at a time. Push past lazy answers — "clean" and "modern" are not answers; "like Linear's homepage but warmer" is._
+_Run in this order — do NOT skip step 1:_
+
+_**Step 1 — read context.** Re-read §1 Problem, §2 Success, §3 User stories. Extract every signal they give you about audience, stakes, mood, screen context, brand posture, voice. Write these out to the user in one compact paragraph so they can see what you've inferred._
+
+_**Step 2 — ask only what's missing.** Identify the 1-3 smallest gaps you still have before proposing a UX direction. Ask only those. Not a list of 8. (Example: "I can read tone and screen size from §1, but I don't know whether brand perception is core positioning or whether it's purely functional — which is it?")_
+
+_**Step 3 — propose candidates, not fields.** After user answers the gap questions, propose a full UX brief with each sub-item given as 2-3 concrete candidates with one-line reasoning tied back to §1-3 context. Structure:_
 
 - **Tone / feel:** [ ]
-  _Pick 2-3 descriptors: minimal, professional, playful, bold, elegant, warm, technical, confident, editorial, luxe — or describe in your own words._
+  _Propose 2-3 candidate vibes, each with reasoning. E.g.: `"1) confident + warm — users are burned by Squarespace; warmth says 'made by a founder' and confidence says 'won't waste your time'. 2) minimal + editorial — if positioning is 'serious tool for serious founders'. 3) playful + bold — if the goal is to feel different from every other SaaS landing."`_
 
-- **Reference sites / apps you love (1-3):** [ ]
-  _Names + URLs or screenshots of products whose UI or vibe you want to match. "Linear", "Stripe checkout", "Notion marketing pages"._
+- **Reference sites / apps (3 candidates):** [ ]
+  _For each: name, URL, what specifically to borrow (layout, spacing, copy, colour, motion), WHY it maps to this feature. Plus 1-2 to avoid with why._
 
-- **References you want to AVOID (0-2):** [ ]
-  _"Don't make it look like [X]." Helpful for bracketing taste._
-
-- **Brand assets on hand:** [ ]
-  _Logo / color palette / typeface already chosen? Starting fresh? If fresh, one-line brand idea so the agent can pick sensible defaults._
+- **Brand assets:** [ ]
+  _If user has assets, capture them. If starting fresh, propose palette + typeface with reasoning (e.g. "warm off-white + dark slate + single amber accent — warmth without ProductHunt-loud")._ 
 
 - **Primary screen size:** [ ]
-  _Where will most users see this — mobile, desktop, or split?_
+  _Infer from §1/§3 and state the inference in one sentence. Confirm with user._
 
 - **Copy voice:** [ ]
-  _How should the words feel — formal, friendly, concise, witty, technical, warm? One-sentence example of a headline you'd personally write, if you have one._
+  _Propose 2 candidate voices each with a sample headline. User picks or edits._
 
 - **Emotional goal:** [ ]
-  _What should the user FEEL after using this feature? (confident, excited, reassured, in control, impressed, calm…) Guides microcopy, animation, pacing decisions later._
+  _Propose the feeling §2 Success is pointing at (e.g. "reassured + slightly excited — they want to know they're on a list that will actually ship"). Confirm with user._
 
 - **Accessibility intent beyond baseline:** [ ]
-  _Default is WCAG 2.1 AA via §10. This is where you raise the bar — high-contrast audience, large-type, keyboard-only, screen-reader-first, low-bandwidth regions. Write "baseline only" if none apply._
+  _State the baseline (WCAG 2.1 AA) unless the audience implies otherwise. If you detect signals (e.g. older users, low-bandwidth regions), raise them and ask — otherwise confirm "baseline only"._
+
+_**Step 4 — iterate until the user says `approve`**, then write the agreed brief into this section and move on. What goes in `spec.md` is the converged answer with reasoning, not the candidate shortlist._
 
 ---
 
