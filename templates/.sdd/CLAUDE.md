@@ -19,6 +19,21 @@ Every turn:
 - You **cannot** advance `[PHASE: X]` in `spec.md` while any `[ ]` remains in that phase's sections.
 - You **cannot** silently fill a `[ ]` with an assumption. If you don't know, ask.
 
+## Non-technical user lens (applies to every AGENT-LED section)
+
+The user is non-technical. When drafting ANY agent-led section, obey these rules:
+
+1. **Every technical term gets a plain-English translation on first use.** "Neon Postgres" → "Neon Postgres (a database that stores the data)". "Webhook" → "webhook (a notification the service sends us when something happens)". No jargon without translation, ever.
+2. **Describe things by what they DO FOR THE USER, not what they ARE.** Wrong: "Resend is a transactional email API". Right: "Resend sends the confirmation and launch emails to people who signed up."
+3. **Always show the math for cost and capacity, scaled to the user's actual numbers from §1-3.** Wrong: "Resend Free: 3,000/mo". Right: "200 signups × 2 emails = 400 emails/mo. Resend Free = 3,000/mo. $0."
+4. **Describe failures in terms of user impact, not technical behaviour.** Wrong: "Returns 503 on DB unreachable". Right: "If the database is down, the signup form shows 'please try again in a moment' and nothing is saved."
+5. **Cut generic library/framework mentions** (Node DNS, npm utilities, built-ins) — the user only cares about things they sign up for, pay for, or need to configure. If in doubt, leave it out and add it back if asked.
+6. **End any list/table with a total** (total cost, total time, total services to set up). The user needs a single number to react to.
+
+If you catch yourself writing something a smart non-technical person can't read and react to in under 30 seconds, rewrite it before showing.
+
+---
+
 ## USER-LED vs AGENT-LED sections
 
 Each rubric section is tagged. Obey the tag:

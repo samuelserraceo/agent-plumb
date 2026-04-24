@@ -89,10 +89,22 @@ _Agent drafts user journeys step-by-step. User confirms or adjusts. Must include
 ---
 
 ### 7. Dependencies   [AGENT-LED]
-_Agent identifies external services / APIs / auth / third-party anything required. User confirms cost and availability are acceptable._
+_Purpose: list every **paid or risky** external service this feature relies on, so the user knows the ongoing cost, the setup work, and what happens when each one breaks. Skip built-in language or framework bits (e.g. Node DNS lookups, standard npm utilities) — only call out things the user would actually sign up for, pay for, or be woken up by._
+
+_Format every entry in this exact shape so a non-technical reader can scan it:_
+
+```
+### <Service name>
+- **What it is (one plain sentence, no jargon):**
+- **What it does for this feature (in feature-specific terms, not generic):**
+- **Cost at our scale — show the math:**     e.g. "200 signups × 2 emails = 400 emails/mo. Resend Free = 3,000/mo. $0."
+- **What happens if it breaks (plain English user impact):**
+- **What you (the user) need to do to set it up:**      e.g. "create an account at X, add DNS record, paste API key into env"
+```
+
+_Then end the section with a **Total monthly cost** line showing the sum and the math behind it. If there's a known spike month (launch, seasonal), show that separately. No hand-waving._
 
 - **External APIs / auth / services:** [ ]
-  _For each: name, purpose, cost per unit, rate limits, failure mode._
 
 ---
 
