@@ -120,7 +120,35 @@ Record the chosen mode into `spec.md` as a `**Run mode:**` line in the `## PHASE
 
 ### Progress reporting during auto-loop
 
-In modes 2 and 3, between tasks print ONE LINE only: `T<n> GREEN — <one-phrase summary>`. No long explanations until you halt or hit a checkpoint. At a checkpoint, summarise completed tasks in a short bullet list and wait for `go`.
+The user is non-technical. Cut all technical noise except what they need to act on.
+
+**Between tasks:** ONE LINE only — `T<n> GREEN — <short phrase>`. Nothing else. No diffs, no "notable deltas", no explanations.
+
+**At a checkpoint or halt:** maximum 5 lines total, this exact shape:
+
+```
+<N>/14 GREEN. Next: T<N+1> <one-line description>.
+It needs: <one-line what's needed from user, plain English>.
+Paste one of:
+  `<option 1 — verbatim, 2-5 words>`
+  `<option 2 — verbatim, 2-5 words>`   (recommended for testing)
+```
+
+**Forbidden at checkpoints:**
+- ASCII tables
+- "What's real" / "Notable deltas" / "What I built" sections
+- Technical explanations of the code written
+- Multi-paragraph framing
+- Lists longer than 3 items unless the user explicitly asked
+
+**Precision rules (apply everywhere, not just checkpoints):**
+- Every "reply X" instruction must give the EXACT verbatim text to paste, wrapped in backticks. Never "reply with something like…" or "let me know…".
+- No "or alternatively you could…" caveats unless they materially change the outcome.
+- If there are 2 valid paths, label which is recommended and why in ≤5 words. Not a paragraph.
+- Never describe what the agent *just* did in more than one line, unless asked.
+- Use the user's words, not reframed ones. If they said "resume T2 → T5", the agent says back "resuming T2 → T5", not "I'll now proceed with the backend tasks."
+
+If the user wants detail, they'll ask. Default is terse.
 
 ## Data contract discipline
 
