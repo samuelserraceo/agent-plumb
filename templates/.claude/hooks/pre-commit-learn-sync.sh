@@ -2,8 +2,8 @@
 # SDD PreToolUse hook.
 # When the active feature is in LEARN phase and the commit touches substantive LEARN content
 # (the "## What shipped" or "## Lessons" sections of spec.md), require BOTH:
-#   - .sdd/patterns.md staged
-#   - .sdd/current-state.md staged
+#   - .sdd/patterns.md staged   (cross-feature learnings)
+#   - .sdd/INDEX.md staged      (live state: shipped list + deviations + environments)
 # in the same commit. No duplicate sources of institutional memory.
 #
 # Skipped when the only change to spec.md is the phase marker flip (BUILD → LEARN) — ship.sh
@@ -54,7 +54,7 @@ staged=$(git diff --cached --name-only 2>/dev/null || echo "")
 
 missing=()
 echo "$staged" | grep -qx '.sdd/patterns.md' || missing+=(".sdd/patterns.md")
-echo "$staged" | grep -qx '.sdd/current-state.md' || missing+=(".sdd/current-state.md")
+echo "$staged" | grep -qx '.sdd/INDEX.md' || missing+=(".sdd/INDEX.md")
 
 if [ ${#missing[@]} -gt 0 ]; then
   {
@@ -70,7 +70,7 @@ if [ ${#missing[@]} -gt 0 ]; then
     echo ""
     echo "  LEARN isn't done until cross-feature memory is updated. Reason:"
     echo "  - patterns.md must capture at least one reusable learning from this feature"
-    echo "  - current-state.md must record what is now live"
+    echo "  - INDEX.md must record what is now live (Shipped list + deviations + environments)"
     echo ""
     echo "  Update both files, then:"
     for m in "${missing[@]}"; do

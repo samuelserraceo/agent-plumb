@@ -80,7 +80,7 @@ cd <your-project>
 <path-to>/sdd-template/scripts/init.sh
 ```
 
-This drops `.sdd/`, `.claude/`, and `rubric.md` into your project. It also installs `agent-browser` globally for UAT (skip with `--no-browser` if you prefer Playwright).
+This drops `.sdd/`, `.claude/`, and `CLAUDE.md` into your project. It also installs `agent-browser` globally for UAT (skip with `--no-browser` if you prefer Playwright).
 
 ### 2. Open Claude Code in your project
 
@@ -147,31 +147,31 @@ Output is one line per iteration (`RALPH_STATUS: CONTINUE T3 duplicate email`). 
 ```
 .
 ├── README.md               # you are here
-├── rubric.md               # the canonical SPEC rubric — the heart of the system
 ├── templates/              # what init.sh drops into your project
+│   ├── CLAUDE.md           # project + workflow rules (marker-delimited)
 │   ├── .sdd/
-│   │   ├── INDEX.md
-│   │   ├── CLAUDE.md
-│   │   ├── current-state.md
+│   │   ├── INDEX.md        # TOC + active pointer + shipped + live state + deviations + envs
+│   │   ├── rubric.md       # canonical SPEC rubric — copied to spec.md per feature
 │   │   ├── data-model.md
 │   │   ├── patterns.md
 │   │   └── features/_template/
 │   └── .claude/
 │       ├── settings.json
-│       ├── hooks/          # session-start, user-prompt-submit, pre-commit-block, learn-sync, schema-sync, scope-guard
+│       ├── hooks/          # session-start, user-prompt-submit, pre-commit-block, learn-sync, schema-sync, scope-guard, claude-md-managed
 │       └── commands/       # /next, /status, /ship, /compress, /skip
 └── scripts/
     ├── init.sh
     ├── install-agent-browser.sh
-    ├── ralph.sh                # shell Ralph loop for headless BUILD
-    └── ship.sh
+    ├── ralph.sh            # shell Ralph loop for headless BUILD
+    ├── ship.sh
+    └── update.sh           # pull new SDD rules into existing projects (managed-section only)
 ```
 
 ---
 
 ## The rubric (what the agent *actually* asks)
 
-See [`rubric.md`](rubric.md) for the full canonical version. Summary:
+See [`templates/.sdd/rubric.md`](templates/.sdd/rubric.md) for the full canonical version. Summary:
 
 | Section | Mode | What it captures |
 |---|---|---|
@@ -199,7 +199,7 @@ Skippable sections (§4, §8, §10, wireframe) are offered with a reason — typ
 - **The rubric** is just a markdown file. Edit it. Rename sections. Add/remove items. Your workflow.
 - **Commands** in `templates/.claude/commands/` are Claude Code slash commands — edit the prompts to fit your style.
 - **Hooks** are three shell scripts. Each ~30–80 lines. Read them, edit them, remove them.
-- **Tests** use agent-browser by default. To swap to Playwright, change the task template in `rubric.md` and your `tests/` conventions.
+- **Tests** use agent-browser by default. To swap to Playwright, change the task template in `.sdd/rubric.md` and your `tests/` conventions.
 
 ---
 

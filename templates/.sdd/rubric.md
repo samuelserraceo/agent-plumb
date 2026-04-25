@@ -223,7 +223,7 @@ _Rendered from §12. User ticks each box after testing manually. Feature cannot 
 ## PHASE: LEARN
 
 ### What shipped
-_One-paragraph summary. Gets appended to `current-state.md` (if used) or INDEX.md's shipped section._
+_One-paragraph summary. Gets distilled to a one-liner in INDEX.md's `## Shipped` section. The full paragraph stays here._
 
 - [ ]
 

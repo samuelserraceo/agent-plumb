@@ -9,7 +9,7 @@ You are running the SDD workflow. Do exactly one step — no more, no less.
 ## What to do
 
 1. Read `.sdd/INDEX.md`. Identify the active feature from the `**Active:**` pointer line.
-   - If there's no active feature and the user's `$ARGUMENTS` describe a new feature intent, pick the next free feature id (e.g. `001`), create `.sdd/features/<id>-<slug>/` by copying the template, copy `rubric.md` to `.sdd/features/<id>-<slug>/spec.md`, update INDEX.md's `**Active:**` pointer and `## In flight` list, commit with `[SDD] init: features/<id>-<slug>`, then continue.
+   - If there's no active feature and the user's `$ARGUMENTS` describe a new feature intent, pick the next free feature id (e.g. `001`), create `.sdd/features/<id>-<slug>/` by copying the template, copy `.sdd/rubric.md` to `.sdd/features/<id>-<slug>/spec.md`, update INDEX.md's `**Active:**` pointer and `## In flight` list, commit with `[SDD] init: features/<id>-<slug>`, then continue.
    - If there's no active feature and `$ARGUMENTS` is empty, ask the user: "What do you want to work on? (new feature name, or name an existing backlog item)."
 
 2. Read `.sdd/features/<active>/spec.md`. Find the current phase (`[PHASE: X]`) and the first `[ ]` in that phase's sections.

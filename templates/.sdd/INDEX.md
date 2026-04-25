@@ -14,20 +14,45 @@
 _(none yet)_
 
 ## Backlog
-<!-- Queued ideas. Move to "In flight" when ready to start. -->
+<!-- Queued features. Move to "In flight" when ready to start. -->
 
 _(empty)_
 
 ## Shipped
-<!-- Completed + merged. Format: features/<id>-<slug> — PR <#url> — merged <YYYY-MM-DD> -->
+<!-- Completed + merged. One line per feature, newest first.
+     Format: features/<id>-<slug> — PR <#url> — merged <YYYY-MM-DD> — <one-line summary> -->
 
 _(empty)_
 
 ---
 
+## Live state
+<!-- Auto-maintained by /ship and LEARN. Captures the truth about what's running NOW,
+     so a non-technical reader can answer "what does this project actually do today?"
+     without reading code. -->
+
+### Environments
+- **Development (local):** `pnpm dev` → http://localhost:3001
+- **Preview:** _(not yet)_
+- **Production:** _(not yet)_
+
+### Known live deviations
+<!-- Things that shipped despite deviating from spec. Format:
+     <feature-id> — <what deviated> — <why accepted> — <when to fix> -->
+
+_(none)_
+
+### Pending production verification
+<!-- Acceptance criteria tagged [PROD-ONLY] that can't be verified locally — they collect
+     here on /ship and must be manually walked through after first prod deploy. -->
+
+_(none)_
+
+---
+
 ## References
 
-- **Rubric (template for new features):** `rubric.md` at project root
+- **Rubric (template for new features):** `.sdd/rubric.md`
 - **Data model:** `.sdd/data-model.md`
 - **Patterns / cross-feature learnings:** `.sdd/patterns.md`
-- **Agent instructions:** `.sdd/CLAUDE.md`
+- **Project + workflow rules:** `CLAUDE.md` at project root

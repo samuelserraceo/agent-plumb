@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # SDD workflow installer.
-# Drops .sdd/, .claude/, and rubric.md into the current directory.
+# Drops .sdd/, .claude/, and CLAUDE.md into the current directory.
 # Safe to re-run: will not overwrite existing files unless --force is passed.
 
 set -euo pipefail
@@ -12,7 +12,6 @@ if [ "${1:-}" = "--force" ]; then FORCE=1; fi
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 REPO_ROOT="$( cd "$SCRIPT_DIR/.." && pwd )"
 TEMPLATES="$REPO_ROOT/templates"
-RUBRIC="$REPO_ROOT/rubric.md"
 TARGET="$(pwd)"
 
 if [ ! -d "$TEMPLATES" ]; then
@@ -20,8 +19,8 @@ if [ ! -d "$TEMPLATES" ]; then
   exit 1
 fi
 
-if [ ! -f "$RUBRIC" ]; then
-  echo "ERROR: rubric.md not found at $RUBRIC. The SDD repo is missing its rubric." >&2
+if [ ! -f "$TEMPLATES/.sdd/rubric.md" ]; then
+  echo "ERROR: rubric not found at $TEMPLATES/.sdd/rubric.md. The SDD repo is missing its rubric." >&2
   exit 1
 fi
 
@@ -40,12 +39,12 @@ copy_if_absent() {
   fi
 }
 
-# Top-level .sdd/ and .claude/ trees
+# Top-level .sdd/ and .claude/ trees (.sdd/ already includes rubric.md, data-model.md, etc.)
 copy_if_absent "$TEMPLATES/.sdd" "$TARGET/.sdd"
 copy_if_absent "$TEMPLATES/.claude" "$TARGET/.claude"
 
-# rubric.md at project root (used as template when starting new features)
-copy_if_absent "$RUBRIC" "$TARGET/rubric.md"
+# CLAUDE.md at project root — has SDD-managed section + your project rules section
+copy_if_absent "$TEMPLATES/CLAUDE.md" "$TARGET/CLAUDE.md"
 
 # Ensure hook scripts are executable (cp preserves mode on macOS/Linux, but be safe)
 if [ -d "$TARGET/.claude/hooks" ]; then
@@ -57,6 +56,6 @@ fi
 
 echo ""
 echo "Done. Next steps:"
-echo "  1. Review .sdd/CLAUDE.md and rubric.md — these are your workflow's 'personality'. Edit freely."
+echo "  1. Review CLAUDE.md (project root) and .sdd/rubric.md."
 echo "  2. Start a feature: tell Claude 'work on <feature name>' or run /next."
 echo "  3. Run /status anytime to see current state, or open .sdd/INDEX.md for the table of contents."
