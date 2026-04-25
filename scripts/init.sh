@@ -46,6 +46,14 @@ copy_if_absent "$TEMPLATES/.claude" "$TARGET/.claude"
 # CLAUDE.md at project root — has SDD-managed section + your project rules section
 copy_if_absent "$TEMPLATES/CLAUDE.md" "$TARGET/CLAUDE.md"
 
+# Runtime scripts the project itself uses (ralph, ship, install-agent-browser).
+# init.sh and update.sh stay in the SDD source repo — only project-runtime scripts get copied.
+mkdir -p "$TARGET/scripts"
+for s in ralph.sh ship.sh install-agent-browser.sh; do
+  copy_if_absent "$REPO_ROOT/scripts/$s" "$TARGET/scripts/$s"
+done
+chmod +x "$TARGET/scripts/"*.sh 2>/dev/null || true
+
 # Ensure hook scripts are executable (cp preserves mode on macOS/Linux, but be safe)
 if [ -d "$TARGET/.claude/hooks" ]; then
   chmod +x "$TARGET/.claude/hooks/"*.sh 2>/dev/null || true

@@ -6,7 +6,7 @@
      SDD ships an update. Your edits inside this block will be lost.
      Your project-specific rules go BELOW the END marker.
      ════════════════════════════════════════════════════════════════════ -->
-<!-- SDD-MANAGED-START version: 0.5 -->
+<!-- SDD-MANAGED-START version: 0.6 -->
 
 # CLAUDE.md
 
@@ -29,18 +29,28 @@ Every turn:
 - You **cannot** advance `[PHASE: X]` in `spec.md` while any `[ ]` remains in that phase's sections.
 - You **cannot** silently fill a `[ ]` with an assumption. If you don't know, ask.
 
-## Non-technical user lens (applies to every AGENT-LED section)
+## Non-technical user lens (applies to EVERYTHING you write to the user)
 
-The user is non-technical. When drafting ANY agent-led section, obey these rules:
+The user is non-technical. This rule applies to every word you produce — rubric content, halt messages, diagnoses, error explanations, option presentation, status reports, ALL of it. Not just the AGENT-LED rubric sections.
 
 1. **Every technical term gets a plain-English translation on first use.** "Neon Postgres" → "Neon Postgres (a database that stores the data)". "Webhook" → "webhook (a notification the service sends us when something happens)". No jargon without translation, ever.
 2. **Describe things by what they DO FOR THE USER, not what they ARE.** Wrong: "Resend is a transactional email API". Right: "Resend sends the confirmation and launch emails to people who signed up."
-3. **Always show the math for cost and capacity, scaled to the user's actual numbers from §1-3.** Wrong: "Resend Free: 3,000/mo". Right: "200 signups × 2 emails = 400 emails/mo. Resend Free = 3,000/mo. $0."
-4. **Describe failures in terms of user impact, not technical behaviour.** Wrong: "Returns 503 on DB unreachable". Right: "If the database is down, the signup form shows 'please try again in a moment' and nothing is saved."
-5. **Cut generic library/framework mentions** (Node DNS, npm utilities, built-ins) — the user only cares about things they sign up for, pay for, or need to configure. If in doubt, leave it out and add it back if asked.
-6. **End any list/table with a total** (total cost, total time, total services to set up). The user needs a single number to react to.
+3. **Always show the math for cost and capacity, scaled to the user's actual numbers.** Wrong: "Resend Free: 3,000/mo". Right: "200 signups × 2 emails = 400 emails/mo. Resend Free = 3,000/mo. $0."
+4. **Describe failures and tool errors in terms of user impact, not technical behaviour.** Wrong: "Returns 503 on DB unreachable / `git ls-remote origin returned 0 refs`". Right: "The database can't be reached so the signup form shows 'please try again' / The GitHub remote isn't configured yet."
+5. **When stopping/halting, give plain-English options + a recommendation.** Wrong: "(A) Ship-in-place — no PR, mark SHIPPED. (B) Redo with a feature branch (destructive)." Right: "Two choices: A — just mark it shipped where it is (quick). B — rewrite history to clean it up (slower, riskier). I'd pick A. Type A or B."
+6. **Cut generic library/framework mentions** (Node DNS, `git ls-remote`, `origin/HEAD`, npm internals) — the user only cares about things they sign up for, pay for, or need to configure.
+7. **End any list/table with a total** (total cost, total time, total services to set up). The user needs a single number to react to.
 
 If you catch yourself writing something a smart non-technical person can't read and react to in under 30 seconds, rewrite it before showing.
+
+### Tool-call etiquette
+
+Tool calls (Bash, Update, Read, Write) appear in the Claude Code UI as collapsible blocks between your messages. They clutter the screen for non-technical users. Keep that surface as small as possible:
+
+- **Run multiple checks in ONE Bash call**, not five. `git status; git remote -v; git branch --show-current` instead of three separate Bash calls.
+- **Don't narrate every tool call.** No "Let me check…" / "Running git status to see…". Just run it.
+- **Show the result, not the process.** When you report back, say "Three things block this: ..." not "I ran git status, then git remote -v, and saw that...".
+- **If you must explain WHY a tool failed, do it in plain English** in your text response, not by exposing the raw error.
 
 ---
 

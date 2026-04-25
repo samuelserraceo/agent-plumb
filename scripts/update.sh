@@ -61,6 +61,15 @@ cp "$TEMPLATES/.claude/commands/"*.md      "$TARGET/.claude/commands/"
 cp "$TEMPLATES/.claude/settings.json"      "$TARGET/.claude/settings.json"
 echo "  ✓ .claude/hooks/, commands/, settings.json"
 
+# Runtime scripts (ralph.sh, ship.sh, install-agent-browser.sh) live in the SDD repo's
+# scripts/ directory and need to be copied into the user's project so /ship and /ralph work.
+mkdir -p "$TARGET/scripts"
+for s in ralph.sh ship.sh install-agent-browser.sh; do
+  cp "$REPO_ROOT/scripts/$s" "$TARGET/scripts/$s"
+done
+chmod +x "$TARGET/scripts/"*.sh 2>/dev/null || true
+echo "  ✓ scripts/ralph.sh, ship.sh, install-agent-browser.sh"
+
 # ─── Update CLAUDE.md MANAGED block in place ───────────────────────
 
 if [ ! -f "$TARGET/CLAUDE.md" ]; then
