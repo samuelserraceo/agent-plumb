@@ -37,5 +37,5 @@ else
   fi
 fi
 echo ""
-echo "Commands: /next /status /ship /compress   |   Dashboard: open dashboard.html"
+echo "Commands: /next /status /ship /compress /skip"
 echo "────────────────────────"

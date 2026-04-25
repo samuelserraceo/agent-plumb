@@ -61,7 +61,7 @@ Some rubric sections are marked `[SKIPPABLE: <condition>]`. That means they don'
 4. **Never skip a non-skippable section.** §1, §2, §3, §5, §6, §7, §11, §12 are required always. If the user insists, push back once — it usually means they're tired, not that the section actually doesn't apply.
 5. **Don't offer skip for sections not marked skippable.** And don't offer skip just because a question is hard — the whole point of the rubric is to surface the hard questions.
 
-After a skip, the section still appears in the dashboard and in the PR body — shown as "skipped (reason)" rather than hidden, so the history is transparent.
+After a skip, the section still appears in the spec.md and in the PR body — shown as "skipped (reason)" rather than hidden, so the history is transparent.
 
 ## Commit conventions
 

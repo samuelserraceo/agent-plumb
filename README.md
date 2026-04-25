@@ -80,7 +80,7 @@ cd <your-project>
 <path-to>/sdd-template/scripts/init.sh
 ```
 
-This drops `.sdd/`, `.claude/`, `dashboard.html`, and `rubric.md` into your project. It also installs `agent-browser` globally for UAT (skip with `--no-browser` if you prefer Playwright).
+This drops `.sdd/`, `.claude/`, and `rubric.md` into your project. It also installs `agent-browser` globally for UAT (skip with `--no-browser` if you prefer Playwright).
 
 ### 2. Open Claude Code in your project
 
@@ -97,16 +97,7 @@ Claude: (writes it in, asks Section 1.2, and so on)
 
 After SPEC, Claude proposes the tech approach (Section 4) with alternatives and tradeoffs — in plain English. You push back or agree. Then PLAN, BUILD, VERIFY, LEARN.
 
-### 4. Watch the dashboard (optional)
-
-```bash
-npx serve .
-# open http://localhost:3000/dashboard.html
-```
-
-Shows current phase, active blocker, rendered spec. Refreshes every 5s.
-
-### 5. BUILD run modes
+### 4. BUILD run modes
 
 When the feature crosses PLAN → BUILD the agent asks how you want to run it:
 
@@ -117,7 +108,7 @@ When the feature crosses PLAN → BUILD the agent asks how you want to run it:
 
 Universal halting rules apply in every mode (stuck after 3 attempts, hook block, real design gap, missing credentials).
 
-### 6. Ship
+### 5. Ship
 
 ```
 /ship
@@ -161,14 +152,14 @@ Output is one line per iteration (`RALPH_STATUS: CONTINUE T3 duplicate email`). 
 │   ├── .sdd/
 │   │   ├── INDEX.md
 │   │   ├── CLAUDE.md
+│   │   ├── current-state.md
 │   │   ├── data-model.md
 │   │   ├── patterns.md
 │   │   └── features/_template/
-│   ├── .claude/
-│   │   ├── settings.json
-│   │   ├── hooks/          # session-start, user-prompt-submit, pre-commit-block
-│   │   └── commands/       # /next, /status, /ship, /compress, /skip
-│   └── dashboard.html
+│   └── .claude/
+│       ├── settings.json
+│       ├── hooks/          # session-start, user-prompt-submit, pre-commit-block, learn-sync, schema-sync, scope-guard
+│       └── commands/       # /next, /status, /ship, /compress, /skip
 └── scripts/
     ├── init.sh
     ├── install-agent-browser.sh

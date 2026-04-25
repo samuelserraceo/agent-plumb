@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # SDD workflow installer.
-# Drops .sdd/, .claude/, dashboard.html, and rubric.md into the current directory.
+# Drops .sdd/, .claude/, and rubric.md into the current directory.
 # Safe to re-run: will not overwrite existing files unless --force is passed.
 
 set -euo pipefail
@@ -44,9 +44,6 @@ copy_if_absent() {
 copy_if_absent "$TEMPLATES/.sdd" "$TARGET/.sdd"
 copy_if_absent "$TEMPLATES/.claude" "$TARGET/.claude"
 
-# dashboard.html at project root
-copy_if_absent "$TEMPLATES/dashboard.html" "$TARGET/dashboard.html"
-
 # rubric.md at project root (used as template when starting new features)
 copy_if_absent "$RUBRIC" "$TARGET/rubric.md"
 
@@ -62,4 +59,4 @@ echo ""
 echo "Done. Next steps:"
 echo "  1. Review .sdd/CLAUDE.md and rubric.md — these are your workflow's 'personality'. Edit freely."
 echo "  2. Start a feature: tell Claude 'work on <feature name>' or run /next."
-echo "  3. Serve the dashboard: npx serve . (then open http://localhost:3000/dashboard.html)"
+echo "  3. Run /status anytime to see current state, or open .sdd/INDEX.md for the table of contents."
