@@ -6,7 +6,7 @@
      SDD ships an update. Your edits inside this block will be lost.
      Your project-specific rules go BELOW the END marker.
      ════════════════════════════════════════════════════════════════════ -->
-<!-- SDD-MANAGED-START version: 0.4 -->
+<!-- SDD-MANAGED-START version: 0.5 -->
 
 # CLAUDE.md
 
@@ -220,6 +220,19 @@ These run without your involvement. If a hook blocks you, fix the blocker — do
   - `pre-commit-schema-sync.sh` — Data contract changes require `data-model.md` staged.
   - `pre-commit-scope-guard.sh` — blocks UI copy ≥30 chars not in wireframe/spec; blocks new UI files without a `// spec:` reference comment.
   - `pre-commit-claude-md-managed.sh` — warns (does not block) on edits inside the MANAGED section of CLAUDE.md without bumping the version.
+  - `pre-commit-size-cap.sh` — warns (does not block) when patterns.md / INDEX.md / data-model.md cross size thresholds. Pressure to compress, not refusal.
+
+## Shipped features are cold — do NOT re-read them
+
+Once a feature ships, `.sdd/features/<id>/.shipped` exists in its folder. That folder is **inert**: do not read `spec.md`, `wireframe.html`, or `tests/` from it unless the user explicitly references it ("look at how 002 did X", "fix the bug in 003"). The shipped feature's distilled value already lives in:
+
+- **INDEX.md `## Shipped`** — one-line summary + PR link
+- **data-model.md** — its entity/field contributions
+- **patterns.md** — its lessons
+
+Reading cold features bloats context for no reason. They are reference material, accessed on demand.
+
+If a feature folder has no `.shipped` marker, treat it as in-flight and read normally.
 
 ## Forbidden
 
@@ -231,6 +244,7 @@ These run without your involvement. If a hook blocks you, fix the blocker — do
 - ❌ Introducing a new framework/library without a §5 "Alternatives considered" note
 - ❌ Duplicating schema — it all lives in `data-model.md`
 - ❌ Adding UI copy or components not in the wireframe or spec — every new file gets a `// spec:` comment
+- ❌ Re-reading shipped feature folders (those with `.shipped` marker) unless the user explicitly asks
 
 ## Permitted
 

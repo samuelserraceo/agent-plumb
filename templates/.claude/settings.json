@@ -4,7 +4,10 @@
       {
         "matcher": "",
         "hooks": [
-          { "type": "command", "command": ".claude/hooks/session-start.sh" }
+          {
+            "type": "command",
+            "command": ".claude/hooks/session-start.sh"
+          }
         ]
       }
     ],
@@ -12,7 +15,10 @@
       {
         "matcher": "",
         "hooks": [
-          { "type": "command", "command": ".claude/hooks/user-prompt-submit.sh" }
+          {
+            "type": "command",
+            "command": ".claude/hooks/user-prompt-submit.sh"
+          }
         ]
       }
     ],
@@ -20,11 +26,30 @@
       {
         "matcher": "Bash",
         "hooks": [
-          { "type": "command", "command": ".claude/hooks/pre-commit-block.sh" },
-          { "type": "command", "command": ".claude/hooks/pre-commit-learn-sync.sh" },
-          { "type": "command", "command": ".claude/hooks/pre-commit-schema-sync.sh" },
-          { "type": "command", "command": ".claude/hooks/pre-commit-scope-guard.sh" },
-          { "type": "command", "command": ".claude/hooks/pre-commit-claude-md-managed.sh" }
+          {
+            "type": "command",
+            "command": ".claude/hooks/pre-commit-block.sh"
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/pre-commit-learn-sync.sh"
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/pre-commit-schema-sync.sh"
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/pre-commit-scope-guard.sh"
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/pre-commit-claude-md-managed.sh"
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/pre-commit-size-cap.sh"
+          }
         ]
       }
     ]

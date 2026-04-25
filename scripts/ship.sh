@@ -129,43 +129,87 @@ set -e
 if [ $ci_exit -eq 0 ]; then
   echo "✓ CI passed."
 
-  # Mark feature SHIPPED in INDEX.md.
-  # Clear the Active pointer and append to Shipped section.
+  # ─── Distillation: extract one-line summary from spec's "What shipped" / §1 ───
   today=$(date +%Y-%m-%d)
-  python3 - "$active" "$pr_url" "$today" <<'PY'
+  one_liner=$(awk '
+    /^### What shipped/ {flag=1; next}
+    flag && /^- / && !/^- \[ \]/ {sub(/^- /, ""); print; exit}
+    flag && /^### / {flag=0}
+  ' "$spec" 2>/dev/null | head -c 140)
+  if [ -z "$one_liner" ]; then
+    one_liner=$(grep -A 10 '### 1\. Problem' "$spec" 2>/dev/null | grep -m1 -E 'Who has it|What breaks' | sed -E 's/^[*-]\s*\*\*[^:]+:\*\*\s*//' | head -c 140)
+  fi
+  [ -z "$one_liner" ] && one_liner="(see $spec for details)"
+
+  # Mark feature SHIPPED in INDEX.md
+  python3 - "$active" "$pr_url" "$today" "$one_liner" <<'PY'
 import re, sys, pathlib
-active, pr_url, today = sys.argv[1], sys.argv[2], sys.argv[3]
+active, pr_url, today, one_liner = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
 idx = pathlib.Path(".sdd/INDEX.md")
 text = idx.read_text()
 
-# Clear Active pointer
 text = re.sub(r"(\*\*Active:\*\*).*", r"\1 _(none)_", text, count=1)
 
-# Append to Shipped section
-shipped_line = f"- {active} — {pr_url} — merged {today}"
+shipped_line = f"- {active} — {pr_url} — merged {today} — {one_liner}"
 if re.search(r"^## Shipped\s*$", text, flags=re.MULTILINE):
     text = re.sub(
-        r"(## Shipped\s*\n(?:<!--[\s\S]*?-->\s*\n)?\s*)(_\(empty\)_|\n)?",
+        r"(## Shipped[\s\S]*?\n(?:<!--[\s\S]*?-->\s*\n)?\s*)(_\(empty\)_\s*\n)?",
         lambda m: m.group(1) + shipped_line + "\n",
         text,
         count=1,
     )
 
-# Remove the feature from "In flight" if present
 text = re.sub(rf"(?m)^- {re.escape(active)}.*\n", "", text)
 
 idx.write_text(text)
 PY
 
-  # Flip phase in spec.md to LEARN (or SHIPPED — we use LEARN so the user can capture lessons first)
+  # Cold-tier marker: shipped feature folder gets a .shipped file. Agents read it as
+  # "do not load this spec.md unless explicitly asked".
+  touch ".sdd/$active/.shipped"
+
+  # Surface [PROD-ONLY] ACs into the "Pending production verification" block in INDEX.
+  python3 - "$active" "$spec" <<'PY'
+import re, sys, pathlib
+active, spec_path = sys.argv[1], sys.argv[2]
+spec_text = pathlib.Path(spec_path).read_text()
+prod_acs = re.findall(r'^[\s-]*\[ ?[xX ]? ?\]\s*(AC\d+:.*\[PROD-ONLY\].*)$', spec_text, flags=re.MULTILINE)
+if not prod_acs:
+    sys.exit(0)
+idx = pathlib.Path(".sdd/INDEX.md")
+text = idx.read_text()
+lines = "\n".join(f"- {active} — [ ] {ac.strip()}" for ac in prod_acs)
+if "## Pending production verification" in text:
+    text = re.sub(
+        r"(### Pending production verification[\s\S]*?\n(?:<!--[\s\S]*?-->\s*\n)?\s*)(_\(none\)_\s*\n)?",
+        lambda m: m.group(1) + lines + "\n",
+        text,
+        count=1,
+    )
+    idx.write_text(text)
+PY
+
+  # Flip phase to LEARN (so /next captures lessons before the feature truly closes)
   sed -i.bak -E 's/\[PHASE: [A-Z]+\]/[PHASE: LEARN]/' "$spec" && rm -f "$spec.bak"
 
-  git add .sdd/INDEX.md "$spec"
-  git commit -m "[SDD:$feature_id] ship: CI green, marked for LEARN" || true
+  # Size-cap nudge — print a notice if patterns.md or INDEX.md crossed thresholds
+  patterns_lines=$(wc -l < .sdd/patterns.md 2>/dev/null | tr -d ' ' || echo 0)
+  index_lines=$(wc -l < .sdd/INDEX.md | tr -d ' ')
+  echo ""
+  if [ "$patterns_lines" -ge 250 ]; then
+    echo "  (notice) .sdd/patterns.md is now $patterns_lines lines — consider /compress patterns soon."
+  fi
+  if [ "$index_lines" -ge 200 ]; then
+    echo "  (notice) .sdd/INDEX.md is now $index_lines lines — old shipped entries should rotate to .sdd/archive/."
+  fi
+
+  git add .sdd/INDEX.md "$spec" ".sdd/$active/.shipped"
+  git commit -m "[SDD:$feature_id] ship: CI green → LEARN; spec marked cold (.shipped)" || true
   git push
 
   echo ""
-  echo "Next: capture lessons in Section LEARN of the spec, then merge the PR on GitHub."
+  echo "Next: capture lessons in §LEARN of the spec, then merge the PR on GitHub."
+  echo "  Spec is now cold — agent will not re-read it unless you reference it explicitly."
   echo "PR: $pr_url"
   exit 0
 else
