@@ -72,7 +72,15 @@ first_open=$(awk -v target="## PHASE: ${phase}" '
   /^[[:space:]]*```/ { in_fence = !in_fence; next }
   # Inside a code fence: ignore content.
   in_fence == 1 { next }
-  # First `[ ]` outside fences: print and stop.
+  # `[ ]` is overloaded across three semantic uses:
+  #   1. Rubric question to fill (e.g. `- **Who has it:** [ ]`) — TRUE blocker.
+  #   2. Work-item placeholder (e.g. `- [ ] AC1: ...`, `- [ ] T1 ...`) — NOT a
+  #      SPEC blocker; turned to [GREEN] in BUILD.
+  #   3. Exit-check definition (e.g. `- [ ] C-spec-acs: ...`) — verified by
+  #      verify-stage.sh, never filled by hand.
+  # Skip patterns 2 + 3 so /next reaches genuine rubric questions.
+  /^[[:space:]]*-[[:space:]]*\[ \][[:space:]]+(AC|T|C-)[A-Za-z0-9_-]/ { next }
+  # First `[ ]` outside fences and not a work-item placeholder: print and stop.
   /\[ \]/ { print; exit }
 ' "$spec")
 

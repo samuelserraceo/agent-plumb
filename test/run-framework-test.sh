@@ -299,6 +299,51 @@ else
 fi
 
 # ============================================================
+# T9 — next-action.sh skips work-item placeholders ([ ] AC<N>, [ ] T<N>, [ ] C-...)
+#   RED: implementation treats `[ ] AC1: ...` as a rubric blocker and gets
+#        stuck returning it on every /next. Caught during throwaway end-to-end
+#        stress-test at the §11 boundary; was not covered by T1-T8.
+#   The `[ ]` marker is overloaded:
+#     - rubric question (`- **Who has it:** [ ]`) — TRUE blocker
+#     - work-item placeholder (`- [ ] AC1: ...`, `- [ ] T1 ...`) — NOT a SPEC
+#       blocker; turned [GREEN] in BUILD
+#     - exit-check (`- [ ] C-spec-acs: ...`) — verified by verify-stage.sh,
+#       never hand-filled
+# ============================================================
+note "T9: next-action skips AC/T/C- work-item placeholders"
+d=$(mkproj)
+cat > "$d/.sdd/features/001-test/spec.md" <<'SPEC'
+[PHASE: SPEC]
+
+## PHASE: SPEC
+
+### §1 Problem
+- **Who has it:** filled
+
+### §11 Acceptance criteria
+- [ ] AC1: GET / returns 200
+- [ ] AC2: form has email input
+
+### Exit checks
+- [ ] C-spec-acs: §11 has ≥1 acceptance criterion — grep -q '\[ \] AC' "$SECTION_FILE"
+
+## PHASE: PLAN
+[ ] task list
+SPEC
+out=$(bash "$NEXT_ACTION" "$d/.sdd/features/001-test/spec.md" 2>&1 || true)
+rm -rf "$d"
+# All real rubric blockers are filled (only [ ] AC and [ ] C- remain in SPEC).
+# Should emit transition, not return AC1 / AC2 / C-spec-acs.
+if echo "$out" | grep -qE 'AC1|AC2|C-spec-acs'; then
+  bad "T9 returned a work-item placeholder" "expected transition; got: $out"
+elif echo "$out" | grep -Eq '"transition"[[:space:]]*:[[:space:]]*"[A-Z]+→[A-Z]+"' \
+     || echo "$out" | grep -Eq '"sub_action"[[:space:]]*:[[:space:]]*null'; then
+  ok "T9 skips AC/T/C- placeholders, transitions to next phase"
+else
+  bad "T9 unexpected output" "expected transition with all rubric blockers filled; got: $out"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
