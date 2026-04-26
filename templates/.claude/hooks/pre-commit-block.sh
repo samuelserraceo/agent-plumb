@@ -47,8 +47,12 @@ spec_status=$(git diff --cached --name-status -- "$spec" 2>/dev/null | awk '{pri
 [ "$spec_status" = "A" ] && exit 0
 
 # Phase-advance detection. Per-section commits skip the open-blocker check.
+# The commit-message signal must be ANCHORED to the SDD subject convention
+# (`[SDD:<id>] phase: X → Y`) so the word "phase" mentioned anywhere in the
+# message body — e.g. when documenting the commit's behaviour — doesn't false-
+# trigger the gate. The diff signal catches commits that bypass the convention.
 phase_advance=0
-if echo "$cmd" | grep -Eq '\bphase:[[:space:]]*[A-Z]+'; then
+if echo "$cmd" | grep -Eq '\[SDD:[^]]+\][[:space:]]*phase:[[:space:]]*[A-Z]+'; then
   phase_advance=1
 fi
 if git diff --cached -- "$spec" 2>/dev/null | grep -Eq '^[+-]\[PHASE:[[:space:]]*[A-Z]+\]'; then
@@ -70,9 +74,13 @@ phase_section=$(git show ":$spec" 2>/dev/null | awk -v ph="## PHASE: $source_pha
   found {print}
 ')
 
+# Skip work-item placeholders (same shape as next-action.sh): `- [ ] AC<N>`,
+# `- [ ] T<N>`, `- [ ] C-...` are not rubric blockers — they're intentionally
+# RED until BUILD turns them GREEN.
 open_blockers=$(printf '%s\n' "$phase_section" | awk '
   /^[[:space:]]*```/ { in_fence = !in_fence; next }
   in_fence == 1 { next }
+  /^[[:space:]]*-[[:space:]]*\[ \][[:space:]]+(AC|T|C-)[A-Za-z0-9_-]/ { next }
   /\[ \]/ { print NR ": " $0 }
 ' | head -5)
 
