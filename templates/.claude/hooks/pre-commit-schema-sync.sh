@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
 # SDD PreToolUse hook.
-# If the staged diff modifies a feature spec's Data contract section (adds/changes entities,
+# If the staged diff MODIFIES a feature spec's Data contract section (adds/changes entities,
 # fields, state transitions, edge cases), require .sdd/data-model.md to be staged in the same
 # commit. No duplicate sources of schema truth.
+#
+# IMPORTANT: this hook is NOT triggered by the bootstrap commit that creates a fresh spec.md
+# from the rubric template. Newly-added spec.md files have no real Data contract content yet —
+# just the rubric's empty headings — so we skip them and only enforce on subsequent edits.
 
 set -euo pipefail
 
@@ -19,21 +23,50 @@ esac
 
 [ ! -d .sdd ] && exit 0
 
-staged_specs=$(git diff --cached --name-only 2>/dev/null | grep -E '^\.sdd/features/[^/]+/spec\.md$' || echo "")
-[ -z "$staged_specs" ] && exit 0
+# Only consider spec.md files that are MODIFIED in this commit (status M).
+# Newly-added spec.md files (status A) are bootstrap copies of rubric.md — every line is
+# technically an "addition" but nothing is real schema content yet. Skip them.
+modified_specs=$(git diff --cached --name-only --diff-filter=M 2>/dev/null | grep -E '^\.sdd/features/[^/]+/spec\.md$' || echo "")
+[ -z "$modified_specs" ] && exit 0
 
-# Detect substantive additions in the Data contract section of any staged spec.
-# Heuristic: look for "+" lines referencing the Data contract sub-bullets the rubric defines.
+# Detect substantive additions in the Data contract section of any modified spec.
+# Heuristic: look for additions that contain real content beyond the empty rubric scaffold.
+# We require BOTH a Data contract heading mention AND non-placeholder content (i.e. additions
+# that are not just `[ ]`, `<!-- ... -->`, or empty bullet markers).
 touched_schema=0
 offending_specs=""
+
+# Helper: extract the Data contract section's substantive lines from a spec.md content stream.
+# A "substantive" line is a "- **Label:** value" bullet whose value is NOT an empty [ ] placeholder.
+extract_substantive_dc() {
+  awk '
+    /^### [56]\. Data contract/ { in_dc=1; next }
+    /^### / && in_dc { in_dc=0 }
+    in_dc && /^\s*-\s*\*\*[^*]+:\*\*\s+/ {
+      # Skip if value is empty placeholder
+      if (/\[ \]\s*$/) next
+      # Skip if value is only whitespace
+      sub(/^\s*-\s*\*\*[^*]+:\*\*\s+/, "")
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "")
+      if (length($0) == 0) next
+      print
+    }
+  ' | sort -u
+}
+
 while IFS= read -r spec; do
   [ -z "$spec" ] && continue
-  diff=$(git diff --cached -- "$spec" 2>/dev/null || echo "")
-  if echo "$diff" | grep -qE '^\+.*(Entities used from|New entities|State transitions|Edge cases \(nulls|## 5\. Data contract|## 6\. Data contract)'; then
+
+  # Compare BEFORE (HEAD) vs AFTER (working tree, post-staged) of the Data contract section.
+  before=$(git show "HEAD:$spec" 2>/dev/null | extract_substantive_dc 2>/dev/null || echo "")
+  after=$(extract_substantive_dc < "$spec" 2>/dev/null || echo "")
+
+  # Substantive change = before != after AND after has some content
+  if [ "$before" != "$after" ] && [ -n "$after" ]; then
     touched_schema=1
     offending_specs="$offending_specs $spec"
   fi
-done <<< "$staged_specs"
+done <<< "$modified_specs"
 
 [ $touched_schema -eq 0 ] && exit 0
 
