@@ -50,8 +50,17 @@ fi
 # ─── Update non-managed files (overwrite) ──────────────────────────
 
 echo "→ Updating canonical files…"
-cp "$TEMPLATES/.sdd/rubric.md" "$TARGET/.sdd/rubric.md"           && echo "  ✓ .sdd/rubric.md"
+# Copy all rubric files (rubric.md for features, rubric-bug.md, rubric-idea.md, etc.)
+for r in "$TEMPLATES/.sdd/"rubric*.md; do
+  [ -f "$r" ] || continue
+  base=$(basename "$r")
+  cp "$r" "$TARGET/.sdd/$base" && echo "  ✓ .sdd/$base"
+done
 cp "$TEMPLATES/.sdd/CLAUDE.version" "$TARGET/.sdd/CLAUDE.version" && echo "  ✓ .sdd/CLAUDE.version"
+
+# Ensure .sdd/ideas/ directory exists (for /idea command)
+mkdir -p "$TARGET/.sdd/ideas"
+[ ! -f "$TARGET/.sdd/ideas/.gitkeep" ] && touch "$TARGET/.sdd/ideas/.gitkeep"
 
 # Hooks + commands + settings
 mkdir -p "$TARGET/.claude/hooks" "$TARGET/.claude/commands"

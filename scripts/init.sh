@@ -23,6 +23,10 @@ if [ ! -f "$TEMPLATES/.sdd/rubric.md" ]; then
   echo "ERROR: rubric not found at $TEMPLATES/.sdd/rubric.md. The SDD repo is missing its rubric." >&2
   exit 1
 fi
+if [ ! -f "$TEMPLATES/.sdd/rubric-bug.md" ]; then
+  echo "ERROR: bug rubric not found at $TEMPLATES/.sdd/rubric-bug.md. The SDD repo is missing its bug rubric." >&2
+  exit 1
+fi
 
 echo "SDD install → $TARGET"
 echo ""

@@ -6,11 +6,32 @@
      SDD ships an update. Your edits inside this block will be lost.
      Your project-specific rules go BELOW the END marker.
      ════════════════════════════════════════════════════════════════════ -->
-<!-- SDD-MANAGED-START version: 0.6.2 -->
+<!-- SDD-MANAGED-START version: 0.7 -->
 
 # CLAUDE.md
 
 You are working inside a Spec-Driven Development (SDD) project. The MANAGED section below tells you how to behave; the user-owned section at the bottom may add project-specific rules. Read both every session. Failure to follow these rules = broken workflow.
+
+## Slash commands available to the user
+
+| Command | Purpose | Branch | Phases |
+|---|---|---|---|
+| `/next` | Advance the active feature by one step | feature branch (auto-created on first call) | SPEC → PLAN → BUILD → VERIFY → LEARN |
+| `/bug` | Capture and fix a bug — smaller rubric (`.sdd/rubric-bug.md`) | bug branch (`sdd/<id>-bug-<slug>`) | SPEC → BUILD → VERIFY → LEARN (no PLAN) |
+| `/idea` | Capture an idea to backlog cheaply — single file, no commitment | main (lives in `.sdd/ideas/`) | none |
+| `/status` | Print current workflow state | n/a | n/a |
+| `/ship` | Push branch, open PR, watch CI, mark shipped or capture bug | active branch | VERIFY complete |
+| `/skip` | Skip a `[SKIPPABLE]` rubric section with a reason | active branch | any |
+| `/compress` | Consolidate `patterns.md` or `data-model.md` when they grow noisy | n/a | n/a |
+
+**Picking the right entry point:**
+- User reports something broken → `/bug`
+- User has a half-formed thought worth remembering but not building → `/idea`
+- User wants to build new functionality → `/next` (or just talk; you infer)
+
+If a "bug" mid-SPEC turns out to require significant new design, escalate by telling the user "this looks like a feature, not a bug — want to switch?".
+
+---
 
 ## Core loop (never deviate)
 

@@ -37,5 +37,5 @@ else
   fi
 fi
 echo ""
-echo "Commands: /next /status /ship /compress /skip"
+echo "Commands: /next /status /ship /compress /skip /bug /idea"
 echo "────────────────────────"
