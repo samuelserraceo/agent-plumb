@@ -1,20 +1,27 @@
 # Spec-Driven Development Workflow (SDD)
 
-> A stupidly simple, agent-driven workflow for building software with AI.
+> A stupidly simple, agent-driven workflow for building real software with AI without the AI making stuff up.
 > **The state file is the program. The rubric is the questioning agent. The filesystem is the retrieval system.**
-> No orchestrator, no database, no RAG.
+> No orchestrator, no database, no RAG, no magic.
 
 ---
 
-## Who this is for
+## What this solves
 
-Solo builders and small teams — especially non-technical founders — who want to ship real software with AI agents without the agent drifting, assuming, or skipping the hard questions.
+If you've used Claude Code, Cursor, Lovable, or any other AI coding tool, you've probably had this happen:
 
-If you've ever had an AI agent build something that technically works but fundamentally misunderstood your intent — this fixes it.
+- You asked for X, the AI built X **plus a fake "47 founders on the wait list" counter you never wanted**.
+- The AI shipped something that technically works but **misunderstood your intent**.
+- Six months later you can't remember **why** the AI picked one tech over another.
+- Documentation drifted. Schema drifted. Tests skipped.
+
+SDD makes the wrong path **mechanically impossible**, not just discouraged. The agent literally cannot commit code that drifts from its spec, because git pre-commit hooks refuse the commit.
+
+You bring the *what* (in plain English). The agent proposes the *how* (with tradeoffs you can react to). Every decision is captured in a markdown file you can read, share with an investor, hand to a future engineer, or rebuild in a different stack.
 
 ---
 
-## The loop
+## The 5-phase loop
 
 ```
 SPEC → PLAN → BUILD → VERIFY → LEARN → SHIPPED
@@ -22,200 +29,228 @@ SPEC → PLAN → BUILD → VERIFY → LEARN → SHIPPED
   └── (bug task) ← CI fail
 ```
 
-One feature moves through five phases. You **cannot** skip a phase. You cannot advance while any blocker (`[ ]`) in the current phase is unanswered.
+You can never skip a phase. You can never advance while the current phase has unanswered questions.
 
-1. **SPEC** — the agent walks a rubric. Some sections it asks you about in plain English (problem, success, user stories, sign-off). Other sections it *proposes* a concrete answer and explains tradeoffs (technical approach, data contract, flows, acceptance criteria). You bring the *what*, the agent proposes the *how*, you adjust together.
-2. **PLAN** — once the spec is complete, the agent breaks it into atomic tasks, each linked to a test file.
-3. **BUILD** — strictly test-first. For each task: write the test (must fail), write the code, test passes, commit. Move on.
-4. **VERIFY** — runs every test via [agent-browser](https://agent-browser.dev). Generates a human sign-off checklist from your spec.
-5. **LEARN** — on CI green, capture lessons, update the project's `patterns.md`, mark shipped.
-
----
-
-## Why it works
-
-### The state file *is* the program
-
-Every feature has one `spec.md` file. That file is both the PRD and the state machine. Its sections have `[ ]` placeholders that the agent must fill — honestly, with your input — before it can do anything else. When all `[ ]` in the current phase are filled, the phase advances. That's the entire workflow logic.
-
-No orchestrator. No engine. Just markdown and a tiny rubric.
-
-### The filesystem *is* retrieval
-
-Instead of a vector store:
-
-```
-.sdd/
-  INDEX.md              # table of contents — one line per feature
-  data-model.md         # canonical schema — every entity, every field
-  patterns.md           # cross-feature learnings
-  CLAUDE.md             # agent instructions
-  features/
-    001-user-auth/spec.md
-    002-payments/spec.md
-    ...
-```
-
-The agent's working context is bounded: `INDEX.md` + one active `spec.md` + `patterns.md`. Shipped features sit in the tree but out of context until referenced. Scales to hundreds of features without RAG.
-
-### Enforcement without fragile hooks
-
-Three tiny hooks:
-
-1. `SessionStart` — prints the current state banner.
-2. `UserPromptSubmit` — injects the state into every turn. The agent *cannot* forget where it is.
-3. `PreToolUse(git commit)` — refuses commits if the current phase has open `[ ]`.
-
-Each hook does one thing. None are clever. All are idempotent. That's why they work.
+| Phase | What happens |
+|---|---|
+| **SPEC** | Agent walks a rubric. Asks you the *what* (problem, users, success). Proposes the *how* (tech, data, flows) with tradeoffs. You approve. |
+| **PLAN** | Spec gets broken into atomic tasks, each with a test file. |
+| **BUILD** | Strict test-first. Write the test (must fail) → write the code → test passes → commit. |
+| **VERIFY** | Run all tests. Generate a human sign-off checklist from your spec. |
+| **LEARN** | Capture lessons → `patterns.md`. Update `INDEX.md` with what shipped. Mark feature cold. |
 
 ---
 
 ## Quick start
 
-### 1. Install
+### 1. Clone SDD somewhere stable
 
 ```bash
-git clone https://github.com/<you>/spec-driven-dev-workflow sdd-template
+git clone https://github.com/samuelserraceo/spec-driven-dev-workflow ~/Projects/sdd
+```
+
+### 2. Drop SDD into your project
+
+```bash
 cd <your-project>
-<path-to>/sdd-template/scripts/init.sh
+~/Projects/sdd/scripts/init.sh
 ```
 
-This drops `.sdd/`, `.claude/`, and `CLAUDE.md` into your project. It also installs `agent-browser` globally for UAT (skip with `--no-browser` if you prefer Playwright).
+This adds a `.sdd/` folder, a `.claude/` folder, a project-root `CLAUDE.md`, and three runtime scripts (`scripts/ralph.sh`, `scripts/ship.sh`, `scripts/install-agent-browser.sh`). It also installs `agent-browser` globally for browser-based UAT.
 
-### 2. Open Claude Code in your project
+### 3. Open Claude Code in your project
 
-The `SessionStart` hook prints the workflow state. On a fresh install it'll say "no active feature" and tell you how to start one.
-
-### 3. Work your first feature
-
-```
-You: "Let's work on user auth"
-Claude: (creates features/001-user-auth/, asks you Section 1.1: who has this problem?)
-You: "People without accounts who want to sign up"
-Claude: (writes it in, asks Section 1.2, and so on)
+```bash
+claude
 ```
 
-After SPEC, Claude proposes the tech approach (Section 4) with alternatives and tradeoffs — in plain English. You push back or agree. Then PLAN, BUILD, VERIFY, LEARN.
+A banner shows the current state. On a fresh project: *"No active feature."*
 
-### 4. BUILD run modes
+### 4. Start your first feature
 
-When the feature crosses PLAN → BUILD the agent asks how you want to run it:
+Just talk:
 
-1. **Step-by-step** — pause after every task.
-2. **Checkpoint every 5** — auto-loop with periodic pauses (recommended).
-3. **Full autonomous (conversation mode)** — agent loops in the session until blocked or done.
-4. **Shell Ralph (headless)** — run `./scripts/ralph.sh` in a terminal. Each task gets a **fresh Claude invocation** with clean context — no bloat, no token creep. Best for 2+ hour unattended runs. See *Shell Ralph* below.
+> Let's work on a waitlist signup
 
-Universal halting rules apply in every mode (stuck after 3 attempts, hook block, real design gap, missing credentials).
+The agent picks the right entry point automatically:
 
-### 5. Ship
+| You say | Entry point | What happens |
+|---|---|---|
+| "Build me X" / "Add a feature for Y" | `/next` | Creates branch `sdd/001-x`, starts SPEC rubric |
+| "Something is broken: …" | `/bug` | Creates branch `sdd/001-bug-x`, smaller rubric |
+| "Just an idea: …" | `/idea` | Captures to `.sdd/ideas/`, no commitment |
+
+### 5. Walk the rubric
+
+The agent asks you one section at a time. Most questions are USER-LED (it asks you in plain English; common patterns are offered as multiple choice with a free-form escape). Some are AGENT-LED (it proposes a concrete answer with at least 2 alternatives; you push back or approve).
+
+When SPEC is fully filled, PLAN runs, then BUILD. At BUILD entry the agent asks **how you want to run it**:
+
+1. **Step-by-step** — pause after every task
+2. **Checkpoint every 5** (recommended) — auto-loop, pause every 5 tasks for review
+3. **Full autonomous** — agent loops in the session until done or blocked
+4. **Shell Ralph** — `./scripts/ralph.sh` in a terminal, fresh Claude per task, walk away for hours
+
+### 6. Ship
 
 ```
 /ship
 ```
 
-Pushes the branch, opens a PR, watches CI. On pass, marks shipped. On fail, captures the error as a bug task and flips phase back to BUILD.
+Pushes the branch, opens a PR, watches CI. On pass: marks shipped, distills the feature to a one-liner in INDEX, marks the feature folder cold, flips phase to LEARN. On fail: captures the CI error as a bug task, flips back to BUILD.
 
 ---
 
-## Shell Ralph (the headless loop)
+## Slash commands at a glance
 
-The original Ralph pattern: a shell `while` loop that spawns a **fresh** Claude invocation per iteration. Agent reads state files, does one task, exits. Context never bloats. Interrupt-resumable.
+| Command | What it does |
+|---|---|
+| `/next` | Advance the active feature by one step (SPEC question, PLAN task, BUILD test, etc.) |
+| `/bug` | Start a focused bug fix — smaller rubric, no PLAN phase |
+| `/idea` | Capture an idea cheaply — no phase, no branch, just a small file in `.sdd/ideas/` |
+| `/status` | Print the current workflow state |
+| `/ship` | Push branch, open PR, watch CI, mark shipped or capture bug |
+| `/skip` | Skip a `[SKIPPABLE]` rubric section with a reason |
+| `/compress` | Consolidate `patterns.md` or `data-model.md` when they grow noisy |
 
-```bash
-cd <project-root>
-./scripts/ralph.sh                   # default: 50 iter max, 10 min/iter
-MAX_ITERS=20 ./scripts/ralph.sh      # override
-```
-
-Only operates in BUILD phase. For SPEC / PLAN / VERIFY / LEARN, use conversation mode — those phases need discussion, not a loop.
-
-Stops on:
-- All tasks GREEN → advances to VERIFY, exits 0
-- Halting rule fires (stuck after 3 attempts, hook block, design gap, missing creds) → exits 1 with the reason
-- `MAX_ITERS` reached → exits 1 (re-run to continue; state is safe in files)
-- Ctrl-C → exits 130 cleanly
-
-Output is one line per iteration (`RALPH_STATUS: CONTINUE T3 duplicate email`). For detail, tail `git log` in another window.
-
-**Caveat:** shell Ralph uses `--dangerously-skip-permissions` under the hood so the agent doesn't block on interactive approvals. That's safe here because the workflow's own enforcement (pre-commit hook, rubric `[ ]` gates, atomic commits, test-first) is doing the guardrail work — but you should only run it on a project you're OK letting the agent edit freely.
+The agent picks the right command from your wording — you rarely type them yourself.
 
 ---
 
-## Layout of this repo
+## What's in the box
 
 ```
 .
-├── README.md               # you are here
-├── templates/              # what init.sh drops into your project
-│   ├── CLAUDE.md           # project + workflow rules (marker-delimited)
-│   ├── .sdd/
-│   │   ├── INDEX.md        # TOC + active pointer + shipped + live state + deviations + envs
-│   │   ├── rubric.md       # canonical SPEC rubric — copied to spec.md per feature
-│   │   ├── data-model.md
-│   │   ├── patterns.md
-│   │   └── features/_template/
-│   └── .claude/
-│       ├── settings.json
-│       ├── hooks/          # session-start, user-prompt-submit, pre-commit-block, learn-sync, schema-sync, scope-guard, claude-md-managed
-│       └── commands/       # /next, /status, /ship, /compress, /skip
+├── README.md
+├── templates/                           # what init.sh drops into your project
+│   ├── CLAUDE.md                        # workflow rules (managed) + your project rules (yours)
+│   ├── DEPRECATED.list                  # files removed in each version (used by update.sh)
+│   ├── migrations/                      # per-version migration scripts
+│   └── .sdd/
+│       ├── INDEX.md                     # table of contents + active pointer + shipped + live state
+│       ├── rubric.md                    # full feature rubric (12 sections + phases)
+│       ├── rubric-bug.md                # smaller bug rubric (6 sections)
+│       ├── rubric-idea.md               # tiny idea-capture rubric
+│       ├── data-model.md                # canonical schema, single source of truth
+│       ├── patterns.md                  # cross-feature learnings
+│       ├── CLAUDE.version               # current SDD version
+│       ├── archive/                     # frozen history (compressed patterns, old shipped)
+│       ├── ideas/                       # captured ideas, one file each
+│       └── features/_template/          # scaffold for new feature folders
+└── .claude/
+    ├── settings.json                    # registers all hooks
+    ├── hooks/                           # 7 deterministic enforcement hooks (see below)
+    └── commands/                        # /next /bug /idea /status /ship /skip /compress
 └── scripts/
-    ├── init.sh
-    ├── install-agent-browser.sh
-    ├── ralph.sh            # shell Ralph loop for headless BUILD
-    ├── ship.sh
-    └── update.sh           # pull new SDD rules into existing projects (managed-section only)
+    ├── init.sh                          # one-time install into a project
+    ├── update.sh                        # pull new SDD rules into existing projects
+    ├── ralph.sh                         # headless BUILD loop
+    ├── ship.sh                          # the actual /ship implementation
+    └── install-agent-browser.sh         # global agent-browser install
 ```
 
 ---
 
-## The rubric (what the agent *actually* asks)
+## The 7 hooks (mechanical enforcement)
 
-See [`templates/.sdd/rubric.md`](templates/.sdd/rubric.md) for the full canonical version. Summary:
+Each does one thing, fails closed, idempotent.
 
-| Section | Mode | What it captures |
+| Hook | When it fires | What it enforces |
 |---|---|---|
-| 1. Problem | user-led | Who, why now, what breaks without it |
-| 2. Success | user-led | Verifiable outcomes |
-| 3. User stories | user-led | As X, I want Y, so that Z |
-| 4. **UX & Design brief** | **user-led** | **Tone, references, voice, emotional goal** — _skippable for non-UI features_ |
-| 5. **Proposed approach** | **agent-led** | **Recommended solution + alternatives + tradeoffs** |
-| 6. **Data contract** | **agent-led** | **Every entity, field, transition, edge case** |
-| 7. Flows | agent-led | Happy path + 3 edge cases |
-| 8. Dependencies | agent-led | APIs, auth, third parties — _skippable if nothing paid_ |
-| 9. Out of scope | user-led | Explicit exclusions |
-| 10. Non-functional | agent-led | Perf, security, a11y — _skippable if nothing relevant_ |
-| 11. Acceptance criteria | agent-led | One test file per criterion |
-| 12. Human sign-off | user-led | Manual test steps |
-
-The depth of sections 5 and 6 is what makes this different from "the agent asks some questions." Each proposal shows alternatives, tradeoffs, and unknowns — *you don't need to know the technology, you just need to read plain-English tradeoffs and say what feels right.*
-
-Skippable sections (§4, §8, §10, wireframe) are offered with a reason — type `/skip <reason>` to skip, or push back if they do apply.
+| `session-start` | Every Claude session start | Prints active feature + phase + blocker |
+| `user-prompt-submit` | Every user message | Injects `INDEX.md` + active spec + `patterns.md` so the agent never forgets state |
+| `pre-commit-block` | Every `git commit` | Refuses commits while current phase has unanswered `[ ]` (with a bootstrap exception for new features) |
+| `pre-commit-learn-sync` | LEARN-phase commits | Requires `patterns.md` + `INDEX.md` updated in same commit |
+| `pre-commit-schema-sync` | Commits that touch a feature's Data contract section | Requires `data-model.md` updated in same commit |
+| `pre-commit-scope-guard` | Commits that add UI files | Refuses copy strings ≥30 chars not in wireframe/spec; refuses new component files without a `// spec:` reference |
+| `pre-commit-claude-md-managed` | Commits that edit CLAUDE.md | Warns (doesn't block) when editing inside the SDD-managed section without bumping `CLAUDE.version` |
+| `pre-commit-size-cap` | Every `git commit` | Warns when `patterns.md` / `INDEX.md` / `data-model.md` cross size thresholds |
 
 ---
 
-## Customizing
+## The rubric
 
-- **The rubric** is just a markdown file. Edit it. Rename sections. Add/remove items. Your workflow.
-- **Commands** in `templates/.claude/commands/` are Claude Code slash commands — edit the prompts to fit your style.
-- **Hooks** are three shell scripts. Each ~30–80 lines. Read them, edit them, remove them.
-- **Tests** use agent-browser by default. To swap to Playwright, change the task template in `.sdd/rubric.md` and your `tests/` conventions.
+See [`templates/.sdd/rubric.md`](templates/.sdd/rubric.md) for the full feature rubric. Summary:
+
+| § | Section | Mode | Skippable? |
+|---|---|---|---|
+| 1 | Problem | USER-LED | no |
+| 2 | Success | USER-LED (with multi-choice) | no |
+| 3 | User stories | USER-LED (with multi-choice) | no |
+| 4 | **UX & Design brief** | **AGENT-LED** | yes (non-UI features) |
+| 5 | **Proposed approach** | **AGENT-LED** | no |
+| 6 | **Data contract** | **AGENT-LED** | no |
+| 7 | Flows | AGENT-LED | no |
+| 8 | Dependencies | AGENT-LED | yes (no paid services) |
+| 9 | Out of scope | USER-LED | no |
+| 10 | Non-functional | AGENT-LED | yes (rare) |
+| 11 | Acceptance criteria | AGENT-LED (with multi-choice) | no |
+| 12 | Human sign-off | USER-LED | no |
+
+Sections 4, 5, 6 are the depth that makes this different from "the agent asks some questions." Section 4 captures your taste with concrete reference proposals. Section 5 proposes the *how* with at least 2 alternatives + tradeoffs in plain English. Section 6 forces the schema to be modelled before any code is written.
+
+The bug rubric ([`rubric-bug.md`](templates/.sdd/rubric-bug.md)) is shorter: 7 sections focused on reproduction + root cause + regression test. The idea rubric ([`rubric-idea.md`](templates/.sdd/rubric-idea.md)) is 4 questions, ~60 second capture.
+
+---
+
+## Updating SDD on existing projects
+
+```bash
+cd <your-project>
+~/Projects/sdd/scripts/update.sh
+```
+
+Reads `CLAUDE.version` in your project, compares to the template, applies:
+
+- Updated rubrics, hooks, commands, settings
+- Updated SDD-managed section of `CLAUDE.md` (your project rules below the marker are untouched)
+- Removes deprecated files (per `DEPRECATED.list`)
+- Runs migration scripts (per `migrations/to-X.Y.sh`) for any version steps you crossed
+
+Your data is never touched: `INDEX.md`, `data-model.md`, `patterns.md`, `features/`, `ideas/`, and your project rules stay exactly as they were.
+
+---
+
+## Customizing for your project
+
+`CLAUDE.md` at your project root has two clearly-marked sections:
+
+```
+<!-- SDD-MANAGED-START version: 0.7.1 -->
+   (workflow rules — overwritten by update.sh)
+<!-- SDD-MANAGED-END -->
+
+## Project Rules
+   (your stack, conventions, domain knowledge — yours forever)
+```
+
+Add anything project-specific (your stack, your team's conventions, your domain language) below the END marker. SDD updates won't touch it.
+
+If you want to customize the workflow rules themselves, you can — but bump `CLAUDE.version` in the same commit to signal intent (otherwise a soft-warning hook flags the edit).
 
 ---
 
 ## Honest caveats
 
-- **The rubric is 80% of the product.** If its questions are weak, the system is weak. Fork and iterate.
+- **The rubric is 80% of the product.** If a question is weak, the system is weak. Fork and iterate — it's just markdown.
 - **"Non-technical" has limits.** The agent proposes technical options; you decide what feels right. If you don't know what you *want the feature to do*, no workflow saves you.
-- **The commit-block hook can be annoying.** Disable it in `settings.json` if you find the soft enforcement (context injection) sufficient.
-- **This scales to roughly 50 in-flight features / 500 total.** Beyond that, you want real tooling.
+- **Hooks have escape hatches.** Each one tells you in plain English how to proceed when blocked legitimately. Read the message — don't try to bypass.
+- **This scales to roughly 50 in-flight features / 500 total.** Beyond that, you want real tooling. The current cold-tier + size caps + auto-archival keep working memory bounded forever, but at some scale you'll outgrow plain markdown.
 - **Not a silver bullet.** It makes drift expensive and deep questioning cheap. It doesn't turn a bad idea into a good one.
 
 ---
 
-## Contributing
+## Status
 
-The rubric and the slash-command prompts are the most valuable things to improve. If a new section or a sharper question saves someone from a bad assumption, it pays for itself 100x. PRs welcome.
+Built end-to-end and stress-tested on a real Next.js + Vercel project (a waitlist signup app — 14 BUILD tasks, 48 tests across desktop + mobile-safari, all passing).
+
+Currently at **v0.7.1**. The system has been hardened through three rounds of real use:
+
+- **Round 1** — proved the SPEC + BUILD + VERIFY loop on feature 001
+- **Round 2** — added determinism hooks, auto-archival, single-file CLAUDE.md, runtime script install
+- **Round 3** — typed entry points (`/bug`, `/idea`), bootstrap-commit exception, multi-choice scaffolding
+
+Next on the roadmap: design session on file/memory/retrieval at scale, modular rubric section library, plugin packaging (so SDD lives globally as a Claude Code plugin instead of being copied into each project).
 
 ---
 
