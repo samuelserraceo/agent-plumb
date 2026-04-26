@@ -1,0 +1,12 @@
+# Files removed by SDD updates. Read by scripts/update.sh.
+# Format: <version-that-removed-it> <path-relative-to-project-root>
+# Lines starting with # are comments.
+#
+# When update.sh runs, it removes files whose version is > local CLAUDE.version
+# and ≤ target CLAUDE.version. So a project on 0.3 updating to 0.6 gets ALL
+# entries between 0.4 and 0.6 cleaned up automatically.
+
+0.4 .sdd/CLAUDE.md
+0.4 .sdd/current-state.md
+0.4 dashboard.html
+0.4 rubric.md

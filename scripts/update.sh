@@ -111,9 +111,56 @@ PY
   echo "  ✓ CLAUDE.md MANAGED block (backup at CLAUDE.md.bak)"
 fi
 
+# ─── Auto-remove deprecated files ──────────────────────────────────
+
+ver_le() {
+  # Returns 0 if $1 ≤ $2 (semver-ish, two-or-three-part)
+  [ "$1" = "$2" ] && return 0
+  printf '%s\n%s\n' "$1" "$2" | sort -V -C 2>/dev/null
+}
+
+ver_gt_local() {
+  # True if $1 > LOCAL_VERSION (so the deprecation/migration applies on this update)
+  if [ "$LOCAL_VERSION" = "unknown" ]; then return 0; fi
+  ! ver_le "$1" "$LOCAL_VERSION"
+}
+
+if [ -f "$TEMPLATES/DEPRECATED.list" ]; then
+  removed_count=0
+  while IFS= read -r line; do
+    case "$line" in ''|\#*) continue ;; esac
+    dep_ver=$(echo "$line" | awk '{print $1}')
+    dep_path=$(echo "$line" | awk '{print $2}')
+    [ -z "$dep_ver" ] || [ -z "$dep_path" ] && continue
+    if ver_gt_local "$dep_ver" && ver_le "$dep_ver" "$TEMPLATE_VERSION"; then
+      if [ -e "$TARGET/$dep_path" ]; then
+        rm -rf "$TARGET/$dep_path"
+        echo "  ✓ removed deprecated: $dep_path (deprecated in $dep_ver)"
+        removed_count=$((removed_count + 1))
+      fi
+    fi
+  done < "$TEMPLATES/DEPRECATED.list"
+  [ $removed_count -eq 0 ] && echo "  (no deprecated files to remove)"
+fi
+
+# ─── Run migrations in order ───────────────────────────────────────
+
+if [ -d "$TEMPLATES/migrations" ]; then
+  ran_count=0
+  for mig in $(ls "$TEMPLATES/migrations/to-"*.sh 2>/dev/null | sort -V); do
+    mig_ver=$(basename "$mig" | sed -E 's/^to-([0-9.]+)\.sh$/\1/')
+    if ver_gt_local "$mig_ver" && ver_le "$mig_ver" "$TEMPLATE_VERSION"; then
+      echo "  → running migration to-$mig_ver…"
+      bash "$mig" "$TARGET"
+      ran_count=$((ran_count + 1))
+    fi
+  done
+  [ $ran_count -eq 0 ] && echo "  (no migrations needed)"
+fi
+
 echo ""
 echo "Done. Review changes:"
 echo "  diff CLAUDE.md.bak CLAUDE.md"
 echo ""
 echo "Your Project Rules section + everything outside the MANAGED block is untouched."
-echo "Your .sdd/INDEX.md, data-model.md, patterns.md, and features/ are untouched."
+echo "Your .sdd/INDEX.md (your data), data-model.md, patterns.md, and features/ are untouched."
