@@ -46,19 +46,17 @@ spec=".sdd/$active_path/spec.md"
 spec_status=$(git diff --cached --name-status -- "$spec" 2>/dev/null | awk '{print $1}' | head -1)
 [ "$spec_status" = "A" ] && exit 0
 
-# Phase-advance detection. Per-section commits skip the open-blocker check.
-# The commit-message signal must be ANCHORED to the SDD subject convention
-# (`[SDD:<id>] phase: X → Y`) so the word "phase" mentioned anywhere in the
-# message body — e.g. when documenting the commit's behaviour — doesn't false-
-# trigger the gate. The diff signal catches commits that bypass the convention.
-phase_advance=0
-if echo "$cmd" | grep -Eq '\[SDD:[^]]+\][[:space:]]*phase:[[:space:]]*[A-Z]+'; then
-  phase_advance=1
+# Phase-advance detection. The diff signal is the truth: if the staged
+# spec.md changes the `[PHASE: X]` line, this is a phase-advance commit.
+# A commit-message signal was tried earlier and dropped — patterns like
+# `[SDD:<id>] phase: X → Y` mentioned anywhere in the message body
+# (including when *describing* a fix to the hook itself, or quoting the
+# convention as an example) caused false-triggers that blocked unrelated
+# per-section commits. The diff catches the only thing that matters
+# semantically: did this commit move the phase pointer.
+if ! git diff --cached -- "$spec" 2>/dev/null | grep -Eq '^[+-]\[PHASE:[[:space:]]*[A-Z]+\]'; then
+  exit 0
 fi
-if git diff --cached -- "$spec" 2>/dev/null | grep -Eq '^[+-]\[PHASE:[[:space:]]*[A-Z]+\]'; then
-  phase_advance=1
-fi
-[ $phase_advance -eq 0 ] && exit 0
 
 # It IS a phase-advance commit. Read the SOURCE phase from HEAD (the phase
 # this commit is leaving), then check the STAGED spec for residual `[ ]` in
