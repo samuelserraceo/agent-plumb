@@ -29,14 +29,14 @@ if [ ! -f "$spec" ]; then
   exit 1
 fi
 
-# Phase progression. Hardcoded; profile-feature.md prose mirrors this.
+# Phase progression. Aligned with the 3-phase profile-feature.md
+# (SPEC → BUILD → SHIP → SHIPPED). PLAN and VERIFY+LEARN were collapsed
+# into sub-actions of SPEC and SHIP respectively in the v0.8 spine.
 next_phase() {
   case "$1" in
-    SPEC)    echo "PLAN" ;;
-    PLAN)    echo "BUILD" ;;
-    BUILD)   echo "VERIFY" ;;
-    VERIFY)  echo "LEARN" ;;
-    LEARN)   echo "SHIPPED" ;;
+    SPEC)    echo "BUILD" ;;
+    BUILD)   echo "SHIP" ;;
+    SHIP)    echo "SHIPPED" ;;
     SHIPPED) echo "" ;;
     *)       echo "" ;;
   esac

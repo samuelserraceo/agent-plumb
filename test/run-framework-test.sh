@@ -344,6 +344,32 @@ else
 fi
 
 # ============================================================
+# T10 — TRANSITION target follows the 3-phase profile (SPEC → BUILD → SHIP)
+#   RED: implementation has the legacy 5-phase mapping (SPEC → PLAN → BUILD
+#        → VERIFY → LEARN → SHIPPED). Caught during throwaway end-to-end
+#        stress-test when SPEC completed and next_phase emitted SPEC→PLAN
+#        but the playbook has no PLAN phase.
+# ============================================================
+note "T10: transition follows 3-phase profile (SPEC → BUILD)"
+d=$(mkproj)
+cat > "$d/.sdd/features/001-test/spec.md" <<'EOF'
+[PHASE: SPEC]
+
+## PHASE: SPEC
+
+## PHASE: BUILD
+[ ] T1
+EOF
+out=$(bash "$NEXT_ACTION" "$d/.sdd/features/001-test/spec.md" 2>&1 || true)
+rm -rf "$d"
+# Active phase SPEC has no [ ] markers — should emit SPEC→BUILD transition.
+if echo "$out" | grep -Eq '"transition"[[:space:]]*:[[:space:]]*"SPEC→BUILD"'; then
+  ok "T10 SPEC transitions to BUILD (3-phase profile)"
+else
+  bad "T10 wrong transition target" "expected 'SPEC→BUILD'; got: $out"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
