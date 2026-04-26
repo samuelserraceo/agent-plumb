@@ -370,6 +370,211 @@ else
 fi
 
 # ============================================================
+# T11 — pre-commit-block allows per-section commits (no [PHASE:] diff)
+#   RED: original v0.7 hook refused ANY commit while open [ ] remained in
+#        the active phase, blocking the documented per-section pattern.
+#        Caught during throwaway end-to-end stress-test.
+# ============================================================
+note "T11: pre-commit-block allows per-section commits"
+d=$(mkproj)
+cd "$d"
+git init -q
+git config user.email t@t.com && git config user.name T
+echo '**Active:** features/001-test' > .sdd/INDEX.md
+cat > .sdd/features/001-test/spec.md <<'SPEC'
+[PHASE: SPEC]
+
+## PHASE: SPEC
+- **Who has it:** [ ]
+- **Why now:** [ ]
+SPEC
+git add -A && git commit -q -m "init"
+sed -i.bak 's/Why now:\*\* \[ \]/Why now:** filled/' .sdd/features/001-test/spec.md
+rm -f .sdd/features/001-test/spec.md.bak
+git add -A
+e=0
+echo '{"tool_input":{"command":"git commit -m \"[SDD:001] spec: §2 fill\""}}' \
+  | CLAUDE_PROJECT_DIR="$d" bash "$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-block.sh" >/dev/null 2>&1 || e=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$e" -eq 0 ]; then
+  ok "T11 per-section commit allowed (no phase-advance signal)"
+else
+  bad "T11 false-trigger on per-section commit" "exit was $e, expected 0"
+fi
+
+# ============================================================
+# T12 — pre-commit-block doesn't false-trigger on "phase:" in message body
+#   RED: an earlier "tightened" regex still pattern-matched anywhere in the
+#        commit message — bodies that QUOTED `[SDD:001] phase: X → Y` as an
+#        example tripped the gate. Diff-only signal closes this. Caught
+#        during throwaway when committing a hook fix whose body referenced
+#        the convention.
+# ============================================================
+note "T12: pre-commit-block doesn't false-trigger on 'phase:' in body"
+d=$(mkproj)
+cd "$d"
+git init -q
+git config user.email t@t.com && git config user.name T
+echo '**Active:** features/001-test' > .sdd/INDEX.md
+cat > .sdd/features/001-test/spec.md <<'SPEC'
+[PHASE: SPEC]
+
+## PHASE: SPEC
+- **Who has it:** [ ]
+SPEC
+git add -A && git commit -q -m "init"
+echo "extra line" >> .sdd/features/001-test/spec.md
+git add -A
+e=0
+# Commit message body literally contains the phase-advance convention as an example
+echo '{"tool_input":{"command":"git commit -m \"[SDD:001] spec: §1 — example: [SDD:001] phase: SPEC → BUILD shows the convention\""}}' \
+  | CLAUDE_PROJECT_DIR="$d" bash "$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-block.sh" >/dev/null 2>&1 || e=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$e" -eq 0 ]; then
+  ok "T12 'phase:' in body doesn't trigger gate"
+else
+  bad "T12 message-body false-trigger" "exit was $e, expected 0 (only diff signal should gate)"
+fi
+
+# ============================================================
+# T13 — pre-commit-block blocks phase-advance with rubric [ ] still open
+#   RED: hook misses phase-advance commits, lets through commits with
+#        unfilled rubric blockers in the source phase.
+# ============================================================
+note "T13: pre-commit-block blocks phase-advance with open rubric [ ]"
+d=$(mkproj)
+cd "$d"
+git init -q
+git config user.email t@t.com && git config user.name T
+echo '**Active:** features/001-test' > .sdd/INDEX.md
+cat > .sdd/features/001-test/spec.md <<'SPEC'
+[PHASE: SPEC]
+
+## PHASE: SPEC
+- **Who has it:** [ ]
+- **Why now:** [ ]
+
+## PHASE: BUILD
+SPEC
+git add -A && git commit -q -m "init"
+sed -i.bak 's/\[PHASE: SPEC\]/[PHASE: BUILD]/' .sdd/features/001-test/spec.md
+rm -f .sdd/features/001-test/spec.md.bak
+git add -A
+e=0
+echo '{"tool_input":{"command":"git commit -m \"[SDD:001] phase: SPEC → BUILD\""}}' \
+  | CLAUDE_PROJECT_DIR="$d" bash "$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-block.sh" >/dev/null 2>&1 || e=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$e" -eq 2 ]; then
+  ok "T13 phase-advance with open [ ] correctly blocked"
+else
+  bad "T13 phase-advance let through" "exit was $e, expected 2 (block: source phase has open rubric blockers)"
+fi
+
+# ============================================================
+# T14 — pre-commit-block allows phase-advance with only AC/T/C- placeholders
+#   RED: same `[ ]` overload bug that hit next-action.sh — hook treats
+#        `[ ] AC1`, `[ ] T1`, `[ ] C-...` as rubric blockers and refuses
+#        legitimate phase-advance. Caught during throwaway at SPEC→BUILD.
+# ============================================================
+note "T14: pre-commit-block allows phase-advance when only AC/T/C- remain"
+d=$(mkproj)
+cd "$d"
+git init -q
+git config user.email t@t.com && git config user.name T
+echo '**Active:** features/001-test' > .sdd/INDEX.md
+cat > .sdd/features/001-test/spec.md <<'SPEC'
+[PHASE: SPEC]
+
+## PHASE: SPEC
+- **Who has it:** filled
+- **Why now:** filled
+- [ ] AC1: GET / returns 200
+- [ ] T1 scaffold
+
+### Exit checks
+- [ ] C-spec-acs: §11 has ≥1 AC — grep -q '\[ \] AC' "$SECTION_FILE"
+
+## PHASE: BUILD
+SPEC
+git add -A && git commit -q -m "init"
+sed -i.bak 's/\[PHASE: SPEC\]/[PHASE: BUILD]/' .sdd/features/001-test/spec.md
+rm -f .sdd/features/001-test/spec.md.bak
+git add -A
+e=0
+echo '{"tool_input":{"command":"git commit -m \"[SDD:001] phase: SPEC → BUILD\""}}' \
+  | CLAUDE_PROJECT_DIR="$d" bash "$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-block.sh" >/dev/null 2>&1 || e=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$e" -eq 0 ]; then
+  ok "T14 work-item placeholders correctly skipped on phase-advance"
+else
+  bad "T14 false-block on AC/T/C- placeholders" "exit was $e, expected 0"
+fi
+
+# ============================================================
+# T15 — next_phase BUILD → SHIP (3-phase profile, symmetric to T10)
+#   RED: legacy 5-phase mapping has BUILD → VERIFY. The 3-phase v0.8 spine
+#        collapsed VERIFY+LEARN into SHIP sub-actions. Caught during
+#        throwaway when SPEC completed and we needed to verify the BUILD
+#        end of the mapping was also right.
+# ============================================================
+note "T15: next_phase BUILD → SHIP (3-phase profile)"
+d=$(mkproj)
+cat > "$d/.sdd/features/001-test/spec.md" <<'EOF'
+[PHASE: BUILD]
+
+## PHASE: BUILD
+
+## PHASE: SHIP
+[ ] verify-test-run
+EOF
+out=$(bash "$NEXT_ACTION" "$d/.sdd/features/001-test/spec.md" 2>&1 || true)
+rm -rf "$d"
+if echo "$out" | grep -Eq '"transition"[[:space:]]*:[[:space:]]*"BUILD→SHIP"'; then
+  ok "T15 BUILD transitions to SHIP (3-phase profile)"
+else
+  bad "T15 wrong transition target" "expected 'BUILD→SHIP'; got: $out"
+fi
+
+# ============================================================
+# T16 — moat allows commit on honest BUILD verification.json
+#   RED: hook is paranoid on non-SPEC phases, blocks honest verifications.
+#        T8 covers negative case at BUILD; this completes the matrix with
+#        the positive case at BUILD.
+# ============================================================
+note "T16: moat allows honest BUILD verification.json"
+d=$(mkproj)
+cd "$d"
+git init -q
+git config user.email t@t.com && git config user.name T
+echo '**Active:** features/001-test' > .sdd/INDEX.md
+cat > .sdd/features/001-test/spec.md <<'SPEC'
+[PHASE: BUILD]
+
+## PHASE: BUILD
+[GREEN] T1 done
+
+### Exit checks
+- [ ] C-build-1: T1 present — grep -q 'T1' "$SECTION_FILE"
+- [ ] C-build-2: phase header present — grep -q '## PHASE: BUILD' "$SECTION_FILE"
+SPEC
+bash "$VERIFY_STAGE" .sdd/features/001-test/spec.md BUILD >/dev/null 2>&1 || true
+git add -A
+e=0
+echo '{"tool_input":{"command":"git commit -m \"[SDD:001] phase: BUILD → SHIP\""}}' \
+  | CLAUDE_PROJECT_DIR="$d" bash "$MOAT_HOOK" >/dev/null 2>&1 || e=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$e" -eq 0 ]; then
+  ok "T16 honest BUILD verification allowed through"
+else
+  bad "T16 moat false-positive at BUILD" "exit was $e, expected 0"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
