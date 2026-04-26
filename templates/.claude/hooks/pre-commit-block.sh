@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
 # SDD PreToolUse hook for Bash.
-# Refuses `git commit` if the active feature's current phase has open `[ ]` blockers.
-# Silent pass-through for non-commit Bash commands and for projects without .sdd/.
+# Refuses `git commit` ONLY when it's a phase-advance commit and the SOURCE
+# phase (the one being left) still has open `[ ]` blockers. Per-section
+# commits during a phase pass through — that's the documented workflow.
+# Silent pass-through for non-commit Bash and for projects without .sdd/.
 #
-# Input: JSON on stdin with fields { tool_name, tool_input: { command: "..." } }
-# Output:
-#   exit 0 = allow
-#   exit 2 = block (stderr shown to agent)
+# Phase-advance detection (either signal triggers the check):
+#   - Commit message contains `phase:` (convention: `[SDD:<id>] phase: X → Y`)
+#   - Staged diff of spec.md changes the `[PHASE: X]` line
+#
+# Input:  JSON on stdin with fields { tool_name, tool_input: { command: "..." } }
+# Output: exit 0 = allow,  exit 2 = block (stderr shown to agent)
 
 set -euo pipefail
 
@@ -17,9 +21,12 @@ cd "$PROJECT_DIR"
 input=$(cat)
 cmd=$(printf '%s' "$input" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('command',''))" 2>/dev/null || echo "")
 
+# Empty-cmd safe default (consistent with the moat hook's catastrophic-#4 fix).
+[ -z "$cmd" ] && exit 0
+
 # Not a git commit? Allow.
 case "$cmd" in
-  *"git commit"*) ;;   # fall through to the check
+  *"git commit"*) ;;
   *) exit 0 ;;
 esac
 
@@ -28,52 +35,60 @@ if [ ! -d .sdd ] || [ ! -f .sdd/INDEX.md ]; then
   exit 0
 fi
 
-# No active feature? Allow (initial commits, scaffolding, etc.)
+# No active feature? Allow.
 active_path=$(grep -m1 -E '^\*\*Active:\*\*' .sdd/INDEX.md | grep -oE 'features/[A-Za-z0-9._-]+' | head -1 || echo "")
-if [ -z "$active_path" ]; then
-  exit 0
-fi
+[ -z "$active_path" ] && exit 0
 
 spec=".sdd/$active_path/spec.md"
-if [ ! -f "$spec" ]; then
-  exit 0
-fi
+[ ! -f "$spec" ] && exit 0
 
-# Bootstrap exception: if the active feature's spec.md is being newly ADDED in this commit
-# (status A — never existed at HEAD), this is the bootstrap commit. The fresh spec is full
-# of `[ ]` placeholders by definition. Allow.
+# Bootstrap exception: spec.md being newly ADDED in this commit is the bootstrap.
 spec_status=$(git diff --cached --name-status -- "$spec" 2>/dev/null | awk '{print $1}' | head -1)
-if [ "$spec_status" = "A" ]; then
-  exit 0
+[ "$spec_status" = "A" ] && exit 0
+
+# Phase-advance detection. Per-section commits skip the open-blocker check.
+phase_advance=0
+if echo "$cmd" | grep -Eq '\bphase:[[:space:]]*[A-Z]+'; then
+  phase_advance=1
 fi
+if git diff --cached -- "$spec" 2>/dev/null | grep -Eq '^[+-]\[PHASE:[[:space:]]*[A-Z]+\]'; then
+  phase_advance=1
+fi
+[ $phase_advance -eq 0 ] && exit 0
 
-phase=$(grep -m1 -oE '\[PHASE: [A-Z]+\]' "$spec" | grep -oE '[A-Z]+' | tail -1 || echo "SPEC")
+# It IS a phase-advance commit. Read the SOURCE phase from HEAD (the phase
+# this commit is leaving), then check the STAGED spec for residual `[ ]` in
+# that phase's section. The moat (pre-commit-stage-verified.sh) handles
+# verification.json honesty separately.
+source_phase=$(git show "HEAD:$spec" 2>/dev/null | grep -m1 -oE '\[PHASE:[[:space:]]*[A-Z]+\]' | grep -oE '[A-Z]+' | tail -1 || echo "")
+[ -z "$source_phase" ] && exit 0
 
-# Extract the current phase section and search for `[ ]` (open blocker).
-phase_section=$(awk -v ph="## PHASE: $phase" '
-  $0 ~ ph {found=1}
-  found && /^## PHASE:/ && $0 !~ ph {exit}
+# Phase body in the staged spec, fence-aware (F3 fix — same as next-action.sh).
+phase_section=$(git show ":$spec" 2>/dev/null | awk -v ph="## PHASE: $source_phase" '
+  $0 ~ ph {found=1; next}
+  found && /^## PHASE:/ {exit}
   found {print}
-' "$spec")
+')
 
-# Check for open blockers. We treat `[ ]` at the start of a line or inline as a blocker,
-# but ignore commented-out regions (lines starting with `<!--` or inside HTML comments).
-# For simplicity we filter out lines that start with `<!--` or `-->`.
-open_blockers=$(printf '%s\n' "$phase_section" | grep -n -E '\[ \]' | grep -v -E '^\s*<!--' | head -5 || true)
+open_blockers=$(printf '%s\n' "$phase_section" | awk '
+  /^[[:space:]]*```/ { in_fence = !in_fence; next }
+  in_fence == 1 { next }
+  /\[ \]/ { print NR ": " $0 }
+' | head -5)
 
 if [ -n "$open_blockers" ]; then
   {
-    echo "[SDD] Commit blocked: the active feature has open \`[ ]\` blockers in the current phase."
+    echo "[SDD] Phase-advance blocked: $source_phase still has open \`[ ]\` blockers."
     echo ""
     echo "  Feature: $active_path"
-    echo "  Phase:   $phase"
+    echo "  Leaving phase: $source_phase"
     echo ""
     echo "  Open blockers (first 5):"
     printf '%s\n' "$open_blockers" | sed 's/^/    /'
     echo ""
-    echo "  Either fill the blockers (preferred), or — if this commit legitimately"
-    echo "  shouldn't be gated (e.g. a fix on main, not tied to a feature) — temporarily"
-    echo "  clear the \`**Active:**\` line in .sdd/INDEX.md and retry."
+    echo "  Fill those blockers (or /skip a [SKIPPABLE] section), then retry."
+    echo "  Per-section commits during a phase are allowed — only the phase-advance"
+    echo "  commit is gated."
   } >&2
   exit 2
 fi
