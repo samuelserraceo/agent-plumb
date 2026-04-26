@@ -39,6 +39,14 @@ if [ ! -f "$spec" ]; then
   exit 0
 fi
 
+# Bootstrap exception: if the active feature's spec.md is being newly ADDED in this commit
+# (status A — never existed at HEAD), this is the bootstrap commit. The fresh spec is full
+# of `[ ]` placeholders by definition. Allow.
+spec_status=$(git diff --cached --name-status -- "$spec" 2>/dev/null | awk '{print $1}' | head -1)
+if [ "$spec_status" = "A" ]; then
+  exit 0
+fi
+
 phase=$(grep -m1 -oE '\[PHASE: [A-Z]+\]' "$spec" | grep -oE '[A-Z]+' | tail -1 || echo "SPEC")
 
 # Extract the current phase section and search for `[ ]` (open blocker).

@@ -27,15 +27,33 @@ _Ask: Who has this problem? Why now? What breaks if we don't solve it? Push for 
 
 ---
 
-### 2. Success   [USER-LED, agent sharpens]
-_Ask: How will we know this worked? Push for measurable outcomes. If the user says "it works well", ask what "well" means in numbers, behavior, or feeling — and pin it down._
+### 2. Success   [USER-LED, agent sharpens with multi-choice]
+_Ask: How will we know this worked? Offer common metric patterns + free-form escape. Push for numbers — if the user says "it works well", ask what "well" looks like as a number._
+
+_Common starting points to offer:_
+- **Volume:** signups, orders, messages, transactions per day/week/month
+- **Speed:** time to first action, response time, conversion rate
+- **Quality:** NPS, error rate, support tickets, completion rate
+- **Engagement:** DAU/WAU/MAU, retention curve, time in app
+- **Or describe your own**
 
 - **Verifiable outcomes:** [ ]
 
 ---
 
-### 3. User stories   [USER-LED, agent structures]
+### 3. User stories   [USER-LED, agent structures with multi-choice]
 _Ask: "As `<who>`, I want `<what>`, so that `<why>`"? Usually 2–5 stories. Agent keeps phrasing consistent._
+
+_Common personas to offer (pick which apply, or describe your own):_
+- **New visitor** — first time on the page, doesn't know the product
+- **Signed-up user** — has an account, returning to use the feature
+- **Returning customer** — has already used the product before
+- **Admin / operator** — internal, manages the system
+- **Billing / finance** — handles payment and accounting
+- **Customer support** — answers user questions
+- **Or describe your own persona**
+
+For each persona the user picks, ask what they want to do and why (the rest of the user-story sentence).
 
 - [ ]
 
@@ -158,8 +176,19 @@ _Agent raises performance / security / accessibility / observability / complianc
 
 ---
 
-### 11. Acceptance criteria   [AGENT-LED]
+### 11. Acceptance criteria   [AGENT-LED, propose multi-choice when reviewing]
 _Agent derives from user stories (§3) and the UX brief (§4). Each criterion must be testable by agent-browser. Each maps to one test file in `features/<id>/tests/`._
+
+_Common test-type patterns to draw from when proposing ACs (mix and match):_
+- **Form submission produces** `<expected outcome>` (success state, redirect, DB row)
+- **Invalid input returns** `<error code/message>` with no side effects
+- **User session persists** across `<reload / new tab / N minutes>`
+- **Mobile viewport renders** `<key element>` without scrolling / with correct layout
+- **Link redirects to** `<expected destination>`
+- **Time-based action fires** at `<schedule>` and updates `<state>`
+- **Auth-protected route returns** `<401/403>` without credentials, `<200 + content>` with valid ones
+
+When the user reviews, they can say "yes that's right" or "swap AC3 for…" or "add a test for X" — give them the multi-choice scaffold first, then iterate.
 
 - [ ] AC1: `<criterion>` → `tests/task-001.mjs`
 

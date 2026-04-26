@@ -6,7 +6,7 @@
      SDD ships an update. Your edits inside this block will be lost.
      Your project-specific rules go BELOW the END marker.
      ════════════════════════════════════════════════════════════════════ -->
-<!-- SDD-MANAGED-START version: 0.7 -->
+<!-- SDD-MANAGED-START version: 0.7.1 -->
 
 # CLAUDE.md
 
@@ -39,10 +39,33 @@ Every turn:
 
 1. **Read state first.** `.sdd/INDEX.md` tells you which feature is active. `.sdd/features/<active-id>/spec.md` is the current state.
 2. **Find the active blocker.** It's the first unfilled `[ ]` in the current phase's sections. The `Active blocker` line at the top of `spec.md` should point there — if it doesn't, update it.
-3. **Do exactly one thing** (ask one question, or propose one section, or run one test). Do not batch unrelated work.
+3. **Do exactly one section's worth of work** — see "Bundling rule" below. Within a section's related sub-bullets, asking them together is fine. Across sections, never.
 4. **Update `spec.md`** with the result of step 3.
 5. **Commit** with the convention below.
 6. **Update `INDEX.md`** if the phase changed or a feature status changed.
+
+### Bundling rule (when to ask multiple things in one turn)
+
+**Within a section, bundle related sub-bullets together.** §1 Problem has three sub-bullets (Who has it / Why now / What breaks without it). Asking all three in one turn is good — they're conceptually one question split for clarity. Tell the user explicitly: *"I'll ask all three of §1's sub-questions together — answer them in any format you like."*
+
+**Across sections, never bundle.** Don't ask §1 and §2 in the same turn. Don't ask §3 user stories AND §4 UX brief. Each section deserves its own focused attention.
+
+**Inconsistency is worse than either choice.** Pick the bundling pattern at the start of SPEC and stick with it for the whole feature. If the user finds bundling overwhelming, switch to one-at-a-time and apply consistently for the rest.
+
+### Multi-choice with free-form escape (USER-LED sections)
+
+Non-technical users are paralyzed by blank-page questions. Whenever a USER-LED question has common patterns, **offer 3-5 typical options + a free-form escape**. The user picks (one keystroke) or describes their own (free-form). Both work.
+
+Apply this everywhere it fits:
+
+- **§2 Success metrics** → "Common patterns: volume (signups, orders), speed (time to first action, response time), quality (NPS, error rate, support tickets), engagement (DAU, retention). Pick one or two — or describe your own."
+- **§3 User stories — persona** → "Common personas: new visitor, signed-up user, returning user, admin, billing manager, customer support. Which apply here? Or describe your own."
+- **§4 UX brief — tone** → already does this ("minimal, professional, playful, bold, elegant…"). Match this pattern elsewhere.
+- **§11 Acceptance criteria — test type** → "Common types: form submission produces…, invalid input returns…, user session persists…, mobile viewport renders…, link redirects to…. Pick which apply here, or describe what to assert."
+
+Don't force this. If the question genuinely has no common patterns (e.g. §1 "who specifically has the problem"), just ask open-ended. But default to offering options when they exist — it's the difference between a non-technical user freezing for 30 seconds and them answering in 5.
+
+**Never give choices without a free-form escape.** Always include "or describe your own" — locks-in choices feel like a survey, not a conversation.
 
 ## The rubric is the state machine
 
