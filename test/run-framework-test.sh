@@ -872,6 +872,37 @@ else
 fi
 
 # ============================================================
+# T25 — settings.json registers the moat hook
+#   RED: Phase A shipped with pre-commit-stage-verified.sh as a file but
+#        never registered in templates/.claude/settings.json. The hook
+#        existed but was never invoked by Claude Code's hook chain on
+#        real commits. Pure configuration-consistency check; flagged by
+#        Phase B coverage reviewer as a BLOCKER missed by 4 prior rounds.
+# ============================================================
+note "T25: settings.json registers pre-commit-stage-verified.sh"
+if grep -q 'pre-commit-stage-verified\.sh' "$FRAMEWORK_ROOT/templates/.claude/settings.json"; then
+  ok "T25 moat hook registered in PreToolUse chain"
+else
+  bad "T25 moat hook missing from settings.json" "no pre-commit-stage-verified.sh entry — hook ships unfired"
+fi
+
+# ============================================================
+# T26 — CLAUDE.md version matches profile-feature.md profile_version
+#   RED: Phase A shipped CLAUDE.md at v0.7.1 (5-phase prose) while
+#        profile-feature.md was at 0.7.5-phase-a (3-phase). Drift caused
+#        agent confusion at §11 — agent read CLAUDE.md's 5-phase rules in
+#        a project whose playbook said 3 phases.
+# ============================================================
+note "T26: CLAUDE.md version matches profile-feature.md profile_version"
+claude_version=$(grep -m1 'SDD-MANAGED-START version:' "$FRAMEWORK_ROOT/templates/CLAUDE.md" | sed -E 's/.*version: ([^ ]+) -->.*/\1/' || echo "")
+profile_version=$(grep -m1 '^profile_version:' "$FRAMEWORK_ROOT/templates/.sdd/profile-feature.md" | awk '{print $2}' || echo "")
+if [ -n "$claude_version" ] && [ "$claude_version" = "$profile_version" ]; then
+  ok "T26 versions aligned (CLAUDE.md=$claude_version, profile-feature.md=$profile_version)"
+else
+  bad "T26 version drift" "CLAUDE.md=$claude_version, profile-feature.md=$profile_version (must match)"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
