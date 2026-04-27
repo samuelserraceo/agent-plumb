@@ -12,6 +12,7 @@ NEXT_ACTION="$FRAMEWORK_ROOT/templates/.sdd/scripts/next-action.sh"
 VERIFY_STAGE="$FRAMEWORK_ROOT/templates/.sdd/scripts/verify-stage.sh"
 MOAT_HOOK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-stage-verified.sh"
 LOAD_PLAYBOOK="$FRAMEWORK_ROOT/templates/.sdd/scripts/load-playbook.sh"
+COFILE_BLOCK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-cofile-block.sh"
 FIXTURES_V08="$FRAMEWORK_ROOT/test/fixtures/v08-schema"
 
 PASS=0
@@ -44,16 +45,27 @@ mkproj() {
 # v0.8 scaffold: copies the framework's actual playbooks/, subactions/, config.md
 # templates so each loader test starts from a "real valid project." Tests then
 # OVERLAY a fixture file to introduce one specific failure mode.
-# Used by T27-T30 (loader validation tests).
+# Used by T27-T30 (loader validation tests) and T31-T35 (hook tests).
 mkproj_v08() {
   local d
   d=$(mktemp -d)
-  mkdir -p "$d/.sdd/playbooks" "$d/.sdd/subactions" "$d/.sdd/scripts" "$d/.sdd/.cache"
+  mkdir -p "$d/.sdd/playbooks" "$d/.sdd/subactions" "$d/.sdd/scripts" \
+           "$d/.sdd/.cache" "$d/.sdd/features/001-test"
   cp "$FRAMEWORK_ROOT/templates/.sdd/config.md"          "$d/.sdd/config.md"
   cp "$FRAMEWORK_ROOT/templates/.sdd/playbooks/feature.md" "$d/.sdd/playbooks/feature.md"
   cp "$FRAMEWORK_ROOT/templates/.sdd/subactions/problem.md"           "$d/.sdd/subactions/problem.md"
   cp "$FRAMEWORK_ROOT/templates/.sdd/subactions/proposed-approach.md" "$d/.sdd/subactions/proposed-approach.md"
   cp "$FRAMEWORK_ROOT/templates/.sdd/subactions/build-task.md"        "$d/.sdd/subactions/build-task.md"
+  cp "$FRAMEWORK_ROOT/templates/.sdd/.cache/manifest.json"            "$d/.sdd/.cache/manifest.json"
+  cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/load-playbook.sh"        "$d/.sdd/scripts/load-playbook.sh"
+  cp "$VERIFY_STAGE" "$d/.sdd/scripts/verify-stage.sh" 2>/dev/null || true
+  cp "$NEXT_ACTION"  "$d/.sdd/scripts/next-action.sh"  2>/dev/null || true
+  ( cd "$d" \
+    && git init -q 2>/dev/null \
+    && git config user.email t@t.com \
+    && git config user.name T \
+    && git add .sdd/ \
+    && git commit -q -m "scaffold" >/dev/null 2>&1 ) || true
   echo "$d"
 }
 
@@ -1006,6 +1018,83 @@ if echo "$out" | grep -qiE 'tampered|hash mismatch|trust.*downgrade|untrusted'; 
   ok "T30 hash mismatch detected (warning emitted)"
 else
   bad "T30 tamper not detected" "exit=$ec; out='$out'"
+fi
+
+# ============================================================
+# T31 — pre-commit-cofile-block blocks verify-stage + verification.json co-stage
+#   RED: hook absent or doesn't enforce the verify-stage / verification.json
+#        pair, allowing an attacker to swap the verifier and ship a fabricated
+#        verification.json in the same commit (Phase A defense in handoff §16).
+# ============================================================
+note "T31: cofile-block refuses verify-stage.sh + verification.json same commit"
+d=$(mkproj_v08)
+cd "$d"
+# Modify verify-stage.sh + create verification.json, stage both
+echo "# tampered" >> .sdd/scripts/verify-stage.sh
+cat > .sdd/features/001-test/verification.json <<'EOF'
+{"phase":"SPEC","checks":[{"id":"C-spec-acs","result":"pass"}],"approved_sections":{}}
+EOF
+git add .sdd/scripts/verify-stage.sh .sdd/features/001-test/verification.json
+hook_stdin='{"tool_input":{"command":"git commit -m phase: SPEC -> BUILD"}}'
+ec=0
+echo "$hook_stdin" | bash "$COFILE_BLOCK" >/dev/null 2>&1 || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 2 ]; then
+  ok "T31 cofile-block refused (exit 2)"
+else
+  bad "T31 cofile-block let pair through" "expected exit 2; got $ec"
+fi
+
+# ============================================================
+# T32 — pre-commit-cofile-block blocks moat-hook + verification.json co-stage
+#   RED: an attacker modifies pre-commit-stage-verified.sh to neuter the moat
+#        and ships a fabricated verification.json in the same commit.
+# ============================================================
+note "T32: cofile-block refuses pre-commit-stage-verified.sh + verification.json same commit"
+d=$(mkproj_v08)
+cd "$d"
+mkdir -p .claude/hooks
+cp "$MOAT_HOOK" .claude/hooks/pre-commit-stage-verified.sh
+echo "# tampered" >> .claude/hooks/pre-commit-stage-verified.sh
+cat > .sdd/features/001-test/verification.json <<'EOF'
+{"phase":"SPEC","checks":[{"id":"C-spec-acs","result":"pass"}],"approved_sections":{}}
+EOF
+git add .claude/hooks/pre-commit-stage-verified.sh .sdd/features/001-test/verification.json
+hook_stdin='{"tool_input":{"command":"git commit -m phase: SPEC -> BUILD"}}'
+ec=0
+echo "$hook_stdin" | bash "$COFILE_BLOCK" >/dev/null 2>&1 || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 2 ]; then
+  ok "T32 cofile-block refused (exit 2)"
+else
+  bad "T32 cofile-block let pair through" "expected exit 2; got $ec"
+fi
+
+# ============================================================
+# T33 — pre-commit-cofile-block blocks playbook + verification.json co-stage
+#   RED: an attacker modifies feature.md (e.g., loosens an exit_check or removes
+#        a sub-action requiring approval) and ships a fabricated verification.json
+#        in the same commit. Without this block, the playbook+claim are atomic.
+# ============================================================
+note "T33: cofile-block refuses playbook + verification.json same commit"
+d=$(mkproj_v08)
+cd "$d"
+echo "# tampered" >> .sdd/playbooks/feature.md
+cat > .sdd/features/001-test/verification.json <<'EOF'
+{"phase":"SPEC","checks":[{"id":"C-spec-acs","result":"pass"}],"approved_sections":{}}
+EOF
+git add .sdd/playbooks/feature.md .sdd/features/001-test/verification.json
+hook_stdin='{"tool_input":{"command":"git commit -m phase: SPEC -> BUILD"}}'
+ec=0
+echo "$hook_stdin" | bash "$COFILE_BLOCK" >/dev/null 2>&1 || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 2 ]; then
+  ok "T33 cofile-block refused (exit 2)"
+else
+  bad "T33 cofile-block let pair through" "expected exit 2; got $ec"
 fi
 
 # ============================================================
