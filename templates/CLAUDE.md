@@ -6,7 +6,7 @@
      SDD ships an update. Your edits inside this block will be lost.
      Your project-specific rules go BELOW the END marker.
      ════════════════════════════════════════════════════════════════════ -->
-<!-- SDD-MANAGED-START version: 0.7.5-phase-a -->
+<!-- SDD-MANAGED-START version: 0.8.0 -->
 
 # CLAUDE.md
 

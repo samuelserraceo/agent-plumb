@@ -1,7 +1,7 @@
 ---
 type: profile
 slug: profile-feature
-profile_version: 0.7.5-phase-a
+profile_version: 0.8.0
 ---
 
 # Profile: Feature
