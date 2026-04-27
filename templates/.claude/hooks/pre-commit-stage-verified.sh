@@ -158,6 +158,110 @@ EOF
   exit 2
 fi
 
+# === MANIFEST HASH-PIN CHECK ===
+# When verification.json is staged, every framework file claimed by
+# .sdd/.cache/manifest.json must match its expected SHA-256 (normalized
+# per SCHEMA.md §11.1). Defends against the cross-commit attack:
+#
+#   Commit N: agent tampers a playbook (no claim staged → cofile-block
+#             doesn't fire because there's no cross-class staging).
+#   Commit N+1: agent stages verification.json (no policy staged →
+#             cofile-block doesn't fire). Without this check, the
+#             tampered playbook would silently affect future /next.
+#
+# Manifest hash-pin in the moat closes this — the pin compares on-disk
+# files to the manifest's expected hashes regardless of what's staged.
+#
+# Uses SCHEMA.md §11.1 normalization (LF, strip trailing whitespace,
+# strip blank-line edges). NOT raw bytes (which would force re-pinning
+# on every CRLF flip in editors).
+#
+# Manifest absent → allow (preserves Phase A's 26 tests, which don't
+# scaffold a manifest). Manifest malformed JSON → block.
+check_manifest_pins() {
+  local manifest_path="$PROJECT_DIR/.sdd/.cache/manifest.json"
+  [ -f "$manifest_path" ] || return 0
+
+  MANIFEST="$manifest_path" PROJ="$PROJECT_DIR" python3 <<'PYEOF'
+import hashlib, json, os, sys
+
+manifest_path = os.environ["MANIFEST"]
+proj = os.environ["PROJ"]
+
+try:
+    with open(manifest_path) as f:
+        manifest = json.load(f)
+except Exception as e:
+    print(f"[moat] manifest.json malformed: {e}", file=sys.stderr)
+    sys.exit(1)
+
+def normalized_sha256(path):
+    """SCHEMA.md §11.1: LF line endings, strip trailing ws per line,
+    strip blank-line edges. Same algorithm as load-playbook.sh and
+    the manifest generator, so hashes always agree."""
+    try:
+        with open(path, "rb") as f:
+            data = f.read()
+    except OSError:
+        return None
+    if b"\x00" in data:
+        return "NUL"  # caller treats as mismatch + names file
+    text = data.decode("utf-8", errors="replace")
+    lines = [ln.rstrip() for ln in
+             text.replace("\r\n", "\n").replace("\r", "\n").split("\n")]
+    while lines and lines[0] == "": lines.pop(0)
+    while lines and lines[-1] == "": lines.pop()
+    return hashlib.sha256("\n".join(lines).encode("utf-8")).hexdigest()
+
+mismatches = []
+for section in ("playbooks", "subactions", "extensions", "scripts"):
+    for slug, entry in (manifest.get(section) or {}).items():
+        rel = entry.get("path", "")
+        expected = entry.get("expected_sha256", "")
+        full = os.path.join(proj, rel)
+        if not os.path.isfile(full):
+            mismatches.append((rel, "missing on disk", "", expected))
+            continue
+        actual = normalized_sha256(full)
+        if actual == "NUL":
+            mismatches.append((rel, "contains NUL bytes", "NUL", expected))
+            continue
+        if actual is None:
+            mismatches.append((rel, "unreadable", "?", expected))
+            continue
+        if actual != expected:
+            mismatches.append((rel, "hash mismatch (tampered)", actual, expected))
+
+if mismatches:
+    print("[moat] manifest hash-pin failed — file(s) tampered or out of date.",
+          file=sys.stderr)
+    print("", file=sys.stderr)
+    print("This catches the cross-commit attack: tamper in one commit (no",
+          file=sys.stderr)
+    print("claim staged), then verification.json in a separate commit. Either",
+          file=sys.stderr)
+    print("revert the tamper, or regenerate the manifest if the change is a",
+          file=sys.stderr)
+    print("legitimate framework upgrade (admin repin in a policy-only commit).",
+          file=sys.stderr)
+    print("", file=sys.stderr)
+    for rel, kind, actual_h, expected_h in mismatches:
+        a = (actual_h[:12] + "...") if len(actual_h) > 12 else actual_h or "(none)"
+        e = (expected_h[:12] + "...") if len(expected_h) > 12 else expected_h or "(none)"
+        print(f"  {rel}", file=sys.stderr)
+        print(f"    kind:     {kind}", file=sys.stderr)
+        print(f"    expected: {e}", file=sys.stderr)
+        print(f"    actual:   {a}", file=sys.stderr)
+    sys.exit(1)
+
+sys.exit(0)
+PYEOF
+}
+
+if ! check_manifest_pins; then
+  exit 2
+fi
+
 # Compare two verification.json blobs by (id, result) set. Returns 0 if
 # identical, 1 if different. Uses python3 for robust JSON parsing.
 compare_sets() {
