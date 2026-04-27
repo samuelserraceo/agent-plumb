@@ -17,6 +17,7 @@ START_SH="$FRAMEWORK_ROOT/templates/.sdd/scripts/start.sh"
 ADVANCE_SH="$FRAMEWORK_ROOT/templates/.sdd/scripts/advance.sh"
 RESOLVE_WIKILINK="$FRAMEWORK_ROOT/templates/.sdd/scripts/resolve-wikilink.sh"
 TOUCHES_HOOK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-touches.sh"
+DECISIONS_HOOK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-decisions-append-only.sh"
 FIXTURES_V08="$FRAMEWORK_ROOT/test/fixtures/v08-schema"
 
 PASS=0
@@ -67,6 +68,7 @@ mkproj_v08() {
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/start.sh"                "$d/.sdd/scripts/start.sh"
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/advance.sh"              "$d/.sdd/scripts/advance.sh"
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/resolve-wikilink.sh"     "$d/.sdd/scripts/resolve-wikilink.sh"
+  cp "$FRAMEWORK_ROOT/templates/.sdd/decisions.md"                    "$d/.sdd/decisions.md"
   cp "$VERIFY_STAGE" "$d/.sdd/scripts/verify-stage.sh" 2>/dev/null || true
   cp "$NEXT_ACTION"  "$d/.sdd/scripts/next-action.sh"  2>/dev/null || true
   ( cd "$d" \
@@ -1935,6 +1937,44 @@ if echo "$out" | grep -q '\[\[bogus-undefined-slug\]\]' && echo "$err" | grep -q
   ok "T61 unknown wikilink preserved + warning to stderr"
 else
   bad "T61 unknown wikilink mishandled" "out='$out'; err='$err'"
+fi
+
+# ============================================================
+# T62 — pre-commit-decisions-append-only blocks deletions/modifications
+#   to existing entries in .sdd/decisions.md (Theme 7 — audit trail).
+#   RED: hook lets the commit through, prior approvals can be retroactively
+#        edited or removed without trace.
+# ============================================================
+note "T62: pre-commit-decisions-append-only blocks edits to prior entries"
+d=$(mkproj_v08)
+cd "$d"
+# Append a "real" entry to decisions.md and commit (so HEAD has it)
+cat >> .sdd/decisions.md <<'EOF'
+
+## 2026-04-27T12:00:00Z [SDD:001] feature/problem
+Sam approved §1 Problem with 3 user types.
+Hash: abc123def456
+EOF
+git add .sdd/decisions.md
+git commit -q -m "[SDD:001] decisions: log §1 approval" 2>/dev/null
+# Now MODIFY the existing entry (remove the hash line)
+python3 -c "
+import re
+with open('.sdd/decisions.md') as f: c = f.read()
+# Remove the 'Hash: abc...' line
+c = re.sub(r'\nHash: abc123def456\n', '\n', c)
+with open('.sdd/decisions.md', 'w') as f: f.write(c)
+"
+git add .sdd/decisions.md
+hook_stdin='{"tool_input":{"command":"git commit -m soften decisions"}}'
+ec=0
+err=$(echo "$hook_stdin" | bash "$DECISIONS_HOOK" 2>&1 1>/dev/null) || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 2 ] && echo "$err" | grep -qiE 'append-only|removes|modifies'; then
+  ok "T62 modification of prior entry BLOCKED (append-only enforced)"
+else
+  bad "T62 prior-entry modification slipped through" "exit=$ec; err='$err'"
 fi
 
 # ============================================================
