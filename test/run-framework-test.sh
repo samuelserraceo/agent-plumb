@@ -2536,6 +2536,30 @@ else
 fi
 
 # ============================================================
+# T72 — F4 atomic-step teaching: CLAUDE.md core loop names atomic steps
+#   templates/CLAUDE.md (the agent's master discipline file shipped to
+#   projects) must teach the v0.9 core loop in atomic-step terms — one
+#   step row, one commit, free-form cognitive bundling. Pre-Phase-C
+#   wording said "exactly one section's worth of work" + a bundling rule
+#   table that's incompatible with atomic-step. This test asserts the
+#   v0.9 phrasing landed AND the v0.8 anti-pattern is gone.
+# ============================================================
+note "T72: CLAUDE.md core loop teaches atomic-step (v0.9 F4 phrasing)"
+CLAUDE_MD="$FRAMEWORK_ROOT/templates/CLAUDE.md"
+miss=""
+for needle in 'one atomic step' 'next-action.sh' 'one step = one commit' 'F4'; do
+  grep -q "$needle" "$CLAUDE_MD" || miss="$miss $needle"
+done
+# Anti-pattern: the v0.8 phrase "one section's worth of work" is gone.
+if grep -q "one section's worth of work" "$CLAUDE_MD"; then
+  bad "T72 CLAUDE.md still uses v0.8 'one section's worth of work' phrasing" "v0.9 atomic-step replaces it"
+elif [ -z "$miss" ]; then
+  ok "T72 CLAUDE.md teaches atomic-step + names next-action.sh + commit shape"
+else
+  bad "T72 CLAUDE.md missing v0.9 phrasing:" "missing:$miss"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
