@@ -2560,6 +2560,27 @@ else
 fi
 
 # ============================================================
+# T73 — F5 cascading parameters: config.md declares project-level defaults
+#   Pre-Phase-C: config.md frontmatter had no `parameters:` block; per-
+#   action `budget:` was the only tuning surface. Phase C adds an F5
+#   cascade chain (project → work item → stage → action → step). This
+#   test asserts the project-default `parameters:` block exists with the
+#   three known sub-blocks (budget, voice, pace) so downstream cascade
+#   resolution has a non-empty bottom layer to fall back to.
+# ============================================================
+note "T73: config.md frontmatter declares project-level parameters: block (F5)"
+CONFIG_MD="$FRAMEWORK_ROOT/templates/.sdd/config.md"
+ok_t73=1
+for needle in '^parameters:' '^  budget:' '^  voice:' '^  pace:' '^    max_minutes:' '^    plain_english:' '^    halt_on_red_after_attempts:'; do
+  grep -q "$needle" "$CONFIG_MD" || { ok_t73=0; miss="$miss $needle"; }
+done
+if [ "$ok_t73" -eq 1 ]; then
+  ok "T73 config.md has parameters: { budget, voice, pace } project defaults"
+else
+  bad "T73 config.md parameters: block missing keys" "missing:$miss"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
