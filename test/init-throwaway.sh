@@ -16,7 +16,7 @@ TARGET="${1:-$HOME/sdd-throwaway}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FRAMEWORK="${SDD_FRAMEWORK_ROOT:-$(cd "$SCRIPT_DIR/.." && pwd)}"
-FIXTURE="$FRAMEWORK/templates/.sdd/features/_throwaway-fixture.md"
+FIXTURE="$FRAMEWORK/test/_throwaway-fixture.md"
 
 if [ ! -d "$FRAMEWORK/templates" ] || [ ! -f "$FIXTURE" ]; then
   echo "ERROR: framework templates/ or fixture not found at $FRAMEWORK" >&2

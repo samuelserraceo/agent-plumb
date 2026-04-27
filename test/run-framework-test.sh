@@ -733,6 +733,81 @@ else
 fi
 
 # ============================================================
+# T21 — pre-commit-block reads INDEX.md and spec.md from STAGED blobs
+#   RED: hook reads working tree, agent blanks the working-tree INDEX.md
+#        (or removes spec.md) to make the hook see no active feature,
+#        then commits a phase-advance with open blockers. Caught by
+#        adversarial reality-vs-theory review (round 3).
+# ============================================================
+note "T21: pre-commit-block reads from staged blobs (not working tree)"
+d=$(mkproj)
+cd "$d"
+echo '**Active:** features/001-test' > .sdd/INDEX.md
+cat > .sdd/features/001-test/spec.md <<'SPEC'
+[PHASE: SPEC]
+
+## PHASE: SPEC
+- **Who has it:** [ ]
+SPEC
+git add -A && git commit -q -m "init"
+# Stage a phase-advance from SPEC to BUILD (open [ ] in SPEC remains)
+sed -i.bak 's/\[PHASE: SPEC\]/[PHASE: BUILD]/' .sdd/features/001-test/spec.md
+rm -f .sdd/features/001-test/spec.md.bak
+git add .sdd/features/001-test/spec.md
+# Now blank out the working-tree INDEX.md to try to bypass
+echo "" > .sdd/INDEX.md
+e=$(echo '{"tool_input":{"command":"git commit -m \"[SDD:001] phase: SPEC->BUILD\""}}' \
+      | CLAUDE_PROJECT_DIR="$d" bash "$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-block.sh" >/dev/null 2>&1; echo $?)
+cd - >/dev/null
+rm -rf "$d"
+if [ "$e" -eq 2 ]; then
+  ok "T21 working-tree INDEX.md blanking didn't bypass — hook used staged blob"
+else
+  bad "T21 working-tree manipulation bypassed gate" "exit=$e, expected 2"
+fi
+
+# ============================================================
+# T22 — moat blocks co-stage of pre-commit-stage-verified.sh + verification.json
+#   RED: hook only blocks co-stage of verify-stage.sh; agent stages a
+#        no-op replacement of the moat hook itself + fabrication.
+# ============================================================
+note "T22: moat blocks co-stage of itself + verification.json"
+d=$(mkproj)
+cd "$d"
+mkdir -p .claude/hooks
+# Set up: scaffold commit has the hook in HEAD, then we modify it and stage
+# alongside a verification.json. Both must be in the staged set.
+cp "$MOAT_HOOK" .claude/hooks/pre-commit-stage-verified.sh
+chmod +x .claude/hooks/pre-commit-stage-verified.sh
+echo '**Active:** features/001-test' > .sdd/INDEX.md
+cat > .sdd/features/001-test/spec.md <<'SPEC'
+[PHASE: BUILD]
+
+## PHASE: BUILD
+
+### Exit checks
+- [ ] C1: trivially true — true
+SPEC
+git add -A && git commit -q -m "scaffold"
+# Now modify the hook AND create a fresh verification.json (both staged)
+echo "# touched-for-test" >> .claude/hooks/pre-commit-stage-verified.sh
+bash "$VERIFY_STAGE" .sdd/features/001-test/spec.md BUILD >/dev/null 2>&1 || true
+git add -A
+out=$(echo '{"tool_input":{"command":"git commit -m \"[SDD:001] phase: BUILD->SHIP\""}}' \
+        | CLAUDE_PROJECT_DIR="$d" bash "$MOAT_HOOK" 2>&1) || true
+e=$(echo '{"tool_input":{"command":"git commit -m \"[SDD:001] phase: BUILD->SHIP\""}}' \
+      | CLAUDE_PROJECT_DIR="$d" bash "$MOAT_HOOK" >/dev/null 2>&1; echo $?)
+cd - >/dev/null
+rm -rf "$d"
+hook_co_block_seen=0
+echo "$out" | grep -q 'pre-commit-stage-verified.sh and verification.json' && hook_co_block_seen=1
+if [ "$e" -eq 2 ] && [ "$hook_co_block_seen" -eq 1 ]; then
+  ok "T22 hook co-stage with verification.json blocked"
+else
+  bad "T22 hook co-stage allowed" "exit=$e, msg_seen=$hook_co_block_seen, output: $out"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'

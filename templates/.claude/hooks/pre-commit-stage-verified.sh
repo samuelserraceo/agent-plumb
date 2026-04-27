@@ -101,14 +101,29 @@ fi
 
 # Hash pin: refuse if the verifier on disk doesn't match the expected hash.
 VERIFY_STAGE_EXPECTED_HASH="ff4b4d0480be3575970d1d7523cfcf6d3737cbbb7cc6080ef7bda7b243c27813"
+# Compute hash. Try shasum (macOS default), sha256sum (most Linux), then
+# python3 hashlib as a guaranteed fallback (python3 is already required for
+# JSON parsing below — if it's missing the hook can't function anyway).
+# Reviewer round 3 caught the original silent-disable when neither shasum
+# nor sha256sum were on PATH.
 if command -v shasum >/dev/null 2>&1; then
   actual_hash=$(shasum -a 256 "$VERIFY_STAGE" 2>/dev/null | cut -d' ' -f1)
 elif command -v sha256sum >/dev/null 2>&1; then
   actual_hash=$(sha256sum "$VERIFY_STAGE" 2>/dev/null | cut -d' ' -f1)
+elif command -v python3 >/dev/null 2>&1; then
+  actual_hash=$(python3 -c "import hashlib,sys;print(hashlib.sha256(open(sys.argv[1],'rb').read()).hexdigest())" "$VERIFY_STAGE" 2>/dev/null)
 else
-  actual_hash=""  # No hasher available — fall through; co-stage block is the only defense.
+  actual_hash=""
 fi
-if [ -n "$actual_hash" ] && [ "$actual_hash" != "$VERIFY_STAGE_EXPECTED_HASH" ]; then
+if [ -z "$actual_hash" ]; then
+  cat >&2 <<EOF
+[moat] no SHA-256 hasher available (shasum, sha256sum, python3 all
+absent) — refusing to commit. The hash pin cannot verify
+verify-stage.sh's integrity without a hasher.
+EOF
+  exit 2
+fi
+if [ "$actual_hash" != "$VERIFY_STAGE_EXPECTED_HASH" ]; then
   cat >&2 <<EOF
 [moat] verify-stage.sh hash mismatch — refusing to use it as referee.
   Expected: $VERIFY_STAGE_EXPECTED_HASH
@@ -118,6 +133,27 @@ If you legitimately updated verify-stage.sh, also update
 VERIFY_STAGE_EXPECTED_HASH in pre-commit-stage-verified.sh in the same
 commit. Otherwise restore the verifier from main:
   git checkout main -- .sdd/scripts/verify-stage.sh
+EOF
+  exit 2
+fi
+
+# === HOOK SELF-TAMPERING GUARD ===
+# An adversary could stage a no-op replacement of THIS hook alongside a
+# fabricated verification.json. The (modified) hook fires, allows. Block
+# co-staging of pre-commit-stage-verified.sh + verification.json. This is
+# a partial defense — the agent could also modify the hook in a separate
+# commit, then commit fabrications later. Phase B's `core.hooksPath`
+# proposal (move hooks out of the working tree) is the structural fix.
+if printf '%s\n' "$staged_files" | grep -Eq '(^|/)\.claude/hooks/pre-commit-stage-verified\.sh$'; then
+  cat >&2 <<EOF
+[moat] pre-commit-stage-verified.sh and verification.json cannot be
+staged in the same commit. The hook is the moat itself; staging a
+modification of it alongside the verification it gates breaks the
+trust assumption. Split the commits:
+
+  1. Commit hook changes alone.
+  2. Then re-run verify-stage and stage spec.md + verification.json
+     separately.
 EOF
   exit 2
 fi

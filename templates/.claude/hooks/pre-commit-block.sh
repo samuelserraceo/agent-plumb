@@ -31,16 +31,37 @@ case "$cmd" in
 esac
 
 # No SDD setup? Allow.
-if [ ! -d .sdd ] || [ ! -f .sdd/INDEX.md ]; then
+if [ ! -d .sdd ]; then
   exit 0
 fi
 
+# Read INDEX.md from the STAGED blob (not working tree). Reviewer round 3
+# found that an agent could blank out the working-tree INDEX.md to make the
+# hook see no active feature, then commit a phase advance unblocked. Reading
+# from staged makes the hook see what's actually being committed.
+staged_index=$(git show ":.sdd/INDEX.md" 2>/dev/null || echo "")
+if [ -z "$staged_index" ]; then
+  # Fall back to working tree only if INDEX.md is genuinely absent (very early
+  # bootstrap before INDEX.md exists). Allow.
+  [ -f .sdd/INDEX.md ] || exit 0
+  staged_index=$(cat .sdd/INDEX.md)
+fi
+
 # No active feature? Allow.
-active_path=$(grep -m1 -E '^\*\*Active:\*\*' .sdd/INDEX.md | grep -oE 'features/[A-Za-z0-9._-]+' | head -1 || echo "")
+active_path=$(printf '%s\n' "$staged_index" | grep -m1 -E '^\*\*Active:\*\*' | grep -oE 'features/[A-Za-z0-9._-]+' | head -1 || echo "")
 [ -z "$active_path" ] && exit 0
 
 spec=".sdd/$active_path/spec.md"
-[ ! -f "$spec" ] && exit 0
+
+# Read spec.md from the STAGED blob (same reason as INDEX.md). An agent
+# could rm or blank the working-tree spec.md while staging a phase advance
+# from a different blob via `git update-index`. Use the staged content.
+staged_spec_content=$(git show ":$spec" 2>/dev/null || echo "")
+if [ -z "$staged_spec_content" ]; then
+  # spec.md not staged in this commit — bootstrap or unrelated commit. Allow.
+  [ -f "$spec" ] || exit 0
+  staged_spec_content=$(cat "$spec")
+fi
 
 # NUL-byte / binary guard: a NUL byte in spec.md causes git diff --cached
 # to emit "Binary files differ" instead of line diffs, which means the
@@ -49,7 +70,8 @@ spec=".sdd/$active_path/spec.md"
 # through. Reject any spec.md with NUL bytes.
 # Using `od -An -c` because bash strips literal \x00 from variable
 # expansions, breaking the more obvious `grep -q $'\x00'` approach.
-if od -An -c "$spec" 2>/dev/null | grep -q '\\0'; then
+# Check staged content (round 3 fix), not working tree.
+if printf '%s' "$staged_spec_content" | od -An -c | grep -q '\\0'; then
   cat >&2 <<EOF
 [SDD] spec.md contains NUL bytes — refusing to commit.
 NUL bytes break the phase-advance regex below; a fabricated phase
