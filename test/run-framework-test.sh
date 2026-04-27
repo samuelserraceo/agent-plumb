@@ -2154,6 +2154,89 @@ else
 fi
 
 # ============================================================
+# T65 — Cut 7: moat reads playbook_slug from INDEX.md (engine bones)
+#   Pre-Cut-7: hardcoded `playbook_slug = "feature"`. Phase C playbooks
+#   couldn't be coverage-checked. Post-Cut-7: reads `**Playbook:** <slug>`
+#   line from INDEX.md, falls back to `feature` if absent.
+#
+#   This test exercises the new read path with INDEX.md present + valid.
+#   Same attack as T44 (empty approved_sections + drafted proposed-approach)
+#   — should still BLOCK because INDEX.md says `feature` and feature.md has
+#   proposed-approach as requires_user_approval=true.
+# ============================================================
+note "T65: moat reads playbook_slug from INDEX.md (positive case)"
+d=$(mkproj_v08)
+cd "$d"
+echo "**Playbook:** feature" > .sdd/INDEX.md
+cat > .sdd/features/001-test/spec.md <<'EOF'
+[PHASE: SPEC]
+
+## PHASE: SPEC
+
+### sub-action: proposed-approach
+- weak vague approach
+- no alternatives
+- no tradeoffs
+
+### Exit checks
+- [ ] C1: dummy — true
+EOF
+cat > .sdd/features/001-test/verification.json <<'EOF'
+{"phase":"SPEC","checks":[{"id":"C1","result":"pass"}],"approved_sections":{}}
+EOF
+git add .sdd/features/001-test/ .sdd/INDEX.md
+hook_stdin='{"tool_input":{"command":"git commit -m phase: SPEC -> BUILD"}}'
+ec=0
+err=$(echo "$hook_stdin" | bash "$MOAT_HOOK" 2>&1 1>/dev/null) || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 2 ] && echo "$err" | grep -qiE 'coverage|missing required|proposed-approach'; then
+  ok "T65 INDEX.md Playbook: feature → coverage check fired"
+else
+  bad "T65 moat didn't honor INDEX.md Playbook line" "exit=$ec; err='$err'"
+fi
+
+# ============================================================
+# T65b — Cut 7 mutation: bogus playbook in INDEX.md → coverage check no-ops
+#   With `**Playbook:** does-not-exist`, the moat should look up
+#   does-not-exist.md, fail to find it, leave required_slugs empty, and
+#   pass through (no coverage to enforce). This PROVES the moat is reading
+#   from INDEX.md — pre-Cut-7 (hardcoded "feature") this test would still
+#   block, just like T44.
+# ============================================================
+note "T65b: mutation — bogus Playbook in INDEX.md proves the read path"
+d=$(mkproj_v08)
+cd "$d"
+echo "**Playbook:** does-not-exist" > .sdd/INDEX.md
+cat > .sdd/features/001-test/spec.md <<'EOF'
+[PHASE: SPEC]
+
+## PHASE: SPEC
+
+### sub-action: proposed-approach
+- weak vague approach
+- no alternatives
+- no tradeoffs
+
+### Exit checks
+- [ ] C1: dummy — true
+EOF
+cat > .sdd/features/001-test/verification.json <<'EOF'
+{"phase":"SPEC","checks":[{"id":"C1","result":"pass"}],"approved_sections":{}}
+EOF
+git add .sdd/features/001-test/ .sdd/INDEX.md
+hook_stdin='{"tool_input":{"command":"git commit -m phase: SPEC -> BUILD"}}'
+ec=0
+echo "$hook_stdin" | bash "$MOAT_HOOK" >/dev/null 2>&1 || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 0 ]; then
+  ok "T65b bogus playbook → no coverage required (proves INDEX.md read is load-bearing)"
+else
+  bad "T65b moat blocked despite bogus playbook" "ec=$ec — moat may still be hardcoding 'feature'"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'

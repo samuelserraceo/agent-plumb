@@ -378,7 +378,22 @@ if not isinstance(approved, dict):
 # Block if any required slug is absent from claimed.approved_sections.
 
 phase = d.get("phase", "")
-playbook_slug = "feature"  # B-1 default; Phase C will read from INDEX.md
+# Read the active playbook from INDEX.md's `**Playbook:** <slug>` line so the
+# coverage check honors whichever playbook the project is using. Fallback to
+# 'feature' (the only B-1 playbook) when INDEX.md is absent or malformed —
+# preserves Phase A test compat where mkproj() doesn't scaffold INDEX.md.
+playbook_slug = "feature"
+index_path = os.path.join(proj, ".sdd", "INDEX.md")
+if os.path.isfile(index_path):
+    try:
+        with open(index_path) as _f:
+            for _line in _f:
+                _m = re.match(r"^\*\*Playbook:\*\*\s+(\S+)\s*$", _line)
+                if _m:
+                    playbook_slug = _m.group(1)
+                    break
+    except OSError:
+        pass
 playbook_path = os.path.join(proj, ".sdd", "playbooks", f"{playbook_slug}.md")
 
 required_slugs = set()
