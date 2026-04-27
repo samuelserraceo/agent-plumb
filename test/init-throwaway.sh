@@ -80,7 +80,8 @@ I'm stress-testing SDD lean Phase A on a throwaway project. Active
 feature: $FEAT_SLUG (a personal landing page with email waitlist).
 
 You are the SDD agent. Drive this feature through the spine. The
-playbook lives at .sdd/profile-feature.md.
+playbook lives at .sdd/playbooks/feature.md, with each sub-action's
+prose at .sdd/subactions/<slug>.md.
 
 For each turn:
 1. Run \`bash .sdd/scripts/next-action.sh .sdd/$FEAT/spec.md\` and read the JSON.

@@ -921,19 +921,23 @@ else
 fi
 
 # ============================================================
-# T26 — CLAUDE.md version matches profile-feature.md profile_version
+# T26 — CLAUDE.md version matches .sdd/CLAUDE.version
 #   RED: Phase A shipped CLAUDE.md at v0.7.1 (5-phase prose) while
-#        profile-feature.md was at 0.7.5-phase-a (3-phase). Drift caused
-#        agent confusion at §11 — agent read CLAUDE.md's 5-phase rules in
-#        a project whose playbook said 3 phases.
+#        the playbook was at 0.7.5-phase-a (3-phase). Drift caused
+#        agent confusion at §11 — agent read CLAUDE.md's 5-phase rules
+#        in a project whose playbook said 3 phases.
+#   v0.8: profile-feature.md is gone (Theme 2). Authoritative version
+#        sources are CLAUDE.md's SDD-MANAGED-START header and
+#        .sdd/CLAUDE.version. Both must agree, or `update.sh` upgrade
+#        and the agent's interpretation of phase rules can diverge.
 # ============================================================
-note "T26: CLAUDE.md version matches profile-feature.md profile_version"
+note "T26: CLAUDE.md version matches .sdd/CLAUDE.version"
 claude_version=$(grep -m1 'SDD-MANAGED-START version:' "$FRAMEWORK_ROOT/templates/CLAUDE.md" | sed -E 's/.*version: ([^ ]+) -->.*/\1/' || echo "")
-profile_version=$(grep -m1 '^profile_version:' "$FRAMEWORK_ROOT/templates/.sdd/profile-feature.md" | awk '{print $2}' || echo "")
-if [ -n "$claude_version" ] && [ "$claude_version" = "$profile_version" ]; then
-  ok "T26 versions aligned (CLAUDE.md=$claude_version, profile-feature.md=$profile_version)"
+file_version=$(tr -d ' \n' < "$FRAMEWORK_ROOT/templates/.sdd/CLAUDE.version" 2>/dev/null || echo "")
+if [ -n "$claude_version" ] && [ "$claude_version" = "$file_version" ]; then
+  ok "T26 versions aligned (CLAUDE.md=$claude_version, CLAUDE.version=$file_version)"
 else
-  bad "T26 version drift" "CLAUDE.md=$claude_version, profile-feature.md=$profile_version (must match)"
+  bad "T26 version drift" "CLAUDE.md=$claude_version, CLAUDE.version=$file_version (must match)"
 fi
 
 # ============================================================

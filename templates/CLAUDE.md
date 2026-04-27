@@ -12,7 +12,7 @@
 
 You are working inside a Spec-Driven Development (SDD) project. The MANAGED section below tells you how to behave; the user-owned section at the bottom may add project-specific rules. Read both every session. Failure to follow these rules = broken workflow.
 
-**Canonical playbook**: `.sdd/profile-feature.md`. The 3-phase state machine (SPEC → BUILD → SHIP → SHIPPED) and the per-phase sub-actions live there. This file (CLAUDE.md) covers the cross-cutting rules; the playbook covers what each phase actually requires.
+**Canonical playbook**: `.sdd/playbooks/feature.md` (and any other playbook in `.sdd/playbooks/`). The frontmatter declares the stages (SPEC → BUILD → SHIP) and the sub-action sequence per stage; sub-action files at `.sdd/subactions/<slug>.md` carry the actual prose for each step. This file (CLAUDE.md) covers the cross-cutting rules; playbooks + sub-actions cover what each step actually requires.
 
 **Legacy phase names in this doc**: where you see references to "PLAN phase", "VERIFY phase", or "LEARN phase" below, they are sub-actions of SPEC or SHIP in the 3-phase spine, kept here for prose continuity:
 - "PLAN" → SPEC's `plan-decompose` sub-action (turning ACs into tasks)
@@ -76,7 +76,7 @@ Don't force this. If the question genuinely has no common patterns (e.g. §1 "wh
 
 ## The rubric is the state machine
 
-- Phases: `SPEC → BUILD → SHIP → SHIPPED` (the 3-phase v0.8 spine; PLAN/VERIFY/LEARN from earlier versions are folded in as sub-actions of SPEC and SHIP — see `.sdd/profile-feature.md`).
+- Phases: `SPEC → BUILD → SHIP → SHIPPED` (the 3-phase v0.8 spine; PLAN/VERIFY/LEARN from earlier versions are folded in as sub-actions of SPEC and SHIP — see `.sdd/playbooks/feature.md` for the per-stage sub-action list, and `.sdd/subactions/<slug>.md` for the prose of each).
 - You **cannot** advance `[PHASE: X]` in `spec.md` while any `[ ]` remains in that phase's sections.
 - You **cannot** silently fill a `[ ]` with an assumption. If you don't know, ask.
 - Phase advances are gated by `verify-stage.sh` writing a `verification.json`, which the moat hook (`pre-commit-stage-verified.sh`) re-checks at commit time. The agent's "I'm done" claim is text; the moat reads bash-checked truth.

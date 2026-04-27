@@ -29,9 +29,10 @@ if [ ! -f "$spec" ]; then
   exit 1
 fi
 
-# Phase progression. Aligned with the 3-phase profile-feature.md
+# Phase progression. Aligned with the 3-phase v0.8 feature playbook
 # (SPEC → BUILD → SHIP → SHIPPED). PLAN and VERIFY+LEARN were collapsed
 # into sub-actions of SPEC and SHIP respectively in the v0.8 spine.
+# See .sdd/playbooks/feature.md frontmatter for the canonical stage list.
 next_phase() {
   case "$1" in
     SPEC)    echo "BUILD" ;;
