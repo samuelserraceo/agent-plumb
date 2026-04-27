@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # load-playbook.sh — v0.8 schema loader and validator.
 #
-# Reads .sdd/ contents, validates against SCHEMA.md, and verifies hash-pinned
-# files against .sdd/.cache/manifest.json. Builds an in-memory slug-map for
-# duplicate detection during validation. (Persistent slug-map.json caching
-# is a Phase B-1 Theme 7 deliverable — wikilink resolution needs it then.)
+# Reads .sdd/ contents, validates against SCHEMA.md, verifies hash-pinned
+# files against .sdd/.cache/manifest.json, and (Theme 7) persists the
+# slug-map to .sdd/.cache/slug-map.json so resolve-wikilink.sh can lookup
+# [[slug]] references without re-scanning the .sdd/ tree.
 #
 # Inherits Phase A bash patterns (NUL guard, set -uo pipefail, deterministic
 # JSON output via python3, plain-English error messages to stderr).
@@ -388,7 +388,29 @@ def cmd_validate():
             validate_playbook(r["path"], r["fm"], available_subactions)
         elif r["type"] == "config":
             validate_config(r["path"], r["fm"])
-    build_slug_map(records)
+    slug_map = build_slug_map(records)
+
+    # Theme 7 — persist the slug-map to .sdd/.cache/slug-map.json so
+    # resolve-wikilink.sh and other downstream callers don't have to
+    # re-scan the .sdd/ tree on every invocation. Stored as paths
+    # relative to project root (so it's portable across machines).
+    if slug_map:
+        cache_dir = os.path.join(SDD, ".cache")
+        os.makedirs(cache_dir, exist_ok=True)
+        out_map = {
+            slug: os.path.relpath(path, PROJ)
+            for slug, path in slug_map.items()
+        }
+        slug_map_path = os.path.join(cache_dir, "slug-map.json")
+        try:
+            with open(slug_map_path, "w") as f:
+                json.dump(out_map, f, indent=2, sort_keys=True)
+                f.write("\n")
+        except OSError as e:
+            # Soft-fail: cache write isn't critical to validation outcome.
+            sys.stderr.write(
+                f"load-playbook: WARNING: could not write slug-map.json: {e}\n"
+            )
 
 def cmd_check_hashes():
     manifest_path = os.path.join(SDD, ".cache", "manifest.json")

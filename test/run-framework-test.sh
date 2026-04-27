@@ -15,6 +15,7 @@ LOAD_PLAYBOOK="$FRAMEWORK_ROOT/templates/.sdd/scripts/load-playbook.sh"
 COFILE_BLOCK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-cofile-block.sh"
 START_SH="$FRAMEWORK_ROOT/templates/.sdd/scripts/start.sh"
 ADVANCE_SH="$FRAMEWORK_ROOT/templates/.sdd/scripts/advance.sh"
+RESOLVE_WIKILINK="$FRAMEWORK_ROOT/templates/.sdd/scripts/resolve-wikilink.sh"
 TOUCHES_HOOK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-touches.sh"
 FIXTURES_V08="$FRAMEWORK_ROOT/test/fixtures/v08-schema"
 
@@ -65,6 +66,7 @@ mkproj_v08() {
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/reapprove.sh"            "$d/.sdd/scripts/reapprove.sh"
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/start.sh"                "$d/.sdd/scripts/start.sh"
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/advance.sh"              "$d/.sdd/scripts/advance.sh"
+  cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/resolve-wikilink.sh"     "$d/.sdd/scripts/resolve-wikilink.sh"
   cp "$VERIFY_STAGE" "$d/.sdd/scripts/verify-stage.sh" 2>/dev/null || true
   cp "$NEXT_ACTION"  "$d/.sdd/scripts/next-action.sh"  2>/dev/null || true
   ( cd "$d" \
@@ -1890,6 +1892,49 @@ if [ "$metrics_size" -gt 0 ] \
   ok "T59 metrics.md got a line with timestamp + slug + tag"
 else
   bad "T59 metrics.md missing or malformed" "size=$metrics_size; last_line='$metrics_line'"
+fi
+
+# ============================================================
+# T60 — resolve-wikilink.sh resolves [[slug]] to markdown link
+#   (Theme 7 — wikilinks layer; depends on slug-map.json built by
+#   load-playbook.sh --validate).
+#   RED: load-playbook didn't persist slug-map.json (Round 1 GPT-5.5
+#   drift — fixed in this commit), or resolve-wikilink doesn't read
+#   it, or doesn't replace [[slug]] correctly.
+# ============================================================
+note "T60: resolve-wikilink resolves [[slug]] to markdown link (Theme 7)"
+d=$(mkproj_v08)
+# Build slug-map by running load-playbook.sh --validate
+bash "$LOAD_PLAYBOOK" --validate "$d" >/dev/null 2>&1
+if [ ! -f "$d/.sdd/.cache/slug-map.json" ]; then
+  bad "T60 setup: slug-map.json not persisted by --validate" "Theme 7 drift not fixed"
+  rm -rf "$d"
+else
+  out=$(echo "See [[problem]] for context." | bash "$RESOLVE_WIKILINK" "$d" 2>/dev/null)
+  rm -rf "$d"
+  if echo "$out" | grep -q '\[problem\](.sdd/subactions/problem\.md)'; then
+    ok "T60 [[problem]] resolved to markdown link"
+  else
+    bad "T60 wikilink resolution failed" "out='$out'"
+  fi
+fi
+
+# ============================================================
+# T61 — resolve-wikilink.sh leaves unknown [[slug]] as-is + warns
+#   RED: silently strips [[slug]] OR errors instead of warning.
+# ============================================================
+note "T61: resolve-wikilink leaves unknown [[slug]] alone + warns to stderr"
+d=$(mkproj_v08)
+bash "$LOAD_PLAYBOOK" --validate "$d" >/dev/null 2>&1
+out=$(echo "Test [[bogus-undefined-slug]] passes through." | bash "$RESOLVE_WIKILINK" "$d" 2>/tmp/wikilink-stderr-$$)
+err=$(cat /tmp/wikilink-stderr-$$ 2>/dev/null)
+rm -f /tmp/wikilink-stderr-$$
+rm -rf "$d"
+# Output should still contain [[bogus-undefined-slug]] unchanged; stderr should mention it
+if echo "$out" | grep -q '\[\[bogus-undefined-slug\]\]' && echo "$err" | grep -q 'bogus-undefined-slug'; then
+  ok "T61 unknown wikilink preserved + warning to stderr"
+else
+  bad "T61 unknown wikilink mishandled" "out='$out'; err='$err'"
 fi
 
 # ============================================================
