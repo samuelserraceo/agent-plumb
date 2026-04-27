@@ -262,6 +262,142 @@ if ! check_manifest_pins; then
   exit 2
 fi
 
+# === THEME 1.6 — APPROVED-SECTION HASH CHECK ===
+# Closes Codex finding #2: agent's cheapest cheat is editing the user-
+# approved section content (e.g., §11 ACs) to soften criteria, then
+# "honestly" passing the now-trivial check. Manifest-pin doesn't catch
+# this (the playbook isn't tampered; spec.md is). The fabrication check
+# doesn't catch this (the agent can re-run verify-stage; if checks like
+# "≥1 AC exists" still pass against the weakened content, claimed and
+# fresh agree).
+#
+# Defense: when the user approves a sub-action, framework writes a
+# normalized SHA-256 of the section content to verification.json's
+# approved_sections.<slug>. On phase-advance commit, this check
+# re-extracts the section from the staged spec.md, recomputes the
+# hash via hash-section.sh (single source of truth), and compares to
+# the claim. Mismatch → block.
+#
+# Inputs: claimed verification.json blob (string), staged spec.md
+#         path (temp file), path to hash-section.sh.
+# Returns: 0 if all entries match (or approved_sections empty/absent),
+#          1 if any mismatch / schema error / hash failure.
+check_approved_sections() {
+  local claimed="$1" staged_spec="$2" hash_script="$3"
+
+  # If hash-section.sh isn't available (template not installed yet),
+  # skip — preserves Phase A test compatibility (those scaffolds don't
+  # ship hash-section.sh).
+  [ -x "$hash_script" ] || [ -f "$hash_script" ] || return 0
+
+  CLAIMED_BLOB="$claimed" STAGED_SPEC="$staged_spec" PROJ="$PROJECT_DIR" \
+    HASH_SCRIPT="$hash_script" python3 <<'PYEOF'
+import json, os, re, subprocess, sys
+
+claimed = os.environ["CLAIMED_BLOB"]
+staged_spec = os.environ["STAGED_SPEC"]
+proj = os.environ["PROJ"]
+hash_script = os.environ["HASH_SCRIPT"]
+
+try:
+    d = json.loads(claimed)
+except Exception:
+    # Malformed JSON; let compare_sets handle the shape error.
+    sys.exit(0)
+
+approved = d.get("approved_sections")
+# Field absent (v0.7.5 verification.json) → no Theme 1.6 enforcement.
+if approved is None:
+    sys.exit(0)
+if not isinstance(approved, dict):
+    print("[moat] approved_sections must be a JSON object, got "
+          + type(approved).__name__, file=sys.stderr)
+    sys.exit(1)
+# Empty dict → no entries to check.
+if not approved:
+    sys.exit(0)
+
+HEX64 = re.compile(r"^[0-9a-f]{64}$")
+errors = []
+
+for slug, expected in sorted(approved.items()):
+    # Schema validation: hash must be 64-char lowercase hex SHA-256.
+    if not isinstance(expected, str) or not HEX64.match(expected):
+        errors.append(
+            f"approved_sections.{slug} = {expected!r} is not a 64-char "
+            f"lowercase hex SHA-256 (SCHEMA.md §5.2)"
+        )
+        continue
+
+    # Resolve sub-action file. By convention, .sdd/subactions/<slug>.md.
+    sa_path = os.path.join(proj, ".sdd", "subactions", f"{slug}.md")
+    if not os.path.isfile(sa_path):
+        errors.append(
+            f"approved_sections.{slug} references unknown sub-action "
+            f"— no file at .sdd/subactions/{slug}.md"
+        )
+        continue
+
+    # Compute actual hash of the staged section via hash-section.sh.
+    try:
+        result = subprocess.run(
+            ["bash", hash_script, staged_spec, sa_path],
+            capture_output=True, text=True, timeout=10,
+        )
+    except Exception as e:
+        errors.append(f"hash-section.sh failed for §{slug}: {e}")
+        continue
+
+    if result.returncode != 0:
+        errors.append(
+            f"could not extract §{slug} from staged spec.md: "
+            f"{result.stderr.strip() or 'unknown error'}"
+        )
+        continue
+
+    actual = result.stdout.strip()
+    if actual != expected:
+        errors.append(
+            f"section §{slug} CHANGED since you approved it:\n"
+            f"        approved hash: {expected[:12]}...\n"
+            f"        staged hash:   {actual[:12]}...\n"
+            f"        Either revert your edits to §{slug}, or run\n"
+            f"        /re-approve {slug} to lock in the new content."
+        )
+
+if errors:
+    print("[moat] approved_sections check failed — refusing to commit.",
+          file=sys.stderr)
+    print("", file=sys.stderr)
+    print("This is v0.8's central new defense (Codex finding #2). It catches",
+          file=sys.stderr)
+    print("the silent-criteria-softening attack: agent edits a user-approved",
+          file=sys.stderr)
+    print("section to weaken the content, then claims verification 'honestly'",
+          file=sys.stderr)
+    print("against the trivially-easy now-version.", file=sys.stderr)
+    print("", file=sys.stderr)
+    for e in errors:
+        print(f"  - {e}", file=sys.stderr)
+    sys.exit(1)
+
+sys.exit(0)
+PYEOF
+}
+
+# Locate hash-section.sh — same pattern as VERIFY_STAGE locate above.
+locate_hash_section() {
+  local candidates=(
+    "$PROJECT_DIR/.sdd/scripts/hash-section.sh"
+    "$PROJECT_DIR/templates/.sdd/scripts/hash-section.sh"
+  )
+  for p in "${candidates[@]}"; do
+    [ -f "$p" ] && { echo "$p"; return 0; }
+  done
+  echo ""
+}
+HASH_SECTION=$(locate_hash_section)
+
 # Compare two verification.json blobs by (id, result) set. Returns 0 if
 # identical, 1 if different. Uses python3 for robust JSON parsing.
 compare_sets() {
@@ -369,6 +505,18 @@ EOF
 verification.json must declare {"phase":"X","checks":[...]}.
 EOF
     exit 2
+  fi
+
+  # Theme 1.6 — verify approved_sections re-hash matches staged spec.md.
+  # Runs BEFORE compare_sets (per audit recommendation): structural
+  # integrity of approvals comes before per-check fabrication detection.
+  # No-op when approved_sections is absent (v0.7.5 verification.json) or
+  # empty (v0.8 with no requires_user_approval sub-actions).
+  if [ -n "$HASH_SECTION" ]; then
+    if ! check_approved_sections "$claimed" "$staged_spec" "$HASH_SECTION"; then
+      rm -f "$staged_spec"
+      exit 2
+    fi
   fi
 
   # Re-run verify-stage on the staged spec, in an isolated temp dir.
