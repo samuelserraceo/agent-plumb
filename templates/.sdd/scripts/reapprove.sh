@@ -10,7 +10,7 @@
 # Usage:
 #   reapprove.sh <slug> <work-item-dir>
 #
-#   <slug>            — the sub-action whose section was edited
+#   <slug>            — the action whose section was edited
 #   <work-item-dir>   — the work item folder, e.g.
 #                       .sdd/features/001-waitlist (must contain spec.md
 #                       and verification.json)
@@ -52,7 +52,7 @@ ver="$work_item_dir/verification.json"
 sa_path="$PROJECT_DIR/.sdd/actions/$slug.md"
 
 [ -f "$spec" ] || { echo "reapprove: spec not found at $spec" >&2; exit 1; }
-[ -f "$sa_path" ] || { echo "reapprove: sub-action not found at $sa_path" >&2; exit 1; }
+[ -f "$sa_path" ] || { echo "reapprove: action not found at $sa_path" >&2; exit 1; }
 
 # Locate hash-section.sh
 HASH_SECTION="$PROJECT_DIR/.sdd/scripts/hash-section.sh"

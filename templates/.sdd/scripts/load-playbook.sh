@@ -194,7 +194,7 @@ def simple_yaml_parse(text, path):
 # Per-file validators
 # ---------------------------------------------------------------------------
 def validate_action(path, fm):
-    """Validate sub-action frontmatter per SCHEMA.md §2."""
+    """Validate action frontmatter per SCHEMA.md §2."""
     expected_slug = os.path.splitext(os.path.basename(path))[0]
     rel = os.path.relpath(path, PROJ)
 
@@ -267,11 +267,11 @@ def validate_playbook(path, fm, available_actions=None):
         if not re.match(r"^[A-Z]+$", sid) or len(sid) > 16:
             err(f"{rel} stage id {sid!r} — must be UPPERCASE letters only, "
                 f"max 16 chars (SCHEMA.md §6)")
-        # Sub-action resolution check — SCHEMA.md §1.5
+        # Action resolution check — SCHEMA.md §1.5
         if available_actions is not None:
             for slug in stage.get("actions", []) or []:
                 if slug not in available_actions:
-                    err(f"{rel} stage {sid!r} references sub-action "
+                    err(f"{rel} stage {sid!r} references action "
                         f"{slug!r} but no .sdd/actions/{slug}.md exists "
                         f"(SCHEMA.md §1.5)")
         for chk in stage.get("exit_checks", []) or []:
@@ -352,7 +352,7 @@ def scan_files():
             if name.endswith(".md"):
                 add(os.path.join(pdir, name), "playbook")
 
-    # Sub-actions
+    # Actions
     sdir = os.path.join(SDD, "actions")
     if os.path.isdir(sdir):
         for name in sorted(os.listdir(sdir)):
@@ -375,7 +375,7 @@ def scan_files():
 
 def cmd_validate():
     records = scan_files()
-    # Pre-collect available sub-action slugs so playbook validation can
+    # Pre-collect available action slugs so playbook validation can
     # check that every subactions[] reference resolves (SCHEMA.md §1.5).
     available_actions = {
         r["slug"] for r in records
@@ -391,7 +391,7 @@ def cmd_validate():
     # build_slug_map runs as part of validation (catches duplicate slugs
     # across the framework — closed-enum invariant per SCHEMA.md). The
     # slug-map cache writer was removed in Cut 4b: post-Cut-4 the
-    # wikilink consumer was already stripped from sub-action prose, and
+    # wikilink consumer was already stripped from action prose, and
     # leaving the writer in place would have shipped dead infrastructure.
     # Phase C re-adds the cache + resolver when wikilinks ship for real.
     build_slug_map(records)

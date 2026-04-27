@@ -2,7 +2,7 @@
 type: action
 slug: not-the-filename
 tag: USER-LED
-title: "Sub-action where slug doesn't match filename"
+title: "Action where slug doesn't match filename"
 bundling: n_a
 used_by: []
 references: []

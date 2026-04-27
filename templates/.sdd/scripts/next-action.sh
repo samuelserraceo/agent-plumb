@@ -2,7 +2,7 @@
 # next-action.sh — Resolve the next blocker in a SDD spec.md.
 #
 # Usage:   next-action.sh <path/to/spec.md>
-# Output:  JSON to stdout describing the next sub-action.
+# Output:  JSON to stdout describing the next action.
 #          {"phase":"X","sub_action":"<line>","transition":null}
 #          {"phase":"X","sub_action":null,"transition":"X→Y"}
 #
@@ -31,7 +31,7 @@ fi
 
 # Phase progression. Aligned with the 3-phase v0.8 feature playbook
 # (SPEC → BUILD → SHIP → SHIPPED). PLAN and VERIFY+LEARN were collapsed
-# into sub-actions of SPEC and SHIP respectively in the v0.8 spine.
+# into actions of SPEC and SHIP respectively in the v0.8 spine.
 # See .sdd/playbooks/feature.md frontmatter for the canonical stage list.
 next_phase() {
   case "$1" in

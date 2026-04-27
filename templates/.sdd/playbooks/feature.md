@@ -72,18 +72,18 @@ Total time depends on the feature. Small (a form, a CRUD endpoint): 1-2 hours. M
 
 Every `/next` runs the same 4-step inner loop:
 
-1. **LOCATE** — read `INDEX.md` to find the active work item, find the active sub-action, load that sub-action's prose from `.sdd/actions/<slug>.md`.
+1. **LOCATE** — read `INDEX.md` to find the active work item, find the active action, load that action's prose from `.sdd/actions/<slug>.md`.
 2. **EXECUTE** — ask the user (USER-LED) or draft + iterate (AGENT-LED). Capture the result in `spec.md`.
 3. **SYNC** — `pre-commit-touches.sh` (Theme 4) verifies the right files are staged for this step. Block if missing.
-4. **ADVANCE** — `post-commit-advance.sh` (Theme 4) updates the active blocker pointer in `INDEX.md` to the next sub-action.
+4. **ADVANCE** — `post-commit-advance.sh` (Theme 4) updates the active blocker pointer in `INDEX.md` to the next action.
 
 LOCATE + EXECUTE are agent-driven prose. SYNC + ADVANCE are structural (real bash hooks). The framework's defenses (manifest hash-pin, section-locking on user approval, trust boundary on injected content, fabrication check on phase advance) all run during commit, between SYNC and ADVANCE.
 
 ## What's locked, what's not
 
-The 23 sub-actions in this playbook's frontmatter are **closed for B-1**. Adding new sub-actions requires Phase C work (touches schema validation + the sub-action library). The order is also fixed — sub-actions inside each stage must be filled in sequence.
+The 23 actions in this playbook's frontmatter are **closed for B-1**. Adding new actions requires Phase C work (touches schema validation + the action library). The order is also fixed — actions inside each stage must be filled in sequence.
 
-Three sub-actions default to **`requires_user_approval: true`** in their frontmatter:
+Three actions default to **`requires_user_approval: true`** in their frontmatter:
 - `proposed-approach` — closes Codex's silent-design-softening attack
 - `acceptance-criteria` — closes Codex's silent-AC-softening attack (the central attack)
 - `out-of-scope` — closes silent-scope-expansion attack
@@ -116,7 +116,7 @@ Total time depends on the feature. Small (a form, a CRUD endpoint): 1-2 hours. M
 
 ## What's locked, what's not
 
-The 23 sub-actions in the frontmatter are **closed for B-1**. Adding new sub-actions requires Phase C work (it touches schema validation + the sub-action library). The order is also fixed — sub-actions inside each stage must be filled in sequence.
+The 23 actions in the frontmatter are **closed for B-1**. Adding new actions requires Phase C work (it touches schema validation + the action library). The order is also fixed — actions inside each stage must be filled in sequence.
 
 The plain-English `check:` strings in `exit_checks` are documentation. The actual evaluation logic lives in `verify-stage.sh` (per-check-ID bash). Adding a new check ID in B-1 requires editing `verify-stage.sh`. See SCHEMA.md §17 for why.
 

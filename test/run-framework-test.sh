@@ -57,7 +57,7 @@ mkproj_v08() {
            "$d/.sdd/.cache" "$d/.sdd/features/001-test"
   cp "$FRAMEWORK_ROOT/templates/.sdd/config.md"          "$d/.sdd/config.md"
   cp "$FRAMEWORK_ROOT/templates/.sdd/playbooks/feature.md" "$d/.sdd/playbooks/feature.md"
-  # Copy ALL sub-actions from the framework so manifest hash-pin is satisfied.
+  # Copy ALL actions from the framework so manifest hash-pin is satisfied.
   # (Theme 3 extracted 20 more, bringing total to 23.)
   cp "$FRAMEWORK_ROOT"/templates/.sdd/actions/*.md "$d/.sdd/actions/"
   cp "$FRAMEWORK_ROOT/templates/.sdd/.cache/manifest.json"            "$d/.sdd/.cache/manifest.json"
@@ -116,7 +116,7 @@ fi
 # ============================================================
 # T2 — first [ ] resolves to §1 Problem
 #   RED: returns wrong section, returns empty, hardcodes a different
-#        sub-action name.
+#        action name.
 # ============================================================
 note "T2: first [ ] resolves to §1 Problem"
 d=$(mkproj)
@@ -132,12 +132,12 @@ rm -rf "$d"
 if echo "$out" | grep -q '§1 Problem'; then
   ok "T2 returns §1 Problem"
 else
-  bad "T2 wrong sub-action" "expected '§1 Problem' in output, got: $out"
+  bad "T2 wrong action" "expected '§1 Problem' in output, got: $out"
 fi
 
 # ============================================================
 # T3 — advances after [ ] → [x]
-#   RED: implementation returns the same sub-action even after the [ ]
+#   RED: implementation returns the same action even after the [ ]
 #        becomes [x]; e.g. iterates with the wrong predicate.
 # ============================================================
 note "T3: advances after [ ] → [x]"
@@ -159,7 +159,7 @@ fi
 
 # ============================================================
 # T4 — TRANSITION when all [ ] in active phase filled
-#   RED: returns the last sub-action (or empty) instead of signaling
+#   RED: returns the last action (or empty) instead of signaling
 #        a phase transition. Or counts [ ] from OTHER phases as open.
 # ============================================================
 note "T4: TRANSITION when all [ ] in active phase filled"
@@ -571,7 +571,7 @@ fi
 # ============================================================
 # T15 — next_phase BUILD → SHIP (3-phase profile, symmetric to T10)
 #   RED: legacy 5-phase mapping has BUILD → VERIFY. The 3-phase v0.8 spine
-#        collapsed VERIFY+LEARN into SHIP sub-actions. Caught during
+#        collapsed VERIFY+LEARN into SHIP actions. Caught during
 #        throwaway when SPEC completed and we needed to verify the BUILD
 #        end of the mapping was also right.
 # ============================================================
@@ -954,7 +954,7 @@ fi
 
 # ============================================================
 # T27 — load-playbook.sh --validate rejects unknown tag
-#   RED: loader silently accepts a sub-action with `tag: BOGUS`
+#   RED: loader silently accepts a action with `tag: BOGUS`
 #        instead of erroring with the closed-enum check (SCHEMA.md §6).
 # ============================================================
 note "T27: load-playbook.sh --validate rejects unknown tag"
@@ -1007,7 +1007,7 @@ fi
 # ============================================================
 # T30 — load-playbook.sh detects tampered framework file (hash mismatch)
 #   RED: loader doesn't compare actual file SHA against manifest's
-#        expected_sha256, so a tampered framework sub-action keeps its
+#        expected_sha256, so a tampered framework action keeps its
 #        trust=framework status (SCHEMA.md §11.2 violation).
 # ============================================================
 note "T30: load-playbook.sh detects tampered framework file"
@@ -1095,7 +1095,7 @@ fi
 # ============================================================
 # T33 — pre-commit-cofile-block blocks playbook + verification.json co-stage
 #   RED: an attacker modifies feature.md (e.g., loosens an exit_check or removes
-#        a sub-action requiring approval) and ships a fabricated verification.json
+#        a action requiring approval) and ships a fabricated verification.json
 #        in the same commit. Without this block, the playbook+claim are atomic.
 # ============================================================
 note "T33: cofile-block refuses playbook + verification.json same commit"
@@ -1141,8 +1141,8 @@ fi
 # ============================================================
 note "T34: load-playbook.sh --validate rejects unresolved subaction reference"
 d=$(mkproj_v08)
-# Overlay a fixture playbook that references a sub-action with no .md file
-cp "$FIXTURES_V08/invalid-unresolved-subaction.md" "$d/.sdd/playbooks/invalid-unresolved-subaction.md"
+# Overlay a fixture playbook that references a action with no .md file
+cp "$FIXTURES_V08/invalid-unresolved-action.md" "$d/.sdd/playbooks/invalid-unresolved-action.md"
 out=$(bash "$LOAD_PLAYBOOK" --validate "$d" 2>&1) && ec=0 || ec=$?
 rm -rf "$d"
 if [ "$ec" -ne 0 ] && echo "$out" | grep -qiE 'does-not-exist|unresolved|no .sdd/actions'; then
@@ -1185,12 +1185,12 @@ else
 fi
 
 # ============================================================
-# T37 — moat blocks tampered sub-action (manifest hash-pin)
-#   RED: same attack class as T36 but for a sub-action file. The
+# T37 — moat blocks tampered action (manifest hash-pin)
+#   RED: same attack class as T36 but for a action file. The
 #        agent could soften proposed-approach.md's prose to weaken
 #        what gets injected at LOCATE step, then claim verification.
 # ============================================================
-note "T37: moat blocks tampered sub-action (manifest hash-pin)"
+note "T37: moat blocks tampered action (manifest hash-pin)"
 d=$(mkproj_v08)
 cd "$d"
 echo "# tampered AFTER manifest was generated" >> .sdd/actions/problem.md
@@ -1207,9 +1207,9 @@ err=$(echo "$hook_stdin" | bash "$MOAT_HOOK" 2>&1 1>/dev/null) || ec=$?
 cd - >/dev/null
 rm -rf "$d"
 if [ "$ec" -eq 2 ] && echo "$err" | grep -qiE 'manifest|tampered|hash mismatch'; then
-  ok "T37 moat blocked tampered sub-action (exit 2, manifest-pin error)"
+  ok "T37 moat blocked tampered action (exit 2, manifest-pin error)"
 else
-  bad "T37 moat let tampered sub-action through" "exit=$ec; err='$err'"
+  bad "T37 moat let tampered action through" "exit=$ec; err='$err'"
 fi
 
 # ============================================================
@@ -1226,7 +1226,7 @@ cat > .sdd/features/001-test/spec.md <<'EOF'
 
 ## PHASE: SPEC
 
-### sub-action: problem
+### action: problem
 - Who has it: real users
 - Why now: launch coming
 - What breaks: revenue impact
@@ -1267,7 +1267,7 @@ cat > .sdd/features/001-test/spec.md <<'EOF'
 
 ## PHASE: SPEC
 
-### sub-action: problem
+### action: problem
 - Who has it: STRONG specific user segments with verified pain points
 - Why now: deadline-critical launch with revenue implications
 - What breaks: revenue impact, customer trust, brand damage
@@ -1287,7 +1287,7 @@ cat > .sdd/features/001-test/spec.md <<'EOF'
 
 ## PHASE: SPEC
 
-### sub-action: problem
+### action: problem
 - vague
 
 ### Exit checks
@@ -1317,7 +1317,7 @@ cat > .sdd/features/001-test/spec.md <<'EOF'
 
 ## PHASE: SPEC
 
-### sub-action: problem
+### action: problem
 - something
 
 ### Exit checks
@@ -1358,7 +1358,7 @@ cat > .sdd/features/001-test/spec.md <<'EOF'
 
 ## PHASE: SPEC
 
-### sub-action: problem
+### action: problem
 - original strong content
 - with multiple specifics
 
@@ -1377,7 +1377,7 @@ cat > .sdd/features/001-test/spec.md <<'EOF'
 
 ## PHASE: SPEC
 
-### sub-action: problem
+### action: problem
 - updated content user wants to lock in instead
 
 ### Exit checks
@@ -1449,7 +1449,7 @@ fi
 # ============================================================
 # T43 — user-prompt-submit.sh emits [FRAMEWORK INSTRUCTIONS] markers
 #       (Theme 1.7 trust boundary, framework-trusted block).
-#   The block may be empty in B-1 (sub-action prose injection lands
+#   The block may be empty in B-1 (action prose injection lands
 #   in a future theme), but the markers MUST be present so the
 #   convention is established and CLAUDE.md teaching applies.
 # ============================================================
@@ -1471,7 +1471,7 @@ fi
 
 # ============================================================
 # T44 — Round 1 failure-mode A.1: empty approved_sections must NOT bypass
-#       coverage when a sub-action with requires_user_approval=true has
+#       coverage when a action with requires_user_approval=true has
 #       its section drafted in spec.md.
 #
 #   Attack scenario flagged by the failure-mode reviewer: agent stages a
@@ -1495,7 +1495,7 @@ cat > .sdd/features/001-test/spec.md <<'EOF'
 
 ## PHASE: SPEC
 
-### sub-action: proposed-approach
+### action: proposed-approach
 - Recommended approach: weak vague handwave
 - Alternatives considered: none
 - What we trade off: nothing
@@ -1557,26 +1557,26 @@ fi
 
 # ============================================================
 # T46 — load-playbook.sh --validate succeeds on the full framework templates/
-#   Verifies all 23 sub-actions parse, feature.md's stages[].subactions[]
+#   Verifies all 23 actions parse, feature.md's stages[].subactions[]
 #   all resolve, manifest is consistent with the disk state.
-#   RED if any new sub-action ships with malformed frontmatter, missing
+#   RED if any new action ships with malformed frontmatter, missing
 #   required field, slug-mismatch, unknown tag, etc.
 # ============================================================
 note "T46: load-playbook.sh --validate succeeds on full framework templates/"
 out=$(bash "$LOAD_PLAYBOOK" --validate "$FRAMEWORK_ROOT/templates" 2>&1) && ec=0 || ec=$?
 if [ "$ec" -eq 0 ]; then
-  ok "T46 framework validates (all sub-actions + feature.md resolve)"
+  ok "T46 framework validates (all actions + feature.md resolve)"
 else
   bad "T46 framework validation failed" "exit=$ec; out='$out'"
 fi
 
 # ============================================================
-# T47 — manifest covers every framework sub-action (no orphans, no missing)
-#   Coverage assertion. Mutation: add a new sub-action file without
-#   regenerating the manifest → T47 fails RED. Or: remove a sub-action
+# T47 — manifest covers every framework action (no orphans, no missing)
+#   Coverage assertion. Mutation: add a new action file without
+#   regenerating the manifest → T47 fails RED. Or: remove a action
 #   file but leave its manifest entry → T47 fails RED.
 # ============================================================
-note "T47: manifest covers every framework sub-action"
+note "T47: manifest covers every framework action"
 out=$(python3 - <<PYEOF
 import json, os, sys
 sub_dir = "$FRAMEWORK_ROOT/templates/.sdd/actions"
@@ -1589,12 +1589,12 @@ orphans = manifest_actions - sub_files
 if missing or orphans:
     print(f"MISMATCH missing-from-manifest={sorted(missing)} orphans-in-manifest={sorted(orphans)}")
     sys.exit(1)
-print(f"OK {len(sub_files)} sub-actions covered")
+print(f"OK {len(sub_files)} actions covered")
 sys.exit(0)
 PYEOF
 ) && ec=0 || ec=$?
 if [ "$ec" -eq 0 ]; then
-  ok "T47 manifest covers every sub-action ($out)"
+  ok "T47 manifest covers every action ($out)"
 else
   bad "T47 manifest coverage mismatch" "$out"
 fi
@@ -1631,8 +1631,8 @@ bash "$START_SH" "build a test feature" >/dev/null 2>&1
 cd - >/dev/null
 expected_path="$d/.sdd/features/001-build-a-test-feature/spec.md"
 if [ -f "$expected_path" ]; then
-  if grep -q '\[PHASE: SPEC\]' "$expected_path" && grep -q '### sub-action: problem' "$expected_path"; then
-    ok "T49 spec.md scaffolded with PHASE + sub-action headings"
+  if grep -q '\[PHASE: SPEC\]' "$expected_path" && grep -q '### action: problem' "$expected_path"; then
+    ok "T49 spec.md scaffolded with PHASE + action headings"
   else
     bad "T49 spec.md exists but missing expected content" "no PHASE: SPEC or §problem heading"
   fi
@@ -1680,10 +1680,10 @@ else
 fi
 
 # ============================================================
-# T52 — pre-commit-touches BLOCKS when an active sub-action's
+# T52 — pre-commit-touches BLOCKS when an active action's
 #       declared touches[] file isn't staged alongside spec.md.
 #       Closes the SYNC step of the 4-step inner loop (Theme 4).
-#       Active sub-action = data-contract (touches: data-model.md).
+#       Active action = data-contract (touches: data-model.md).
 # ============================================================
 note "T52: pre-commit-touches blocks when declared file missing"
 d=$(mkproj_v08)
@@ -1692,7 +1692,7 @@ mkdir -p .sdd/features/001-test
 cat > .sdd/INDEX.md <<'EOF'
 **Active:** features/001-test
 **Playbook:** feature
-**Active blocker:** §6 (sub-action: data-contract)
+**Active blocker:** §6 (action: data-contract)
 
 ## Active
 
@@ -1706,7 +1706,7 @@ cat > .sdd/features/001-test/spec.md <<'EOF'
 
 ## PHASE: SPEC
 
-### sub-action: data-contract
+### action: data-contract
 
 Some content here.
 EOF
@@ -1733,20 +1733,20 @@ mkdir -p .sdd/features/001-test
 cat > .sdd/INDEX.md <<'EOF'
 **Active:** features/001-test
 **Playbook:** feature
-**Active blocker:** §6 (sub-action: data-contract)
+**Active blocker:** §6 (action: data-contract)
 EOF
 cat > .sdd/features/001-test/spec.md <<'EOF'
 [PHASE: SPEC]
 
 ## PHASE: SPEC
 
-### sub-action: data-contract
+### action: data-contract
 
 Schema: users(id, email, verified_at).
 EOF
 echo "# data model" > .sdd/data-model.md
 git add .sdd/INDEX.md .sdd/features/001-test/spec.md .sdd/data-model.md
-hook_stdin='{"tool_input":{"command":"git commit -m sub-action: data-contract"}}'
+hook_stdin='{"tool_input":{"command":"git commit -m action: data-contract"}}'
 ec=0
 echo "$hook_stdin" | bash "$TOUCHES_HOOK" >/dev/null 2>&1 || ec=$?
 cd - >/dev/null
@@ -1789,7 +1789,7 @@ fi
 # ============================================================
 # T56 — advance.sh moves active blocker within a stage (problem → success)
 #   RED: advance.sh fails to update INDEX.md, or updates to wrong slug,
-#        or doesn't recognize the active sub-action's position in stage.
+#        or doesn't recognize the active action's position in stage.
 # ============================================================
 note "T56: advance.sh moves active blocker within a stage (problem → success)"
 d=$(mkproj_v08)
@@ -1797,7 +1797,7 @@ cd "$d"
 cat > .sdd/INDEX.md <<'EOF'
 **Active:** features/001-test
 **Playbook:** feature
-**Active blocker:** §1 (first sub-action: problem)
+**Active blocker:** §1 (first action: problem)
 
 ## Active
 
@@ -1809,7 +1809,7 @@ bash "$ADVANCE_SH" "$d" >/dev/null 2>&1
 out=$(grep '^\*\*Active blocker:\*\*' .sdd/INDEX.md)
 cd - >/dev/null
 rm -rf "$d"
-if echo "$out" | grep -q 'sub-action: success'; then
+if echo "$out" | grep -q 'action: success'; then
   ok "T56 advanced problem → success within SPEC stage"
 else
   bad "T56 advance failed within stage" "active blocker line: $out"
@@ -1818,7 +1818,7 @@ fi
 # ============================================================
 # T57 — advance.sh handles stage transition (last of SPEC → first of BUILD)
 #   RED: advance.sh stays within stage, fails to find next stage's first
-#        sub-action, or stops at end of stage instead of transitioning.
+#        action, or stops at end of stage instead of transitioning.
 # ============================================================
 note "T57: advance.sh transitions across stages (plan-decompose → run-mode-chosen)"
 d=$(mkproj_v08)
@@ -1826,7 +1826,7 @@ cd "$d"
 cat > .sdd/INDEX.md <<'EOF'
 **Active:** features/001-test
 **Playbook:** feature
-**Active blocker:** §14 (sub-action: plan-decompose)
+**Active blocker:** §14 (action: plan-decompose)
 
 ## Active
 
@@ -1838,7 +1838,7 @@ bash "$ADVANCE_SH" "$d" >/dev/null 2>&1
 out=$(grep '^\*\*Active blocker:\*\*' .sdd/INDEX.md)
 cd - >/dev/null
 rm -rf "$d"
-if echo "$out" | grep -q 'BUILD sub-action: run-mode-chosen'; then
+if echo "$out" | grep -q 'BUILD action: run-mode-chosen'; then
   ok "T57 advanced plan-decompose (SPEC) → run-mode-chosen (BUILD) — stage transition"
 else
   bad "T57 stage transition failed" "active blocker line: $out"
@@ -1880,7 +1880,7 @@ cd "$d"
 cat > .sdd/INDEX.md <<'EOF'
 **Active:** features/001-test
 **Playbook:** feature
-**Active blocker:** §1 (first sub-action: problem)
+**Active blocker:** §1 (first action: problem)
 
 ## Active
 
@@ -2004,7 +2004,7 @@ cat > .sdd/features/001-test/spec.md <<'EOF'
 
 ## PHASE: SPEC
 
-### sub-action: problem
+### action: problem
 - Strong specific user pain points with verified contexts.
 - Real numbers, real names, real timelines.
 
@@ -2025,7 +2025,7 @@ cat > .sdd/features/001-test/spec.md <<'EOF'
 
 ## PHASE: SPEC
 
-### sub-action: problem
+### action: problem
 - vague
 
 ### Exit checks
@@ -2072,7 +2072,7 @@ cat > .sdd/features/001-test/spec.md <<'EOF'
 
 ## PHASE: SPEC
 
-### sub-action: problem
+### action: problem
 - Strong content.
 
 ### Exit checks
@@ -2092,7 +2092,7 @@ cat > .sdd/features/001-test/spec.md <<'EOF'
 
 ## PHASE: SPEC
 
-### sub-action: problem
+### action: problem
 - vague
 
 ### Exit checks
@@ -2133,7 +2133,7 @@ cat > .sdd/features/001-test/spec.md <<'EOF'
 
 ## PHASE: SPEC
 
-### sub-action: proposed-approach
+### action: proposed-approach
 - weak vague approach
 - no alternatives
 - no tradeoffs
@@ -2173,7 +2173,7 @@ cat > .sdd/features/001-test/spec.md <<'EOF'
 
 ## PHASE: SPEC
 
-### sub-action: proposed-approach
+### action: proposed-approach
 - weak vague approach
 - no alternatives
 - no tradeoffs
@@ -2219,7 +2219,7 @@ cat > .sdd/features/001-test/spec.md <<'EOF'
 
 ## PHASE: SPEC
 
-### sub-action: proposed-approach
+### action: proposed-approach
 - weak vague approach
 - no alternatives
 - no tradeoffs

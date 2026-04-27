@@ -3,7 +3,7 @@ type: action
 slug: invalid-yaml-duplicate
 tag: USER-LED
 tag: AGENT-LED
-title: "Sub-action with a duplicate YAML key"
+title: "Action with a duplicate YAML key"
 bundling: n_a
 used_by: []
 references: []

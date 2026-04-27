@@ -321,7 +321,7 @@ fi
 # "≥1 AC exists" still pass against the weakened content, claimed and
 # fresh agree).
 #
-# Defense: when the user approves a sub-action, framework writes a
+# Defense: when the user approves a action, framework writes a
 # normalized SHA-256 of the section content to verification.json's
 # approved_sections.<slug>. On phase-advance commit, this check
 # re-extracts the section from the staged spec.md, recomputes the
@@ -368,12 +368,12 @@ if not isinstance(approved, dict):
 
 # === COVERAGE CHECK (Theme 1.6 — closes Round 1 failure-mode A.1) ===
 # Even with approved_sections present-but-empty, a v0.8 verification.json
-# MUST include a hash entry for every sub-action in the active phase that
+# MUST include a hash entry for every action in the active phase that
 # declares `requires_user_approval: true` in its frontmatter. Otherwise an
 # adversarial agent can write `approved_sections: {}` alongside a tampered
 # spec.md and the moat silently skips the check (since no entries to check).
 #
-# Read the active playbook (B-1 default: 'feature') + each sub-action's
+# Read the active playbook (B-1 default: 'feature') + each action's
 # frontmatter to determine which slugs require coverage in this phase.
 # Block if any required slug is absent from claimed.approved_sections.
 
@@ -469,7 +469,7 @@ if phase and os.path.isfile(playbook_path):
 
 # Coverage only requires approval for sections that ALREADY EXIST in
 # spec.md. Otherwise the moat would block at scaffold time when the
-# user hasn't reached that sub-action yet. Test "section exists" by
+# user hasn't reached that action yet. Test "section exists" by
 # probing hash-section.sh — exit 0 = present, non-zero = absent or
 # malformed (skip from coverage requirement either way).
 sections_present = set()
@@ -496,7 +496,7 @@ if missing_required:
     print("", file=sys.stderr)
     print("This is the Round-1-failure-mode-A.1 fix: even when",
           file=sys.stderr)
-    print("approved_sections is an empty dict {}, sub-actions that declare",
+    print("approved_sections is an empty dict {}, actions that declare",
           file=sys.stderr)
     print("`requires_user_approval: true` in their frontmatter MUST have",
           file=sys.stderr)
@@ -528,11 +528,11 @@ for slug, expected in sorted(approved.items()):
         )
         continue
 
-    # Resolve sub-action file. By convention, .sdd/actions/<slug>.md.
+    # Resolve action file. By convention, .sdd/actions/<slug>.md.
     sa_path = os.path.join(proj, ".sdd", "actions", f"{slug}.md")
     if not os.path.isfile(sa_path):
         errors.append(
-            f"approved_sections.{slug} references unknown sub-action "
+            f"approved_sections.{slug} references unknown action "
             f"— no file at .sdd/actions/{slug}.md"
         )
         continue
@@ -710,7 +710,7 @@ EOF
   # Runs BEFORE compare_sets (per audit recommendation): structural
   # integrity of approvals comes before per-check fabrication detection.
   # No-op when approved_sections is absent (v0.7.5 verification.json) or
-  # empty (v0.8 with no requires_user_approval sub-actions).
+  # empty (v0.8 with no requires_user_approval actions).
   if [ -n "$HASH_SECTION" ]; then
     if ! check_approved_sections "$claimed" "$staged_spec" "$HASH_SECTION"; then
       rm -f "$staged_spec"

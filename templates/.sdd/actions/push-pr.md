@@ -26,7 +26,7 @@ Push the feature branch to origin and open a PR against `main`.
 5. Capture the PR URL from gh's output
 6. Tell the user the PR is open + the URL
 
-**CI trigger:** the PR auto-runs CI checks (tests, lint, type checks, etc.). The next sub-action (verify-ci-green) waits for them.
+**CI trigger:** the PR auto-runs CI checks (tests, lint, type checks, etc.). The next action (verify-ci-green) waits for them.
 
 **On push failure:** if `git push` fails (no remote, auth issue, force-push needed), HALT and tell the user. Don't `--force` push to a shared remote without explicit user confirmation.
 

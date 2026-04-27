@@ -2,34 +2,34 @@
   "extensions": {},
   "playbooks": {
     "feature": {
-      "expected_sha256": "3cc3a6863fc6d68159b6c2a3cf69444785c4798fde727e300e66764b3548eb0a",
+      "expected_sha256": "3b5f3f28b86847a38430d906802cdedebd7790f32bfd2d45e09de0252e750e14",
       "path": ".sdd/playbooks/feature.md",
       "trust": "framework"
     }
   },
   "scripts": {
     "advance.sh": {
-      "expected_sha256": "f436f8fd87db8aeb3f7a8ec8f9eca50ac7fb24c7f008fd29e7f23967fecc8406",
+      "expected_sha256": "5a9b5572a53f66eb796035ee4496a522e7fd08443ea79cb9970df0c30f4d7107",
       "path": ".sdd/scripts/advance.sh",
       "trust": "framework"
     },
     "hash-section.sh": {
-      "expected_sha256": "f2d018fa800839e160b513a16b72b67206887ae38a7dfc7166e6bee33cb0348a",
+      "expected_sha256": "b9a01c6377d31ce27a679da0bc43d0ec87283c68521411623da1e54d32ff8e95",
       "path": ".sdd/scripts/hash-section.sh",
       "trust": "framework"
     },
     "load-playbook.sh": {
-      "expected_sha256": "b74bc64591b0073b3506bc5bea93a5e76cac5d86d5b69d7b60d21581b221cf41",
+      "expected_sha256": "afb5d6c61f29accc222841913a1e99f8aeac852c632601f731529575ddfe8680",
       "path": ".sdd/scripts/load-playbook.sh",
       "trust": "framework"
     },
     "reapprove.sh": {
-      "expected_sha256": "b2a810c504227325ec445049428ff4ac52a80ed1b228e37504aaa08c8ec89b44",
+      "expected_sha256": "5866ef8aa0c6491a66a55e8c538d5b35ffc6f8908684a1aee97ed0e000c6a92a",
       "path": ".sdd/scripts/reapprove.sh",
       "trust": "framework"
     },
     "start.sh": {
-      "expected_sha256": "325099544890f2fd6e9e970c47941bc4b9c577eb0335b4e147aeb0e0923e3593",
+      "expected_sha256": "eb8fe7c7ca4a96251b12c8adb75d2a75db1ed326d705f0e6acbc40e0b3ef925b",
       "path": ".sdd/scripts/start.sh",
       "trust": "framework"
     }
@@ -42,7 +42,7 @@
       "trust": "framework"
     },
     "build-task": {
-      "expected_sha256": "5d68439ea2e893370ec1990d2ef4d020259b2f77f614d5e35a4321041b5e457a",
+      "expected_sha256": "4b8570580e1ac90c184c08fd9bb338b76da7c3e25c4a320a8341fbae156ced2a",
       "path": ".sdd/actions/build-task.md",
       "trust": "framework"
     },
@@ -62,7 +62,7 @@
       "trust": "framework"
     },
     "learn-lessons": {
-      "expected_sha256": "40c139393d817025ca8a19c709fc50288c273554d902a0b03e48f356561d19d1",
+      "expected_sha256": "6d9d766f89de7c31857c2036e671c079cc604f48ef6715084e35f1f84385fa53",
       "path": ".sdd/actions/learn-lessons.md",
       "trust": "framework"
     },
@@ -72,7 +72,7 @@
       "trust": "framework"
     },
     "mark-shipped": {
-      "expected_sha256": "cc0e1fba6c8749a9c5bb0df8e7b4db2bde3b2825ade448c24f77345c38ec6433",
+      "expected_sha256": "9fdda41bbe9390e5438bb962104ebcf49937a344c094f26c2e7965cdfc483af5",
       "path": ".sdd/actions/mark-shipped.md",
       "trust": "framework"
     },
@@ -102,7 +102,7 @@
       "trust": "framework"
     },
     "push-pr": {
-      "expected_sha256": "d574b45a418c776b8bc9f37b0f08bdb4cbf804031e2cd22583ecd72ddbf841e7",
+      "expected_sha256": "d6f43cfb0976316e9d6151999f09d8c2a909ab1c4518b8d844c3e921dc0405d1",
       "path": ".sdd/actions/push-pr.md",
       "trust": "framework"
     },
@@ -112,7 +112,7 @@
       "trust": "framework"
     },
     "signoff-steps": {
-      "expected_sha256": "a0ba650ebb09c13c8dbb2f5fd03a3b3edd37432d6bedeaf4789ef16af778fbc2",
+      "expected_sha256": "f0a49acf03504ebc8c7f2db4a9a628bf3c184f0b0cf11d1a3c4df158148d2301",
       "path": ".sdd/actions/signoff-steps.md",
       "trust": "framework"
     },
@@ -142,7 +142,7 @@
       "trust": "framework"
     },
     "verify-test-run": {
-      "expected_sha256": "a87ab6b5a933c8c4b22bc548cba6d5e5c9a5b270dd76185bbb1ea88d818276dc",
+      "expected_sha256": "57786a29f91ba5a075e8448f92c2db1f719deaf7ac039982ea8d3c8f08ce2efe",
       "path": ".sdd/actions/verify-test-run.md",
       "trust": "framework"
     },

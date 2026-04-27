@@ -3,7 +3,7 @@
 #
 # Scaffolds a new work item: creates the work-item folder with a
 # numbered ID, generates an empty spec.md skeleton populated with the
-# active playbook's sub-action headings, updates INDEX.md to point at
+# active playbook's action headings, updates INDEX.md to point at
 # the new work item.
 #
 # Usage:
@@ -233,7 +233,7 @@ os.makedirs(item_dir)
 
 # --- Generate spec.md skeleton ---
 # Use the FIRST stage (typically SPEC) as the active phase.
-# For each sub-action, include `### sub-action: <slug>` with placeholder body.
+# For each action, include `### action: <slug>` with placeholder body.
 first_stage = stages[0]
 first_stage_id = first_stage.get("id", "SPEC")
 sub_slugs = first_stage.get("actions", []) or []
@@ -243,13 +243,13 @@ spec_lines = [
     "",
     f"[PHASE: {first_stage_id}]",
     "",
-    f"**Active blocker:** §1 (first sub-action: {sub_slugs[0] if sub_slugs else 'n/a'})",
+    f"**Active blocker:** §1 (first action: {sub_slugs[0] if sub_slugs else 'n/a'})",
     "",
     f"## PHASE: {first_stage_id}",
     "",
 ]
 for i, sa_slug in enumerate(sub_slugs, start=1):
-    spec_lines.append(f"### sub-action: {sa_slug}")
+    spec_lines.append(f"### action: {sa_slug}")
     spec_lines.append("")
     spec_lines.append("[ ]  (waiting for /next to populate)")
     spec_lines.append("")
@@ -282,7 +282,7 @@ else:
 header_lines = [
     f"**Active:** {work_item_rel}",
     f"**Playbook:** {chosen}",
-    f"**Active blocker:** §1 (first sub-action: {sub_slugs[0] if sub_slugs else 'n/a'})",
+    f"**Active blocker:** §1 (first action: {sub_slugs[0] if sub_slugs else 'n/a'})",
     "",
 ]
 
@@ -314,9 +314,9 @@ with open(index_path, "w") as f:
 
 # --- Plain-English success message to stdout ---
 print(f"[/start] scaffolded: {work_item_rel}")
-print(f"   - spec.md created with {len(sub_slugs)} sub-actions in stage '{first_stage_id}'")
+print(f"   - spec.md created with {len(sub_slugs)} actions in stage '{first_stage_id}'")
 print(f"   - INDEX.md updated (active = {work_item_rel}, playbook = {chosen})")
 print()
-print("Next: run /next to start the first sub-action.")
+print("Next: run /next to start the first action.")
 print(f"      I'll ask you about §1 ({sub_slugs[0] if sub_slugs else 'n/a'}) first.")
 PYEOF

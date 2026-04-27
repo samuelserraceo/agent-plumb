@@ -12,7 +12,7 @@
 > **Format**: each entry is one Markdown level-2 section:
 >
 > ```
-> ## <ISO-Z timestamp>  [<work-item-id>]  <playbook>/<sub-action>
+> ## <ISO-Z timestamp>  [<work-item-id>]  <playbook>/<action>
 > <one-paragraph summary in plain English of what was decided>
 > Hash: <sha256 if section was approved> (optional)
 > ```

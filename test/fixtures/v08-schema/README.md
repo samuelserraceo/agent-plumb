@@ -4,11 +4,11 @@ These fixtures exercise edge cases of the v0.8 schema (defined in repo-root `SCH
 
 | Fixture | Demonstrates | Expected loader behavior |
 |---|---|---|
-| `valid-playbook.md` | Complete valid playbook with 1 stage / 1 sub-action / 1 exit_check | LOAD OK |
-| `valid-subaction.md` | Complete valid USER-LED sub-action | LOAD OK |
+| `valid-playbook.md` | Complete valid playbook with 1 stage / 1 action / 1 exit_check | LOAD OK |
+| `valid-subaction.md` | Complete valid USER-LED action | LOAD OK |
 | `invalid-unknown-tag.md` | `tag: BOGUS` (not in SCHEMA.md §6 closed enum) | ERROR — unknown tag |
 | `invalid-slug-mismatch.md` | `slug: actual-slug` inside, but filename suggests different slug | ERROR — slug must equal filename |
-| `invalid-missing-tag.md` | Sub-action missing required `tag:` field | ERROR — missing required field |
+| `invalid-missing-tag.md` | Action missing required `tag:` field | ERROR — missing required field |
 | `invalid-yaml-duplicate.md` | Duplicate YAML key (Codex finding #4) | ERROR — duplicate YAML key (silent corruption risk) |
 | `multi-match/dup-a.md` + `multi-match/dup-b.md` | Two files with the same `slug: dup-test` | ERROR on `[[dup-test]]` resolution — multi-match |
 

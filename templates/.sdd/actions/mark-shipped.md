@@ -16,7 +16,7 @@ budget:
 requires_user_approval: false
 ---
 
-Final SHIP sub-action. Move the feature from `## Active` to `## Shipped` in INDEX.md, drop a `.shipped` marker, commit.
+Final SHIP action. Move the feature from `## Active` to `## Shipped` in INDEX.md, drop a `.shipped` marker, commit.
 
 **Actions:**
 

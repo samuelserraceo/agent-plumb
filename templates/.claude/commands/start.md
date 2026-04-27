@@ -21,7 +21,7 @@ Begin a new work item. Pick the kind of work, give it a one-line title, and the 
 2. **B-1 ships only `feature`.** If you say `/start fix the login button`, the framework will tell you in plain English: *"Bug playbook is coming in Phase C. For now, use feature — it's the same process, just with extra steps you can leave blank."*
 3. Computes the next ID for the work-item folder (e.g., `001`, `002`, ...).
 4. Derives a slug from your title (`build a waitlist landing page` → `build-a-waitlist-landing-page`).
-5. Creates `.sdd/<work-item-folder>/<NNN>-<slug>/spec.md` with all the playbook's sub-action headings as placeholders.
+5. Creates `.sdd/<work-item-folder>/<NNN>-<slug>/spec.md` with all the playbook's action headings as placeholders.
 6. Updates `INDEX.md` to point at the new work item.
 7. Tells you the exact `/next` to run first (which will ask the first question — usually §1 Problem).
 

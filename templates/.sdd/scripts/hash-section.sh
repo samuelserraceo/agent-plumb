@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# hash-section.sh — extract a sub-action section from spec.md, normalize per
+# hash-section.sh — extract a action section from spec.md, normalize per
 # SCHEMA.md §9, output its lowercase-hex SHA-256.
 #
 # Usage:
 #   hash-section.sh <spec-path> <subaction-md-path>
 #
 #   <spec-path>           — path to the spec.md being hashed
-#   <subaction-md-path>   — path to the sub-action's framework file
+#   <subaction-md-path>   — path to the action's framework file
 #                           (.sdd/actions/<slug>.md). Used to resolve
 #                           BOTH the slug and the title for heading matching.
 #
@@ -17,15 +17,15 @@
 # Errors that block:
 #   - spec.md not found / unreadable
 #   - spec.md contains NUL bytes (Phase A invariant — refuse to parse)
-#   - sub-action file not found / unreadable
+#   - action file not found / unreadable
 #   - section heading not found in spec.md (matched by either form)
 #   - section heading matched multiple times in spec.md (ambiguous)
 #
 # Heading patterns matched (in order):
-#   1. ^### sub-action: <slug>$
+#   1. ^### action: <slug>$
 #   2. ^### §\d+ <title>$
 # where <slug> = filename without .md, <title> = `title:` field from the
-# sub-action's frontmatter.
+# action's frontmatter.
 #
 # Section content is captured from the line AFTER the matched heading
 # until the next line matching ^### (fence-aware — code-fenced ### lines
@@ -52,7 +52,7 @@ spec="$1"
 subaction="$2"
 
 [ -f "$spec" ] || { echo "hash-section: spec not found: $spec" >&2; exit 1; }
-[ -f "$subaction" ] || { echo "hash-section: sub-action not found: $subaction" >&2; exit 1; }
+[ -f "$subaction" ] || { echo "hash-section: action not found: $subaction" >&2; exit 1; }
 
 SPEC="$spec" SUBACTION="$subaction" python3 <<'PYEOF'
 import hashlib, os, re, sys
@@ -60,7 +60,7 @@ import hashlib, os, re, sys
 spec_path = os.environ["SPEC"]
 subaction_path = os.environ["SUBACTION"]
 
-# Resolve slug from sub-action filename (without .md).
+# Resolve slug from action filename (without .md).
 slug = os.path.splitext(os.path.basename(subaction_path))[0]
 
 # Read spec.md, NUL guard (Phase A invariant — refuse to parse).
@@ -75,7 +75,7 @@ if b"\x00" in spec_bytes:
           f"(Phase A NUL guard)", file=sys.stderr)
     sys.exit(1)
 
-# Read sub-action frontmatter to get title.
+# Read action frontmatter to get title.
 try:
     with open(subaction_path, "rb") as f:
         sa_bytes = f.read()
@@ -101,7 +101,7 @@ lines = spec_text.split("\n")
 
 # Build matchers for the heading. Order matters: try slug-form first
 # (deterministic), then title-form (Phase A backward compat).
-slug_pat = re.compile(r"^###\s+sub-action:\s+" + re.escape(slug) + r"\s*$")
+slug_pat = re.compile(r"^###\s+action:\s+" + re.escape(slug) + r"\s*$")
 title_pat = None
 if title:
     title_re = re.escape(title)
@@ -144,7 +144,7 @@ def find_section():
 
 heading_idx, end_idx = find_section()
 if heading_idx is None:
-    tried = f"'### sub-action: {slug}'"
+    tried = f"'### action: {slug}'"
     if title:
         tried += f" and '### §N {title}'"
     print(f"hash-section: section for slug {slug!r} not found in {spec_path} "

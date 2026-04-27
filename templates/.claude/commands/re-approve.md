@@ -1,5 +1,5 @@
 ---
-description: Re-lock a sub-action section after an intentional edit (Theme 1.6).
+description: Re-lock a action section after an intentional edit (Theme 1.6).
 argument-hint: <slug>
 ---
 
@@ -27,7 +27,7 @@ commit will then accept the new content.
 
 `/re-approve problem` — re-approve the §problem section
 `/re-approve acceptance-criteria` — re-approve §11 ACs
-`/re-approve <any-slug>` — re-approve any sub-action with `requires_user_approval: true`
+`/re-approve <any-slug>` — re-approve any action with `requires_user_approval: true`
 
 ## What this command does NOT do
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # advance.sh — body of the post-commit ADVANCE step in the 4-step inner loop.
 #
-# Reads INDEX.md to find the active work item + sub-action, walks the
-# active playbook's stages[] to find the next sub-action, and updates
+# Reads INDEX.md to find the active work item + action, walks the
+# active playbook's stages[] to find the next action, and updates
 # INDEX.md's "**Active blocker:**" pointer.
 #
 # Why this isn't a real post-commit hook: Claude Code's hook chain is
@@ -15,16 +15,16 @@
 #   advance.sh <project-dir>
 #
 # Behavior:
-#   - If active sub-action is NOT the last in its stage: advance to next
-#   - If active sub-action IS the last in its stage AND there's a next
-#     stage: transition to that stage's first sub-action
-#   - If active sub-action is the last sub-action of the last stage:
+#   - If active action is NOT the last in its stage: advance to next
+#   - If active action IS the last in its stage AND there's a next
+#     stage: transition to that stage's first action
+#   - If active action is the last action of the last stage:
 #     mark INDEX.md's active blocker as `(work item complete — run
 #     /next to advance to SHIPPED)`
 #
 # Exit:
 #   0 — INDEX.md updated (or no-op if no active work item)
-#   1 — error (file not found, malformed, no next sub-action found)
+#   1 — error (file not found, malformed, no next action found)
 #
 # Idempotency: running twice without intervening commits is a no-op
 # from the perspective of phase progression — the second run reads the
@@ -74,13 +74,13 @@ if not m_blocker:
 playbook_slug = m_playbook.group(1).strip()
 blocker_text = m_blocker.group(1).strip()
 
-# Parse active sub-action slug from blocker line.
+# Parse active action slug from blocker line.
 # Formats supported:
-#   "§1 (first sub-action: problem)"   ← /start scaffold
-#   "§N (sub-action: <slug>)"
+#   "§1 (first action: problem)"   ← /start scaffold
+#   "§N (action: <slug>)"
 #   "<slug>"                            ← bare slug
 #   "(work item complete ...)"          ← terminal state — no advance
-sa_match = re.search(r"sub-action:\s*([a-z][a-z0-9-]*)", blocker_text)
+sa_match = re.search(r"action:\s*([a-z][a-z0-9-]*)", blocker_text)
 if sa_match:
     active_slug = sa_match.group(1)
 elif "complete" in blocker_text.lower():
@@ -91,7 +91,7 @@ else:
     if re.match(r"^[a-z][a-z0-9-]*$", bare):
         active_slug = bare
     else:
-        print(f"[advance] cannot parse active sub-action from blocker line: "
+        print(f"[advance] cannot parse active action from blocker line: "
               f"{blocker_text!r}", file=sys.stderr)
         sys.exit(1)
 
@@ -120,7 +120,7 @@ if not stages:
     print(f"[advance] playbook has no stages: {playbook_path}", file=sys.stderr)
     sys.exit(1)
 
-# Find the stage containing the active sub-action, then next slug.
+# Find the stage containing the active action, then next slug.
 next_slug = None
 next_stage_id = None
 terminal = False
@@ -143,12 +143,12 @@ for i, stage in enumerate(stages):
                 # Empty next stage — terminal.
                 terminal = True
         else:
-            # Last sub-action of last stage — terminal.
+            # Last action of last stage — terminal.
             terminal = True
         break
 
 if next_slug is None and not terminal:
-    print(f"[advance] active sub-action {active_slug!r} not found in any "
+    print(f"[advance] active action {active_slug!r} not found in any "
           f"stage of playbook {playbook_slug!r}.", file=sys.stderr)
     sys.exit(1)
 
@@ -156,10 +156,10 @@ if next_slug is None and not terminal:
 if terminal:
     new_blocker = (
         f"(work item complete — run /next to mark shipped, or close out "
-        f"the SHIP stage's last sub-action manually)"
+        f"the SHIP stage's last action manually)"
     )
 else:
-    new_blocker = f"§ ({next_stage_id} sub-action: {next_slug})"
+    new_blocker = f"§ ({next_stage_id} action: {next_slug})"
 
 new_index = re.sub(
     r"^(\*\*Active blocker:\*\*\s+).*$",
@@ -181,7 +181,7 @@ with open(index_path, "w") as f:
 import time
 metrics_path = os.path.join(proj, ".sdd", "metrics.md")
 work_item = m_active.group(1).strip()
-# Read tag from the just-completed sub-action's frontmatter.
+# Read tag from the just-completed action's frontmatter.
 sa_path = os.path.join(proj, ".sdd", "actions", f"{active_slug}.md")
 tag = "?"
 if os.path.isfile(sa_path):
@@ -203,7 +203,7 @@ with open(metrics_path, "a") as f:
     f.write(metrics_line)
 
 if terminal:
-    print(f"[advance] {active_slug} was the last sub-action — work item "
+    print(f"[advance] {active_slug} was the last action — work item "
           f"is now at terminal state.")
 else:
     print(f"[advance] advanced {active_slug} → {next_slug} "

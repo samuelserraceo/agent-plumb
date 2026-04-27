@@ -2,7 +2,7 @@
 # pre-commit-cofile-block.sh — Class-based cofile block.
 #
 # Refuses commits that stage files from BOTH a CLAIM class (verification.json,
-# .git/sdd/approvals.jsonl) AND a POLICY class (manifest, playbooks, sub-actions,
+# .git/sdd/approvals.jsonl) AND a POLICY class (manifest, playbooks, actions,
 # extensions, scripts, hooks, settings, CLAUDE.md).
 #
 # Each cross-class pair represents "the agent could weaken policy in commit N

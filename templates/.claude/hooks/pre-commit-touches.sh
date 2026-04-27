@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # pre-commit-touches.sh — SYNC step enforcement for the 4-step inner loop.
 #
-# When a user commits work for the active sub-action (signaled by
-# staging spec.md), this hook reads the active sub-action's frontmatter
+# When a user commits work for the active action (signaled by
+# staging spec.md), this hook reads the active action's frontmatter
 # `touches:` declaration and refuses the commit if any declared file
 # isn't also staged. This is the SYNC defense from handoff Section 6:
 #
-#   "If a sub-action declares it must stage data-model.md, the hook
+#   "If a action declares it must stage data-model.md, the hook
 #    enforces it. Forgetting to stage the sync'd file becomes
 #    impossible by accident."
 #
-# Examples of `touches:` declarations from the v0.8 sub-action library:
+# Examples of `touches:` declarations from the v0.8 action library:
 #   data-contract.md  → [.sdd/data-model.md]      (schema sync)
 #   learn-lessons.md  → [.sdd/patterns.md]        (lesson sync)
 #   mark-shipped.md   → [.sdd/INDEX.md]           (state sync)
@@ -20,8 +20,8 @@
 #   - Empty-cmd safe default (Phase A pattern, catastrophic-#4)
 #   - Non-commit Bash → exit 0 (silent pass-through)
 #   - No spec.md staged → exit 0 (nothing for SYNC to enforce)
-#   - Active sub-action unknown → exit 0 (no INDEX.md, no project, etc.)
-#   - Sub-action's `touches:` empty/absent → exit 0
+#   - Active action unknown → exit 0 (no INDEX.md, no project, etc.)
+#   - Action's `touches:` empty/absent → exit 0
 #   - Any declared file missing from staged set → BLOCK (exit 2) with
 #     plain-English error naming the file + how to fix
 #
@@ -52,18 +52,18 @@ git rev-parse --is-inside-work-tree >/dev/null 2>&1 || exit 0
 staged=$(git diff --cached --name-only 2>/dev/null || echo "")
 [ -z "$staged" ] && exit 0
 
-# If NO spec.md is staged, this isn't a sub-action commit — pass through.
-# The hook only enforces touches: when the agent is committing sub-action
+# If NO spec.md is staged, this isn't a action commit — pass through.
+# The hook only enforces touches: when the agent is committing action
 # work. Other commits (typo fixes, README updates, framework upgrades)
-# don't need to honor the active sub-action's touches: declaration.
+# don't need to honor the active action's touches: declaration.
 if ! echo "$staged" | grep -qE '(^|/)spec\.md$'; then
   exit 0
 fi
 
-# Read INDEX.md to find the active sub-action slug.
+# Read INDEX.md to find the active action slug.
 [ -f .sdd/INDEX.md ] || exit 0
 
-# Active blocker line format: `**Active blocker:** §<N> (first sub-action: <slug>)`
+# Active blocker line format: `**Active blocker:** §<N> (first action: <slug>)`
 # OR `**Active blocker:** <slug>` (alternate forms).
 active_slug=$(python3 - <<'PYEOF' 2>/dev/null || echo ""
 import re, sys
@@ -72,8 +72,8 @@ try:
         text = f.read()
 except OSError:
     sys.exit(0)
-# Try parenthesized form: "(... sub-action: <slug>)"
-m = re.search(r"sub-action:\s*([a-z][a-z0-9-]*)", text, re.IGNORECASE)
+# Try parenthesized form: "(... action: <slug>)"
+m = re.search(r"action:\s*([a-z][a-z0-9-]*)", text, re.IGNORECASE)
 if m:
     print(m.group(1))
     sys.exit(0)
@@ -84,12 +84,12 @@ if m:
 PYEOF
 )
 
-# If we can't determine the active sub-action, pass through silently.
+# If we can't determine the active action, pass through silently.
 # (User may be mid-/start, or INDEX.md may be hand-edited, or there's
 # no active work item.)
 [ -z "$active_slug" ] && exit 0
 
-# Read sub-action frontmatter for touches: declaration.
+# Read action frontmatter for touches: declaration.
 sa_path=".sdd/actions/${active_slug}.md"
 [ -f "$sa_path" ] || exit 0
 
@@ -141,13 +141,13 @@ done <<< "$touches_files"
 if [ -n "$missing" ]; then
   cat >&2 <<EOF
 
-[SDD] sub-action '$active_slug' declares files it MUST also stage,
+[SDD] action '$active_slug' declares files it MUST also stage,
       but you committed without including all of them.
 
       Missing from this commit:
 $(printf "        - %s\n" $(printf "$missing"))
 
-      The sub-action's frontmatter at $sa_path declares
+      The action's frontmatter at $sa_path declares
       \`touches: [...]\`. Each file in that list MUST be staged in the
       same commit as spec.md. Reason: declared sync points keep the
       project state coherent (e.g., schema changes → data-model.md
@@ -155,7 +155,7 @@ $(printf "        - %s\n" $(printf "$missing"))
 
       Either:
         - Stage the missing file(s):  git add <file>
-        - Or undo this sub-action's spec.md change
+        - Or undo this action's spec.md change
 
 EOF
   exit 2

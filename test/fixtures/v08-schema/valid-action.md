@@ -2,7 +2,7 @@
 type: action
 slug: valid-subaction
 tag: USER-LED
-title: "Valid sub-action for fixture testing"
+title: "Valid action for fixture testing"
 short_label: "Valid"
 fields:
   - { id: example-field, label: "An example field" }
@@ -18,6 +18,6 @@ budget:
 requires_user_approval: false
 ---
 
-Synthetic USER-LED sub-action. Used by Theme 1 loader tests as the
+Synthetic USER-LED action. Used by Theme 1 loader tests as the
 "happy path" baseline. Every required field is present, every value
 is in the closed enum, and the slug matches the filename.

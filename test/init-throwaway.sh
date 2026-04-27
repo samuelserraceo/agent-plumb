@@ -80,13 +80,13 @@ I'm stress-testing SDD lean Phase A on a throwaway project. Active
 feature: $FEAT_SLUG (a personal landing page with email waitlist).
 
 You are the SDD agent. Drive this feature through the spine. The
-playbook lives at .sdd/playbooks/feature.md, with each sub-action's
+playbook lives at .sdd/playbooks/feature.md, with each action's
 prose at .sdd/actions/<slug>.md.
 
 For each turn:
 1. Run \`bash .sdd/scripts/next-action.sh .sdd/$FEAT/spec.md\` and read the JSON.
-2. Read the playbook section corresponding to that sub-action.
-3. Walk me through the sub-action following the playbook's prose
+2. Read the playbook section corresponding to that action.
+3. Walk me through the action following the playbook's prose
    (USER-LED → ask, AGENT-LED → propose with alternatives).
 4. Update spec.md (replace the [ ] with the agreed answer).
 5. Commit with [SDD:001] <phase>: <slug>.

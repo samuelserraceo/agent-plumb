@@ -2,7 +2,7 @@
 type: action
 slug: invalid-unknown-tag
 tag: BOGUS
-title: "Sub-action with an unknown tag"
+title: "Action with an unknown tag"
 bundling: n_a
 used_by: []
 references: []

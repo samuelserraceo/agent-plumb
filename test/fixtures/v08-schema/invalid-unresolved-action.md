@@ -1,7 +1,7 @@
 ---
 type: playbook
 slug: invalid-unresolved-subaction
-title: "Playbook referencing a sub-action that doesn't exist"
+title: "Playbook referencing a action that doesn't exist"
 when_to_use: "fixture only"
 work_item_folder: items/
 work_item_id_pattern: "{NNN}-{slug}"

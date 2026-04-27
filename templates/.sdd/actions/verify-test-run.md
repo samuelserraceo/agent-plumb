@@ -28,7 +28,7 @@ All tasks should be GREEN by now. Run the **full test suite** to catch any regre
 
 **If all GREEN (excluding [PROD-ONLY] ACs):**
 - Tick the `**All ACs pass (excluding PROD-ONLY):** [x]` box in spec.md
-- Continue to the next sub-action
+- Continue to the next action
 
 **Output:** fill `spec.md` under `### verify-test-run` with `**All ACs pass (excluding PROD-ONLY):** [x]` (or `[ ]` + BUG task if any failed).
 

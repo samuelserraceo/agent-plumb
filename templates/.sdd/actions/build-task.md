@@ -16,7 +16,7 @@ budget:
 requires_user_approval: false
 ---
 
-This sub-action repeats once per task in `plan-decompose`. The default mode is **test-first (TDD)**. The alternative is BUILD-SPIKE — see the BUILD-SPIKE sub-action; only use it for spike/exploration tasks the user has explicitly tagged.
+This action repeats once per task in `plan-decompose`. The default mode is **test-first (TDD)**. The alternative is BUILD-SPIKE — see the BUILD-SPIKE action; only use it for spike/exploration tasks the user has explicitly tagged.
 
 **Non-negotiable order:**
 
@@ -34,7 +34,7 @@ This sub-action repeats once per task in `plan-decompose`. The default mode is *
 - You discover a real design gap in `proposed-approach` or data-contract that needs a user decision → halt and ask.
 - An infrastructure step needs credentials / keys / accounts the user hasn't set up → halt and ask.
 
-**`touches:` is empty for this sub-action.** Reason: file paths vary per task (T01 touches different files than T02). Theme 4's pre-commit-touches hook applies the empty-touches rule = "no enforcement"; per-task file-staging discipline is on the agent. Phase C can introduce template syntax (e.g., `{task-id}` placeholders) if needed.
+**`touches:` is empty for this action.** Reason: file paths vary per task (T01 touches different files than T02). Theme 4's pre-commit-touches hook applies the empty-touches rule = "no enforcement"; per-task file-staging discipline is on the agent. Phase C can introduce template syntax (e.g., `{task-id}` placeholders) if needed.
 
 **Per-task budget defaults:** 90 minutes / 16K tokens. Override per-task via the task's own line if a specific task is genuinely larger (e.g., a refactor task). Framework warns at budget breach; doesn't block.
 

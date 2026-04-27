@@ -46,9 +46,9 @@ spec=".sdd/$active/spec.md"
 [ ! -f "$spec" ] && exit 0
 
 phase=$(grep -m1 -oE '\[PHASE: [A-Z]+\]' "$spec" | grep -oE '[A-Z]+' | tail -1 || echo "")
-# Only enforce during BUILD and SHIP (SPEC sub-actions don't write code yet;
+# Only enforce during BUILD and SHIP (SPEC actions don't write code yet;
 # SHIP includes verify-test-run / push-pr — agent shouldn't add new UI here).
-# v0.8 3-phase spine: VERIFY/LEARN are now sub-actions of SHIP, not phases.
+# v0.8 3-phase spine: VERIFY/LEARN are now actions of SHIP, not phases.
 case "$phase" in
   BUILD|SHIP) ;;
   *) exit 0 ;;

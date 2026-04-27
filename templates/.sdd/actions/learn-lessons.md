@@ -27,7 +27,7 @@ The distilled value of the feature. **One or two cross-feature lessons** — pat
 
 **Format:** one paragraph per lesson. No jargon. Actionable. Each lesson should answer *"if you read this in 6 months, what would you do differently?"*
 
-**Sync requirement (Theme 4's pre-commit-touches hook):** stage `.sdd/patterns.md` in the commit that closes this sub-action. If patterns.md doesn't exist yet, create it. Append the new lessons under a `## Feature: <id>-<slug>` heading.
+**Sync requirement (Theme 4's pre-commit-touches hook):** stage `.sdd/patterns.md` in the commit that closes this action. If patterns.md doesn't exist yet, create it. Append the new lessons under a `## Feature: <id>-<slug>` heading.
 
 **Topic-page lifecycle (Phase C-deferred):**
 - If a lesson is feature-specific (only relevant to THIS feature's domain) → append to patterns.md
