@@ -22,6 +22,11 @@
       "expected_sha256": "fc17c3b9e6b39f08da36db3d1524f763b4b2c8ac72f1da97c703ab4313ac60e1",
       "path": ".sdd/scripts/reapprove.sh",
       "trust": "framework"
+    },
+    "start.sh": {
+      "expected_sha256": "d500ee2f0fdfba10ec584eaea36a6cde8bb16c3d9b5227dec3a08422bdd65aec",
+      "path": ".sdd/scripts/start.sh",
+      "trust": "framework"
     }
   },
   "sdd_version": "0.8.0",

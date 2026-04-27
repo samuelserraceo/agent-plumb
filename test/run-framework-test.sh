@@ -13,6 +13,7 @@ VERIFY_STAGE="$FRAMEWORK_ROOT/templates/.sdd/scripts/verify-stage.sh"
 MOAT_HOOK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-stage-verified.sh"
 LOAD_PLAYBOOK="$FRAMEWORK_ROOT/templates/.sdd/scripts/load-playbook.sh"
 COFILE_BLOCK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-cofile-block.sh"
+START_SH="$FRAMEWORK_ROOT/templates/.sdd/scripts/start.sh"
 FIXTURES_V08="$FRAMEWORK_ROOT/test/fixtures/v08-schema"
 
 PASS=0
@@ -60,6 +61,7 @@ mkproj_v08() {
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/load-playbook.sh"        "$d/.sdd/scripts/load-playbook.sh"
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/hash-section.sh"         "$d/.sdd/scripts/hash-section.sh"
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/reapprove.sh"            "$d/.sdd/scripts/reapprove.sh"
+  cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/start.sh"                "$d/.sdd/scripts/start.sh"
   cp "$VERIFY_STAGE" "$d/.sdd/scripts/verify-stage.sh" 2>/dev/null || true
   cp "$NEXT_ACTION"  "$d/.sdd/scripts/next-action.sh"  2>/dev/null || true
   ( cd "$d" \
@@ -1579,6 +1581,86 @@ if [ "$ec" -eq 0 ]; then
   ok "T47 manifest covers every sub-action ($out)"
 else
   bad "T47 manifest coverage mismatch" "$out"
+fi
+
+# ============================================================
+# T48 — /start with one playbook available uses default silently
+#   B-1 ships only `feature` in playbooks_available; start.sh should
+#   skip menu prompts and just use it. RED if start.sh demands a menu
+#   choice or fails when there's only one option.
+# ============================================================
+note "T48: /start uses default playbook silently when only one is available"
+d=$(mkproj_v08)
+cd "$d"
+out=$(bash "$START_SH" "build a test feature" 2>&1) && ec=0 || ec=$?
+cd - >/dev/null
+if [ "$ec" -eq 0 ] && echo "$out" | grep -q 'scaffolded:.*feature'; then
+  ok "T48 /start used default playbook silently"
+else
+  bad "T48 /start failed or wrong output" "exit=$ec; out='$out'"
+fi
+rm -rf "$d"
+
+# ============================================================
+# T49 — /start scaffolds the work item folder with NNN ID + slug
+#   Verifies the folder structure: .sdd/features/001-<slug>/spec.md
+#   Note: mkproj_v08 pre-creates 001-test for moat tests, so we clear
+#   features/ before running start.sh to test the "first feature" path.
+# ============================================================
+note "T49: /start creates work item folder with correct ID and slug"
+d=$(mkproj_v08)
+rm -rf "$d/.sdd/features"  # clear pre-existing scaffold
+cd "$d"
+bash "$START_SH" "build a test feature" >/dev/null 2>&1
+cd - >/dev/null
+expected_path="$d/.sdd/features/001-build-a-test-feature/spec.md"
+if [ -f "$expected_path" ]; then
+  if grep -q '\[PHASE: SPEC\]' "$expected_path" && grep -q '### sub-action: problem' "$expected_path"; then
+    ok "T49 spec.md scaffolded with PHASE + sub-action headings"
+  else
+    bad "T49 spec.md exists but missing expected content" "no PHASE: SPEC or §problem heading"
+  fi
+else
+  bad "T49 spec.md not created at expected path" "expected $expected_path"
+fi
+rm -rf "$d"
+
+# ============================================================
+# T50 — /start updates INDEX.md with Active/Playbook/Active blocker pointer
+# ============================================================
+note "T50: /start updates INDEX.md with Active + Playbook + Active blocker"
+d=$(mkproj_v08)
+rm -rf "$d/.sdd/features"
+cd "$d"
+bash "$START_SH" "test feature for index" >/dev/null 2>&1
+cd - >/dev/null
+idx="$d/.sdd/INDEX.md"
+if [ -f "$idx" ] \
+   && grep -q '\*\*Active:\*\* features/001-test-feature-for-index' "$idx" \
+   && grep -q '\*\*Playbook:\*\* feature' "$idx" \
+   && grep -q '\*\*Active blocker:\*\*' "$idx"; then
+  ok "T50 INDEX.md updated with Active/Playbook/Active blocker"
+else
+  bad "T50 INDEX.md missing required header lines" "$(cat "$idx" 2>/dev/null | head -10)"
+fi
+rm -rf "$d"
+
+# ============================================================
+# T51 — /start rejects unknown playbook with plain-English error
+#   B-1 only has `feature`. Asking for /start --playbook=bug should
+#   produce a plain-English message, NOT a bash stack trace.
+# ============================================================
+note "T51: /start rejects unknown playbook with plain-English error"
+d=$(mkproj_v08)
+cd "$d"
+out=$(bash "$START_SH" --playbook=bug "fix something" 2>&1) && ec=0 || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+# Expect non-zero exit AND plain-English message mentioning bug + Phase C
+if [ "$ec" -ne 0 ] && echo "$out" | grep -qiE 'phase c|coming|use.*feature'; then
+  ok "T51 unknown playbook rejected with plain-English error"
+else
+  bad "T51 wrong error or accepted unknown playbook" "exit=$ec; out='$out'"
 fi
 
 # ============================================================
