@@ -9,30 +9,53 @@ stages:
   - id: SPEC
     subactions:
       - problem
+      - success
+      - user-stories
+      - ux-brief
       - proposed-approach
+      - data-contract
+      - flows
+      - dependencies
+      - out-of-scope
+      - non-functional
+      - acceptance-criteria
+      - signoff-steps
+      - wireframe
+      - plan-decompose
     exit_checks:
-      - { id: C-spec-problem-filled, check: "§1 problem has all 3 fields filled" }
-      - { id: C-spec-approach-approved, check: "§5 proposed-approach has been approved by the user" }
+      - { id: C-spec-acs,   check: "≥1 acceptance criterion exists in §11" }
+      - { id: C-spec-tasks, check: "≥1 task in plan-decompose section" }
   - id: BUILD
     subactions:
+      - run-mode-chosen
       - build-task
     exit_checks:
-      - { id: C-build-task-green, check: "every build-task instance is GREEN (test passing, code committed)" }
+      - { id: C-build-tasks-green, check: "every task is GREEN (test passing, code committed)" }
+  - id: SHIP
+    subactions:
+      - verify-test-run
+      - verify-prod-only-acs
+      - learn-summary
+      - learn-lessons
+      - push-pr
+      - verify-ci-green
+      - mark-shipped
+    exit_checks:
+      - { id: C-ship-pr-url, check: "PR URL recorded in INDEX.md Shipped section" }
+      - { id: C-ship-marked, check: ".shipped marker file exists in feature folder" }
 ---
 
 # Build a new feature end-to-end
 
-> **Phase B-0 / Theme 1.5 SKELETON.** Two stages with the 3 sub-actions
-> that exist in B-0. Theme 3 extracts the remaining 20 sub-actions from
-> the legacy `profile-feature.md` and adds them back here (full SPEC =
-> 14 sub-actions, BUILD = 2, SHIP = 7 = 23 total per the original plan).
-> Theme 2 (the prose refactor) replaces this placeholder body with the
-> real "when this fits / what to expect" prose.
+> **Theme 3 EXPANDED (2026-04-27).** All 23 sub-actions referenced in the
+> frontmatter are now present in `.sdd/subactions/`. Stages SPEC (14),
+> BUILD (2), and SHIP (7) cover the full new-feature lifecycle. Theme 2
+> (the prose refactor) will replace this placeholder body with the real
+> "when this fits / what to expect" guidance for the user.
 >
 > The loader enforces SCHEMA.md §1.5 — every `subactions[]` slug must
-> resolve to a `.sdd/subactions/<slug>.md` file. Until Theme 3 ships
-> the missing 20, this playbook can only declare references to the 3
-> that exist. Honest representation > false-confidence loader.
+> resolve to a `.sdd/subactions/<slug>.md` file. All 23 references
+> resolve as of this commit.
 
 ## When this playbook fits
 

@@ -1,0 +1,35 @@
+---
+type: subaction
+slug: verify-test-run
+tag: AGENT-LED
+title: "verify-test-run"
+short_label: "Test run"
+bundling: n_a
+used_by: [feature]
+references: [acceptance-criteria, plan-decompose]
+touches: []
+trust: framework
+budget:
+  max_minutes: 15
+  max_tokens: 4000
+  max_commits: 1
+requires_user_approval: false
+---
+
+All tasks should be GREEN by now. Run the **full test suite** to catch any regression, race condition, or flakiness that didn't surface during single-task runs.
+
+**Action:** invoke the project's test runner (`npm test`, `pytest`, `cargo test`, `go test ./...`, etc.). Capture exit code and output.
+
+**If any test fails (RED):**
+- Identify which AC the failing test covers
+- Re-mark that AC's `[ ]` checkbox in spec.md as RED
+- Open a `[BUG]` task in plan-decompose for the fix
+- HALT. Tell the user: *"Test X failed; AC Y is now back in BUILD as a BUG. Run `/next` after we fix it."*
+
+**If all GREEN (excluding [PROD-ONLY] ACs):**
+- Tick the `**All ACs pass (excluding PROD-ONLY):** [x]` box in spec.md
+- Continue to the next sub-action
+
+**Output:** fill `spec.md` under `### verify-test-run` with `**All ACs pass (excluding PROD-ONLY):** [x]` (or `[ ]` + BUG task if any failed).
+
+**End the turn with one line:** `Test suite GREEN — N/N passing.` (or BUG details if any RED).

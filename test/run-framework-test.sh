@@ -53,9 +53,9 @@ mkproj_v08() {
            "$d/.sdd/.cache" "$d/.sdd/features/001-test"
   cp "$FRAMEWORK_ROOT/templates/.sdd/config.md"          "$d/.sdd/config.md"
   cp "$FRAMEWORK_ROOT/templates/.sdd/playbooks/feature.md" "$d/.sdd/playbooks/feature.md"
-  cp "$FRAMEWORK_ROOT/templates/.sdd/subactions/problem.md"           "$d/.sdd/subactions/problem.md"
-  cp "$FRAMEWORK_ROOT/templates/.sdd/subactions/proposed-approach.md" "$d/.sdd/subactions/proposed-approach.md"
-  cp "$FRAMEWORK_ROOT/templates/.sdd/subactions/build-task.md"        "$d/.sdd/subactions/build-task.md"
+  # Copy ALL sub-actions from the framework so manifest hash-pin is satisfied.
+  # (Theme 3 extracted 20 more, bringing total to 23.)
+  cp "$FRAMEWORK_ROOT"/templates/.sdd/subactions/*.md "$d/.sdd/subactions/"
   cp "$FRAMEWORK_ROOT/templates/.sdd/.cache/manifest.json"            "$d/.sdd/.cache/manifest.json"
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/load-playbook.sh"        "$d/.sdd/scripts/load-playbook.sh"
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/hash-section.sh"         "$d/.sdd/scripts/hash-section.sh"

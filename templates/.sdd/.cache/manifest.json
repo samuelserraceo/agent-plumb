@@ -2,7 +2,7 @@
   "extensions": {},
   "playbooks": {
     "feature": {
-      "expected_sha256": "b4b336858ef754ee49dbfca30a9ba8bf4eff1532bbaff57e247edb5075b7b1af",
+      "expected_sha256": "a3910a52fcb9ba621b4c5c72ab312855132bf9e61e154cab037cceabcffe0694",
       "path": ".sdd/playbooks/feature.md",
       "trust": "framework"
     }
@@ -26,9 +26,59 @@
   },
   "sdd_version": "0.8.0",
   "subactions": {
+    "acceptance-criteria": {
+      "expected_sha256": "b49f73d63ce9d2a9c8c850d92272b14c658dbb034715f3a5a1964eb3bf2845e9",
+      "path": ".sdd/subactions/acceptance-criteria.md",
+      "trust": "framework"
+    },
     "build-task": {
       "expected_sha256": "e08bbd597ef36397e579c4e058545adc3cb10c6c24e3aa57ccb61e90e2833d20",
       "path": ".sdd/subactions/build-task.md",
+      "trust": "framework"
+    },
+    "data-contract": {
+      "expected_sha256": "3df49dbb76ee2b7e70bac5f5eb6fc1e5a3432004d859ff3e3ba92aac79cfdfb9",
+      "path": ".sdd/subactions/data-contract.md",
+      "trust": "framework"
+    },
+    "dependencies": {
+      "expected_sha256": "803d3d17bfc1b603a499ac625ed0a23022715da3a50fcfe53dfe5737a5de7324",
+      "path": ".sdd/subactions/dependencies.md",
+      "trust": "framework"
+    },
+    "flows": {
+      "expected_sha256": "a2e328c2cff726b1d70bf7c32470c233fb313059bc0d32bfd8dbd6e21c6dbfd3",
+      "path": ".sdd/subactions/flows.md",
+      "trust": "framework"
+    },
+    "learn-lessons": {
+      "expected_sha256": "0edbe7ea13e962be0073fe1507108d6d98e496552d7855a79974a01d8381860f",
+      "path": ".sdd/subactions/learn-lessons.md",
+      "trust": "framework"
+    },
+    "learn-summary": {
+      "expected_sha256": "c6221dbd20a0ffb6fff84e7501a354e2c16b3a8287937011961bd1781d555346",
+      "path": ".sdd/subactions/learn-summary.md",
+      "trust": "framework"
+    },
+    "mark-shipped": {
+      "expected_sha256": "0bc7912e1ebbaf8596a5ec2394da84ed619d00cfed3ca9c014af1f50d5821d26",
+      "path": ".sdd/subactions/mark-shipped.md",
+      "trust": "framework"
+    },
+    "non-functional": {
+      "expected_sha256": "198c3be88be3884e8ecb25ad2fb40df87c46be16345113ac93b73032f6313726",
+      "path": ".sdd/subactions/non-functional.md",
+      "trust": "framework"
+    },
+    "out-of-scope": {
+      "expected_sha256": "cb6d2f158a161f669c2ca6df5017c4ceab833a63b6228ac6baca9b1b1a94aa6c",
+      "path": ".sdd/subactions/out-of-scope.md",
+      "trust": "framework"
+    },
+    "plan-decompose": {
+      "expected_sha256": "cd501c0c9acb3eed213d34e71de73eaf0cae1197379c41c015856f7e1436bca1",
+      "path": ".sdd/subactions/plan-decompose.md",
       "trust": "framework"
     },
     "problem": {
@@ -39,6 +89,56 @@
     "proposed-approach": {
       "expected_sha256": "e4ae61db1ee3ab8be5293e72920001148592bfd37337ca39647113a740194c06",
       "path": ".sdd/subactions/proposed-approach.md",
+      "trust": "framework"
+    },
+    "push-pr": {
+      "expected_sha256": "e0c234dbb30237f50e8162a2a58461eea2b920e35f1a84bc48094f19f3b4beca",
+      "path": ".sdd/subactions/push-pr.md",
+      "trust": "framework"
+    },
+    "run-mode-chosen": {
+      "expected_sha256": "0dfc83e0740cc5176d20057b387abda8aba77c1f1756cbbdd300010c9042c9d3",
+      "path": ".sdd/subactions/run-mode-chosen.md",
+      "trust": "framework"
+    },
+    "signoff-steps": {
+      "expected_sha256": "2c7b26551fe2d4666a52d120b7e837f874f6620b1872632508767072a4f802bc",
+      "path": ".sdd/subactions/signoff-steps.md",
+      "trust": "framework"
+    },
+    "success": {
+      "expected_sha256": "de7e43af703ef3d73a20c0a0b2d48766523416e69e6c9d0d6f77fb5b1457de5e",
+      "path": ".sdd/subactions/success.md",
+      "trust": "framework"
+    },
+    "user-stories": {
+      "expected_sha256": "fb76ba0bd158030b661834a832e543b6c86b8f9ba7790ce9b155559240ebad7b",
+      "path": ".sdd/subactions/user-stories.md",
+      "trust": "framework"
+    },
+    "ux-brief": {
+      "expected_sha256": "8f665b8b157bbf77cfc2ed3a9991975243579a9394aa376ca69d11ab33cda4d6",
+      "path": ".sdd/subactions/ux-brief.md",
+      "trust": "framework"
+    },
+    "verify-ci-green": {
+      "expected_sha256": "f38a9d77c4b1fe69da92bec3ae33d5d666926e3dd7763adc8e8dcd53b73d7ae0",
+      "path": ".sdd/subactions/verify-ci-green.md",
+      "trust": "framework"
+    },
+    "verify-prod-only-acs": {
+      "expected_sha256": "95792c4c430789f8b34dba1b0affc08e98d1854ec8018a34177c20b67b47a794",
+      "path": ".sdd/subactions/verify-prod-only-acs.md",
+      "trust": "framework"
+    },
+    "verify-test-run": {
+      "expected_sha256": "8bc6b0da104110c7cc8845994d0bf88f5ca7909644617d22d600e2144784b147",
+      "path": ".sdd/subactions/verify-test-run.md",
+      "trust": "framework"
+    },
+    "wireframe": {
+      "expected_sha256": "ab7c91bfc2dd3aa99dfe75b3cf8109ef61c9a719b34f381cce87833f5346b8df",
+      "path": ".sdd/subactions/wireframe.md",
       "trust": "framework"
     }
   }
