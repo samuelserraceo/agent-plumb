@@ -11,6 +11,8 @@ FRAMEWORK_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 NEXT_ACTION="$FRAMEWORK_ROOT/templates/.sdd/scripts/next-action.sh"
 VERIFY_STAGE="$FRAMEWORK_ROOT/templates/.sdd/scripts/verify-stage.sh"
 MOAT_HOOK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-stage-verified.sh"
+LOAD_PLAYBOOK="$FRAMEWORK_ROOT/templates/.sdd/scripts/load-playbook.sh"
+FIXTURES_V08="$FRAMEWORK_ROOT/test/fixtures/v08-schema"
 
 PASS=0
 FAIL=0
@@ -36,6 +38,22 @@ mkproj() {
     && git config user.name T \
     && git add .sdd/scripts/ \
     && git commit -q -m "scaffold" >/dev/null 2>&1 ) || true
+  echo "$d"
+}
+
+# v0.8 scaffold: copies the framework's actual playbooks/, subactions/, config.md
+# templates so each loader test starts from a "real valid project." Tests then
+# OVERLAY a fixture file to introduce one specific failure mode.
+# Used by T27-T30 (loader validation tests).
+mkproj_v08() {
+  local d
+  d=$(mktemp -d)
+  mkdir -p "$d/.sdd/playbooks" "$d/.sdd/subactions" "$d/.sdd/scripts" "$d/.sdd/.cache"
+  cp "$FRAMEWORK_ROOT/templates/.sdd/config.md"          "$d/.sdd/config.md"
+  cp "$FRAMEWORK_ROOT/templates/.sdd/playbooks/feature.md" "$d/.sdd/playbooks/feature.md"
+  cp "$FRAMEWORK_ROOT/templates/.sdd/subactions/problem.md"           "$d/.sdd/subactions/problem.md"
+  cp "$FRAMEWORK_ROOT/templates/.sdd/subactions/proposed-approach.md" "$d/.sdd/subactions/proposed-approach.md"
+  cp "$FRAMEWORK_ROOT/templates/.sdd/subactions/build-task.md"        "$d/.sdd/subactions/build-task.md"
   echo "$d"
 }
 
@@ -900,6 +918,98 @@ if [ -n "$claude_version" ] && [ "$claude_version" = "$profile_version" ]; then
   ok "T26 versions aligned (CLAUDE.md=$claude_version, profile-feature.md=$profile_version)"
 else
   bad "T26 version drift" "CLAUDE.md=$claude_version, profile-feature.md=$profile_version (must match)"
+fi
+
+# ============================================================
+# T27 — load-playbook.sh --validate rejects unknown tag
+#   RED: loader silently accepts a sub-action with `tag: BOGUS`
+#        instead of erroring with the closed-enum check (SCHEMA.md §6).
+# ============================================================
+note "T27: load-playbook.sh --validate rejects unknown tag"
+d=$(mkproj_v08)
+# Overlay invalid fixture into the project's subactions/
+cp "$FIXTURES_V08/invalid-unknown-tag.md" "$d/.sdd/subactions/invalid-unknown-tag.md"
+out=$(bash "$LOAD_PLAYBOOK" --validate "$d" 2>&1 || true)
+ec=$?
+rm -rf "$d"
+if [ "$ec" -ne 0 ] && echo "$out" | grep -qiE 'BOGUS|unknown tag|invalid tag'; then
+  ok "T27 unknown tag rejected (exit=$ec, error mentions BOGUS/tag)"
+else
+  bad "T27 unknown tag accepted or wrong error" "exit=$ec; out='$out'"
+fi
+
+# ============================================================
+# T28 — load-playbook.sh --validate rejects slug-filename mismatch
+#   RED: loader doesn't enforce SCHEMA.md §1.5 / §2.6 rule that
+#        slug must equal filename without .md.
+# ============================================================
+note "T28: load-playbook.sh --validate rejects slug-filename mismatch"
+d=$(mkproj_v08)
+# Fixture's filename is invalid-slug-mismatch.md but its slug claims not-the-filename
+cp "$FIXTURES_V08/invalid-slug-mismatch.md" "$d/.sdd/subactions/invalid-slug-mismatch.md"
+out=$(bash "$LOAD_PLAYBOOK" --validate "$d" 2>&1 || true)
+ec=$?
+rm -rf "$d"
+if [ "$ec" -ne 0 ] && echo "$out" | grep -qiE 'slug.*mismatch|slug.*filename|not-the-filename'; then
+  ok "T28 slug-filename mismatch rejected (exit=$ec, error mentions slug)"
+else
+  bad "T28 slug mismatch accepted or wrong error" "exit=$ec; out='$out'"
+fi
+
+# ============================================================
+# T29 — load-playbook.sh --validate rejects multi-match slug
+#   RED: loader's slug-map allows two files to claim the same slug
+#        instead of erroring with both paths listed (SCHEMA.md §10).
+# ============================================================
+note "T29: load-playbook.sh --validate rejects multi-match slug"
+d=$(mkproj_v08)
+# Two fixtures both declare slug=dup-test
+cp "$FIXTURES_V08/multi-match/dup-a.md" "$d/.sdd/subactions/dup-a.md"
+cp "$FIXTURES_V08/multi-match/dup-b.md" "$d/.sdd/subactions/dup-b.md"
+out=$(bash "$LOAD_PLAYBOOK" --validate "$d" 2>&1 || true)
+ec=$?
+rm -rf "$d"
+if [ "$ec" -ne 0 ] && echo "$out" | grep -qiE 'duplicate slug|multi.?match|dup-test.*matches'; then
+  ok "T29 multi-match slug rejected (exit=$ec, error mentions duplicate)"
+else
+  bad "T29 duplicate slugs accepted or wrong error" "exit=$ec; out='$out'"
+fi
+
+# ============================================================
+# T30 — load-playbook.sh detects tampered framework file (hash mismatch)
+#   RED: loader doesn't compare actual file SHA against manifest's
+#        expected_sha256, so a tampered framework sub-action keeps its
+#        trust=framework status (SCHEMA.md §11.2 violation).
+# ============================================================
+note "T30: load-playbook.sh detects tampered framework file"
+d=$(mkproj_v08)
+# Build a manifest claiming a hash for problem.md that DOESN'T match the actual file
+problem_path="$d/.sdd/subactions/problem.md"
+fake_hash="0000000000000000000000000000000000000000000000000000000000000000"
+cat > "$d/.sdd/.cache/manifest.json" <<EOF
+{
+  "sdd_version": "0.8.0",
+  "playbooks": {},
+  "subactions": {
+    "problem": {
+      "path": ".sdd/subactions/problem.md",
+      "expected_sha256": "$fake_hash",
+      "trust": "framework"
+    }
+  },
+  "extensions": {},
+  "scripts": {}
+}
+EOF
+out=$(bash "$LOAD_PLAYBOOK" --check-hashes "$d" 2>&1 || true)
+ec=$?
+rm -rf "$d"
+# Hash mismatch should emit a warning (stderr) AND mark untrusted; exit code may
+# be 0 (warning) or non-zero (depends on impl). Test for the warning text.
+if echo "$out" | grep -qiE 'tampered|hash mismatch|trust.*downgrade|untrusted'; then
+  ok "T30 hash mismatch detected (warning emitted)"
+else
+  bad "T30 tamper not detected" "exit=$ec; out='$out'"
 fi
 
 # ============================================================
