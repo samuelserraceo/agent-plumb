@@ -674,20 +674,52 @@ The hook regex that filters these is hardcoded. Theme 4's `pre-commit-touches.sh
 
 These are properties of the framework's security model, NOT per-playbook configuration. They live in hooks, not schema. Documented here so future contributors don't try to relocate them into per-playbook schema fields.
 
-### Co-stage block pairs
+### Co-stage block (class-based)
 
-`pre-commit-cofile-block.sh` (Theme 1.5) refuses commits where any of these PAIRS are both staged:
+`pre-commit-cofile-block.sh` (Theme 1.5) classifies every staged file as either a CLAIM file or a POLICY file (or neither). It refuses any commit that stages files from BOTH classes.
 
-| File A | File B | Reason |
-|---|---|---|
-| `verify-stage.sh` | any `verification.json` | Verifier change + verification claim must be separate auditable commits |
-| `pre-commit-stage-verified.sh` (the moat) | any `verification.json` | Moat hook change + verification claim must be separate |
-| Any playbook (`.sdd/playbooks/*.md`) | any `verification.json` | Workflow definition change + verification must be separate |
-| Any sub-action (`.sdd/subactions/*.md`) | any `verification.json` | Step definition change + verification must be separate |
-| `load-playbook.sh` | any `verification.json` | Loader change + verification must be separate |
-| `start.sh` | any `verification.json` | Scaffolder change + verification must be separate |
+#### Class A — CLAIM files (state about what was verified)
 
-The list is **closed for B-1**. New extensions in Phase C+ that introduce sensitive file pairs must add to this list explicitly via the extension's `adds_files:` declaration plus a hook update.
+| Path pattern | Description |
+|---|---|
+| `**/verification.json` | The "phase X passed" claim re-checked by the moat |
+| `.git/sdd/approvals.jsonl` | Hook-controlled approval ledger (Theme 1.6b — reserved; not shipped in B-1) |
+
+#### Class B — POLICY files (the rules being verified against)
+
+| Path pattern | Description |
+|---|---|
+| `.sdd/.cache/manifest.json` | The hash trust root |
+| `.sdd/playbooks/*.md` | Workflow definitions |
+| `.sdd/subactions/*.md` | Step definitions |
+| `.sdd/extensions/*.md` | Opt-in extensions |
+| `.sdd/scripts/*.sh` | Verifier scripts (verify-stage, hash-section, load-playbook, start, reapprove, resolve-wikilink) |
+| `.claude/hooks/*.sh` | Every hook (moat, cofile-block, touches, advance, block, scope-guard, etc.) |
+| `.claude/settings.json` | Hook registration manifest |
+| `CLAUDE.md` (managed section only) | Agent instructions inside the SDD-MANAGED markers |
+
+#### Files NOT in either class (allowed alongside anything)
+
+- `.sdd/<work-item-folder>/<id>/spec.md` (work-item working state)
+- `.sdd/INDEX.md`, `.sdd/data-model.md`, `.sdd/patterns.md`, `.sdd/decisions.md`, `.sdd/metrics.md` (working memory)
+- `.sdd/archive/`, `.sdd/ideas/`, `.sdd/features/`, `.sdd/bugs/`, etc. (work-item folders' non-state files)
+
+#### The rule
+
+A single commit cannot stage files from both Class A and Class B. Each cross-class pair represents *"the agent could weaken the policy in commit N and ship the matching claim in commit N+1."* The block forces those modifications into separate auditable commits — claim-changes get their own commit, policy-changes get their own.
+
+#### What's allowed
+
+- **Pure claim commit:** `verification.json` only. No policy file changes. The moat does its fabrication check on this commit.
+- **Pure policy commit:** any combination of policy files (manifest + playbook + sub-action + script + hook + settings.json + CLAUDE.md). No claim files staged. The moat is silent on these (no claim to check). This is the legitimate framework-upgrade path.
+- **Pure work-item commit:** spec.md, INDEX.md, etc., with no claim or policy files. Routine SDD work.
+- **Work-item + claim commit:** spec.md + verification.json. The phase-advance pattern (Phase A's normal flow). Claim is in Class A; work-item state is in neither class — no conflict.
+
+#### Why class-based, not a closed list
+
+An earlier B-0 design used an explicit closed list of 6 pairs. GPT-5.5 caught that the list was incomplete (missing manifest.json itself, hash-section.sh, pre-commit-touches.sh, .claude/settings.json, CLAUDE.md) and would have to grow per theme. Class-based covers every current and future framework file via path patterns — no per-theme manual updates.
+
+Resolution committed in `200afae` after Sam's confirmation via AskUserQuestion (Theme 1.5 pivot).
 
 ### Hash-pinned files
 

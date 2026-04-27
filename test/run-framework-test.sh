@@ -1098,6 +1098,20 @@ else
 fi
 
 # ============================================================
+# T35 — settings.json registers pre-commit-cofile-block.sh
+#   RED: cofile-block hook ships but isn't wired into Claude Code's
+#        PreToolUse chain → it never fires on real commits. Same bug
+#        class T25 was added to catch (Phase B reviewer round caught
+#        the moat-unregistered bug; preventing recurrence).
+# ============================================================
+note "T35: settings.json registers pre-commit-cofile-block.sh"
+if grep -q 'pre-commit-cofile-block\.sh' "$FRAMEWORK_ROOT/templates/.claude/settings.json"; then
+  ok "T35 cofile-block hook registered in PreToolUse chain"
+else
+  bad "T35 cofile-block hook missing from settings.json" "no pre-commit-cofile-block.sh entry — hook ships unfired"
+fi
+
+# ============================================================
 # T34 — load-playbook.sh --validate rejects unresolved subaction reference
 #   RED: loader doesn't enforce SCHEMA.md §1.5 — "every subactions[]
 #        slug must reference an existing .sdd/subactions/<slug>.md."
