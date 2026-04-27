@@ -929,8 +929,7 @@ note "T27: load-playbook.sh --validate rejects unknown tag"
 d=$(mkproj_v08)
 # Overlay invalid fixture into the project's subactions/
 cp "$FIXTURES_V08/invalid-unknown-tag.md" "$d/.sdd/subactions/invalid-unknown-tag.md"
-out=$(bash "$LOAD_PLAYBOOK" --validate "$d" 2>&1 || true)
-ec=$?
+out=$(bash "$LOAD_PLAYBOOK" --validate "$d" 2>&1) && ec=0 || ec=$?
 rm -rf "$d"
 if [ "$ec" -ne 0 ] && echo "$out" | grep -qiE 'BOGUS|unknown tag|invalid tag'; then
   ok "T27 unknown tag rejected (exit=$ec, error mentions BOGUS/tag)"
@@ -947,8 +946,7 @@ note "T28: load-playbook.sh --validate rejects slug-filename mismatch"
 d=$(mkproj_v08)
 # Fixture's filename is invalid-slug-mismatch.md but its slug claims not-the-filename
 cp "$FIXTURES_V08/invalid-slug-mismatch.md" "$d/.sdd/subactions/invalid-slug-mismatch.md"
-out=$(bash "$LOAD_PLAYBOOK" --validate "$d" 2>&1 || true)
-ec=$?
+out=$(bash "$LOAD_PLAYBOOK" --validate "$d" 2>&1) && ec=0 || ec=$?
 rm -rf "$d"
 if [ "$ec" -ne 0 ] && echo "$out" | grep -qiE 'slug.*mismatch|slug.*filename|not-the-filename'; then
   ok "T28 slug-filename mismatch rejected (exit=$ec, error mentions slug)"
@@ -966,8 +964,7 @@ d=$(mkproj_v08)
 # Two fixtures both declare slug=dup-test
 cp "$FIXTURES_V08/multi-match/dup-a.md" "$d/.sdd/subactions/dup-a.md"
 cp "$FIXTURES_V08/multi-match/dup-b.md" "$d/.sdd/subactions/dup-b.md"
-out=$(bash "$LOAD_PLAYBOOK" --validate "$d" 2>&1 || true)
-ec=$?
+out=$(bash "$LOAD_PLAYBOOK" --validate "$d" 2>&1) && ec=0 || ec=$?
 rm -rf "$d"
 if [ "$ec" -ne 0 ] && echo "$out" | grep -qiE 'duplicate slug|multi.?match|dup-test.*matches'; then
   ok "T29 multi-match slug rejected (exit=$ec, error mentions duplicate)"
@@ -1001,8 +998,7 @@ cat > "$d/.sdd/.cache/manifest.json" <<EOF
   "scripts": {}
 }
 EOF
-out=$(bash "$LOAD_PLAYBOOK" --check-hashes "$d" 2>&1 || true)
-ec=$?
+out=$(bash "$LOAD_PLAYBOOK" --check-hashes "$d" 2>&1) && ec=0 || ec=$?
 rm -rf "$d"
 # Hash mismatch should emit a warning (stderr) AND mark untrusted; exit code may
 # be 0 (warning) or non-zero (depends on impl). Test for the warning text.
