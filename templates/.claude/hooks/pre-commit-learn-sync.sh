@@ -25,7 +25,7 @@ esac
 [ ! -d .sdd ] || [ ! -f .sdd/INDEX.md ] && exit 0
 
 active=$(awk '/^\*\*Active:\*\*/{print $2; exit}' .sdd/INDEX.md 2>/dev/null || echo "")
-case "$active" in *"(none)"*|"_"*"_"|"") active="" ;; esac
+echo "$active" | grep -qE '^[a-z][a-z0-9_-]*/[A-Za-z0-9._-]+$' || active=""
 [ -z "$active" ] && exit 0
 
 spec=".sdd/$active/spec.md"

@@ -71,8 +71,11 @@ emit_state() {
 
   # Active feature? Read the path generically from **Active:** <path> so
   # the hook works for any playbook's work_item_folder, not just features/.
+  # R3 Failure-mode F2 fix: strict shape validation rejects path-traversal
+  # injection (`**Active:** ../../etc/passwd` would otherwise pull arbitrary
+  # file content into the [PROJECT DATA] block).
   active_path=$(awk '/^\*\*Active:\*\*/{print $2; exit}' .sdd/INDEX.md 2>/dev/null || echo "")
-  case "$active_path" in *"(none)"*|"_"*"_"|"") active_path="" ;; esac
+  echo "$active_path" | grep -qE '^[a-z][a-z0-9_-]*/[A-Za-z0-9._-]+$' || active_path=""
 
   if [ -n "$active_path" ] && [ -f ".sdd/$active_path/spec.md" ]; then
     spec=".sdd/$active_path/spec.md"

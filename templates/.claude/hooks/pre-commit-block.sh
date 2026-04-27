@@ -50,8 +50,11 @@ fi
 # No active feature? Allow. Reads the work-item path generically from
 # **Active:** <path> rather than hardcoding `features/` — keeps the hook
 # multi-playbook capable (Phase C ships bugs/, ideas/, etc.).
+# R3 Failure-mode F2 fix: strict shape validation — lowercase folder /
+# alphanumeric item, no path traversal, no extra slashes. Anything
+# outside this shape → empty (treated as no active feature).
 active_path=$(printf '%s\n' "$staged_index" | awk '/^\*\*Active:\*\*/{print $2; exit}')
-case "$active_path" in *"(none)"*|"_"*"_"|"") active_path="" ;; esac
+echo "$active_path" | grep -qE '^[a-z][a-z0-9_-]*/[A-Za-z0-9._-]+$' || active_path=""
 [ -z "$active_path" ] && exit 0
 
 spec=".sdd/$active_path/spec.md"

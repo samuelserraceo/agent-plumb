@@ -20,8 +20,11 @@ fi
 # Extract active feature from the `**Active:**` pointer line. Reads the
 # path generically (second whitespace-separated token) instead of grepping
 # for `features/` — keeps the hook multi-playbook capable.
+# R3 Failure-mode F2 fix: validate the path shape strictly — lowercase
+# folder / alphanumeric item, no path traversal, no extra slashes. Anything
+# outside this shape → empty (treated as no active feature).
 active_path=$(awk '/^\*\*Active:\*\*/{print $2; exit}' .sdd/INDEX.md 2>/dev/null || echo "")
-case "$active_path" in *"(none)"*|"_"*"_"|"") active_path="" ;; esac
+echo "$active_path" | grep -qE '^[a-z][a-z0-9_-]*/[A-Za-z0-9._-]+$' || active_path=""
 
 echo "───── SDD workflow ─────"
 if [ -z "$active_path" ]; then

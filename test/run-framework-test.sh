@@ -2197,6 +2197,52 @@ else
 fi
 
 # ============================================================
+# T65c — R3 Failure-mode F1: path-traversal slug attack BLOCKED
+#   Pre-F1-fix: Cut 7's `**Playbook:** <slug>` extraction was unvalidated.
+#   Attacker writes `**Playbook:** ../attacker/evil`, points moat at a
+#   file outside `.sdd/playbooks/`. Combined with `approved_sections: {}`,
+#   the coverage check fail-opens (required_slugs from attacker file is
+#   empty) — section-locking bypassed.
+#
+#   Post-F1-fix: SAFE_PLAYBOOK_SLUG_RE rejects the malicious slug; moat
+#   falls back to 'feature' default; coverage check fires on feature.md's
+#   required_slugs (which is non-empty for proposed-approach); attack
+#   blocks.
+# ============================================================
+note "T65c: path-traversal slug attack blocked (R3 F1 fix)"
+d=$(mkproj_v08)
+cd "$d"
+# Attacker INDEX.md: malicious path-traversal slug
+echo "**Playbook:** ../attacker/evil" > .sdd/INDEX.md
+cat > .sdd/features/001-test/spec.md <<'EOF'
+[PHASE: SPEC]
+
+## PHASE: SPEC
+
+### sub-action: proposed-approach
+- weak vague approach
+- no alternatives
+- no tradeoffs
+
+### Exit checks
+- [ ] C1: dummy — true
+EOF
+cat > .sdd/features/001-test/verification.json <<'EOF'
+{"phase":"SPEC","checks":[{"id":"C1","result":"pass"}],"approved_sections":{}}
+EOF
+git add .sdd/features/001-test/ .sdd/INDEX.md
+hook_stdin='{"tool_input":{"command":"git commit -m phase: SPEC -> BUILD"}}'
+ec=0
+err=$(echo "$hook_stdin" | bash "$MOAT_HOOK" 2>&1 1>/dev/null) || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 2 ] && echo "$err" | grep -qiE 'coverage|missing required|proposed-approach'; then
+  ok "T65c path-traversal slug rejected → fallback feature coverage fired (block)"
+else
+  bad "T65c path-traversal slug let attack through" "exit=$ec; err='$err'"
+fi
+
+# ============================================================
 # T66 — Cut 8: hooks read work-item path generically (not hardcoded features/)
 #   Pre-Cut-8: 6 hooks + status.md grepped `features/[A-Za-z0-9._-]+`
 #   from INDEX.md's **Active:** line. Any non-default playbook

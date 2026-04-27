@@ -380,20 +380,48 @@ if not isinstance(approved, dict):
 phase = d.get("phase", "")
 # Read the active playbook from INDEX.md's `**Playbook:** <slug>` line so the
 # coverage check honors whichever playbook the project is using. Fallback to
-# 'feature' (the only B-1 playbook) when INDEX.md is absent or malformed —
-# preserves Phase A test compat where mkproj() doesn't scaffold INDEX.md.
+# 'feature' (the only B-1 playbook) when INDEX.md is absent, malformed, or
+# the slug fails the safe-format check. Preserves Phase A test compat where
+# mkproj() doesn't scaffold INDEX.md.
+#
+# R3 Failure-mode F1 fix: an unvalidated slug accepts path-traversal
+# (`../attacker/evil`) which would let the moat read an attacker-controlled
+# file as the "playbook" — section-locking bypass via empty required_slugs.
+# The regex below restricts slugs to lowercase + digits + hyphens (the same
+# closed-enum SCHEMA.md §6 declares). Anything outside falls back silently
+# to 'feature' (more strict than fail-open: "feature"'s required_slugs are
+# non-empty, so an empty approved_sections still gets caught).
+SAFE_PLAYBOOK_SLUG_RE = re.compile(r"^[a-z][a-z0-9-]*$")
 playbook_slug = "feature"
-index_path = os.path.join(proj, ".sdd", "INDEX.md")
-if os.path.isfile(index_path):
-    try:
-        with open(index_path) as _f:
-            for _line in _f:
-                _m = re.match(r"^\*\*Playbook:\*\*\s+(\S+)\s*$", _line)
-                if _m:
-                    playbook_slug = _m.group(1)
-                    break
-    except OSError:
-        pass
+# R3 Failure-mode F3 fix: read INDEX.md from the staged blob, not the
+# working tree. An agent could blank out the working-tree INDEX.md to
+# hide the active playbook from the moat, then commit a tampered spec.
+# Match pre-commit-block.sh's pattern (it already does this correctly).
+index_text = ""
+try:
+    _r = subprocess.run(
+        ["git", "show", ":.sdd/INDEX.md"],
+        capture_output=True, cwd=proj, timeout=5,
+    )
+    if _r.returncode == 0:
+        index_text = _r.stdout.decode("utf-8", errors="replace")
+except Exception:
+    pass
+if not index_text:
+    # Fallback to working tree only if staged blob isn't available
+    # (early bootstrap, or test scaffolding without git).
+    index_path_wt = os.path.join(proj, ".sdd", "INDEX.md")
+    if os.path.isfile(index_path_wt):
+        try:
+            with open(index_path_wt) as _f:
+                index_text = _f.read()
+        except OSError:
+            pass
+for _line in index_text.split("\n"):
+    _m = re.match(r"^\*\*Playbook:\*\*\s+(\S+)\s*$", _line)
+    if _m and SAFE_PLAYBOOK_SLUG_RE.match(_m.group(1)):
+        playbook_slug = _m.group(1)
+        break
 playbook_path = os.path.join(proj, ".sdd", "playbooks", f"{playbook_slug}.md")
 
 required_slugs = set()
