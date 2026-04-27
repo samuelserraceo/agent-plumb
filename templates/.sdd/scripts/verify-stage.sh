@@ -31,6 +31,17 @@ if [ ! -f "$spec" ]; then
   exit 1
 fi
 
+# NUL-byte guard: awk treats \0 as record terminator, silently dropping
+# any exit-check line that contains one. The line's `— <bash cmd>`
+# separator never matches and the check vanishes from output, defeating
+# the moat downstream. Reject input with NUL bytes.
+# Using `od -An -c` because bash strips literal \x00 from variable
+# expansions, breaking the more obvious `grep -q $'\x00'` approach.
+if od -An -c "$spec" 2>/dev/null | grep -q '\\0'; then
+  echo '{"error":"spec contains NUL bytes"}' >&2
+  exit 1
+fi
+
 # Extract the body of `## PHASE: <target_phase>` to a temp file.
 # Body = lines between that heading and the next `## ` heading.
 section_file=$(mktemp)

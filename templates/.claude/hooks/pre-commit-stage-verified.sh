@@ -40,8 +40,8 @@ esac
 git rev-parse --git-dir >/dev/null 2>&1 || exit 0
 
 # Find staged verification.json paths (one per active feature, usually).
-staged_verifications=$(git diff --cached --name-only --diff-filter=ACM 2>/dev/null \
-                       | grep -E '(^|/)verification\.json$' || true)
+staged_files=$(git diff --cached --name-only --diff-filter=ACM 2>/dev/null || true)
+staged_verifications=$(printf '%s\n' "$staged_files" | grep -E '(^|/)verification\.json$' || true)
 
 # No staged verification.json → not a verification commit → allow.
 [ -z "$staged_verifications" ] && exit 0
@@ -63,6 +63,64 @@ VERIFY_STAGE=$(locate_verify_stage) || {
   # Cannot verify; default to allow (better than blocking on a config gap).
   exit 0
 }
+
+# === VERIFY-STAGE TRUST GUARD ===
+# The moat re-runs verify-stage.sh on the staged spec to compare claimed
+# vs. fresh verification. If the verifier itself can be replaced or
+# modified in the same commit window, an adversary can ship a shim that
+# emits whatever the fabricated verification.json claims, defeating the
+# moat's central guarantee. Two layers of defense:
+#
+#   1. Co-stage block: verify-stage.sh and verification.json cannot be in
+#      the same commit. Forces any verifier change to be its own commit.
+#   2. Hash pin: the verifier's content hash is embedded below. Hook
+#      refuses to run if the on-disk verifier doesn't match. Legitimate
+#      updates must also update VERIFY_STAGE_EXPECTED_HASH.
+#
+# Multi-commit attacks (commit N replaces verifier, commit N+1 stages
+# verification.json against the shim) are still possible — the agent
+# would need TWO commits, the verifier-change commit is auditable in
+# git log, and the hash pin makes legitimate vs. malicious verifier
+# changes equally visible. Phase B may add a non-staged canonical copy.
+
+# Co-stage block: refuse if verify-stage.sh AND verification.json are
+# both in the staged set.
+if printf '%s\n' "$staged_files" | grep -Eq '(^|/)\.sdd/scripts/verify-stage\.sh$'; then
+  cat >&2 <<EOF
+[moat] verify-stage.sh and verification.json cannot be staged in the same
+commit. The verifier is the moat's referee — staging it alongside the
+verification it produces breaks the trust assumption. Split the commits:
+
+  1. Commit verify-stage.sh changes alone (with an updated expected hash
+     in pre-commit-stage-verified.sh).
+  2. Then re-run verify-stage and stage spec.md + verification.json
+     separately.
+EOF
+  exit 2
+fi
+
+# Hash pin: refuse if the verifier on disk doesn't match the expected hash.
+VERIFY_STAGE_EXPECTED_HASH="ff4b4d0480be3575970d1d7523cfcf6d3737cbbb7cc6080ef7bda7b243c27813"
+if command -v shasum >/dev/null 2>&1; then
+  actual_hash=$(shasum -a 256 "$VERIFY_STAGE" 2>/dev/null | cut -d' ' -f1)
+elif command -v sha256sum >/dev/null 2>&1; then
+  actual_hash=$(sha256sum "$VERIFY_STAGE" 2>/dev/null | cut -d' ' -f1)
+else
+  actual_hash=""  # No hasher available — fall through; co-stage block is the only defense.
+fi
+if [ -n "$actual_hash" ] && [ "$actual_hash" != "$VERIFY_STAGE_EXPECTED_HASH" ]; then
+  cat >&2 <<EOF
+[moat] verify-stage.sh hash mismatch — refusing to use it as referee.
+  Expected: $VERIFY_STAGE_EXPECTED_HASH
+  Actual:   $actual_hash
+
+If you legitimately updated verify-stage.sh, also update
+VERIFY_STAGE_EXPECTED_HASH in pre-commit-stage-verified.sh in the same
+commit. Otherwise restore the verifier from main:
+  git checkout main -- .sdd/scripts/verify-stage.sh
+EOF
+  exit 2
+fi
 
 # Compare two verification.json blobs by (id, result) set. Returns 0 if
 # identical, 1 if different. Uses python3 for robust JSON parsing.
@@ -112,6 +170,22 @@ while IFS= read -r vpath; do
     cat >&2 <<EOF
 [moat] cannot read staged $spec_path — block.
 Stage spec.md alongside verification.json, or re-run verify-stage.sh.
+EOF
+    exit 2
+  fi
+
+  # NUL-byte guard: a NUL byte in spec.md truncates awk parsing — exit-check
+  # lines containing \0 are silently dropped, fresh re-run produces an empty
+  # checks array, and a fabricated `{"checks":[]}` matches the empty fresh
+  # set, bypassing the moat. Reject any spec.md containing NUL bytes.
+  # Using `od -An -c` because bash strips literal \x00 from variable
+  # expansions, breaking the more obvious `grep -q $'\x00'` approach.
+  if od -An -c "$staged_spec" 2>/dev/null | grep -q '\\0'; then
+    rm -f "$staged_spec"
+    cat >&2 <<EOF
+[moat] staged $spec_path contains NUL bytes — refusing to verify.
+A NUL byte in an exit-check line silently drops that check from
+verify-stage.sh's output. Remove the binary content from spec.md.
 EOF
     exit 2
   fi

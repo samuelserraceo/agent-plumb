@@ -42,6 +42,23 @@ active_path=$(grep -m1 -E '^\*\*Active:\*\*' .sdd/INDEX.md | grep -oE 'features/
 spec=".sdd/$active_path/spec.md"
 [ ! -f "$spec" ] && exit 0
 
+# NUL-byte / binary guard: a NUL byte in spec.md causes git diff --cached
+# to emit "Binary files differ" instead of line diffs, which means the
+# `^[+-]\[PHASE:` regex below finds nothing, the phase-advance signal
+# silently fails, and a phase-advance with open blockers is allowed
+# through. Reject any spec.md with NUL bytes.
+# Using `od -An -c` because bash strips literal \x00 from variable
+# expansions, breaking the more obvious `grep -q $'\x00'` approach.
+if od -An -c "$spec" 2>/dev/null | grep -q '\\0'; then
+  cat >&2 <<EOF
+[SDD] spec.md contains NUL bytes — refusing to commit.
+NUL bytes break the phase-advance regex below; a fabricated phase
+advance could otherwise slip past this gate. Remove the binary
+content from $spec.
+EOF
+  exit 2
+fi
+
 # Bootstrap exception: spec.md being newly ADDED in this commit is the bootstrap.
 spec_status=$(git diff --cached --name-status -- "$spec" 2>/dev/null | awk '{print $1}' | head -1)
 [ "$spec_status" = "A" ] && exit 0
