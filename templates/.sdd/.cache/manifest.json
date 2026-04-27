@@ -2,7 +2,7 @@
   "extensions": {},
   "playbooks": {
     "feature": {
-      "expected_sha256": "3b5f3f28b86847a38430d906802cdedebd7790f32bfd2d45e09de0252e750e14",
+      "expected_sha256": "81b96079f39668916197589cbafe48dd307e8bc68a3b63f3d425db96ed2e3a4f",
       "path": ".sdd/playbooks/feature.md",
       "trust": "framework"
     }
@@ -61,16 +61,6 @@
       "path": ".sdd/actions/flows.md",
       "trust": "framework"
     },
-    "learn-lessons": {
-      "expected_sha256": "6d9d766f89de7c31857c2036e671c079cc604f48ef6715084e35f1f84385fa53",
-      "path": ".sdd/actions/learn-lessons.md",
-      "trust": "framework"
-    },
-    "learn-summary": {
-      "expected_sha256": "45c961a844aaf7ccdc1a5999b512f478486ee78a635024e2c30af7d7aa2a97be",
-      "path": ".sdd/actions/learn-summary.md",
-      "trust": "framework"
-    },
     "mark-shipped": {
       "expected_sha256": "9fdda41bbe9390e5438bb962104ebcf49937a344c094f26c2e7965cdfc483af5",
       "path": ".sdd/actions/mark-shipped.md",
@@ -102,7 +92,7 @@
       "trust": "framework"
     },
     "push-pr": {
-      "expected_sha256": "d6f43cfb0976316e9d6151999f09d8c2a909ab1c4518b8d844c3e921dc0405d1",
+      "expected_sha256": "d4b11858e1b24886580b0340d5ef0f1e9a1ec6fdf75132281809458c886aeeb8",
       "path": ".sdd/actions/push-pr.md",
       "trust": "framework"
     },
@@ -150,6 +140,10 @@
       "expected_sha256": "414bc40d129e2f8014afc3e5db9a93ee6db6fcaefb568e64de771cdafdb41069",
       "path": ".sdd/actions/wireframe.md",
       "trust": "framework"
+    },
+    "learn": {
+      "path": ".sdd/actions/learn.md",
+      "expected_sha256": "2a379135f39af1f931ee4903101818b8949067f6d9ad4f2a33670e753edd58ea"
     }
   }
 }

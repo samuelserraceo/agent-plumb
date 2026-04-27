@@ -35,8 +35,7 @@ stages:
     actions:
       - verify-test-run
       - verify-prod-only-acs
-      - learn-summary
-      - learn-lessons
+      - learn
       - push-pr
       - verify-ci-green
       - mark-shipped

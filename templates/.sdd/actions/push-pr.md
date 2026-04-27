@@ -6,7 +6,7 @@ title: "push-pr"
 short_label: "Push PR"
 bundling: n_a
 used_by: [feature]
-references: [problem, success, learn-summary, plan-decompose]
+references: [problem, success, learn, plan-decompose]
 touches: []
 trust: framework
 budget:
