@@ -1194,6 +1194,132 @@ else
 fi
 
 # ============================================================
+# T38 — moat ALLOWS phase-advance when approved_sections hash matches
+#   RED until check_approved_sections lands in the moat. This is the
+#   POSITIVE case for Theme 1.6: user approved §problem, hash recorded
+#   in verification.json, spec.md unchanged → commit must succeed.
+# ============================================================
+note "T38: moat allows phase-advance when approved_sections hash matches (Theme 1.6 positive)"
+d=$(mkproj_v08)
+cd "$d"
+cat > .sdd/features/001-test/spec.md <<'EOF'
+[PHASE: SPEC]
+
+## PHASE: SPEC
+
+### sub-action: problem
+- Who has it: real users
+- Why now: launch coming
+- What breaks: revenue impact
+
+### Exit checks
+- [ ] C1: dummy — true
+EOF
+problem_hash=$(bash .sdd/scripts/hash-section.sh \
+  .sdd/features/001-test/spec.md .sdd/subactions/problem.md)
+cat > .sdd/features/001-test/verification.json <<EOF
+{"phase":"SPEC","checks":[{"id":"C1","result":"pass"}],"approved_sections":{"problem":"$problem_hash"}}
+EOF
+git add .sdd/features/001-test/
+hook_stdin='{"tool_input":{"command":"git commit -m phase: SPEC -> BUILD"}}'
+ec=0
+err=$(echo "$hook_stdin" | bash "$MOAT_HOOK" 2>&1 1>/dev/null) || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 0 ]; then
+  ok "T38 unchanged §problem allowed (hash matches expected)"
+else
+  bad "T38 unchanged §problem BLOCKED" "exit=$ec; err='$err'"
+fi
+
+# ============================================================
+# T39 — THE Codex #2 attack: moat BLOCKS silent section softening
+#   RED until check_approved_sections lands. The CENTRAL test of v0.8.
+#   If T39 ever passes silently against a Theme-1.6-removed implementation,
+#   the entire defense is broken. (See SCHEMA.md §17 / handoff §14 for
+#   the attack class.)
+# ============================================================
+note "T39: moat BLOCKS silent section softening (Codex #2 attack)"
+d=$(mkproj_v08)
+cd "$d"
+# Initial spec — strong, specific problem statement
+cat > .sdd/features/001-test/spec.md <<'EOF'
+[PHASE: SPEC]
+
+## PHASE: SPEC
+
+### sub-action: problem
+- Who has it: STRONG specific user segments with verified pain points
+- Why now: deadline-critical launch with revenue implications
+- What breaks: revenue impact, customer trust, brand damage
+
+### Exit checks
+- [ ] C1: dummy — true
+EOF
+# User approves; framework records hash
+problem_hash=$(bash .sdd/scripts/hash-section.sh \
+  .sdd/features/001-test/spec.md .sdd/subactions/problem.md)
+cat > .sdd/features/001-test/verification.json <<EOF
+{"phase":"SPEC","checks":[{"id":"C1","result":"pass"}],"approved_sections":{"problem":"$problem_hash"}}
+EOF
+# THE ATTACK: agent silently softens §problem AFTER approval
+cat > .sdd/features/001-test/spec.md <<'EOF'
+[PHASE: SPEC]
+
+## PHASE: SPEC
+
+### sub-action: problem
+- vague
+
+### Exit checks
+- [ ] C1: dummy — true
+EOF
+git add .sdd/features/001-test/
+hook_stdin='{"tool_input":{"command":"git commit -m phase: SPEC -> BUILD"}}'
+ec=0
+err=$(echo "$hook_stdin" | bash "$MOAT_HOOK" 2>&1 1>/dev/null) || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 2 ] && echo "$err" | grep -qiE 'section.*changed|approved.section|re-approve'; then
+  ok "T39 silent softening BLOCKED (Codex #2 attack defeated)"
+else
+  bad "T39 silent softening slipped through!" "exit=$ec; err='$err'"
+fi
+
+# ============================================================
+# T40 — moat BLOCKS invalid-hex value in approved_sections
+#   RED until check_approved_sections validates the hex format.
+# ============================================================
+note "T40: moat BLOCKS invalid hex in approved_sections"
+d=$(mkproj_v08)
+cd "$d"
+cat > .sdd/features/001-test/spec.md <<'EOF'
+[PHASE: SPEC]
+
+## PHASE: SPEC
+
+### sub-action: problem
+- something
+
+### Exit checks
+- [ ] C1: dummy — true
+EOF
+cat > .sdd/features/001-test/verification.json <<'EOF'
+{"phase":"SPEC","checks":[{"id":"C1","result":"pass"}],"approved_sections":{"problem":"not-valid-hex"}}
+EOF
+git add .sdd/features/001-test/
+hook_stdin='{"tool_input":{"command":"git commit -m phase: SPEC -> BUILD"}}'
+ec=0
+err=$(echo "$hook_stdin" | bash "$MOAT_HOOK" 2>&1 1>/dev/null) || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 2 ] && echo "$err" | grep -qiE 'not.*hex|64-char|sha-?256|invalid'; then
+  ok "T40 invalid hex BLOCKED"
+else
+  bad "T40 invalid hex slipped through" "exit=$ec; err='$err'"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
