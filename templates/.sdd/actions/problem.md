@@ -1,5 +1,5 @@
 ---
-type: subaction
+type: action
 slug: problem
 tag: USER-LED
 title: "§1 Problem"

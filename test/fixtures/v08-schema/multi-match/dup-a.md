@@ -1,5 +1,5 @@
 ---
-type: subaction
+type: action
 slug: dup-test
 tag: USER-LED
 title: "First file claiming slug 'dup-test'"

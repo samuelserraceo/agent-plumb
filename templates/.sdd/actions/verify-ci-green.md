@@ -1,5 +1,5 @@
 ---
-type: subaction
+type: action
 slug: verify-ci-green
 tag: AGENT-LED
 title: "verify-ci-green"

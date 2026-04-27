@@ -1,5 +1,5 @@
 ---
-type: subaction
+type: action
 slug: invalid-missing-tag
 title: "Sub-action with no `tag:` field"
 bundling: n_a

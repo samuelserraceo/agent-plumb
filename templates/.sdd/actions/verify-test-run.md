@@ -1,5 +1,5 @@
 ---
-type: subaction
+type: action
 slug: verify-test-run
 tag: AGENT-LED
 title: "verify-test-run"

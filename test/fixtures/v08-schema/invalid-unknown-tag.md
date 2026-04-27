@@ -1,5 +1,5 @@
 ---
-type: subaction
+type: action
 slug: invalid-unknown-tag
 tag: BOGUS
 title: "Sub-action with an unknown tag"

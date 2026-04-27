@@ -1,5 +1,5 @@
 ---
-type: subaction
+type: action
 slug: invalid-yaml-duplicate
 tag: USER-LED
 tag: AGENT-LED

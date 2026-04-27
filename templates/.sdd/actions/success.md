@@ -1,5 +1,5 @@
 ---
-type: subaction
+type: action
 slug: success
 tag: USER-LED
 title: "§2 Success"

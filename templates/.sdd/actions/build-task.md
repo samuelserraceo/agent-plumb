@@ -1,5 +1,5 @@
 ---
-type: subaction
+type: action
 slug: build-task
 tag: BUILD-TASK
 title: "Build a task"

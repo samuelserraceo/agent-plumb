@@ -1,5 +1,5 @@
 ---
-type: subaction
+type: action
 slug: data-contract
 tag: AGENT-LED
 title: "§6 Data contract"

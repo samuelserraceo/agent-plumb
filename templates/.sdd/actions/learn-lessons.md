@@ -1,5 +1,5 @@
 ---
-type: subaction
+type: action
 slug: learn-lessons
 tag: AGENT-LED
 title: "learn-lessons"

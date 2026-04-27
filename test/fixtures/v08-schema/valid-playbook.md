@@ -7,7 +7,7 @@ work_item_folder: items/
 work_item_id_pattern: "{NNN}-{slug}"
 stages:
   - id: ONESTAGE
-    subactions:
+    actions:
       - sample-action
     exit_checks:
       - { id: C-sample, check: "the sample action ran" }

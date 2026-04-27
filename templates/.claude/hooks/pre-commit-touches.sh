@@ -90,7 +90,7 @@ PYEOF
 [ -z "$active_slug" ] && exit 0
 
 # Read sub-action frontmatter for touches: declaration.
-sa_path=".sdd/subactions/${active_slug}.md"
+sa_path=".sdd/actions/${active_slug}.md"
 [ -f "$sa_path" ] || exit 0
 
 touches_files=$(SA_PATH="$sa_path" python3 - <<'PYEOF' 2>/dev/null || echo ""

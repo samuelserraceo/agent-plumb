@@ -1,5 +1,5 @@
 ---
-type: subaction
+type: action
 slug: dup-test
 tag: AGENT-LED
 title: "Second file claiming slug 'dup-test'"

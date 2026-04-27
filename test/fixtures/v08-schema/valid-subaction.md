@@ -1,5 +1,5 @@
 ---
-type: subaction
+type: action
 slug: valid-subaction
 tag: USER-LED
 title: "Valid sub-action for fixture testing"

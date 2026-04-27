@@ -66,7 +66,7 @@ CLAIM_PATTERNS = [
 POLICY_PATTERNS = [
     re.compile(r"^\.sdd/\.cache/manifest\.json$"),
     re.compile(r"^\.sdd/playbooks/[^/]+\.md$"),
-    re.compile(r"^\.sdd/subactions/[^/]+\.md$"),
+    re.compile(r"^\.sdd/actions/[^/]+\.md$"),
     re.compile(r"^\.sdd/extensions/[^/]+\.md$"),
     re.compile(r"^\.sdd/scripts/[^/]+\.sh$"),
     re.compile(r"^\.claude/hooks/[^/]+\.sh$"),

@@ -248,7 +248,7 @@ def head_normalized_sha256(rel_path, project_dir):
         return None  # Best-effort: if git is unavailable, skip HEAD check
 
 mismatches = []
-for section in ("playbooks", "subactions", "extensions", "scripts"):
+for section in ("playbooks", "actions", "extensions", "scripts"):
     for slug, entry in (manifest.get(section) or {}).items():
         rel = entry.get("path", "")
         expected = entry.get("expected_sha256", "")
@@ -442,13 +442,13 @@ if phase and os.path.isfile(playbook_path):
             except Exception:
                 pb_fm = None
             if isinstance(pb_fm, dict):
-                stage_subactions = []
+                stage_actions = []
                 for stage in pb_fm.get("stages", []) or []:
                     if stage.get("id") == phase:
-                        stage_subactions = stage.get("subactions", []) or []
+                        stage_actions = stage.get("actions", []) or []
                         break
-                for slug in stage_subactions:
-                    sa_path = os.path.join(proj, ".sdd", "subactions",
+                for slug in stage_actions:
+                    sa_path = os.path.join(proj, ".sdd", "actions",
                                            f"{slug}.md")
                     if not os.path.isfile(sa_path):
                         continue
@@ -474,7 +474,7 @@ if phase and os.path.isfile(playbook_path):
 # malformed (skip from coverage requirement either way).
 sections_present = set()
 for slug in required_slugs:
-    sa_path = os.path.join(proj, ".sdd", "subactions", f"{slug}.md")
+    sa_path = os.path.join(proj, ".sdd", "actions", f"{slug}.md")
     if not os.path.isfile(sa_path):
         continue
     try:
@@ -528,12 +528,12 @@ for slug, expected in sorted(approved.items()):
         )
         continue
 
-    # Resolve sub-action file. By convention, .sdd/subactions/<slug>.md.
-    sa_path = os.path.join(proj, ".sdd", "subactions", f"{slug}.md")
+    # Resolve sub-action file. By convention, .sdd/actions/<slug>.md.
+    sa_path = os.path.join(proj, ".sdd", "actions", f"{slug}.md")
     if not os.path.isfile(sa_path):
         errors.append(
             f"approved_sections.{slug} references unknown sub-action "
-            f"— no file at .sdd/subactions/{slug}.md"
+            f"— no file at .sdd/actions/{slug}.md"
         )
         continue
 

@@ -1,5 +1,5 @@
 ---
-type: subaction
+type: action
 slug: signoff-steps
 tag: USER-LED
 title: "§12 Human sign-off steps"

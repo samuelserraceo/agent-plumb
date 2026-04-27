@@ -236,7 +236,7 @@ os.makedirs(item_dir)
 # For each sub-action, include `### sub-action: <slug>` with placeholder body.
 first_stage = stages[0]
 first_stage_id = first_stage.get("id", "SPEC")
-sub_slugs = first_stage.get("subactions", []) or []
+sub_slugs = first_stage.get("actions", []) or []
 
 spec_lines = [
     f"# {title}",

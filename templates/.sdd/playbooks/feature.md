@@ -7,7 +7,7 @@ work_item_folder: features/
 work_item_id_pattern: "{NNN}-{slug}"
 stages:
   - id: SPEC
-    subactions:
+    actions:
       - problem
       - success
       - user-stories
@@ -26,13 +26,13 @@ stages:
       - { id: C-spec-acs,   check: "≥1 acceptance criterion exists in §11" }
       - { id: C-spec-tasks, check: "≥1 task in plan-decompose section" }
   - id: BUILD
-    subactions:
+    actions:
       - run-mode-chosen
       - build-task
     exit_checks:
       - { id: C-build-tasks-green, check: "every task is GREEN (test passing, code committed)" }
   - id: SHIP
-    subactions:
+    actions:
       - verify-test-run
       - verify-prod-only-acs
       - learn-summary
@@ -72,7 +72,7 @@ Total time depends on the feature. Small (a form, a CRUD endpoint): 1-2 hours. M
 
 Every `/next` runs the same 4-step inner loop:
 
-1. **LOCATE** — read `INDEX.md` to find the active work item, find the active sub-action, load that sub-action's prose from `.sdd/subactions/<slug>.md`.
+1. **LOCATE** — read `INDEX.md` to find the active work item, find the active sub-action, load that sub-action's prose from `.sdd/actions/<slug>.md`.
 2. **EXECUTE** — ask the user (USER-LED) or draft + iterate (AGENT-LED). Capture the result in `spec.md`.
 3. **SYNC** — `pre-commit-touches.sh` (Theme 4) verifies the right files are staged for this step. Block if missing.
 4. **ADVANCE** — `post-commit-advance.sh` (Theme 4) updates the active blocker pointer in `INDEX.md` to the next sub-action.

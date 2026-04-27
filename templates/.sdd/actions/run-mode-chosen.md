@@ -1,5 +1,5 @@
 ---
-type: subaction
+type: action
 slug: run-mode-chosen
 tag: USER-LED
 title: "Run mode chosen"

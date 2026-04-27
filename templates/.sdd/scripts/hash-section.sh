@@ -7,7 +7,7 @@
 #
 #   <spec-path>           — path to the spec.md being hashed
 #   <subaction-md-path>   — path to the sub-action's framework file
-#                           (.sdd/subactions/<slug>.md). Used to resolve
+#                           (.sdd/actions/<slug>.md). Used to resolve
 #                           BOTH the slug and the title for heading matching.
 #
 # Output:

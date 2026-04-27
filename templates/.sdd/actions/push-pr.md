@@ -1,5 +1,5 @@
 ---
-type: subaction
+type: action
 slug: push-pr
 tag: AGENT-LED
 title: "push-pr"

@@ -1,5 +1,5 @@
 ---
-type: subaction
+type: action
 slug: proposed-approach
 tag: AGENT-LED
 title: "§5 Proposed approach"

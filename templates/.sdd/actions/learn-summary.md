@@ -1,5 +1,5 @@
 ---
-type: subaction
+type: action
 slug: learn-summary
 tag: AGENT-LED
 title: "learn-summary"

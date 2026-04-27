@@ -1,5 +1,5 @@
 ---
-type: subaction
+type: action
 slug: plan-decompose
 tag: AGENT-LED
 title: "plan-decompose"

@@ -46,20 +46,20 @@ mkproj() {
   echo "$d"
 }
 
-# v0.8 scaffold: copies the framework's actual playbooks/, subactions/, config.md
+# v0.8 scaffold: copies the framework's actual playbooks/, actions/, config.md
 # templates so each loader test starts from a "real valid project." Tests then
 # OVERLAY a fixture file to introduce one specific failure mode.
 # Used by T27-T30 (loader validation tests) and T31-T35 (hook tests).
 mkproj_v08() {
   local d
   d=$(mktemp -d)
-  mkdir -p "$d/.sdd/playbooks" "$d/.sdd/subactions" "$d/.sdd/scripts" \
+  mkdir -p "$d/.sdd/playbooks" "$d/.sdd/actions" "$d/.sdd/scripts" \
            "$d/.sdd/.cache" "$d/.sdd/features/001-test"
   cp "$FRAMEWORK_ROOT/templates/.sdd/config.md"          "$d/.sdd/config.md"
   cp "$FRAMEWORK_ROOT/templates/.sdd/playbooks/feature.md" "$d/.sdd/playbooks/feature.md"
   # Copy ALL sub-actions from the framework so manifest hash-pin is satisfied.
   # (Theme 3 extracted 20 more, bringing total to 23.)
-  cp "$FRAMEWORK_ROOT"/templates/.sdd/subactions/*.md "$d/.sdd/subactions/"
+  cp "$FRAMEWORK_ROOT"/templates/.sdd/actions/*.md "$d/.sdd/actions/"
   cp "$FRAMEWORK_ROOT/templates/.sdd/.cache/manifest.json"            "$d/.sdd/.cache/manifest.json"
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/load-playbook.sh"        "$d/.sdd/scripts/load-playbook.sh"
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/hash-section.sh"         "$d/.sdd/scripts/hash-section.sh"
@@ -959,8 +959,8 @@ fi
 # ============================================================
 note "T27: load-playbook.sh --validate rejects unknown tag"
 d=$(mkproj_v08)
-# Overlay invalid fixture into the project's subactions/
-cp "$FIXTURES_V08/invalid-unknown-tag.md" "$d/.sdd/subactions/invalid-unknown-tag.md"
+# Overlay invalid fixture into the project's actions/
+cp "$FIXTURES_V08/invalid-unknown-tag.md" "$d/.sdd/actions/invalid-unknown-tag.md"
 out=$(bash "$LOAD_PLAYBOOK" --validate "$d" 2>&1) && ec=0 || ec=$?
 rm -rf "$d"
 if [ "$ec" -ne 0 ] && echo "$out" | grep -qiE 'BOGUS|unknown tag|invalid tag'; then
@@ -977,7 +977,7 @@ fi
 note "T28: load-playbook.sh --validate rejects slug-filename mismatch"
 d=$(mkproj_v08)
 # Fixture's filename is invalid-slug-mismatch.md but its slug claims not-the-filename
-cp "$FIXTURES_V08/invalid-slug-mismatch.md" "$d/.sdd/subactions/invalid-slug-mismatch.md"
+cp "$FIXTURES_V08/invalid-slug-mismatch.md" "$d/.sdd/actions/invalid-slug-mismatch.md"
 out=$(bash "$LOAD_PLAYBOOK" --validate "$d" 2>&1) && ec=0 || ec=$?
 rm -rf "$d"
 if [ "$ec" -ne 0 ] && echo "$out" | grep -qiE 'slug.*mismatch|slug.*filename|not-the-filename'; then
@@ -994,8 +994,8 @@ fi
 note "T29: load-playbook.sh --validate rejects multi-match slug"
 d=$(mkproj_v08)
 # Two fixtures both declare slug=dup-test
-cp "$FIXTURES_V08/multi-match/dup-a.md" "$d/.sdd/subactions/dup-a.md"
-cp "$FIXTURES_V08/multi-match/dup-b.md" "$d/.sdd/subactions/dup-b.md"
+cp "$FIXTURES_V08/multi-match/dup-a.md" "$d/.sdd/actions/dup-a.md"
+cp "$FIXTURES_V08/multi-match/dup-b.md" "$d/.sdd/actions/dup-b.md"
 out=$(bash "$LOAD_PLAYBOOK" --validate "$d" 2>&1) && ec=0 || ec=$?
 rm -rf "$d"
 if [ "$ec" -ne 0 ] && echo "$out" | grep -qiE 'duplicate slug|multi.?match|dup-test.*matches'; then
@@ -1013,15 +1013,15 @@ fi
 note "T30: load-playbook.sh detects tampered framework file"
 d=$(mkproj_v08)
 # Build a manifest claiming a hash for problem.md that DOESN'T match the actual file
-problem_path="$d/.sdd/subactions/problem.md"
+problem_path="$d/.sdd/actions/problem.md"
 fake_hash="0000000000000000000000000000000000000000000000000000000000000000"
 cat > "$d/.sdd/.cache/manifest.json" <<EOF
 {
   "sdd_version": "0.8.0",
   "playbooks": {},
-  "subactions": {
+  "actions": {
     "problem": {
-      "path": ".sdd/subactions/problem.md",
+      "path": ".sdd/actions/problem.md",
       "expected_sha256": "$fake_hash",
       "trust": "framework"
     }
@@ -1134,7 +1134,7 @@ fi
 # ============================================================
 # T34 — load-playbook.sh --validate rejects unresolved subaction reference
 #   RED: loader doesn't enforce SCHEMA.md §1.5 — "every subactions[]
-#        slug must reference an existing .sdd/subactions/<slug>.md."
+#        slug must reference an existing .sdd/actions/<slug>.md."
 #        Found by GPT-5.5 review (DRIFT 1) — the v0.8 feature playbook
 #        referenced 23 subactions while only 3 existed, and the loader
 #        was silently passing.
@@ -1145,7 +1145,7 @@ d=$(mkproj_v08)
 cp "$FIXTURES_V08/invalid-unresolved-subaction.md" "$d/.sdd/playbooks/invalid-unresolved-subaction.md"
 out=$(bash "$LOAD_PLAYBOOK" --validate "$d" 2>&1) && ec=0 || ec=$?
 rm -rf "$d"
-if [ "$ec" -ne 0 ] && echo "$out" | grep -qiE 'does-not-exist|unresolved|no .sdd/subactions'; then
+if [ "$ec" -ne 0 ] && echo "$out" | grep -qiE 'does-not-exist|unresolved|no .sdd/actions'; then
   ok "T34 unresolved subaction reference rejected (exit=$ec, error names the dangling slug)"
 else
   bad "T34 unresolved reference accepted or wrong error" "exit=$ec; out='$out'"
@@ -1193,8 +1193,8 @@ fi
 note "T37: moat blocks tampered sub-action (manifest hash-pin)"
 d=$(mkproj_v08)
 cd "$d"
-echo "# tampered AFTER manifest was generated" >> .sdd/subactions/problem.md
-git add .sdd/subactions/problem.md
+echo "# tampered AFTER manifest was generated" >> .sdd/actions/problem.md
+git add .sdd/actions/problem.md
 git commit -q -m "tamper" >/dev/null 2>&1
 echo "[PHASE: SPEC]" > .sdd/features/001-test/spec.md
 cat > .sdd/features/001-test/verification.json <<'EOF'
@@ -1235,7 +1235,7 @@ cat > .sdd/features/001-test/spec.md <<'EOF'
 - [ ] C1: dummy — true
 EOF
 problem_hash=$(bash .sdd/scripts/hash-section.sh \
-  .sdd/features/001-test/spec.md .sdd/subactions/problem.md)
+  .sdd/features/001-test/spec.md .sdd/actions/problem.md)
 cat > .sdd/features/001-test/verification.json <<EOF
 {"phase":"SPEC","checks":[{"id":"C1","result":"pass"}],"approved_sections":{"problem":"$problem_hash"}}
 EOF
@@ -1277,7 +1277,7 @@ cat > .sdd/features/001-test/spec.md <<'EOF'
 EOF
 # User approves; framework records hash
 problem_hash=$(bash .sdd/scripts/hash-section.sh \
-  .sdd/features/001-test/spec.md .sdd/subactions/problem.md)
+  .sdd/features/001-test/spec.md .sdd/actions/problem.md)
 cat > .sdd/features/001-test/verification.json <<EOF
 {"phase":"SPEC","checks":[{"id":"C1","result":"pass"}],"approved_sections":{"problem":"$problem_hash"}}
 EOF
@@ -1366,7 +1366,7 @@ cat > .sdd/features/001-test/spec.md <<'EOF'
 - [ ] C1: dummy — true
 EOF
 old_hash=$(bash .sdd/scripts/hash-section.sh \
-  .sdd/features/001-test/spec.md .sdd/subactions/problem.md)
+  .sdd/features/001-test/spec.md .sdd/actions/problem.md)
 cat > .sdd/features/001-test/verification.json <<EOF
 {"phase":"SPEC","checks":[{"id":"C1","result":"pass"}],"approved_sections":{"problem":"$old_hash"}}
 EOF
@@ -1579,13 +1579,13 @@ fi
 note "T47: manifest covers every framework sub-action"
 out=$(python3 - <<PYEOF
 import json, os, sys
-sub_dir = "$FRAMEWORK_ROOT/templates/.sdd/subactions"
+sub_dir = "$FRAMEWORK_ROOT/templates/.sdd/actions"
 manifest_path = "$FRAMEWORK_ROOT/templates/.sdd/.cache/manifest.json"
 sub_files = set(f[:-3] for f in os.listdir(sub_dir) if f.endswith(".md"))
 manifest = json.load(open(manifest_path))
-manifest_subs = set(manifest.get("subactions", {}).keys())
-missing = sub_files - manifest_subs
-orphans = manifest_subs - sub_files
+manifest_actions = set(manifest.get("actions", {}).keys())
+missing = sub_files - manifest_actions
+orphans = manifest_actions - sub_files
 if missing or orphans:
     print(f"MISMATCH missing-from-manifest={sorted(missing)} orphans-in-manifest={sorted(orphans)}")
     sys.exit(1)
@@ -2012,7 +2012,7 @@ cat > .sdd/features/001-test/spec.md <<'EOF'
 - [ ] C1: dummy — true
 EOF
 hash=$(bash .sdd/scripts/hash-section.sh \
-  .sdd/features/001-test/spec.md .sdd/subactions/problem.md)
+  .sdd/features/001-test/spec.md .sdd/actions/problem.md)
 cat > .sdd/features/001-test/verification.json <<EOF
 {"phase":"SPEC","checks":[{"id":"C1","result":"pass"}],"approved_sections":{"problem":"$hash"}}
 EOF
@@ -2079,7 +2079,7 @@ cat > .sdd/features/001-test/spec.md <<'EOF'
 - [ ] C1: dummy — true
 EOF
 hash=$(bash .sdd/scripts/hash-section.sh \
-  .sdd/features/001-test/spec.md .sdd/subactions/problem.md)
+  .sdd/features/001-test/spec.md .sdd/actions/problem.md)
 cat > .sdd/features/001-test/verification.json <<EOF
 {"phase":"SPEC","checks":[{"id":"C1","result":"pass"}],"approved_sections":{"problem":"$hash"}}
 EOF

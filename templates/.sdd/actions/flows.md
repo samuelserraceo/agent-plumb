@@ -1,5 +1,5 @@
 ---
-type: subaction
+type: action
 slug: flows
 tag: AGENT-LED
 title: "§7 Flows"

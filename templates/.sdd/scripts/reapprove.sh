@@ -49,7 +49,7 @@ cd "$PROJECT_DIR" || exit 1
 
 spec="$work_item_dir/spec.md"
 ver="$work_item_dir/verification.json"
-sa_path="$PROJECT_DIR/.sdd/subactions/$slug.md"
+sa_path="$PROJECT_DIR/.sdd/actions/$slug.md"
 
 [ -f "$spec" ] || { echo "reapprove: spec not found at $spec" >&2; exit 1; }
 [ -f "$sa_path" ] || { echo "reapprove: sub-action not found at $sa_path" >&2; exit 1; }

@@ -1,5 +1,5 @@
 ---
-type: subaction
+type: action
 slug: verify-prod-only-acs
 tag: USER-LED
 title: "verify-prod-only-acs"

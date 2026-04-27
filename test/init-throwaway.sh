@@ -81,7 +81,7 @@ feature: $FEAT_SLUG (a personal landing page with email waitlist).
 
 You are the SDD agent. Drive this feature through the spine. The
 playbook lives at .sdd/playbooks/feature.md, with each sub-action's
-prose at .sdd/subactions/<slug>.md.
+prose at .sdd/actions/<slug>.md.
 
 For each turn:
 1. Run \`bash .sdd/scripts/next-action.sh .sdd/$FEAT/spec.md\` and read the JSON.

@@ -1,5 +1,5 @@
 ---
-type: subaction
+type: action
 slug: not-the-filename
 tag: USER-LED
 title: "Sub-action where slug doesn't match filename"

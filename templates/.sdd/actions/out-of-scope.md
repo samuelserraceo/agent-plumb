@@ -1,5 +1,5 @@
 ---
-type: subaction
+type: action
 slug: out-of-scope
 tag: USER-LED
 title: "§9 Out of scope"

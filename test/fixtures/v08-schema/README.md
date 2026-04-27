@@ -16,7 +16,7 @@ These fixtures exercise edge cases of the v0.8 schema (defined in repo-root `SCH
 
 Theme 1 tests will:
 1. Set up a temp `.sdd/` scaffold (via `mkproj()` refactor in `run-framework-test.sh`)
-2. Copy a fixture into the appropriate path (e.g., `invalid-unknown-tag.md` → `.sdd/subactions/foo.md`)
+2. Copy a fixture into the appropriate path (e.g., `invalid-unknown-tag.md` → `.sdd/actions/foo.md`)
 3. Run `load-playbook.sh` (or its validation flag)
 4. Assert exit code + stderr message match expectations
 

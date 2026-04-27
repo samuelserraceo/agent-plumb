@@ -1,5 +1,5 @@
 ---
-type: subaction
+type: action
 slug: acceptance-criteria
 tag: AGENT-LED
 title: "§11 Acceptance criteria"

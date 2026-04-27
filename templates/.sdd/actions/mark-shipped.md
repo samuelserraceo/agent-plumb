@@ -1,5 +1,5 @@
 ---
-type: subaction
+type: action
 slug: mark-shipped
 tag: AGENT-LED
 title: "mark-shipped"

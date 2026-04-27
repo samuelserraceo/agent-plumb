@@ -1,5 +1,5 @@
 ---
-type: subaction
+type: action
 slug: non-functional
 tag: AGENT-LED
 title: "§10 Non-functional"

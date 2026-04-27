@@ -1,5 +1,5 @@
 ---
-type: subaction
+type: action
 slug: ux-brief
 tag: AGENT-LED
 title: "§4 UX & Design brief"

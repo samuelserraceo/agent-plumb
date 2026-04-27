@@ -1,5 +1,5 @@
 ---
-type: subaction
+type: action
 slug: wireframe
 tag: AGENT-LED
 title: "Wireframe"

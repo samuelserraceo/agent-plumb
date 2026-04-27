@@ -1,5 +1,5 @@
 ---
-type: subaction
+type: action
 slug: user-stories
 tag: USER-LED
 title: "§3 User stories"

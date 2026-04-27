@@ -1,5 +1,5 @@
 ---
-type: subaction
+type: action
 slug: dependencies
 tag: AGENT-LED
 title: "§8 Dependencies"

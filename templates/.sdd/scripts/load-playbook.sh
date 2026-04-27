@@ -193,14 +193,14 @@ def simple_yaml_parse(text, path):
 # ---------------------------------------------------------------------------
 # Per-file validators
 # ---------------------------------------------------------------------------
-def validate_subaction(path, fm):
+def validate_action(path, fm):
     """Validate sub-action frontmatter per SCHEMA.md §2."""
     expected_slug = os.path.splitext(os.path.basename(path))[0]
     rel = os.path.relpath(path, PROJ)
 
     # Required: type
-    if fm.get("type") != "subaction":
-        err(f"{rel} has type {fm.get('type')!r} — expected 'subaction' "
+    if fm.get("type") != "action":
+        err(f"{rel} has type {fm.get('type')!r} — expected 'action' "
             f"(SCHEMA.md §2.1)")
 
     # Required: slug equals filename
@@ -233,12 +233,12 @@ def validate_subaction(path, fm):
         err(f"{rel} has unknown trust value {trust!r} — allowed: "
             f"{', '.join(sorted(VALID_TRUST))} (SCHEMA.md §6)")
 
-def validate_playbook(path, fm, available_subactions=None):
+def validate_playbook(path, fm, available_actions=None):
     """Validate playbook frontmatter per SCHEMA.md §1.
 
-    `available_subactions` (optional set of slugs): when provided, every
+    `available_actions` (optional set of slugs): when provided, every
     subactions[] reference in the playbook must resolve. SCHEMA.md §1.5
-    rule. Caller passes the set built from scanning .sdd/subactions/.
+    rule. Caller passes the set built from scanning .sdd/actions/.
     """
     expected_slug = os.path.splitext(os.path.basename(path))[0]
     rel = os.path.relpath(path, PROJ)
@@ -268,11 +268,11 @@ def validate_playbook(path, fm, available_subactions=None):
             err(f"{rel} stage id {sid!r} — must be UPPERCASE letters only, "
                 f"max 16 chars (SCHEMA.md §6)")
         # Sub-action resolution check — SCHEMA.md §1.5
-        if available_subactions is not None:
-            for slug in stage.get("subactions", []) or []:
-                if slug not in available_subactions:
+        if available_actions is not None:
+            for slug in stage.get("actions", []) or []:
+                if slug not in available_actions:
                     err(f"{rel} stage {sid!r} references sub-action "
-                        f"{slug!r} but no .sdd/subactions/{slug}.md exists "
+                        f"{slug!r} but no .sdd/actions/{slug}.md exists "
                         f"(SCHEMA.md §1.5)")
         for chk in stage.get("exit_checks", []) or []:
             cid = chk.get("id", "")
@@ -353,11 +353,11 @@ def scan_files():
                 add(os.path.join(pdir, name), "playbook")
 
     # Sub-actions
-    sdir = os.path.join(SDD, "subactions")
+    sdir = os.path.join(SDD, "actions")
     if os.path.isdir(sdir):
         for name in sorted(os.listdir(sdir)):
             if name.endswith(".md"):
-                add(os.path.join(sdir, name), "subaction")
+                add(os.path.join(sdir, name), "action")
 
     # Extensions
     edir = os.path.join(SDD, "extensions")
@@ -377,15 +377,15 @@ def cmd_validate():
     records = scan_files()
     # Pre-collect available sub-action slugs so playbook validation can
     # check that every subactions[] reference resolves (SCHEMA.md §1.5).
-    available_subactions = {
+    available_actions = {
         r["slug"] for r in records
-        if r["type"] == "subaction" and r["slug"]
+        if r["type"] == "action" and r["slug"]
     }
     for r in records:
-        if r["type"] == "subaction":
-            validate_subaction(r["path"], r["fm"])
+        if r["type"] == "action":
+            validate_action(r["path"], r["fm"])
         elif r["type"] == "playbook":
-            validate_playbook(r["path"], r["fm"], available_subactions)
+            validate_playbook(r["path"], r["fm"], available_actions)
         elif r["type"] == "config":
             validate_config(r["path"], r["fm"])
     # build_slug_map runs as part of validation (catches duplicate slugs
@@ -409,7 +409,7 @@ def cmd_check_hashes():
         err(f"manifest.json malformed: {e}")
         return
 
-    for section in ("playbooks", "subactions", "extensions", "scripts"):
+    for section in ("playbooks", "actions", "extensions", "scripts"):
         for slug, entry in (manifest.get(section) or {}).items():
             rel = entry.get("path", "")
             expected = entry.get("expected_sha256", "")

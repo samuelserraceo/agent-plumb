@@ -125,7 +125,7 @@ next_slug = None
 next_stage_id = None
 terminal = False
 for i, stage in enumerate(stages):
-    sa_list = stage.get("subactions", []) or []
+    sa_list = stage.get("actions", []) or []
     if active_slug in sa_list:
         idx = sa_list.index(active_slug)
         if idx + 1 < len(sa_list):
@@ -135,7 +135,7 @@ for i, stage in enumerate(stages):
         elif i + 1 < len(stages):
             # Stage transition.
             next_stage = stages[i + 1]
-            next_stage_subs = next_stage.get("subactions", []) or []
+            next_stage_subs = next_stage.get("actions", []) or []
             if next_stage_subs:
                 next_slug = next_stage_subs[0]
                 next_stage_id = next_stage.get("id", "?")
@@ -182,7 +182,7 @@ import time
 metrics_path = os.path.join(proj, ".sdd", "metrics.md")
 work_item = m_active.group(1).strip()
 # Read tag from the just-completed sub-action's frontmatter.
-sa_path = os.path.join(proj, ".sdd", "subactions", f"{active_slug}.md")
+sa_path = os.path.join(proj, ".sdd", "actions", f"{active_slug}.md")
 tag = "?"
 if os.path.isfile(sa_path):
     try:
