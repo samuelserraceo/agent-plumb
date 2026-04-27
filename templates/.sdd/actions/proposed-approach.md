@@ -4,6 +4,8 @@ slug: proposed-approach
 tag: AGENT-LED
 title: "§5 Proposed approach"
 short_label: "Approach"
+steps:
+  - { id: approval, action: draft_iterate_approve_with_2_alternatives_and_tradeoffs, field: "§5", triggers: [section_approved] }
 bundling: n_a
 used_by: [feature]
 references: [problem, success, user-stories, ux-brief]

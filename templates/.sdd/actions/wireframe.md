@@ -4,6 +4,8 @@ slug: wireframe
 tag: AGENT-LED
 title: "Wireframe"
 short_label: "Wireframe"
+steps:
+  - { id: wireframe, action: draft_wireframe_html_with_one_screen_per_user_story, field: "wireframe.html" }
 bundling: n_a
 used_by: [feature]
 references: [user-stories, ux-brief]

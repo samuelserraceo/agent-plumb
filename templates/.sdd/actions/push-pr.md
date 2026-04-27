@@ -4,6 +4,8 @@ slug: push-pr
 tag: AGENT-LED
 title: "push-pr"
 short_label: "Push PR"
+steps:
+  - { id: push, action: push_branch_open_pr_with_spec_md_body, field: "pr-url-in-INDEX.md" }
 bundling: n_a
 used_by: [feature]
 references: [problem, success, learn, plan-decompose]

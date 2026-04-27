@@ -4,6 +4,9 @@ slug: learn
 tag: AGENT-LED
 title: "learn"
 short_label: "Learn"
+steps:
+  - { id: summary, action: one_paragraph_recap_of_what_shipped, field: "§learn.summary" }
+  - { id: lessons, action: extract_1_to_2_cross_feature_lessons_sync_patterns_md, field: "§learn.lessons" }
 bundling: n_a
 used_by: [feature]
 references: [problem, success, acceptance-criteria, build-task, verify-test-run, non-functional, data-contract]

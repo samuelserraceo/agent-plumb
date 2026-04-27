@@ -4,6 +4,8 @@ slug: mark-shipped
 tag: AGENT-LED
 title: "mark-shipped"
 short_label: "Shipped"
+steps:
+  - { id: mark, action: write_shipped_marker_update_INDEX_shipped_block, field: ".shipped" }
 bundling: n_a
 used_by: [feature]
 references: [push-pr, verify-ci-green]

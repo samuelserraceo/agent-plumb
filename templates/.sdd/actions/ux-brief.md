@@ -4,6 +4,8 @@ slug: ux-brief
 tag: AGENT-LED
 title: "§4 UX & Design brief"
 short_label: "UX brief"
+steps:
+  - { id: brief, action: infer_ux_direction_from_problem_success_user_stories, field: "§4" }
 bundling: n_a
 used_by: [feature]
 references: [problem, success, user-stories]

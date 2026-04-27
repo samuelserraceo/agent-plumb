@@ -4,6 +4,8 @@ slug: verify-test-run
 tag: AGENT-LED
 title: "verify-test-run"
 short_label: "Test run"
+steps:
+  - { id: full-suite, action: run_full_test_suite_mark_all_acs_pass_or_open_bug, field: "§verify-test-run" }
 bundling: n_a
 used_by: [feature]
 references: [acceptance-criteria, plan-decompose]

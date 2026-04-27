@@ -4,6 +4,10 @@ slug: build-task
 tag: BUILD-TASK
 title: "Build a task"
 short_label: "Task"
+steps:
+  - { id: test, action: write_failing_test_for_task_N, field: "tests/task-NNN.*" }
+  - { id: code, action: write_code_make_test_green_keep_others_green, field: "src" }
+  - { id: green, action: mark_task_status_GREEN_commit_atomic, field: "BUILD.task-N.status" }
 bundling: n_a
 used_by: [feature]
 references: [acceptance-criteria, plan-decompose]
