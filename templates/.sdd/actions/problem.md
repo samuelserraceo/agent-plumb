@@ -4,10 +4,10 @@ slug: problem
 tag: USER-LED
 title: "§1 Problem"
 short_label: "Problem"
-fields:
-  - { id: who-has-it, label: "Who has it" }
-  - { id: why-now, label: "Why now" }
-  - { id: what-breaks, label: "What breaks without it" }
+steps:
+  - { id: who, prompt: "Who specifically has this problem? (real persona, not 'users')", field: "§1.who-has-it" }
+  - { id: why-now, prompt: "Why is it worth solving now?", field: "§1.why-now" }
+  - { id: what-breaks, prompt: "What breaks (concretely) if it isn't solved?", field: "§1.what-breaks" }
 bundling: bundle_all_fields_in_one_turn
 used_by: [feature]
 references: []

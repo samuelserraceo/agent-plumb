@@ -4,8 +4,8 @@ slug: success
 tag: USER-LED
 title: "§2 Success"
 short_label: "Success"
-fields:
-  - { id: verifiable-outcomes, label: "Verifiable outcomes (with numbers)" }
+steps:
+  - { id: metric, prompt: "Pick a metric pattern (volume / speed / quality / engagement) or describe your own. Give a target number AND the current baseline if known.", field: "§2.verifiable-outcomes" }
 bundling: bundle_all_fields_in_one_turn
 used_by: [feature]
 references: []

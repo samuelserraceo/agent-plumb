@@ -4,8 +4,8 @@ slug: run-mode-chosen
 tag: USER-LED
 title: "Run mode chosen"
 short_label: "Run mode"
-fields:
-  - { id: run-mode, label: "Run mode for BUILD" }
+steps:
+  - { id: mode, prompt: "How do you want to run BUILD? 1=step-by-step, 2=checkpoint-every-5, 3=full autonomous, 4=Shell Ralph headless. Or adjust.", field: "**Run mode:**" }
 bundling: bundle_all_fields_in_one_turn
 used_by: [feature]
 references: [plan-decompose]

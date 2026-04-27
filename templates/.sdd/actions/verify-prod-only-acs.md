@@ -4,8 +4,8 @@ slug: verify-prod-only-acs
 tag: USER-LED
 title: "verify-prod-only-acs"
 short_label: "PROD-ONLY check"
-fields:
-  - { id: prod-only-results, label: "PROD-ONLY AC verifications" }
+steps:
+  - { id: prod-walk, prompt: "For each [PROD-ONLY] AC in §11: walk through it manually post-deploy. Tick or carry forward.", field: "§verify-prod-only-acs" }
 bundling: bundle_all_fields_in_one_turn
 used_by: [feature]
 references: [acceptance-criteria, signoff-steps]

@@ -4,8 +4,9 @@ slug: out-of-scope
 tag: USER-LED
 title: "§9 Out of scope"
 short_label: "Out of scope"
-fields:
-  - { id: explicitly-deferred, label: "What we're NOT building this round" }
+steps:
+  - { id: list, prompt: "What are we explicitly NOT building this round? 1-5 bullets, each: name + reason. Empty is fine.", field: "§9.explicitly-deferred" }
+  - { id: approval, action: user_approves, triggers: [section_approved] }
 bundling: bundle_all_fields_in_one_turn
 used_by: [feature]
 references: [problem, success, user-stories]

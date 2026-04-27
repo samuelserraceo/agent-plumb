@@ -72,7 +72,7 @@
       "trust": "framework"
     },
     "out-of-scope": {
-      "expected_sha256": "a155cb94e1341b696acf205576c11658a02cc3f0bd51a385c3723675673dcd41",
+      "expected_sha256": "4ab8ccd6602f0512d394dae589ab828a54841a317745314cb3efb88ac5657483",
       "path": ".sdd/actions/out-of-scope.md",
       "trust": "framework"
     },
@@ -82,7 +82,7 @@
       "trust": "framework"
     },
     "problem": {
-      "expected_sha256": "f8136cb60be2aa043c9813e3b166073b30dfbb748f6163464bea8dc422c89cb1",
+      "expected_sha256": "ecce3a651a96555ce1d54a1532f8a3395464cec58d4f6016fee49f0202eb1d4d",
       "path": ".sdd/actions/problem.md",
       "trust": "framework"
     },
@@ -97,22 +97,22 @@
       "trust": "framework"
     },
     "run-mode-chosen": {
-      "expected_sha256": "986c2d8467187b9491aca157496b1e2b1438b0af7a481034a7936b937a5ce176",
+      "expected_sha256": "1dcaf3153ab28c30472c8033d425b0959c79667a2d7bfede8c3dea5d08d3aac6",
       "path": ".sdd/actions/run-mode-chosen.md",
       "trust": "framework"
     },
     "signoff-steps": {
-      "expected_sha256": "f0a49acf03504ebc8c7f2db4a9a628bf3c184f0b0cf11d1a3c4df158148d2301",
+      "expected_sha256": "a99ff6a71f92dd51dfa216380ece30ba219d4fa4129290eb31956981fa115f5d",
       "path": ".sdd/actions/signoff-steps.md",
       "trust": "framework"
     },
     "success": {
-      "expected_sha256": "538c966642c6f3b305c68396e9a43732db02765f2e6b91d94bade41543cb0efb",
+      "expected_sha256": "78fb5f038b16bb528f5f2636eabd6cfadb12b6276f1d57306b0f515f4da9f2cb",
       "path": ".sdd/actions/success.md",
       "trust": "framework"
     },
     "user-stories": {
-      "expected_sha256": "372235f58c81f9749978e3de5d8e696d62d78a6922dabcdd6d22a91e06f12874",
+      "expected_sha256": "fba8e3ee666f9aae2d1ee064540bb742d800e2c03e795f0e0c3b8cde1e43fe3a",
       "path": ".sdd/actions/user-stories.md",
       "trust": "framework"
     },
@@ -127,7 +127,7 @@
       "trust": "framework"
     },
     "verify-prod-only-acs": {
-      "expected_sha256": "8e0c59c0f05a72746983f92cd58d37f060f1711791e4079fec4156fee04d1843",
+      "expected_sha256": "6f8cd2d4082e320938656f1e63247faa200267f6101caa0bdc720bc31c4736a7",
       "path": ".sdd/actions/verify-prod-only-acs.md",
       "trust": "framework"
     },
