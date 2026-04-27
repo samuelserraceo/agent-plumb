@@ -9,7 +9,7 @@
   },
   "scripts": {
     "advance.sh": {
-      "expected_sha256": "945b9fc90e8336bb4b84d52ec996ee2c03af931304a58c1e8ee41f7d73460217",
+      "expected_sha256": "07365773597ab3a188d98b1ccc7016d05c65a10eff55275a2397bcb242d197d8",
       "path": ".sdd/scripts/advance.sh",
       "trust": "framework"
     },

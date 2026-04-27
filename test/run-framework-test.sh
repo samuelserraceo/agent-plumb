@@ -1836,6 +1836,63 @@ else
 fi
 
 # ============================================================
+# T58 — user-prompt-submit truncates injection at SDD_INJECTION_CAP_CHARS
+#   (Theme 11 grain budget — closes Codex finding #9: "one /next too elastic")
+#   RED: hook emits unbounded content, agent's context bloats unboundedly.
+# ============================================================
+note "T58: user-prompt-submit truncates content at injection cap (Theme 11)"
+d=$(mkproj_v08)
+cd "$d"
+# Make INDEX.md HUGE — 30,000 chars of dummy content (well over 16K cap)
+echo '**Active:** none' > .sdd/INDEX.md
+python3 -c "import sys; sys.stdout.write('# bloat\n' + ('lorem ipsum dolor sit amet ' * 1500))" >> .sdd/INDEX.md
+out=$(bash "$FRAMEWORK_ROOT/templates/.claude/hooks/user-prompt-submit.sh" 2>&1)
+ec=$?
+chars=${#out}
+cd - >/dev/null
+rm -rf "$d"
+# Assert: hook exits 0, output is bounded near the cap, sentinel present
+if [ "$ec" -eq 0 ] \
+   && [ "$chars" -le 17000 ] \
+   && echo "$out" | grep -q 'TRUNCATED'; then
+  ok "T58 truncation enforced (output=${chars} chars, cap=16000, sentinel present)"
+else
+  bad "T58 truncation broken or missing" "exit=$ec; chars=$chars; sentinel? $(echo "$out" | grep -c TRUNCATED)"
+fi
+
+# ============================================================
+# T59 — advance.sh appends to .sdd/metrics.md (Theme 12 — token instrumentation)
+#   RED: advance.sh updates INDEX.md but never logs the iteration. Sam can't
+#        answer "is this framework earning its keep?" with data.
+# ============================================================
+note "T59: advance.sh appends a line to .sdd/metrics.md (Theme 12)"
+d=$(mkproj_v08)
+cd "$d"
+cat > .sdd/INDEX.md <<'EOF'
+**Active:** features/001-test
+**Playbook:** feature
+**Active blocker:** §1 (first sub-action: problem)
+
+## Active
+
+## Shipped
+EOF
+bash "$ADVANCE_SH" "$d" >/dev/null 2>&1
+metrics_size=$(wc -c < .sdd/metrics.md 2>/dev/null || echo 0)
+metrics_line=$(tail -1 .sdd/metrics.md 2>/dev/null || echo "")
+cd - >/dev/null
+rm -rf "$d"
+# Assert: metrics.md exists, has at least one line, line includes timestamp + slug + tag
+if [ "$metrics_size" -gt 0 ] \
+   && echo "$metrics_line" | grep -qE '^[0-9]{4}-[0-9]{2}-[0-9]{2}T' \
+   && echo "$metrics_line" | grep -q 'problem' \
+   && echo "$metrics_line" | grep -q 'USER-LED'; then
+  ok "T59 metrics.md got a line with timestamp + slug + tag"
+else
+  bad "T59 metrics.md missing or malformed" "size=$metrics_size; last_line='$metrics_line'"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'

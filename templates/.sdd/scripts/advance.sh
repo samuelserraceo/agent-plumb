@@ -172,6 +172,36 @@ new_index = re.sub(
 with open(index_path, "w") as f:
     f.write(new_index)
 
+# Theme 12 — token instrumentation. Append one line to .sdd/metrics.md
+# per /next iteration. Format:
+#   <ISO-Z timestamp>  <work-item-path>  <slug>  <tag>  <tokens>  <duration-s>
+# B-1 ships timestamp + slug + tag (token count + duration require
+# LLM-level data unavailable from a shell script; Phase C extension
+# can plumb them via the agent's own usage metadata).
+import time
+metrics_path = os.path.join(proj, ".sdd", "metrics.md")
+work_item = m_active.group(1).strip()
+# Read tag from the just-completed sub-action's frontmatter.
+sa_path = os.path.join(proj, ".sdd", "subactions", f"{active_slug}.md")
+tag = "?"
+if os.path.isfile(sa_path):
+    try:
+        with open(sa_path) as f:
+            sa_text = f.read()
+        sa_fm_match = re.match(r"^---\n(.*?)\n---", sa_text, re.DOTALL)
+        if sa_fm_match:
+            sa_fm = yaml.safe_load(sa_fm_match.group(1))
+            if isinstance(sa_fm, dict):
+                tag = sa_fm.get("tag", "?")
+    except Exception:
+        pass
+ts = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+metrics_line = f"{ts}  {work_item}  {active_slug}  {tag}  -  -\n"
+# Append-only — never edit prior lines (decisions.md / metrics.md are
+# event logs per handoff Theme 7, Theme 12).
+with open(metrics_path, "a") as f:
+    f.write(metrics_line)
+
 if terminal:
     print(f"[advance] {active_slug} was the last sub-action — work item "
           f"is now at terminal state.")
