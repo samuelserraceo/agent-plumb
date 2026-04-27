@@ -8,6 +8,11 @@
     }
   },
   "scripts": {
+    "hash-section.sh": {
+      "expected_sha256": "1164f74b431e67b231548c482068b582f0b3419b7bd1b0d73dcbf6baf46a8563",
+      "path": ".sdd/scripts/hash-section.sh",
+      "trust": "framework"
+    },
     "load-playbook.sh": {
       "expected_sha256": "91cb90e71fc431c5b81f00ca709bf6ce3bed8a5676e300794d75ffd565ec94eb",
       "path": ".sdd/scripts/load-playbook.sh",

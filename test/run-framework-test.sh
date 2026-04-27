@@ -58,6 +58,7 @@ mkproj_v08() {
   cp "$FRAMEWORK_ROOT/templates/.sdd/subactions/build-task.md"        "$d/.sdd/subactions/build-task.md"
   cp "$FRAMEWORK_ROOT/templates/.sdd/.cache/manifest.json"            "$d/.sdd/.cache/manifest.json"
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/load-playbook.sh"        "$d/.sdd/scripts/load-playbook.sh"
+  cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/hash-section.sh"         "$d/.sdd/scripts/hash-section.sh"
   cp "$VERIFY_STAGE" "$d/.sdd/scripts/verify-stage.sh" 2>/dev/null || true
   cp "$NEXT_ACTION"  "$d/.sdd/scripts/next-action.sh"  2>/dev/null || true
   ( cd "$d" \
