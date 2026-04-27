@@ -39,12 +39,17 @@ esac
 # Inside a git repo?
 git rev-parse --git-dir >/dev/null 2>&1 || exit 0
 
-# Find staged verification.json paths (one per active feature, usually).
+# Find staged verification.json AND staged spec.md paths (one per active
+# feature, usually).
 staged_files=$(git diff --cached --name-only --diff-filter=ACM 2>/dev/null || true)
 staged_verifications=$(printf '%s\n' "$staged_files" | grep -E '(^|/)verification\.json$' || true)
+staged_specs=$(printf '%s\n' "$staged_files" | grep -E '(^|/)spec\.md$' || true)
 
-# No staged verification.json → not a verification commit → allow.
-[ -z "$staged_verifications" ] && exit 0
+# Neither staged → not a verification-relevant commit → allow.
+# (UAT/T64 finding: spec-only commits also need re-checking when HEAD has
+# an approved verification.json — see the spec-only-attack block at the
+# bottom of this file.)
+[ -z "$staged_verifications" ] && [ -z "$staged_specs" ] && exit 0
 
 # Locate verify-stage.sh. Search project-relative first (real installed
 # project), then framework template (for in-tree tests).
@@ -711,5 +716,44 @@ EOF
     exit 2
   fi
 done <<< "$staged_verifications"
+
+# === SPEC-ONLY ATTACK PATH (UAT / T64 finding) ===
+# Combined `git add spec.md && git commit` stages ONLY spec.md, leaving
+# the existing verification.json (with hashes for the now-softened
+# section content) sitting in HEAD. The original early-exit above
+# treated "no staged verification.json" as "nothing to verify" — but
+# that's exactly what the spec-only attack relies on.
+#
+# For every staged spec.md whose sibling verification.json is NOT in
+# the staged set (already covered by the loop above), pull verification
+# from HEAD and re-run check_approved_sections. Mismatch → block.
+# No HEAD verification.json (legitimate new-feature mid-SPEC) → skip.
+# No hash-section.sh available (Phase A scaffold) → skip.
+if [ -n "$HASH_SECTION" ] && [ -n "$staged_specs" ]; then
+  while IFS= read -r spath; do
+    [ -z "$spath" ] && continue
+    feature_dir=$(dirname "$spath")
+    vpath="$feature_dir/verification.json"
+    # Skip if verification.json is also staged — already handled above.
+    if printf '%s\n' "$staged_verifications" | grep -qFx "$vpath"; then
+      continue
+    fi
+    # Pull HEAD's verification.json. If absent (new feature, no prior
+    # commit), skip — there's nothing to compare the staged spec against.
+    head_claim=$(git show "HEAD:$vpath" 2>/dev/null) || continue
+    [ -z "$head_claim" ] && continue
+    # Read the staged spec.md blob from the index.
+    staged_spec=$(mktemp)
+    if ! git show ":$spath" > "$staged_spec" 2>/dev/null; then
+      rm -f "$staged_spec"
+      continue
+    fi
+    if ! check_approved_sections "$head_claim" "$staged_spec" "$HASH_SECTION"; then
+      rm -f "$staged_spec"
+      exit 2
+    fi
+    rm -f "$staged_spec"
+  done <<< "$staged_specs"
+fi
 
 exit 0
