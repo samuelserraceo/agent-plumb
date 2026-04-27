@@ -6,21 +6,28 @@
      SDD ships an update. Your edits inside this block will be lost.
      Your project-specific rules go BELOW the END marker.
      ════════════════════════════════════════════════════════════════════ -->
-<!-- SDD-MANAGED-START version: 0.7.1 -->
+<!-- SDD-MANAGED-START version: 0.7.5-phase-a -->
 
 # CLAUDE.md
 
 You are working inside a Spec-Driven Development (SDD) project. The MANAGED section below tells you how to behave; the user-owned section at the bottom may add project-specific rules. Read both every session. Failure to follow these rules = broken workflow.
 
+**Canonical playbook**: `.sdd/profile-feature.md`. The 3-phase state machine (SPEC → BUILD → SHIP → SHIPPED) and the per-phase sub-actions live there. This file (CLAUDE.md) covers the cross-cutting rules; the playbook covers what each phase actually requires.
+
+**Legacy phase names in this doc**: where you see references to "PLAN phase", "VERIFY phase", or "LEARN phase" below, they are sub-actions of SPEC or SHIP in the 3-phase spine, kept here for prose continuity:
+- "PLAN" → SPEC's `plan-decompose` sub-action (turning ACs into tasks)
+- "VERIFY" → SHIP's `verify-test-run` + `verify-prod-only-acs` sub-actions
+- "LEARN" → SHIP's `learn-summary` + `learn-lessons` sub-actions
+
 ## Slash commands available to the user
 
 | Command | Purpose | Branch | Phases |
 |---|---|---|---|
-| `/next` | Advance the active feature by one step | feature branch (auto-created on first call) | SPEC → PLAN → BUILD → VERIFY → LEARN |
-| `/bug` | Capture and fix a bug — smaller rubric (`.sdd/rubric-bug.md`) | bug branch (`sdd/<id>-bug-<slug>`) | SPEC → BUILD → VERIFY → LEARN (no PLAN) |
+| `/next` | Advance the active feature by one step | feature branch (auto-created on first call) | SPEC → BUILD → SHIP → SHIPPED |
+| `/bug` | Capture and fix a bug — smaller rubric (`.sdd/rubric-bug.md`) | bug branch (`sdd/<id>-bug-<slug>`) | SPEC → BUILD → SHIP (no plan-decompose) |
 | `/idea` | Capture an idea to backlog cheaply — single file, no commitment | main (lives in `.sdd/ideas/`) | none |
 | `/status` | Print current workflow state | n/a | n/a |
-| `/ship` | Push branch, open PR, watch CI, mark shipped or capture bug | active branch | VERIFY complete |
+| `/ship` | Push branch, open PR, watch CI, mark shipped or capture bug | active branch | SHIP complete |
 | `/skip` | Skip a `[SKIPPABLE]` rubric section with a reason | active branch | any |
 | `/compress` | Consolidate `patterns.md` or `data-model.md` when they grow noisy | n/a | n/a |
 
@@ -69,9 +76,10 @@ Don't force this. If the question genuinely has no common patterns (e.g. §1 "wh
 
 ## The rubric is the state machine
 
-- Phases: `SPEC → PLAN → BUILD → VERIFY → LEARN → SHIPPED`
+- Phases: `SPEC → BUILD → SHIP → SHIPPED` (the 3-phase v0.8 spine; PLAN/VERIFY/LEARN from earlier versions are folded in as sub-actions of SPEC and SHIP — see `.sdd/profile-feature.md`).
 - You **cannot** advance `[PHASE: X]` in `spec.md` while any `[ ]` remains in that phase's sections.
 - You **cannot** silently fill a `[ ]` with an assumption. If you don't know, ask.
+- Phase advances are gated by `verify-stage.sh` writing a `verification.json`, which the moat hook (`pre-commit-stage-verified.sh`) re-checks at commit time. The agent's "I'm done" claim is text; the moat reads bash-checked truth.
 
 ## Non-technical user lens (applies to EVERYTHING you write to the user)
 
