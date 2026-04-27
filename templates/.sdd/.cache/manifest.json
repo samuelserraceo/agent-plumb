@@ -1,0 +1,35 @@
+{
+  "extensions": {},
+  "playbooks": {
+    "feature": {
+      "expected_sha256": "92e45ef7cb91c8761b9656e7e8c1f0e1803241fb696254bd8fedf1aca3aa1d43",
+      "path": ".sdd/playbooks/feature.md",
+      "trust": "framework"
+    }
+  },
+  "scripts": {
+    "load-playbook.sh": {
+      "expected_sha256": "df664f5464d47106e7ab01bbabba72f795e76ea760c30c18f80e546a914d2736",
+      "path": ".sdd/scripts/load-playbook.sh",
+      "trust": "framework"
+    }
+  },
+  "sdd_version": "0.8.0",
+  "subactions": {
+    "build-task": {
+      "expected_sha256": "e08bbd597ef36397e579c4e058545adc3cb10c6c24e3aa57ccb61e90e2833d20",
+      "path": ".sdd/subactions/build-task.md",
+      "trust": "framework"
+    },
+    "problem": {
+      "expected_sha256": "8ed9b73efd4f2b9070168d376e6014fcded123b921a5d8f353c336c3259360b6",
+      "path": ".sdd/subactions/problem.md",
+      "trust": "framework"
+    },
+    "proposed-approach": {
+      "expected_sha256": "e4ae61db1ee3ab8be5293e72920001148592bfd37337ca39647113a740194c06",
+      "path": ".sdd/subactions/proposed-approach.md",
+      "trust": "framework"
+    }
+  }
+}

@@ -1,0 +1,7 @@
+# Generated cache files (rebuildable from manifest + .sdd/ contents)
+slug-map.json
+backlinks.json
+
+# Editor temp files
+*.swp
+*.tmp
