@@ -1452,6 +1452,56 @@ else
 fi
 
 # ============================================================
+# T44 — Round 1 failure-mode A.1: empty approved_sections must NOT bypass
+#       coverage when a sub-action with requires_user_approval=true has
+#       its section drafted in spec.md.
+#
+#   Attack scenario flagged by the failure-mode reviewer: agent stages a
+#   weakened §proposed-approach (which has requires_user_approval=true)
+#   alongside verification.json with `approved_sections: {}`. Without
+#   coverage enforcement, the moat skips section-locking entirely (no
+#   entries to check), then the fabrication check passes because the
+#   weakened content trivially satisfies any verify-stage assertion.
+#
+#   Coverage check (Theme 1.6, post-Round-1) closes this: when a sub-
+#   action with requires_user_approval=true has its section present in
+#   spec.md, an approved_sections entry is REQUIRED.
+# ============================================================
+note "T44: empty approved_sections does NOT bypass coverage when section is drafted"
+d=$(mkproj_v08)
+cd "$d"
+# Spec.md includes a §proposed-approach section (proposed-approach has
+# requires_user_approval=true in its frontmatter — Theme 1.6).
+cat > .sdd/features/001-test/spec.md <<'EOF'
+[PHASE: SPEC]
+
+## PHASE: SPEC
+
+### sub-action: proposed-approach
+- Recommended approach: weak vague handwave
+- Alternatives considered: none
+- What we trade off: nothing
+
+### Exit checks
+- [ ] C1: dummy — true
+EOF
+# Verification.json with EMPTY approved_sections — the bypass attempt.
+cat > .sdd/features/001-test/verification.json <<'EOF'
+{"phase":"SPEC","checks":[{"id":"C1","result":"pass"}],"approved_sections":{}}
+EOF
+git add .sdd/features/001-test/
+hook_stdin='{"tool_input":{"command":"git commit -m phase: SPEC -> BUILD"}}'
+ec=0
+err=$(echo "$hook_stdin" | bash "$MOAT_HOOK" 2>&1 1>/dev/null) || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 2 ] && echo "$err" | grep -qiE 'coverage|missing required|proposed-approach'; then
+  ok "T44 empty approved_sections BLOCKED when section requires approval"
+else
+  bad "T44 empty approved_sections slipped through (Round 1 A.1 bypass NOT closed)" "exit=$ec; err='$err'"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'

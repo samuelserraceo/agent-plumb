@@ -307,13 +307,119 @@ except Exception:
 
 approved = d.get("approved_sections")
 # Field absent (v0.7.5 verification.json) → no Theme 1.6 enforcement.
+# This preserves Phase A backward compat — a verification.json without
+# approved_sections is a v0.7.5 artifact, not a v0.8 lock-bypass attempt.
 if approved is None:
     sys.exit(0)
 if not isinstance(approved, dict):
     print("[moat] approved_sections must be a JSON object, got "
           + type(approved).__name__, file=sys.stderr)
     sys.exit(1)
-# Empty dict → no entries to check.
+
+# === COVERAGE CHECK (Theme 1.6 — closes Round 1 failure-mode A.1) ===
+# Even with approved_sections present-but-empty, a v0.8 verification.json
+# MUST include a hash entry for every sub-action in the active phase that
+# declares `requires_user_approval: true` in its frontmatter. Otherwise an
+# adversarial agent can write `approved_sections: {}` alongside a tampered
+# spec.md and the moat silently skips the check (since no entries to check).
+#
+# Read the active playbook (B-1 default: 'feature') + each sub-action's
+# frontmatter to determine which slugs require coverage in this phase.
+# Block if any required slug is absent from claimed.approved_sections.
+
+phase = d.get("phase", "")
+playbook_slug = "feature"  # B-1 default; Phase C will read from INDEX.md
+playbook_path = os.path.join(proj, ".sdd", "playbooks", f"{playbook_slug}.md")
+
+required_slugs = set()
+if phase and os.path.isfile(playbook_path):
+    try:
+        with open(playbook_path) as f:
+            pb_text = f.read()
+        pb_fm_match = re.match(r"^---\n(.*?)\n---", pb_text, re.DOTALL)
+        if pb_fm_match:
+            try:
+                import yaml
+                pb_fm = yaml.safe_load(pb_fm_match.group(1))
+            except (ImportError, ModuleNotFoundError):
+                # No PyYAML → skip coverage check. Soft-fail rather than
+                # block (preserves Phase A test compatibility on minimal
+                # python installs).
+                pb_fm = None
+            except Exception:
+                pb_fm = None
+            if isinstance(pb_fm, dict):
+                stage_subactions = []
+                for stage in pb_fm.get("stages", []) or []:
+                    if stage.get("id") == phase:
+                        stage_subactions = stage.get("subactions", []) or []
+                        break
+                for slug in stage_subactions:
+                    sa_path = os.path.join(proj, ".sdd", "subactions",
+                                           f"{slug}.md")
+                    if not os.path.isfile(sa_path):
+                        continue
+                    try:
+                        with open(sa_path) as f:
+                            sa_text = f.read()
+                        sa_fm_match = re.match(r"^---\n(.*?)\n---",
+                                               sa_text, re.DOTALL)
+                        if sa_fm_match:
+                            sa_fm = yaml.safe_load(sa_fm_match.group(1))
+                            if (isinstance(sa_fm, dict) and
+                                sa_fm.get("requires_user_approval") is True):
+                                required_slugs.add(slug)
+                    except Exception:
+                        continue
+    except Exception:
+        pass  # Coverage check is best-effort; never let it break the moat.
+
+# Coverage only requires approval for sections that ALREADY EXIST in
+# spec.md. Otherwise the moat would block at scaffold time when the
+# user hasn't reached that sub-action yet. Test "section exists" by
+# probing hash-section.sh — exit 0 = present, non-zero = absent or
+# malformed (skip from coverage requirement either way).
+sections_present = set()
+for slug in required_slugs:
+    sa_path = os.path.join(proj, ".sdd", "subactions", f"{slug}.md")
+    if not os.path.isfile(sa_path):
+        continue
+    try:
+        probe = subprocess.run(
+            ["bash", hash_script, staged_spec, sa_path],
+            capture_output=True, text=True, timeout=10,
+        )
+        if probe.returncode == 0:
+            sections_present.add(slug)
+    except Exception:
+        pass
+
+claimed_slugs = set(approved.keys())
+# Only the intersection (required AND already drafted) must be covered.
+missing_required = (required_slugs & sections_present) - claimed_slugs
+if missing_required:
+    print("[moat] approved_sections coverage check failed — refusing to commit.",
+          file=sys.stderr)
+    print("", file=sys.stderr)
+    print("This is the Round-1-failure-mode-A.1 fix: even when",
+          file=sys.stderr)
+    print("approved_sections is an empty dict {}, sub-actions that declare",
+          file=sys.stderr)
+    print("`requires_user_approval: true` in their frontmatter MUST have",
+          file=sys.stderr)
+    print("hash entries. Otherwise an adversary could ship a tampered spec",
+          file=sys.stderr)
+    print("alongside an empty approved_sections and bypass section locking.",
+          file=sys.stderr)
+    print("", file=sys.stderr)
+    print("Missing required entries:", file=sys.stderr)
+    for slug in sorted(missing_required):
+        print(f"  - {slug}: run /re-approve {slug} to lock the current",
+              file=sys.stderr)
+        print(f"           §{slug} content", file=sys.stderr)
+    sys.exit(1)
+
+# Empty dict (after coverage passes) → no entries to compare against.
 if not approved:
     sys.exit(0)
 

@@ -326,7 +326,9 @@ Phase A's moat hook implements `compare_sets()` which enforces:
 - Root keys EXACTLY `{phase, checks}` — no extras, no missing
 - Each check has EXACTLY `{id, result}` — no extras
 
-**B-1 extension:** root keys EXACTLY `{phase, checks, approved_sections}`. Each `approved_sections` entry MUST be: key = sub-action slug, value = lowercase hex SHA-256 string (64 chars). No extras, no missing keys (where the sub-action requires approval — see §2.5).
+**B-1 extension:** root keys MUST be either `{phase, checks}` (Phase A backward compat) OR `{phase, checks, approved_sections}` (v0.8). No extras allowed in either shape. When `approved_sections` is present, each entry MUST be: key = sub-action slug, value = 64-char lowercase hex SHA-256.
+
+**Coverage rule (Theme 1.6 post-Round-1):** when `approved_sections` is present, every sub-action with `requires_user_approval: true` whose section is drafted in spec.md (heading found by `hash-section.sh`) MUST have a hash entry. Closes the empty-bypass attack the failure-mode reviewer flagged in adversarial review round 1.
 
 ### 5.2 Validation rules
 
@@ -337,6 +339,7 @@ Phase A's moat hook implements `compare_sets()` which enforces:
 | Every approved_sections key is a known sub-action slug | BLOCK: `"approved_sections has unknown sub-action '<slug>'."` |
 | Every sub-action with `requires_user_approval: true` for the current phase has an entry | BLOCK: `"Sub-action '<slug>' requires approval but not in approved_sections. Re-run /next."` |
 | Each entry's hash matches recomputed hash of staged spec.md section | BLOCK: `"Section §<X> changed since you approved it. Run /re-approve §<X> or revert your edit."` (Theme 1.6 — THE CENTRAL CHECK) |
+| **Coverage:** every sub-action with `requires_user_approval: true` whose section is present in spec.md MUST have an approved_sections entry | BLOCK: `"approved_sections coverage check failed — § <slug> requires approval but no hash in approved_sections — run /re-approve <slug>."` (Theme 1.6 post-Round-1 — closes empty-bypass attack) |
 
 ---
 
