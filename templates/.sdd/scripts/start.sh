@@ -82,19 +82,52 @@ command -v python3 >/dev/null 2>&1 || {
   exit 1
 }
 
-# Theme 7+UAT — auto-install the safety checks (one-time, per project).
-# Closes the UAT moat-bypass finding: without `core.hooksPath` pointing at
-# .claude/hooks/, combined `git add && git commit` patterns bypass the
-# moat. Setting it once wires every commit (agent or human, combined or
-# split) through the safety check chain.
+# UAT moat-bypass + Cut-11 safe install — wire `core.hooksPath` to
+# .claude/hooks so combined `git add && git commit` patterns hit the
+# moat via native git pre-commit (Phase B-1 fix). Three cases:
 #
-# Honest UX (Option 2): visible one-line message on first install, silent
-# on subsequent /start runs. User sees what changed; doesn't have to run
-# any setup command themselves.
+#   1. Already set to `.claude/hooks` → silent re-run.
+#   2. Empty (default git, no prior hooks tool) → set silently with
+#      a one-line "this is what changed" message. Honest UX, no
+#      surprise.
+#   3. Set to anything else (Husky, lefthook, custom) → HALT with a
+#      plain-English explanation. Refuses to silently overwrite an
+#      existing hooks setup. Round-2 customisation reviewer flagged
+#      the silent override as a real footgun for adopters of SDD on
+#      existing repos.
 current_hookspath=$(git config --get core.hooksPath 2>/dev/null || echo "")
-if [ "$current_hookspath" != ".claude/hooks" ] && [ -d ".git" ]; then
-  if git config core.hooksPath .claude/hooks 2>/dev/null; then
-    echo "[/start] Setting up your safety checks (one-time, applies to this project only)."
+if [ -d ".git" ]; then
+  if [ "$current_hookspath" = ".claude/hooks" ]; then
+    : # Already SDD's hooks; silent.
+  elif [ -z "$current_hookspath" ]; then
+    if git config core.hooksPath .claude/hooks 2>/dev/null; then
+      echo "[/start] Setting up your safety checks (one-time, applies to this project only)."
+    fi
+  else
+    cat >&2 <<EOF
+[/start] Hook conflict — your project already uses git hooks.
+
+  Current core.hooksPath: $current_hookspath
+  SDD expects:            .claude/hooks
+
+Your current setup (Husky, lefthook, or custom) would be silently
+replaced if SDD set its own path. Refusing to do that without your
+say-so. Pick one and re-run /start:
+
+  - If you want SDD's safety checks for this project (recommended
+    when you're using SDD to drive the workflow):
+        git config core.hooksPath .claude/hooks
+
+  - If you want to keep your existing hooks instead, don't run
+    /start. SDD's safety checks won't fire — the agent can commit
+    past sections you've approved without re-checking. You'd be
+    using SDD's prose-only mode, which is the same as Phase A.
+
+This message protects you from losing your existing hook setup
+silently. SDD will not override core.hooksPath without your
+explicit consent.
+EOF
+    exit 1
   fi
 fi
 

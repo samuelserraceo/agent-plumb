@@ -2278,6 +2278,56 @@ else
 fi
 
 # ============================================================
+# T67 — Cut 11: /start halts on existing core.hooksPath conflict
+#   Pre-Cut-11: /start silently set `core.hooksPath .claude/hooks`
+#   even if the project already had a hooks tool (Husky / lefthook /
+#   custom). Round-2 customisation reviewer flagged this as a real
+#   footgun for SDD adopters with existing repos.
+#
+#   Post-Cut-11: /start refuses to overwrite a non-empty existing
+#   hooksPath. User must explicitly opt in via `git config
+#   core.hooksPath .claude/hooks`.
+# ============================================================
+note "T67: /start halts on existing core.hooksPath conflict (Cut 11)"
+d=$(mkproj_v08)
+cd "$d"
+git init -q
+git config user.email t@t.com && git config user.name T
+git config core.hooksPath .husky  # simulate existing Husky setup
+mkdir -p .husky
+ec=0
+out=$(bash .sdd/scripts/start.sh "test feature" 2>&1) || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -ne 0 ] && echo "$out" | grep -qiE 'hook.*conflict|core\.hooksPath|already.*hooks'; then
+  ok "T67 /start halted on hooksPath conflict (existing setup preserved)"
+else
+  bad "T67 /start silently overrode existing core.hooksPath" "ec=$ec; out: $(echo "$out" | head -3 | tr '\n' '|')"
+fi
+
+# ============================================================
+# T67b — Cut 11 mutation: empty hooksPath → silent install (existing behavior)
+#   Verifies the conflict check ONLY fires on conflict — when there's no
+#   existing hooksPath, /start should still silently set it (per Option 2).
+# ============================================================
+note "T67b: /start with no existing hooksPath sets it silently (Cut 11 inverse)"
+d=$(mkproj_v08)
+cd "$d"
+git init -q
+git config user.email t@t.com && git config user.name T
+# Note: NOT setting core.hooksPath — default git, no prior tool.
+ec=0
+out=$(bash .sdd/scripts/start.sh "test feature" 2>&1) || ec=$?
+post_hookspath=$(git config --get core.hooksPath 2>/dev/null || echo "")
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 0 ] && [ "$post_hookspath" = ".claude/hooks" ]; then
+  ok "T67b /start set hooksPath silently when no existing config (no false-halt)"
+else
+  bad "T67b /start halted unnecessarily on empty hooksPath" "ec=$ec; post=$post_hookspath"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
