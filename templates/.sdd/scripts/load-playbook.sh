@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # load-playbook.sh — v0.8 schema loader and validator.
 #
-# Reads .sdd/ contents, validates against SCHEMA.md, builds the slug-map
-# (lazy, cached at .sdd/.cache/slug-map.json), and verifies hash-pinned
-# files against .sdd/.cache/manifest.json.
+# Reads .sdd/ contents, validates against SCHEMA.md, and verifies hash-pinned
+# files against .sdd/.cache/manifest.json. Builds an in-memory slug-map for
+# duplicate detection during validation. (Persistent slug-map.json caching
+# is a Phase B-1 Theme 7 deliverable — wikilink resolution needs it then.)
 #
 # Inherits Phase A bash patterns (NUL guard, set -uo pipefail, deterministic
 # JSON output via python3, plain-English error messages to stderr).
@@ -232,8 +233,13 @@ def validate_subaction(path, fm):
         err(f"{rel} has unknown trust value {trust!r} — allowed: "
             f"{', '.join(sorted(VALID_TRUST))} (SCHEMA.md §6)")
 
-def validate_playbook(path, fm):
-    """Validate playbook frontmatter per SCHEMA.md §1."""
+def validate_playbook(path, fm, available_subactions=None):
+    """Validate playbook frontmatter per SCHEMA.md §1.
+
+    `available_subactions` (optional set of slugs): when provided, every
+    subactions[] reference in the playbook must resolve. SCHEMA.md §1.5
+    rule. Caller passes the set built from scanning .sdd/subactions/.
+    """
     expected_slug = os.path.splitext(os.path.basename(path))[0]
     rel = os.path.relpath(path, PROJ)
 
@@ -261,6 +267,13 @@ def validate_playbook(path, fm):
         if not re.match(r"^[A-Z]+$", sid) or len(sid) > 16:
             err(f"{rel} stage id {sid!r} — must be UPPERCASE letters only, "
                 f"max 16 chars (SCHEMA.md §6)")
+        # Sub-action resolution check — SCHEMA.md §1.5
+        if available_subactions is not None:
+            for slug in stage.get("subactions", []) or []:
+                if slug not in available_subactions:
+                    err(f"{rel} stage {sid!r} references sub-action "
+                        f"{slug!r} but no .sdd/subactions/{slug}.md exists "
+                        f"(SCHEMA.md §1.5)")
         for chk in stage.get("exit_checks", []) or []:
             cid = chk.get("id", "")
             if cid in seen_check_ids:
@@ -362,11 +375,17 @@ def scan_files():
 
 def cmd_validate():
     records = scan_files()
+    # Pre-collect available sub-action slugs so playbook validation can
+    # check that every subactions[] reference resolves (SCHEMA.md §1.5).
+    available_subactions = {
+        r["slug"] for r in records
+        if r["type"] == "subaction" and r["slug"]
+    }
     for r in records:
         if r["type"] == "subaction":
             validate_subaction(r["path"], r["fm"])
         elif r["type"] == "playbook":
-            validate_playbook(r["path"], r["fm"])
+            validate_playbook(r["path"], r["fm"], available_subactions)
         elif r["type"] == "config":
             validate_config(r["path"], r["fm"])
     build_slug_map(records)

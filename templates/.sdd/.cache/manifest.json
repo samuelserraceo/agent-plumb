@@ -2,14 +2,14 @@
   "extensions": {},
   "playbooks": {
     "feature": {
-      "expected_sha256": "92e45ef7cb91c8761b9656e7e8c1f0e1803241fb696254bd8fedf1aca3aa1d43",
+      "expected_sha256": "b4b336858ef754ee49dbfca30a9ba8bf4eff1532bbaff57e247edb5075b7b1af",
       "path": ".sdd/playbooks/feature.md",
       "trust": "framework"
     }
   },
   "scripts": {
     "load-playbook.sh": {
-      "expected_sha256": "df664f5464d47106e7ab01bbabba72f795e76ea760c30c18f80e546a914d2736",
+      "expected_sha256": "91cb90e71fc431c5b81f00ca709bf6ce3bed8a5676e300794d75ffd565ec94eb",
       "path": ".sdd/scripts/load-playbook.sh",
       "trust": "framework"
     }

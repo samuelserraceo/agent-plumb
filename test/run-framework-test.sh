@@ -1098,6 +1098,26 @@ else
 fi
 
 # ============================================================
+# T34 — load-playbook.sh --validate rejects unresolved subaction reference
+#   RED: loader doesn't enforce SCHEMA.md §1.5 — "every subactions[]
+#        slug must reference an existing .sdd/subactions/<slug>.md."
+#        Found by GPT-5.5 review (DRIFT 1) — the v0.8 feature playbook
+#        referenced 23 subactions while only 3 existed, and the loader
+#        was silently passing.
+# ============================================================
+note "T34: load-playbook.sh --validate rejects unresolved subaction reference"
+d=$(mkproj_v08)
+# Overlay a fixture playbook that references a sub-action with no .md file
+cp "$FIXTURES_V08/invalid-unresolved-subaction.md" "$d/.sdd/playbooks/invalid-unresolved-subaction.md"
+out=$(bash "$LOAD_PLAYBOOK" --validate "$d" 2>&1) && ec=0 || ec=$?
+rm -rf "$d"
+if [ "$ec" -ne 0 ] && echo "$out" | grep -qiE 'does-not-exist|unresolved|no .sdd/subactions'; then
+  ok "T34 unresolved subaction reference rejected (exit=$ec, error names the dangling slug)"
+else
+  bad "T34 unresolved reference accepted or wrong error" "exit=$ec; out='$out'"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
