@@ -32,6 +32,11 @@
       "expected_sha256": "73297d2e2e4176f9bf61d13e6ef3aa829b8852b27b883ecd85e8e4fecc631022",
       "path": ".sdd/scripts/start.sh",
       "trust": "framework"
+    },
+    "resolve-parameters.sh": {
+      "expected_sha256": "89483cb06e150e707661c0cd44d68022a869b3301474ce759e12be49590ed72e",
+      "path": ".sdd/scripts/resolve-parameters.sh",
+      "trust": "framework"
     }
   },
   "sdd_version": "0.8.0",

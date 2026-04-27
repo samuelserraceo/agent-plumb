@@ -66,6 +66,7 @@ mkproj_v08() {
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/reapprove.sh"            "$d/.sdd/scripts/reapprove.sh"
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/start.sh"                "$d/.sdd/scripts/start.sh"
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/advance.sh"              "$d/.sdd/scripts/advance.sh"
+  cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/resolve-parameters.sh"   "$d/.sdd/scripts/resolve-parameters.sh"
   cp "$FRAMEWORK_ROOT/templates/.sdd/decisions.md"                    "$d/.sdd/decisions.md"
   cp "$VERIFY_STAGE" "$d/.sdd/scripts/verify-stage.sh" 2>/dev/null || true
   cp "$NEXT_ACTION"  "$d/.sdd/scripts/next-action.sh"  2>/dev/null || true
@@ -2578,6 +2579,72 @@ if [ "$ok_t73" -eq 1 ]; then
   ok "T73 config.md has parameters: { budget, voice, pace } project defaults"
 else
   bad "T73 config.md parameters: block missing keys" "missing:$miss"
+fi
+
+# ============================================================
+# T74 — F5 cascade: resolve-parameters.sh merges project + action
+#   F5 cascading parameters: project default at config.md gets layered
+#   with action overrides (action.md `budget:` is treated as the action's
+#   `parameters.budget` source). For action `proposed-approach` whose
+#   frontmatter declares budget.max_minutes=30 + max_tokens=8000, the
+#   resolved budget should reflect those, with provenance pointing to
+#   the action source. Project `voice` + `pace` cascade through unchanged.
+# ============================================================
+note "T74: resolve-parameters.sh layers action overrides on project defaults (F5)"
+d=$(mkproj_v08)
+cd "$d"
+mkdir -p .sdd/features/001-test
+echo '[PHASE: SPEC]' > .sdd/features/001-test/spec.md
+out=$(bash .sdd/scripts/resolve-parameters.sh \
+        .sdd/features/001-test/spec.md feature SPEC proposed-approach approval 2>&1)
+cd - >/dev/null
+rm -rf "$d"
+if echo "$out" | grep -q '"max_minutes":[[:space:]]*30' \
+   && echo "$out" | grep -q '"max_tokens":[[:space:]]*8000' \
+   && echo "$out" | grep -q '"plain_english":[[:space:]]*true' \
+   && echo "$out" | grep -q '"halt_on_red_after_attempts":[[:space:]]*3' \
+   && echo "$out" | grep -q '"budget.max_minutes":[[:space:]]*"action:proposed-approach"' \
+   && echo "$out" | grep -q '"voice.plain_english":[[:space:]]*"project"'; then
+  ok "T74 cascade merges (action wins on budget; project wins on voice/pace) + provenance correct"
+else
+  bad "T74 cascade or provenance wrong" "got: $out"
+fi
+
+# ============================================================
+# T74b — F5 mutation: action override absent → project default surfaces
+#   Mutation check: pick an action with no `budget:` declared in
+#   frontmatter (problem.md still has budget — pick the worst case
+#   manually by stripping it). Resolver then falls back entirely to
+#   project defaults. Proves the cascade isn't a tautology — when no
+#   override exists, the resolver returns the project layer untouched.
+# ============================================================
+note "T74b: mutation — strip action budget → project max_minutes (5) surfaces"
+d=$(mkproj_v08)
+cd "$d"
+mkdir -p .sdd/features/001-test
+echo '[PHASE: SPEC]' > .sdd/features/001-test/spec.md
+# Strip the budget: block from problem.md (which originally has max_minutes: 5;
+# overrides project's 5 — they happen to match. Use proposed-approach which
+# differs.) Strip from proposed-approach so project max_minutes=5 surfaces.
+python3 <<'PYEOF'
+import re
+p = ".sdd/actions/proposed-approach.md"
+text = open(p).read()
+# Strip multi-line budget: block from frontmatter.
+text = re.sub(r"^budget:\n(?:  .*\n)+", "", text, count=1, flags=re.MULTILINE)
+open(p, "w").write(text)
+PYEOF
+out=$(bash .sdd/scripts/resolve-parameters.sh \
+        .sdd/features/001-test/spec.md feature SPEC proposed-approach approval 2>&1)
+cd - >/dev/null
+rm -rf "$d"
+# After mutation: project default max_minutes=5 should surface; provenance "project".
+if echo "$out" | grep -q '"max_minutes":[[:space:]]*5' \
+   && echo "$out" | grep -q '"max_tokens":[[:space:]]*4000' \
+   && echo "$out" | grep -q '"budget.max_minutes":[[:space:]]*"project"'; then
+  ok "T74b mutation: action budget stripped → project defaults cascade through"
+else
+  bad "T74b mutation didn't surface project defaults" "got: $out"
 fi
 
 # ============================================================
