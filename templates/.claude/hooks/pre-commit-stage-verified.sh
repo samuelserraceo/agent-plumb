@@ -268,17 +268,31 @@ compare_sets() {
   local claimed="$1" fresh="$2"
   python3 - "$claimed" "$fresh" <<'PY' 2>/dev/null || return 1
 import sys, json
-# Strict shape: claimed must have EXACTLY {phase, checks}, each check
-# must have EXACTLY {id, result}. No extras anywhere. Per failure-mode
-# reviewer: lax shape lets nested-JSON / extra-root-key pollution slip
-# into committed verification.json without claiming false pass-state,
-# but pollutes git history and hides future schema additions.
+# Strict shape (v0.7.5 / v0.8): claimed must have EXACTLY {phase, checks}
+# OR EXACTLY {phase, checks, approved_sections}. Each check must have
+# EXACTLY {id, result}. approved_sections (if present) must be a dict.
+# No extras anywhere — lax shape lets nested-JSON / extra-root-key
+# pollution slip into committed verification.json without claiming false
+# pass-state, polluting git history and hiding schema additions.
+#
+# This function compares the (id, result) tuples in `checks`; it does
+# NOT compare approved_sections (Theme 1.6's section-locking check
+# handles that separately, BEFORE this function is called). Including
+# approved_sections in the strict-shape allowed-set lets v0.8
+# verification.json pass through without being rejected as malformed.
+ALLOWED_V07 = {"phase", "checks"}
+ALLOWED_V08 = {"phase", "checks", "approved_sections"}
 def load_strict(blob):
     try:
         d = json.loads(blob)
     except Exception:
         return None
-    if not isinstance(d, dict) or set(d.keys()) != {"phase", "checks"}:
+    if not isinstance(d, dict):
+        return None
+    keys = set(d.keys())
+    if keys != ALLOWED_V07 and keys != ALLOWED_V08:
+        return None
+    if "approved_sections" in keys and not isinstance(d["approved_sections"], dict):
         return None
     checks = d["checks"]
     if not isinstance(checks, list): return None
