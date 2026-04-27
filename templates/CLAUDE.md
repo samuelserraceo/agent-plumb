@@ -162,19 +162,19 @@ Some rubric sections are marked `[SKIPPABLE: <condition>]`. They don't apply to 
 
 ---
 
-## PLAN-phase coverage check (constraints → ACs)
+## Plan-decompose coverage check (constraints → ACs)
 
-When entering PLAN, before drafting any tasks, verify that EVERY constraint declared in §4 UX & Design brief is reflected in at least one §11 Acceptance Criterion.
+When the active sub-action is `plan-decompose` (the last sub-action of SPEC, where ACs become tasks), before drafting any tasks: verify that EVERY constraint declared in §4 UX & Design brief is reflected in at least one §11 Acceptance Criterion.
 
 Scan §4 for keywords: `mobile`, `desktop`, `tablet`, `mobile-first`, `accessibility`, `WCAG`, `i18n`, `locale`, `currency`, `low-bandwidth`, `dark mode`, `print`, `offline`, `keyboard-only`, etc. For each found, ensure §11 has a matching AC.
 
 If §4 says "primary screen size: mobile" but §11 has no mobile-viewport AC → propose a new AC like:
 
-> **Proposed AC** (mobile coverage required by §4): `AC<N+1>: Form submission flow works on iPhone-13 viewport — submit button enables after tapping consent + Turnstile completes, success state visible without scrolling.` → `tests/task-<NN>.mjs` (Playwright project: `mobile-safari`).
+> **Proposed AC** (mobile coverage required by §4): `AC<N+1>: Form submission flow works on iPhone-13 viewport — submit button enables after tapping consent + Turnstile completes, success state visible without scrolling.` → `tests/task-<NN>.<ext>`.
 
 Same pattern for any §4 constraint without §11 backing. Surface ALL gaps in one go before user approves the plan; don't drip them out one by one.
 
-**Tooling enforcement for mobile:** when §4 declares mobile-first or split, `playwright.config.ts` MUST register a mobile viewport project (e.g., `{ name: "mobile-safari", use: { ...devices['iPhone 13'] } }`) alongside the desktop project. If it doesn't, add an explicit task in PLAN to set this up before any AC is implemented.
+**Tooling enforcement for mobile:** when §4 declares mobile-first or split, the project's test runner config (Playwright, Cypress, Selenium, etc.) should register a mobile viewport project alongside the desktop project. If it doesn't, add an explicit task in plan-decompose to set this up before any AC is implemented.
 
 ---
 
@@ -187,9 +187,9 @@ Some acceptance criteria genuinely can't be tested in dev (real Cloudflare Turns
 ```
 
 Behaviour:
-- VERIFY phase counts `[PROD-ONLY]` ACs as **deferred**, not failing. They don't block phase advance to LEARN.
+- The `verify-test-run` and `verify-prod-only-acs` sub-actions (in SHIP) count `[PROD-ONLY]` ACs as **deferred**, not failing. They don't block SHIP's exit checks.
 - `/ship` collects them into INDEX.md's `## Pending production verification` block.
-- After the first prod deploy, agent prompts the user to walk the deferred list manually. Each box ticked turns the AC into GREEN; LEARN re-opens briefly to capture the production verification.
+- After the first prod deploy, agent prompts the user to walk the deferred list manually. Each box ticked turns the AC into GREEN; the `learn-summary` / `learn-lessons` sub-actions can reopen briefly to capture the production verification.
 - If a `[PROD-ONLY]` AC fails in prod, it becomes a `[BUG]` task back in BUILD.
 
 Do NOT use `[PROD-ONLY]` to dodge writing tests. It's only for things technically impossible to verify in dev (real third-party callbacks, real money, real DNS propagation).
@@ -207,6 +207,32 @@ Every commit prefix:
 - INDEX update: `[SDD] index: <feature-id> <status>`
 
 One commit per section or task. No giant commits. Small and atomic — the PR reviewer (and future you) should be able to read `git log --oneline` and know the story.
+
+## Audit log: appending to `.sdd/decisions.md`
+
+`.sdd/decisions.md` is the framework's append-only audit trail. Every approval and every phase advance gets one entry. Future-you reads this to remember WHY past-you committed to something.
+
+**You (the agent) write to decisions.md** — there's no separate script. When the events below happen, append a Markdown level-2 section to the file using `cat >> .sdd/decisions.md` (NEVER `>` — that overwrites). The append-only hook (`pre-commit-decisions-append-only.sh`) blocks any commit that modifies prior entries.
+
+**When to append**:
+
+1. **User approves a section** that requires approval (any sub-action with `requires_user_approval: true` in its frontmatter — for the `feature` playbook: `proposed-approach`, `acceptance-criteria`, `out-of-scope`, `data-contract`). One entry per approval. Include the section's hash from `verification.json.approved_sections.<slug>`.
+
+2. **Phase advance** (SPEC → BUILD, BUILD → SHIP). One entry. Capture what was just completed in plain English.
+
+3. **Section re-approval** (`/re-approve <slug>`). Record the new hash + a one-line reason for the change.
+
+**Format** (per the template at the top of `decisions.md`):
+
+```
+## <ISO-Z timestamp>  [<work-item-id>]  <playbook>/<sub-action>
+<one-paragraph plain-English summary of what was decided>
+Hash: <sha256 if section was approved> (optional; only for approval events)
+```
+
+**Append in the same commit** as the related spec.md / verification.json change. The hook treats each commit independently; new entries cleanly stack on prior ones.
+
+**Reset path** (rare): if `decisions.md` becomes corrupt and needs a full rebuild, commit with the message `[SDD] decisions: reset` — the hook recognises this as the documented escape hatch and allows the otherwise-blocked overwrite.
 
 ## Branch naming
 
@@ -233,7 +259,7 @@ Stop and ask the user before continuing if ANY of these fire:
 
 ### BUILD phase entry protocol
 
-When a feature transitions PLAN → BUILD **for the first time**, do NOT start executing tasks. First, ask the user how they want to run BUILD:
+When a feature transitions SPEC → BUILD **for the first time** (after the last SPEC sub-action `plan-decompose` lands its task list), do NOT start executing tasks. First, ask the user how they want to run BUILD:
 
 > Before we start BUILD, how do you want to run it? (Universal halting rules always apply — these options just control pace.)
 >
@@ -310,7 +336,7 @@ These run without your involvement. If a hook blocks you, fix the blocker — do
 - `UserPromptSubmit` — injects `INDEX.md` + active phase section of `spec.md` + `patterns.md` every turn.
 - `PreToolUse(Bash)` on `git commit`:
   - `pre-commit-block.sh` — refuses commits while current phase has open `[ ]`.
-  - `pre-commit-learn-sync.sh` — LEARN-phase commits require `patterns.md` + `INDEX.md` staged.
+  - `pre-commit-learn-sync.sh` — SHIP-phase commits (where `learn-summary` / `learn-lessons` write lessons) require `patterns.md` + `INDEX.md` staged.
   - `pre-commit-schema-sync.sh` — Data contract changes require `data-model.md` staged.
   - `pre-commit-scope-guard.sh` — blocks UI copy ≥30 chars not in wireframe/spec; blocks new UI files without a `// spec:` reference comment.
   - `pre-commit-claude-md-managed.sh` — warns (does not block) on edits inside the MANAGED section of CLAUDE.md without bumping the version.
