@@ -229,8 +229,17 @@ EOF
   # Read claimed verification.json from the staged blob.
   claimed=$(git show ":$vpath" 2>/dev/null) || claimed=""
   if [ -z "$claimed" ]; then
+    # Round 4 finding: previously this silently `continue`d, treating an
+    # empty staged verification.json as "nothing to verify". That's a
+    # potential bypass — an attacker stages an empty file to skip
+    # verification entirely. Block instead.
     rm -f "$staged_spec"
-    continue
+    cat >&2 <<EOF
+[moat] staged $vpath is empty — refusing to commit.
+verification.json must be a valid JSON object with phase + checks.
+Re-run verify-stage.sh to regenerate it.
+EOF
+    exit 2
   fi
 
   # Extract phase from the claimed JSON.

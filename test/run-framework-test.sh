@@ -808,6 +808,70 @@ else
 fi
 
 # ============================================================
+# T23 — pre-commit-block detects NUL via the staged-file path (round 4)
+#   RED: round-3's NUL guard read the staged blob into a bash variable
+#        via $(git show :spec). Bash strips NULs from command-substitution
+#        output, so `printf "$content" | od` operates on already-stripped
+#        bytes and never detects NUL. The fix uses a temp file.
+# ============================================================
+note "T23: pre-commit-block NUL guard works via staged-file path (round 4)"
+d=$(mkproj)
+cd "$d"
+echo '**Active:** features/001-test' > .sdd/INDEX.md
+cat > .sdd/features/001-test/spec.md <<'SPEC'
+[PHASE: SPEC]
+
+## PHASE: SPEC
+- **Who has it:** [ ]
+SPEC
+git add -A && git commit -q -m "init"
+# Stage a phase-advance with NUL bytes baked into the staged blob — using
+# `git hash-object -w` to write a binary blob and `git update-index` to
+# stage it (bypasses working-tree round-trip).
+binary_blob=$(printf '[PHASE: BUILD]\n\n## PHASE: SPEC\n- [ ] §1: STILL OPEN\n\x00poison\n## PHASE: BUILD\n' | git hash-object -w --stdin)
+git update-index --add --cacheinfo 100644 "$binary_blob" .sdd/features/001-test/spec.md
+e=$(echo '{"tool_input":{"command":"git commit -m \"[SDD:001] phase: SPEC->BUILD\""}}' \
+      | CLAUDE_PROJECT_DIR="$d" bash "$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-block.sh" >/dev/null 2>&1; echo $?)
+cd - >/dev/null
+rm -rf "$d"
+if [ "$e" -eq 2 ]; then
+  ok "T23 NUL-byte staged spec correctly blocked"
+else
+  bad "T23 NUL bypass via staged-blob round 4" "exit=$e, expected 2"
+fi
+
+# ============================================================
+# T24 — Moat blocks empty staged verification.json
+#   RED: moat used to silently `continue` past empty claimed, treating
+#        it as nothing to verify. An attacker could stage an empty file
+#        to skip verification. Round 4 minor finding.
+# ============================================================
+note "T24: moat blocks empty staged verification.json"
+d=$(mkproj)
+cd "$d"
+echo '**Active:** features/001-test' > .sdd/INDEX.md
+cat > .sdd/features/001-test/spec.md <<'SPEC'
+[PHASE: BUILD]
+
+## PHASE: BUILD
+
+### Exit checks
+- [ ] C1: trivially true — true
+SPEC
+# Stage an EMPTY verification.json
+: > .sdd/features/001-test/verification.json
+git add -A
+e=$(echo '{"tool_input":{"command":"git commit -m \"[SDD:001] phase: BUILD->SHIP\""}}' \
+      | CLAUDE_PROJECT_DIR="$d" bash "$MOAT_HOOK" >/dev/null 2>&1; echo $?)
+cd - >/dev/null
+rm -rf "$d"
+if [ "$e" -eq 2 ]; then
+  ok "T24 empty verification.json blocked"
+else
+  bad "T24 empty verification.json allowed" "exit=$e, expected 2"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'

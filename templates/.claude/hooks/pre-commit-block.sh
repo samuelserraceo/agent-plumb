@@ -53,25 +53,31 @@ active_path=$(printf '%s\n' "$staged_index" | grep -m1 -E '^\*\*Active:\*\*' | g
 
 spec=".sdd/$active_path/spec.md"
 
-# Read spec.md from the STAGED blob (same reason as INDEX.md). An agent
-# could rm or blank the working-tree spec.md while staging a phase advance
-# from a different blob via `git update-index`. Use the staged content.
-staged_spec_content=$(git show ":$spec" 2>/dev/null || echo "")
-if [ -z "$staged_spec_content" ]; then
-  # spec.md not staged in this commit — bootstrap or unrelated commit. Allow.
+# Read spec.md from the STAGED blob into a TEMP FILE. An agent could rm or
+# blank the working-tree spec.md while staging a phase advance from a
+# different blob via `git update-index`. Reading staged is necessary; the
+# CRITICAL detail is that bash command substitution strips NUL bytes
+# silently — `$(git show :spec)` would lose any \0 in the staged content.
+# Round 4 caught this: NUL bytes in the staged spec must be detected
+# before they break the awk regex below, and the only reliable way is to
+# write the staged blob to a file (preserves NULs) and run `od -An -c`
+# against the file path.
+staged_spec_file=$(mktemp)
+trap 'rm -f "$staged_spec_file"' EXIT
+if ! git show ":$spec" > "$staged_spec_file" 2>/dev/null || [ ! -s "$staged_spec_file" ]; then
+  # spec.md not staged in this commit — bootstrap or unrelated commit.
+  # Fall back to working tree only if it exists.
+  rm -f "$staged_spec_file"
   [ -f "$spec" ] || exit 0
-  staged_spec_content=$(cat "$spec")
+  staged_spec_file=$(mktemp)
+  trap 'rm -f "$staged_spec_file"' EXIT
+  cp "$spec" "$staged_spec_file"
 fi
 
-# NUL-byte / binary guard: a NUL byte in spec.md causes git diff --cached
-# to emit "Binary files differ" instead of line diffs, which means the
-# `^[+-]\[PHASE:` regex below finds nothing, the phase-advance signal
-# silently fails, and a phase-advance with open blockers is allowed
-# through. Reject any spec.md with NUL bytes.
-# Using `od -An -c` because bash strips literal \x00 from variable
-# expansions, breaking the more obvious `grep -q $'\x00'` approach.
-# Check staged content (round 3 fix), not working tree.
-if printf '%s' "$staged_spec_content" | od -An -c | grep -q '\\0'; then
+# NUL-byte / binary guard. Run od against the FILE (preserves NULs), not
+# against a bash-stripped variable. Round 4 fix — variable substitution
+# was silently dropping NUL bytes, defeating the guard.
+if od -An -c "$staged_spec_file" 2>/dev/null | grep -q '\\0'; then
   cat >&2 <<EOF
 [SDD] spec.md contains NUL bytes — refusing to commit.
 NUL bytes break the phase-advance regex below; a fabricated phase
@@ -80,6 +86,8 @@ content from $spec.
 EOF
   exit 2
 fi
+# Now safe to load into a variable for downstream awk usage.
+staged_spec_content=$(cat "$staged_spec_file")
 
 # Bootstrap exception: spec.md being newly ADDED in this commit is the bootstrap.
 spec_status=$(git diff --cached --name-status -- "$spec" 2>/dev/null | awk '{print $1}' | head -1)
