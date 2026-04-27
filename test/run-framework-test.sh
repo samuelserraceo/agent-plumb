@@ -2399,6 +2399,98 @@ fi
 rm -rf "$d"
 
 # ============================================================
+# T69 — F4 atomic-step JSON: next-action.sh enriches step-row matches
+#   v0.9 next-action.sh recognises the step-row shape `- [ ] <id>: <prompt>`
+#   under a `### action: <slug>` heading and returns the step's frontmatter
+#   info as JSON: action slug, step id, tag (USER-LED / AGENT-LED /
+#   BUILD-TASK), prompt, field. /next reads these to know what kind of
+#   EXECUTE to run without re-parsing spec.md or the action library.
+#
+#   RED until the script walks ### action: headings + parses step-row IDs +
+#   reads the matching action's frontmatter step entry.
+# ============================================================
+note "T69: next-action.sh returns rich JSON for step-row matches (F4)"
+d=$(mkproj_v08)
+rm -rf "$d/.sdd/features"
+cd "$d"
+bash "$START_SH" "step rich json test" >/dev/null 2>&1
+spec="$d/.sdd/features/001-step-rich-json-test/spec.md"
+out=$(bash "$NEXT_ACTION" "$spec" 2>&1)
+cd - >/dev/null
+rm -rf "$d"
+# First open [ ] should be the `who` step under `problem` action; tag USER-LED.
+if echo "$out" | grep -q '"action":[[:space:]]*"problem"' \
+   && echo "$out" | grep -q '"step":[[:space:]]*"who"' \
+   && echo "$out" | grep -q '"tag":[[:space:]]*"USER-LED"' \
+   && echo "$out" | grep -q '"prompt":[[:space:]]*"Who specifically' \
+   && echo "$out" | grep -q '"field":[[:space:]]*"§1.who-has-it"'; then
+  ok "T69 next-action returns enriched JSON (action=problem step=who tag=USER-LED prompt+field present)"
+else
+  bad "T69 enriched JSON missing fields" "got: $out"
+fi
+
+# ============================================================
+# T69b — F4 mutation: legacy specs (no step rows) leave new fields null
+#   Regression check + mutation: a legacy spec that doesn't use the step-row
+#   shape (e.g. a hand-written `[ ] §1 Problem`) should still parse — the
+#   v0.9 fields stay null while sub_action echoes the line. This proves
+#   the enrichment is gated on the step-row shape, not always-on.
+# ============================================================
+note "T69b: legacy [ ] §X lines leave action/step/tag/prompt null"
+d=$(mkproj)
+cat > "$d/.sdd/features/001-test/spec.md" <<'EOF'
+[PHASE: SPEC]
+
+## PHASE: SPEC
+[ ] §1 Problem
+EOF
+out=$(bash "$NEXT_ACTION" "$d/.sdd/features/001-test/spec.md" 2>&1)
+rm -rf "$d"
+if echo "$out" | grep -q '"action":[[:space:]]*null' \
+   && echo "$out" | grep -q '"step":[[:space:]]*null' \
+   && echo "$out" | grep -q '"tag":[[:space:]]*null' \
+   && echo "$out" | grep -q '"sub_action":[[:space:]]*"\[ \] §1 Problem"'; then
+  ok "T69b legacy [ ] §X spec preserves sub_action; v0.9 fields stay null (graceful degradation)"
+else
+  bad "T69b legacy spec mis-parsed" "expected null v0.9 fields + sub_action echo; got: $out"
+fi
+
+# ============================================================
+# T69c — F4 mutation: bad action slug → fields still emit, action lookup degrades
+#   If spec.md references `### action: not-a-real-action` (typo or stale),
+#   next-action.sh shouldn't crash — it should return action=<slug> step=<id>
+#   but tag/prompt/field as null (frontmatter not found). Proves graceful
+#   degradation when the action library doesn't have a matching file.
+# ============================================================
+note "T69c: bad action slug → action+step echoed, tag/prompt/field null"
+d=$(mkproj_v08)
+cd "$d"
+mkdir -p .sdd/features/001-test
+cat > .sdd/features/001-test/spec.md <<'EOF'
+[PHASE: SPEC]
+
+## PHASE: SPEC
+
+### action: not-a-real-action
+
+- [ ] who: typo in action slug
+
+### Exit checks
+- [ ] C1: dummy
+EOF
+out=$(bash "$NEXT_ACTION" .sdd/features/001-test/spec.md 2>&1)
+cd - >/dev/null
+rm -rf "$d"
+if echo "$out" | grep -q '"action":[[:space:]]*"not-a-real-action"' \
+   && echo "$out" | grep -q '"step":[[:space:]]*"who"' \
+   && echo "$out" | grep -q '"tag":[[:space:]]*null' \
+   && echo "$out" | grep -q '"prompt":[[:space:]]*null'; then
+  ok "T69c bad action slug → step echoed, tag/prompt/field null (graceful)"
+else
+  bad "T69c bad slug not handled gracefully" "expected step echo + null lookup; got: $out"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'

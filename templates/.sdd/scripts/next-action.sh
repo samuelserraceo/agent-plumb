@@ -1,20 +1,27 @@
 #!/usr/bin/env bash
 # next-action.sh — Resolve the next blocker in a SDD spec.md.
 #
-# Usage:   next-action.sh <path/to/spec.md>
-# Output:  JSON to stdout describing the next action.
-#          {"phase":"X","sub_action":"<line>","transition":null}
-#          {"phase":"X","sub_action":null,"transition":"X→Y"}
+# v0.9 atomic-step iteration:
+#   - Walks spec.md, finds active phase, finds first `[ ]` outside fences
+#     and not matching work-item placeholders (AC/T/C-).
+#   - Recognises the v0.9 step-row shape `- [ ] <step-id>: <prompt>` under
+#     a `### action: <slug>` heading and looks up the step's frontmatter
+#     entry from `.sdd/actions/<slug>.md`.
 #
-# Behavior:
-#   1. Read [PHASE: X] line at top to find the active phase.
-#   2. Find the body of `## PHASE: X` (until the next `## ` heading).
-#   3. Walk the body line-by-line, tracking ``` code-fence state.
-#   4. Outside fences: return the first line containing `[ ]`.
-#   5. If no `[ ]` in the active phase body: emit a transition signal.
+# Output JSON keys (always emitted; v0.9 fields populated when the step
+# is recognisable, otherwise null):
+#   phase       — active phase ID (e.g. SPEC)
+#   action      — action slug (e.g. problem) or null
+#   step        — step ID (e.g. who) or null
+#   tag         — USER-LED / AGENT-LED / BUILD-TASK or null
+#   prompt      — step's prompt or action label or null
+#   field       — where in spec.md the answer goes or null
+#   sub_action  — legacy: the literal `[ ]` line from spec.md (or null)
+#   transition  — null, or "X→Y" when the active phase has no open `[ ]`
 #
-# Determinism: pure file walk, no $RANDOM, no timestamps, no unsorted set
-# iteration. Two invocations on the same spec produce byte-identical output.
+# Determinism: pure file walk + frontmatter read; no $RANDOM, no
+# timestamps. JSON emitted via json.dumps(sort_keys=True) so two
+# invocations on the same inputs produce byte-identical output.
 
 set -uo pipefail
 
@@ -29,79 +36,132 @@ if [ ! -f "$spec" ]; then
   exit 1
 fi
 
-# Phase progression. Aligned with the 3-phase v0.8 feature playbook
-# (SPEC → BUILD → SHIP → SHIPPED). PLAN and VERIFY+LEARN were collapsed
-# into actions of SPEC and SHIP respectively in the v0.8 spine.
-# See .sdd/playbooks/feature.md frontmatter for the canonical stage list.
-next_phase() {
-  case "$1" in
-    SPEC)    echo "BUILD" ;;
-    BUILD)   echo "SHIP" ;;
-    SHIP)    echo "SHIPPED" ;;
-    SHIPPED) echo "" ;;
-    *)       echo "" ;;
-  esac
-}
+PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(pwd)}"
+SPEC="$spec" PROJ="$PROJECT_DIR" python3 <<'PYEOF'
+import json, os, re, sys
 
-# Extract active phase from the [PHASE: X] line.
-phase=$(grep -m1 -E '^\[PHASE:[[:space:]]*[A-Z]+\]' "$spec" 2>/dev/null \
-        | sed -E 's/^\[PHASE:[[:space:]]*([A-Z]+)\].*/\1/')
+spec_path = os.environ["SPEC"]
+proj = os.environ["PROJ"]
 
-if [ -z "$phase" ]; then
-  echo '{"error":"no [PHASE: X] line found"}' >&2
-  exit 1
-fi
+# Phase progression — aligned with the 3-phase v0.8/v0.9 feature playbook.
+NEXT_PHASE = {"SPEC": "BUILD", "BUILD": "SHIP", "SHIP": "SHIPPED", "SHIPPED": ""}
 
-# Walk the spec, scoped to `## PHASE: <phase>` body, with fence tracking.
-# Emits the first `[ ]` line found outside code fences. If none, prints empty.
-first_open=$(awk -v target="## PHASE: ${phase}" '
-  BEGIN { in_phase = 0; in_fence = 0 }
-  # Track `## ` headings to scope to our phase.
-  /^## / {
-    if ($0 == target) {
-      in_phase = 1; in_fence = 0; next
-    } else if (in_phase) {
-      # Left our phase.
-      exit
-    } else {
-      next
-    }
-  }
-  # Only process lines inside the active phase.
-  in_phase != 1 { next }
-  # Toggle fence state on lines that start with ``` (with optional language tag).
-  /^[[:space:]]*```/ { in_fence = !in_fence; next }
-  # Inside a code fence: ignore content.
-  in_fence == 1 { next }
-  # `[ ]` is overloaded across three semantic uses:
-  #   1. Rubric question to fill (e.g. `- **Who has it:** [ ]`) — TRUE blocker.
-  #   2. Work-item placeholder (e.g. `- [ ] AC1: ...`, `- [ ] T1 ...`) — NOT a
-  #      SPEC blocker; turned to [GREEN] in BUILD.
-  #   3. Exit-check definition (e.g. `- [ ] C-spec-acs: ...`) — verified by
-  #      verify-stage.sh, never filled by hand.
-  # Skip patterns 2 + 3 so /next reaches genuine rubric questions.
-  /^[[:space:]]*-[[:space:]]*\[ \][[:space:]]+(AC|T|C-)[A-Za-z0-9_-]/ { next }
-  # First `[ ]` outside fences and not a work-item placeholder: print and stop.
-  /\[ \]/ { print; exit }
-' "$spec")
+def emit(d):
+    # ensure_ascii=False keeps UTF-8 verbatim (e.g. § literal, not §)
+    # so downstream consumers can grep with the same string they see in spec.md.
+    sys.stdout.write(json.dumps(d, sort_keys=True, ensure_ascii=False))
+    sys.stdout.write("\n")
 
-# Helper: emit JSON with a sub_action string (escaped minimally).
-json_escape() {
-  # Escape backslashes and double quotes for JSON; strip CR.
-  printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/\r//g'
-}
+# Read spec.md.
+try:
+    with open(spec_path) as f:
+        spec_lines = f.read().split("\n")
+except OSError as e:
+    sys.stderr.write(json.dumps({"error": f"cannot read spec: {e}"}) + "\n")
+    sys.exit(1)
 
-if [ -n "$first_open" ]; then
-  esc=$(json_escape "$first_open")
-  printf '{"phase":"%s","sub_action":"%s","transition":null}\n' "$phase" "$esc"
-  exit 0
-fi
+# 1. Find [PHASE: X] line.
+phase = None
+for line in spec_lines:
+    m = re.match(r'^\[PHASE:\s*([A-Z]+)\]', line)
+    if m:
+        phase = m.group(1)
+        break
 
-# No `[ ]` found in the active phase body → signal transition.
-target_phase=$(next_phase "$phase")
-if [ -n "$target_phase" ]; then
-  printf '{"phase":"%s","sub_action":null,"transition":"%s→%s"}\n' "$phase" "$phase" "$target_phase"
-else
-  printf '{"phase":"%s","sub_action":null,"transition":null}\n' "$phase"
-fi
-exit 0
+if not phase:
+    sys.stderr.write('{"error":"no [PHASE: X] line found"}\n')
+    sys.exit(1)
+
+# 2. Walk active phase body. Track fence state and the most recent
+# `### action: <slug>` heading. Skip work-item placeholders. Return the
+# first `[ ]` line + the action slug active at that point.
+target_heading = f"## PHASE: {phase}"
+in_phase = False
+in_fence = False
+active_action = None
+first_open_line = None
+
+for line in spec_lines:
+    if line.startswith("## "):
+        if line == target_heading:
+            in_phase = True
+            in_fence = False
+            active_action = None
+            continue
+        elif in_phase:
+            break  # left our phase
+        else:
+            continue
+    if not in_phase:
+        continue
+    # Toggle fence state on lines that start with ``` (with optional language tag).
+    if re.match(r'^\s*```', line):
+        in_fence = not in_fence
+        continue
+    if in_fence:
+        continue
+    # Track the active action heading.
+    am = re.match(r'^###\s+action:\s+([a-z][a-z0-9_-]*)\s*$', line)
+    if am:
+        active_action = am.group(1)
+        continue
+    # Skip `[ ]` lines that are work-item placeholders (AC<N>, T<N>, C-<N>) —
+    # those are filled by other mechanisms (BUILD task lifecycle / verify-stage).
+    if re.match(r'^\s*-\s*\[ \]\s+(AC|T|C-)[A-Za-z0-9_-]', line):
+        continue
+    if "[ ]" in line:
+        first_open_line = line
+        break
+
+# 3a. No open [ ] in active phase → transition signal.
+if first_open_line is None:
+    nxt = NEXT_PHASE.get(phase, "")
+    transition = f"{phase}→{nxt}" if nxt else None
+    emit({
+        "phase": phase,
+        "action": None, "step": None, "tag": None,
+        "prompt": None, "field": None,
+        "sub_action": None,
+        "transition": transition,
+    })
+    sys.exit(0)
+
+# 3b. Try to enrich with action+step lookup.
+step_id = None
+sm = re.match(r'^\s*-\s*\[ \]\s+([a-z][a-z0-9_-]*)\s*:', first_open_line)
+if sm:
+    step_id = sm.group(1)
+
+action_tag = None
+step_meta = {}
+if active_action and step_id:
+    action_path = os.path.join(proj, ".sdd", "actions", f"{active_action}.md")
+    if os.path.isfile(action_path):
+        try:
+            import yaml
+            with open(action_path) as f:
+                t = f.read()
+            fm = re.match(r'^---\n(.*?)\n---', t, re.DOTALL)
+            if fm:
+                meta = yaml.safe_load(fm.group(1)) or {}
+                action_tag = meta.get("tag")
+                for s in (meta.get("steps") or []):
+                    if (s.get("id") or "").strip() == step_id:
+                        step_meta = s
+                        break
+        except Exception:
+            # PyYAML missing or frontmatter malformed: degrade gracefully —
+            # legacy fields stay null, sub_action still echoes the line.
+            pass
+
+emit({
+    "phase": phase,
+    "action": active_action,
+    "step": step_id,
+    "tag": action_tag,
+    "prompt": step_meta.get("prompt") or step_meta.get("action"),
+    "field": step_meta.get("field"),
+    "sub_action": first_open_line,
+    "transition": None,
+})
+PYEOF
