@@ -9,7 +9,8 @@ cat .sdd/INDEX.md
 echo ""
 echo "---"
 # Active feature's spec summary
-active=$(grep -m1 -E '^\*\*Active:\*\*' .sdd/INDEX.md | grep -oE 'features/[A-Za-z0-9._-]+' | head -1 || echo "")
+active=$(awk '/^\*\*Active:\*\*/{print $2; exit}' .sdd/INDEX.md 2>/dev/null || echo "")
+case "$active" in *"(none)"*|"_"*"_"|"") active="" ;; esac
 if [ -n "$active" ] && [ -f ".sdd/$active/spec.md" ]; then
   echo "Active spec: .sdd/$active/spec.md"
   echo ""

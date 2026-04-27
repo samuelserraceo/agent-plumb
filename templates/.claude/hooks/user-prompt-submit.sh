@@ -69,8 +69,10 @@ emit_state() {
   cat .sdd/INDEX.md
   echo ""
 
-  # Active feature?
-  active_path=$(grep -m1 -E '^\*\*Active:\*\*' .sdd/INDEX.md | grep -oE 'features/[A-Za-z0-9._-]+' | head -1 || echo "")
+  # Active feature? Read the path generically from **Active:** <path> so
+  # the hook works for any playbook's work_item_folder, not just features/.
+  active_path=$(awk '/^\*\*Active:\*\*/{print $2; exit}' .sdd/INDEX.md 2>/dev/null || echo "")
+  case "$active_path" in *"(none)"*|"_"*"_"|"") active_path="" ;; esac
 
   if [ -n "$active_path" ] && [ -f ".sdd/$active_path/spec.md" ]; then
     spec=".sdd/$active_path/spec.md"

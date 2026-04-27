@@ -2237,6 +2237,47 @@ else
 fi
 
 # ============================================================
+# T66 — Cut 8: hooks read work-item path generically (not hardcoded features/)
+#   Pre-Cut-8: 6 hooks + status.md grepped `features/[A-Za-z0-9._-]+`
+#   from INDEX.md's **Active:** line. Any non-default playbook
+#   (Phase C: bugs/, ideas/) was invisible to those hooks.
+#
+#   This test scaffolds a `bugs/` work-item, stages a phase-advance
+#   commit with open [ ] in spec.md, and asserts pre-commit-block
+#   correctly reads the bugs/ path and blocks. Pre-Cut-8 the hook
+#   couldn't see the path, would exit 0 silently, and the bad commit
+#   would slip through.
+# ============================================================
+note "T66: pre-commit-block reads bugs/ path from INDEX.md (Cut 8)"
+d=$(mkproj)
+cd "$d"
+mkdir -p .sdd/bugs/001-test
+echo '**Active:** bugs/001-test' > .sdd/INDEX.md
+cat > .sdd/bugs/001-test/spec.md <<'SPEC'
+[PHASE: SPEC]
+
+## PHASE: SPEC
+- **Who has it:** [ ]
+- **Why now:** [ ]
+SPEC
+git add -A && git commit -q -m "init bugs scaffold"
+# Stage a phase-advance: change [PHASE: SPEC] → [PHASE: BUILD] but
+# leave open [ ] in SPEC body. Hook should block.
+sed -i.bak 's/\[PHASE: SPEC\]/[PHASE: BUILD]/' .sdd/bugs/001-test/spec.md
+rm -f .sdd/bugs/001-test/spec.md.bak
+git add -A
+e=0
+echo '{"tool_input":{"command":"git commit -m \"[SDD:001-test] phase: SPEC -> BUILD\""}}' \
+  | CLAUDE_PROJECT_DIR="$d" bash "$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-block.sh" >/dev/null 2>&1 || e=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$e" -ne 0 ]; then
+  ok "T66 pre-commit-block found bugs/ path + blocked phase-advance with open [ ]"
+else
+  bad "T66 pre-commit-block didn't read bugs/ path (still hardcodes features/?)" "exit was $e, expected non-zero"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'

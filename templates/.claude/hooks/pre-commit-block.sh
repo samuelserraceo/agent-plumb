@@ -47,8 +47,11 @@ if [ -z "$staged_index" ]; then
   staged_index=$(cat .sdd/INDEX.md)
 fi
 
-# No active feature? Allow.
-active_path=$(printf '%s\n' "$staged_index" | grep -m1 -E '^\*\*Active:\*\*' | grep -oE 'features/[A-Za-z0-9._-]+' | head -1 || echo "")
+# No active feature? Allow. Reads the work-item path generically from
+# **Active:** <path> rather than hardcoding `features/` — keeps the hook
+# multi-playbook capable (Phase C ships bugs/, ideas/, etc.).
+active_path=$(printf '%s\n' "$staged_index" | awk '/^\*\*Active:\*\*/{print $2; exit}')
+case "$active_path" in *"(none)"*|"_"*"_"|"") active_path="" ;; esac
 [ -z "$active_path" ] && exit 0
 
 spec=".sdd/$active_path/spec.md"
