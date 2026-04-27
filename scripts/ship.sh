@@ -41,14 +41,20 @@ if [ ! -f "$spec" ]; then
 fi
 
 phase=$(grep -m1 -oE '\[PHASE: [A-Z]+\]' "$spec" | grep -oE '[A-Z]+' | tail -1)
-if [ "$phase" != "VERIFY" ] && [ "$phase" != "LEARN" ]; then
-  echo "ERROR: active feature is in phase $phase. /ship expects VERIFY (all tests green) or LEARN." >&2
-  echo "       Run /verify first, or manually flip the phase if you know what you're doing." >&2
+# v0.8 3-phase spine: SPEC → BUILD → SHIP. The legacy VERIFY/LEARN phases
+# are now sub-actions of SHIP (verify-test-run, verify-prod-only-acs,
+# learn-summary, learn-lessons). /ship runs once the SHIP phase has been
+# reached — its sub-actions take it the rest of the way.
+if [ "$phase" != "SHIP" ]; then
+  echo "ERROR: active work item is in phase $phase. /ship expects SHIP (the v0.8 final phase)." >&2
+  echo "       Run /next until you've completed BUILD and reached SHIP, then /ship." >&2
   exit 1
 fi
 
-# Derive branch and feature id
-feature_id="${active#features/}"
+# Derive branch and feature id (path-generic — strips any folder prefix
+# like features/, bugs/, ideas/ to leave just the <id>-<slug> for the
+# branch name, matching the convention sdd/<id>-<slug>).
+feature_id="${active##*/}"
 branch="sdd/$feature_id"
 
 # Dirty tree check
@@ -189,8 +195,9 @@ if "## Pending production verification" in text:
     idx.write_text(text)
 PY
 
-  # Flip phase to LEARN (so /next captures lessons before the feature truly closes)
-  sed -i.bak -E 's/\[PHASE: [A-Z]+\]/[PHASE: LEARN]/' "$spec" && rm -f "$spec.bak"
+  # v0.8: stay in SHIP phase — the learn-summary / learn-lessons
+  # sub-actions inside SHIP capture lessons. No phase-flip needed; the
+  # remaining SHIP sub-actions complete via /next.
 
   # Size-cap nudge — print a notice if patterns.md or INDEX.md crossed thresholds
   patterns_lines=$(wc -l < .sdd/patterns.md 2>/dev/null | tr -d ' ' || echo 0)
@@ -204,11 +211,12 @@ PY
   fi
 
   git add .sdd/INDEX.md "$spec" ".sdd/$active/.shipped"
-  git commit -m "[SDD:$feature_id] ship: CI green → LEARN; spec marked cold (.shipped)" || true
+  git commit -m "[SDD:$feature_id] ship: CI green; spec marked cold (.shipped)" || true
   git push
 
   echo ""
-  echo "Next: capture lessons in §LEARN of the spec, then merge the PR on GitHub."
+  echo "Next: run /next to capture lessons via the learn-summary + learn-lessons"
+  echo "      sub-actions, then merge the PR on GitHub."
   echo "  Spec is now cold — agent will not re-read it unless you reference it explicitly."
   echo "PR: $pr_url"
   exit 0
@@ -218,8 +226,8 @@ else
   # Capture the failed check summary
   fail_log=$(gh pr checks "$pr_number" --watch=false 2>&1 | grep -E 'fail|✗' || echo "(no summary captured)")
 
-  # Append a bug task to the PLAN section of spec.md
-  # Flip phase back to BUILD
+  # Append a bug task to the BUILD section of spec.md and flip phase back to BUILD
+  # (v0.8: tasks live inside ## PHASE: BUILD; in Phase A they lived inside PLAN).
   bug_summary=$(echo "$fail_log" | head -3 | tr '\n' '; ' | head -c 200)
 
   python3 - "$spec" "$bug_summary" <<'PY'
@@ -228,19 +236,28 @@ spec_path, summary = sys.argv[1], sys.argv[2]
 p = pathlib.Path(spec_path)
 text = p.read_text()
 
-# Flip phase
+# Flip phase back to BUILD so /next picks up the new bug task
 text = re.sub(r"\[PHASE: [A-Z]+\]", "[PHASE: BUILD]", text, count=1)
 
-# Append bug task under "## PHASE: PLAN" → Tasks section
+# Append bug task under "## PHASE: BUILD" → Tasks section
 bug_line = f"- [ ] bug: CI failed on ship — {summary}   status: RED"
-if "## PHASE: PLAN" in text:
-    # Find the Tasks subsection within PLAN
-    text = re.sub(
-        r"(## PHASE: PLAN[\s\S]*?### Tasks[\s\S]*?\n)",
-        lambda m: m.group(1) + bug_line + "\n",
-        text,
-        count=1,
-    )
+if "## PHASE: BUILD" in text:
+    # Find the Tasks subsection within BUILD (or fall back to end of section)
+    if re.search(r"## PHASE: BUILD[\s\S]*?### Tasks", text):
+        text = re.sub(
+            r"(## PHASE: BUILD[\s\S]*?### Tasks[\s\S]*?\n)",
+            lambda m: m.group(1) + bug_line + "\n",
+            text,
+            count=1,
+        )
+    else:
+        # No ### Tasks subsection — append after the BUILD heading line
+        text = re.sub(
+            r"(## PHASE: BUILD\n)",
+            lambda m: m.group(1) + "\n### Tasks\n\n" + bug_line + "\n",
+            text,
+            count=1,
+        )
 else:
     text += "\n\n<!-- bug task appended by /ship on CI failure -->\n" + bug_line + "\n"
 

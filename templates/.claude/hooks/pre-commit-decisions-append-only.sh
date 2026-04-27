@@ -51,6 +51,18 @@ esac
 staged=$(git diff --cached --name-only 2>/dev/null || echo "")
 echo "$staged" | grep -qE '(^|/)\.sdd/decisions\.md$' || exit 0
 
+# Admin escape hatch: a commit explicitly tagged `[SDD] decisions: reset`
+# is treated as a one-time rebuild of the whole file. The error message
+# below advertises this; this check honors it (R3 Honesty reviewer fix —
+# pre-fix the advertisement was a lie). The agent should rarely use this;
+# it's for the user (or a Phase C `--admin-reset` flag) to recover from
+# decisions-log corruption. Phase C will replace the magic-message
+# convention with an explicit flag — until then, the magic message is
+# documented and intentional.
+case "$cmd" in
+  *"[SDD] decisions: reset"*) exit 0 ;;
+esac
+
 # Compare HEAD vs staged.
 PROJ="$PROJECT_DIR" python3 <<'PYEOF'
 import os, subprocess, sys
