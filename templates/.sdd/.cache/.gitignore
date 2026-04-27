@@ -1,6 +1,5 @@
-# Generated cache files (rebuildable from manifest + .sdd/ contents)
-slug-map.json
-backlinks.json
+# Generated cache files (rebuildable from manifest + .sdd/ contents).
+# slug-map.json + backlinks.json deferred to Phase C with their writers.
 
 # Editor temp files
 *.swp

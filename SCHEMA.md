@@ -481,28 +481,11 @@ The full algorithm for sub-action sections is implemented in `templates/.sdd/scr
 
 ---
 
-## 10 — Wikilink resolution (Theme 7)
+## 10 — Wikilink resolution (deferred to Phase C)
 
-In sub-action prose, `[[<slug>]]` syntax means: at LOCATE step, the loader resolves the slug via `.sdd/.cache/slug-map.json` and emits a brief reference to the agent.
+> **B-1 status:** removed. `[[<slug>]]` syntax was stripped from sub-action prose in Cut 4 (commit `cefeffa`); the cache + resolver were stripped in Cut 4b. Phase C re-adds wikilinks when both producer (sub-action prose) and consumer (LOCATE-step prose injection) ship together.
 
-### Resolution rules
-
-1. Slug-map is built lazily by `load-playbook.sh` on first call after any `.sdd/` change.
-2. If `[[slug]]` matches exactly one file: replace with `[<title>](<path>)` style reference (or inline note).
-3. If matches multiple: ERROR — `"Wikilink [[<slug>]] in <file> matches multiple: <path1>, <path2>. Disambiguate by renaming one."`
-4. If matches none: render as plain text `[[<slug>]]` and emit a warning to stderr (don't block — slug may be a future addition).
-
-### Slug-map shape (`.sdd/.cache/slug-map.json`)
-
-```json
-{
-  "problem": ".sdd/subactions/problem.md",
-  "feature": ".sdd/playbooks/feature.md",
-  "ci-moat-enforcement": ".sdd/extensions/ci-moat-enforcement.md"
-}
-```
-
-Slug must be unique across all `.sdd/*.md` files. Loader emits ERROR on duplicate slug at any depth.
+The slug-uniqueness invariant remains: `load-playbook.sh --validate` builds a slug-map across all `.sdd/*.md` files and errors on duplicates. This protects future wikilinks from ambiguity even though no consumer reads them today.
 
 ---
 

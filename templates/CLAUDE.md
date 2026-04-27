@@ -29,9 +29,10 @@ You are working inside a Spec-Driven Development (SDD) project. The MANAGED sect
 | `/compress` | Consolidate `patterns.md` or `data-model.md` when they grow noisy | n/a | n/a |
 
 **Picking the right entry point:**
-- User reports something broken → `/bug`
+- User wants to build new functionality → `/start <one-line title>`
+- User reports something broken → `/bug` (B-1: routes to `/start [BUG] <title>`; Phase C ships a dedicated bug playbook)
 - User has a half-formed thought worth remembering but not building → `/idea`
-- User wants to build new functionality → `/next` (or just talk; you infer)
+- An active work item already exists, advance it one step → `/next`
 
 If a "bug" mid-SPEC turns out to require significant new design, escalate by telling the user "this looks like a feature, not a bug — want to switch?".
 

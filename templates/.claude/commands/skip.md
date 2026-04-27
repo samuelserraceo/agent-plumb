@@ -8,7 +8,7 @@ Skip the current section of the active feature's `spec.md`, if and only if it is
 
 ## Rules
 
-1. Read `.sdd/INDEX.md` → find the active feature. Read `.sdd/features/<active>/spec.md`.
+1. Read `.sdd/INDEX.md` → find the active work item from the `**Active:**` line (the path may be `features/<id>-<slug>` for B-1, or any other folder if a Phase C playbook ships). Read `.sdd/<active>/spec.md`.
 2. Find the current phase's first section containing any `[ ]`. Check whether that section's heading line contains `[SKIPPABLE:`.
    - **If NOT skippable** → refuse politely: *"§`<N>` `<name>` is required and cannot be skipped. Here's the first blocker: `<question>`."* and ask the next question as if `/next` had been invoked.
    - **If skippable** → proceed.

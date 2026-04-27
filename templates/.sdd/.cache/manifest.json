@@ -19,18 +19,13 @@
       "trust": "framework"
     },
     "load-playbook.sh": {
-      "expected_sha256": "3e0326ecf94fe09d408d89f8cc55f22e65e6a9cb369879f3e184c0038e39dec6",
+      "expected_sha256": "03c72fb678caf2acedf5bd952da4b5c8e92fe23abe09961e2a7a1505c2d2ff3d",
       "path": ".sdd/scripts/load-playbook.sh",
       "trust": "framework"
     },
     "reapprove.sh": {
       "expected_sha256": "fc17c3b9e6b39f08da36db3d1524f763b4b2c8ac72f1da97c703ab4313ac60e1",
       "path": ".sdd/scripts/reapprove.sh",
-      "trust": "framework"
-    },
-    "resolve-wikilink.sh": {
-      "expected_sha256": "d290e06311ccb06b0a1af7ca52514dd9f741c0c208a2e86c4e9c2f0007cc146d",
-      "path": ".sdd/scripts/resolve-wikilink.sh",
       "trust": "framework"
     },
     "start.sh": {

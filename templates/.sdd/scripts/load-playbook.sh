@@ -388,29 +388,13 @@ def cmd_validate():
             validate_playbook(r["path"], r["fm"], available_subactions)
         elif r["type"] == "config":
             validate_config(r["path"], r["fm"])
-    slug_map = build_slug_map(records)
-
-    # Theme 7 — persist the slug-map to .sdd/.cache/slug-map.json so
-    # resolve-wikilink.sh and other downstream callers don't have to
-    # re-scan the .sdd/ tree on every invocation. Stored as paths
-    # relative to project root (so it's portable across machines).
-    if slug_map:
-        cache_dir = os.path.join(SDD, ".cache")
-        os.makedirs(cache_dir, exist_ok=True)
-        out_map = {
-            slug: os.path.relpath(path, PROJ)
-            for slug, path in slug_map.items()
-        }
-        slug_map_path = os.path.join(cache_dir, "slug-map.json")
-        try:
-            with open(slug_map_path, "w") as f:
-                json.dump(out_map, f, indent=2, sort_keys=True)
-                f.write("\n")
-        except OSError as e:
-            # Soft-fail: cache write isn't critical to validation outcome.
-            sys.stderr.write(
-                f"load-playbook: WARNING: could not write slug-map.json: {e}\n"
-            )
+    # build_slug_map runs as part of validation (catches duplicate slugs
+    # across the framework — closed-enum invariant per SCHEMA.md). The
+    # slug-map cache writer was removed in Cut 4b: post-Cut-4 the
+    # wikilink consumer was already stripped from sub-action prose, and
+    # leaving the writer in place would have shipped dead infrastructure.
+    # Phase C re-adds the cache + resolver when wikilinks ship for real.
+    build_slug_map(records)
 
 def cmd_check_hashes():
     manifest_path = os.path.join(SDD, ".cache", "manifest.json")
