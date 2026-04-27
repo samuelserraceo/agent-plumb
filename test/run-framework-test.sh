@@ -1132,6 +1132,67 @@ else
 fi
 
 # ============================================================
+# T36 — moat blocks tampered playbook (manifest hash-pin)
+#   RED: moat doesn't read .sdd/.cache/manifest.json on phase-advance
+#        commits, so a tamper-then-claim cross-commit attack passes.
+#        Cofile-block can't catch this (tamper is in commit N alone,
+#        claim in commit N+1 alone — neither is cross-class). The
+#        manifest pin in the moat is the defense.
+# ============================================================
+note "T36: moat blocks tampered playbook (manifest hash-pin)"
+d=$(mkproj_v08)
+cd "$d"
+# Tamper feature.md, commit it. HEAD now has tampered playbook;
+# manifest still claims the original (un-tampered) hash.
+echo "# tampered AFTER manifest was generated" >> .sdd/playbooks/feature.md
+git add .sdd/playbooks/feature.md
+git commit -q -m "tamper" >/dev/null 2>&1
+# Now simulate a phase-advance commit: stage verification.json + spec.md
+echo "[PHASE: SPEC]" > .sdd/features/001-test/spec.md
+cat > .sdd/features/001-test/verification.json <<'EOF'
+{"phase":"SPEC","checks":[{"id":"C-spec-problem-filled","result":"pass"}],"approved_sections":{}}
+EOF
+git add .sdd/features/001-test/
+hook_stdin='{"tool_input":{"command":"git commit -m phase: SPEC -> BUILD"}}'
+ec=0
+err=$(echo "$hook_stdin" | bash "$MOAT_HOOK" 2>&1 1>/dev/null) || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 2 ] && echo "$err" | grep -qiE 'manifest|tampered|hash mismatch'; then
+  ok "T36 moat blocked tampered playbook (exit 2, manifest-pin error)"
+else
+  bad "T36 moat let tampered playbook through" "exit=$ec; err='$err'"
+fi
+
+# ============================================================
+# T37 — moat blocks tampered sub-action (manifest hash-pin)
+#   RED: same attack class as T36 but for a sub-action file. The
+#        agent could soften proposed-approach.md's prose to weaken
+#        what gets injected at LOCATE step, then claim verification.
+# ============================================================
+note "T37: moat blocks tampered sub-action (manifest hash-pin)"
+d=$(mkproj_v08)
+cd "$d"
+echo "# tampered AFTER manifest was generated" >> .sdd/subactions/problem.md
+git add .sdd/subactions/problem.md
+git commit -q -m "tamper" >/dev/null 2>&1
+echo "[PHASE: SPEC]" > .sdd/features/001-test/spec.md
+cat > .sdd/features/001-test/verification.json <<'EOF'
+{"phase":"SPEC","checks":[{"id":"C-spec-problem-filled","result":"pass"}],"approved_sections":{}}
+EOF
+git add .sdd/features/001-test/
+hook_stdin='{"tool_input":{"command":"git commit -m phase: SPEC -> BUILD"}}'
+ec=0
+err=$(echo "$hook_stdin" | bash "$MOAT_HOOK" 2>&1 1>/dev/null) || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 2 ] && echo "$err" | grep -qiE 'manifest|tampered|hash mismatch'; then
+  ok "T37 moat blocked tampered sub-action (exit 2, manifest-pin error)"
+else
+  bad "T37 moat let tampered sub-action through" "exit=$ec; err='$err'"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
