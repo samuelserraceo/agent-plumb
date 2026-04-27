@@ -53,6 +53,12 @@ fi
 git config user.email "test@sdd-uat.local"
 git config user.name "UAT Test User"
 
+# UAT fix: wire the safety-check chain via native git pre-commit. Without
+# this, combined `git add && git commit` patterns bypass the moat (the
+# Phase B-1 UAT BLOCKER finding). Native pre-commit fires AFTER staging,
+# regardless of how the agent invoked git.
+git config core.hooksPath .claude/hooks
+
 # Copy framework files (preserve .git, don't overwrite any user modifications)
 echo "Copying framework files..."
 cp -r "$PROJECT_ROOT/templates/.sdd" .sdd 2>/dev/null || {

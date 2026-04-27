@@ -82,6 +82,22 @@ command -v python3 >/dev/null 2>&1 || {
   exit 1
 }
 
+# Theme 7+UAT — auto-install the safety checks (one-time, per project).
+# Closes the UAT moat-bypass finding: without `core.hooksPath` pointing at
+# .claude/hooks/, combined `git add && git commit` patterns bypass the
+# moat. Setting it once wires every commit (agent or human, combined or
+# split) through the safety check chain.
+#
+# Honest UX (Option 2): visible one-line message on first install, silent
+# on subsequent /start runs. User sees what changed; doesn't have to run
+# any setup command themselves.
+current_hookspath=$(git config --get core.hooksPath 2>/dev/null || echo "")
+if [ "$current_hookspath" != ".claude/hooks" ] && [ -d ".git" ]; then
+  if git config core.hooksPath .claude/hooks 2>/dev/null; then
+    echo "[/start] Setting up your safety checks (one-time, applies to this project only)."
+  fi
+fi
+
 # Read config + figure out which playbook to use.
 # Validate playbook exists. Compute next NNN. Derive slug from title.
 # Scaffold spec.md + update INDEX.md. All in one python3 block for safety.

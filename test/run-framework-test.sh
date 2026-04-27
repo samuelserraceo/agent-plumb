@@ -71,6 +71,13 @@ mkproj_v08() {
   cp "$FRAMEWORK_ROOT/templates/.sdd/decisions.md"                    "$d/.sdd/decisions.md"
   cp "$VERIFY_STAGE" "$d/.sdd/scripts/verify-stage.sh" 2>/dev/null || true
   cp "$NEXT_ACTION"  "$d/.sdd/scripts/next-action.sh"  2>/dev/null || true
+  # Copy .claude/ (settings.json + hooks/ — including the native git
+  # pre-commit shim that closes the UAT moat-bypass finding).
+  mkdir -p "$d/.claude/hooks"
+  cp "$FRAMEWORK_ROOT/templates/.claude/settings.json" "$d/.claude/settings.json"
+  cp "$FRAMEWORK_ROOT/templates/.claude/hooks/"*.sh "$d/.claude/hooks/" 2>/dev/null || true
+  cp "$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit" "$d/.claude/hooks/pre-commit"
+  chmod +x "$d/.claude/hooks/"* 2>/dev/null || true
   ( cd "$d" \
     && git init -q 2>/dev/null \
     && git config user.email t@t.com \
@@ -2014,6 +2021,136 @@ if [ "$ec_warn" -eq 0 ] \
 else
   bad "T63 size-cap thresholds incorrect" \
       "warn ec=$ec_warn (expect 0); block ec=$ec_block (expect 2)"
+fi
+
+# ============================================================
+# T64 — native git pre-commit shim closes UAT moat-bypass finding
+#   The UAT (sdd-v0.8-uat-results.md) found that combined
+#   `git add X && git commit -m Y` in one bash call bypasses the
+#   PreToolUse-only wiring (hook fires before `git add` runs, sees
+#   nothing staged, exits silently). The fix wires the same hooks
+#   via native git pre-commit (fires AFTER staging). T64 reproduces
+#   the bypass scenario and asserts it's now blocked.
+# ============================================================
+note "T64: native pre-commit shim closes the combined git add && git commit bypass"
+d=$(mkproj_v08)
+cd "$d"
+# Activate the native git pre-commit wiring (the fix).
+git config core.hooksPath .claude/hooks
+
+# Setup the Codex #2 attack: strong content, hash recorded, then soften.
+cat > .sdd/features/001-test/spec.md <<'EOF'
+# Feature
+
+## PHASE: SPEC
+
+### sub-action: problem
+- Strong specific user pain points with verified contexts.
+- Real numbers, real names, real timelines.
+
+### Exit checks
+- [ ] C1: dummy — true
+EOF
+hash=$(bash .sdd/scripts/hash-section.sh \
+  .sdd/features/001-test/spec.md .sdd/subactions/problem.md)
+cat > .sdd/features/001-test/verification.json <<EOF
+{"phase":"SPEC","checks":[{"id":"C1","result":"pass"}],"approved_sections":{"problem":"$hash"}}
+EOF
+git add .sdd/features/001-test/ >/dev/null 2>&1
+git -c core.hooksPath=/dev/null commit -q -m "scaffold approved" >/dev/null 2>&1
+
+# THE ATTACK: agent silently softens and uses the combined pattern.
+cat > .sdd/features/001-test/spec.md <<'EOF'
+# Feature
+
+## PHASE: SPEC
+
+### sub-action: problem
+- vague
+
+### Exit checks
+- [ ] C1: dummy — true
+EOF
+
+# This is the exact bash pattern the UAT showed bypassed PreToolUse-only.
+# With native pre-commit wired, it must now BLOCK.
+attack_out=$(git add .sdd/features/001-test/spec.md && \
+             git commit -m "softened" 2>&1) && \
+             attack_ec=0 || attack_ec=$?
+
+cd - >/dev/null
+rm -rf "$d"
+
+if [ "$attack_ec" -ne 0 ] && \
+   echo "$attack_out" | grep -qiE 'section.*changed|approved.*section|moat'; then
+  ok "T64 combined git add && git commit BLOCKED by native pre-commit shim"
+else
+  bad "T64 BYPASS NOT CLOSED — moat let softened content commit through" \
+      "ec=$attack_ec; out: $(echo "$attack_out" | tail -3 | tr '\n' ' | ')"
+fi
+
+# ============================================================
+# T64b — mutation: shim is the load-bearing piece (not just config)
+#   With core.hooksPath set BUT shim replaced with no-op, the same
+#   attack must succeed. Proves the shim's invocation chain is what
+#   catches the bypass — not just the configuration.
+# ============================================================
+note "T64b: shim invocation chain is load-bearing (mutation check)"
+d=$(mkproj_v08)
+cd "$d"
+git config core.hooksPath .claude/hooks
+# MUTATE the shim: replace with no-op
+cat > .claude/hooks/pre-commit <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+chmod +x .claude/hooks/pre-commit
+
+# Same attack setup as T64
+cat > .sdd/features/001-test/spec.md <<'EOF'
+# Feature
+
+## PHASE: SPEC
+
+### sub-action: problem
+- Strong content.
+
+### Exit checks
+- [ ] C1: dummy — true
+EOF
+hash=$(bash .sdd/scripts/hash-section.sh \
+  .sdd/features/001-test/spec.md .sdd/subactions/problem.md)
+cat > .sdd/features/001-test/verification.json <<EOF
+{"phase":"SPEC","checks":[{"id":"C1","result":"pass"}],"approved_sections":{"problem":"$hash"}}
+EOF
+git add .sdd/features/001-test/ >/dev/null 2>&1
+git -c core.hooksPath=/dev/null commit -q -m "scaffold approved" >/dev/null 2>&1
+
+# Soften
+cat > .sdd/features/001-test/spec.md <<'EOF'
+# Feature
+
+## PHASE: SPEC
+
+### sub-action: problem
+- vague
+
+### Exit checks
+- [ ] C1: dummy — true
+EOF
+
+# With shim mutated to no-op, attack should succeed (commit goes through)
+mut_ec=0
+git add .sdd/features/001-test/spec.md >/dev/null 2>&1
+git commit -m "softened" >/dev/null 2>&1 || mut_ec=$?
+
+cd - >/dev/null
+rm -rf "$d"
+
+if [ "$mut_ec" -eq 0 ]; then
+  ok "T64b shim no-op lets attack through (proves shim invocation is load-bearing)"
+else
+  bad "T64b mutation didn't isolate to shim" "ec=$mut_ec — something else is blocking"
 fi
 
 # ============================================================
