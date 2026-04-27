@@ -18,7 +18,7 @@ requires_user_approval: false
 
 The distilled value of the feature. **One or two cross-feature lessons** — patterns, constraints, gotchas, surprising discoveries that future features will benefit from knowing.
 
-**Anchoring:** scan [[non-functional]], [[data-contract]], [[acceptance-criteria]], [[learn-summary]] for signals.
+**Anchoring:** scan `non-functional`, `data-contract`, `acceptance-criteria`, `learn-summary` for signals.
 
 **Examples of good lessons:**
 - *"Never trust user-submitted emails as the join key — filter duplicates server-side first. Cost us 4 hours debugging a race condition."*

@@ -16,7 +16,7 @@ budget:
 requires_user_approval: false
 ---
 
-Draw 1-3 critical user flows, from open-page through done. Reference [[user-stories]] explicitly — every flow maps to one or more stories.
+Draw 1-3 critical user flows, from open-page through done. Reference `user-stories` explicitly — every flow maps to one or more stories.
 
 For each flow:
 

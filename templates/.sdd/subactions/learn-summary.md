@@ -18,7 +18,7 @@ requires_user_approval: false
 
 One paragraph (4-6 sentences) capturing what just shipped.
 
-**Anchoring:** reference [[problem]] (why we built it), [[success]] (what we optimized for), and what actually happened during BUILD (any pivots, surprises, dead ends recovered from).
+**Anchoring:** reference `problem` (why we built it), `success` (what we optimized for), and what actually happened during BUILD (any pivots, surprises, dead ends recovered from).
 
 **Prompt structure:**
 1. *What got built* — one sentence summary of the feature.

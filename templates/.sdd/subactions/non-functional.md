@@ -20,7 +20,7 @@ requires_user_approval: false
 
 **Test for "is this a real constraint?":** *"Would it be a deal-breaker if X took 5 seconds?"* If yes, it's a constraint.
 
-**If continuing:** propose 1-2 candidates per sub-section, anchored to [[success]] and [[proposed-approach]]:
+**If continuing:** propose 1-2 candidates per sub-section, anchored to `success` and `proposed-approach`:
 
 - **Performance:** response time budget? data volume limit? caching? *Example: "Form submits in <2 sec including network round-trip. p95 < 5 sec under 100 concurrent."*
 - **Security:** sensitive data? access control? threat model? *Example: "Passwords hashed + salted (bcrypt). API keys never in URL params. Rate-limit /signup to 10/IP/hour."*

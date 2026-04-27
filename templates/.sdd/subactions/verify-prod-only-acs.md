@@ -18,7 +18,7 @@ budget:
 requires_user_approval: false
 ---
 
-For every AC in [[acceptance-criteria]] tagged `[PROD-ONLY]`, the user walks through it manually after the first prod deploy. These are the things impossible to test in dev (real Stripe charges, real email bounce webhooks, real Turnstile tokens, real DNS propagation).
+For every AC in `acceptance-criteria` tagged `[PROD-ONLY]`, the user walks through it manually after the first prod deploy. These are the things impossible to test in dev (real Stripe charges, real email bounce webhooks, real Turnstile tokens, real DNS propagation).
 
 **If §11 has zero `[PROD-ONLY]` ACs:** auto-skip. Fill with `**No PROD-ONLY ACs to verify.**` and continue.
 

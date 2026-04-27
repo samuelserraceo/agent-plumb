@@ -19,7 +19,7 @@ requires_user_approval: true
 Propose a concrete approach with reasoning, alternatives, and what's traded off. The user is non-technical — translate every technical choice into "what it does for the user" + "what could go wrong."
 
 **Required output (fill in spec.md):**
-- **Recommended approach** — one paragraph plus a short bulleted list of the moving parts. Reference [[problem]], [[success]], [[user-stories]], [[ux-brief]] explicitly so it's clear this approach answers them.
+- **Recommended approach** — one paragraph plus a short bulleted list of the moving parts. Reference `problem`, `success`, `user-stories`, `ux-brief` explicitly so it's clear this approach answers them.
 - **Alternatives considered (≥2)** — for each, one line on what it is and one line on why it's not the recommendation. Don't strawman — the alternative should be a real plausible choice.
 - **What we trade off** — be honest about cost, complexity, time-to-ship, debt. Plain English.
 - **Key technical choices for sign-off** — list each library / service / pattern the user needs to be aware of (paying for, configuring, or whose limits matter). One short paragraph each: what it does for the user, what it costs, what could go wrong.

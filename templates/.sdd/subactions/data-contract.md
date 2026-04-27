@@ -18,7 +18,7 @@ requires_user_approval: true
 
 Every entity, field, transition, and edge case must be named before code. The data layer is where silent bugs go to multiply.
 
-**Propose the schema.** Based on [[problem]], [[user-stories]], [[proposed-approach]], draft:
+**Propose the schema.** Based on `problem`, `user-stories`, `proposed-approach`, draft:
 
 - **Entities affected** — which tables/collections change?
 - **New fields / migrations** — name + type + why we need it

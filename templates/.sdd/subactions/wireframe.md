@@ -16,11 +16,11 @@ budget:
 requires_user_approval: false
 ---
 
-**Skippable** for non-UI features OR if [[ux-brief]] (§4) was skipped. Proactively offer: *"Wireframe is for UI-facing features. This one [is/isn't]. Skip? Reply `/skip non-UI feature`."*
+**Skippable** for non-UI features OR if `ux-brief` (§4) was skipped. Proactively offer: *"Wireframe is for UI-facing features. This one [is/isn't]. Skip? Reply `/skip non-UI feature`."*
 
 **If continuing:** build ONE static HTML file at `.sdd/features/<id>/wireframe.html`. Tailwind CDN in `<head>` — no build step, viewable in any browser via `open <path>`.
 
-**Show every screen named in [[user-stories]].** Label components, show placeholder text, mark interactive areas (buttons, links, form fields). Keep it rough — this is wireframe (layout + flow), not visual design.
+**Show every screen named in `user-stories`.** Label components, show placeholder text, mark interactive areas (buttons, links, form fields). Keep it rough — this is wireframe (layout + flow), not visual design.
 
 **Iterate with user.** They open in browser, request changes (*"move button left", "add error state", "show loading spinner"*). You update the file and tell them to refresh.
 

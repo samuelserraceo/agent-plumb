@@ -16,9 +16,9 @@ budget:
 requires_user_approval: false
 ---
 
-Convert [[acceptance-criteria]] into ordered tasks. Each task = one test file + one commit. This is what BUILD will execute.
+Convert `acceptance-criteria` into ordered tasks. Each task = one test file + one commit. This is what BUILD will execute.
 
-**Coverage check FIRST.** Before drafting any tasks, verify every constraint in [[ux-brief]] (mobile, accessibility, i18n, locale, dark mode, etc.) is reflected in ≥1 AC in §11. If gaps, propose new ACs in this same turn — surface ALL gaps in one go, don't drip them.
+**Coverage check FIRST.** Before drafting any tasks, verify every constraint in `ux-brief` (mobile, accessibility, i18n, locale, dark mode, etc.) is reflected in ≥1 AC in §11. If gaps, propose new ACs in this same turn — surface ALL gaps in one go, don't drip them.
 
 **Map ACs → tasks 1:1.** T1 → AC1, T2 → AC2, etc. Order matters: dependencies first (e.g., schema migration before form), then features.
 

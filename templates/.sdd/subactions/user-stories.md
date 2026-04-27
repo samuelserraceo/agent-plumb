@@ -18,7 +18,7 @@ budget:
 requires_user_approval: false
 ---
 
-Reference [[problem]] and [[success]] before asking. Don't ask in a vacuum.
+Reference `problem` and `success` before asking. Don't ask in a vacuum.
 
 Ask the user which personas apply — offer 6 common ones plus free-form:
 - **New visitor** · **Signed-up user** · **Returning customer** · **Admin / operator** · **Billing / finance** · **Customer support** · **Or describe your own**

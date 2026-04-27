@@ -18,9 +18,9 @@ requires_user_approval: true
 
 **This is the central section the moat protects** (Codex finding #2). User-approved ACs are hash-locked; the agent cannot silently soften them later.
 
-Each AC is a **concrete, testable assertion**. Each AC maps to **one task** in [[plan-decompose]] — what we promise to test, we promise to build.
+Each AC is a **concrete, testable assertion**. Each AC maps to **one task** in `plan-decompose` — what we promise to test, we promise to build.
 
-**Anchor to context.** Base ACs on [[flows]], [[user-stories]], and (if not skipped) [[ux-brief]] constraints. Every UX constraint (mobile-first, accessibility floor, locale) needs ≥1 AC backing it.
+**Anchor to context.** Base ACs on `flows`, `user-stories`, and (if not skipped) `ux-brief` constraints. Every UX constraint (mobile-first, accessibility floor, locale) needs ≥1 AC backing it.
 
 **Multi-choice scaffold for test types** (and a free-form escape):
 
@@ -31,7 +31,7 @@ Each AC is a **concrete, testable assertion**. Each AC maps to **one task** in [
 - **Errors** → service-down state shows "please try again", logs the error
 - **Or describe what to assert**
 
-**Coverage check before approval.** After drafting all ACs, scan [[ux-brief]] for constraints (mobile, dark mode, accessibility, i18n, locale, etc.). Each constraint MUST have ≥1 AC. If gaps, propose new ACs in this same turn — don't drip them out one by one.
+**Coverage check before approval.** After drafting all ACs, scan `ux-brief` for constraints (mobile, dark mode, accessibility, i18n, locale, etc.). Each constraint MUST have ≥1 AC. If gaps, propose new ACs in this same turn — don't drip them out one by one.
 
 **`[PROD-ONLY]` tag.** Some ACs can't be tested in dev (real Stripe charge, real email bounce webhook, real Turnstile token, real DNS propagation). Tag those `[PROD-ONLY]` at line end. SHIP's verify-prod-only-acs walks them manually post-deploy. Don't use `[PROD-ONLY]` to dodge writing tests — it's only for the impossible-in-dev cases.
 

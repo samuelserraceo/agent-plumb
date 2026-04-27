@@ -16,7 +16,7 @@ budget:
 requires_user_approval: false
 ---
 
-This sub-action repeats once per task in [[plan-decompose]]. The default mode is **test-first (TDD)**. The alternative is BUILD-SPIKE — see the BUILD-SPIKE sub-action; only use it for spike/exploration tasks the user has explicitly tagged.
+This sub-action repeats once per task in `plan-decompose`. The default mode is **test-first (TDD)**. The alternative is BUILD-SPIKE — see the BUILD-SPIKE sub-action; only use it for spike/exploration tasks the user has explicitly tagged.
 
 **Non-negotiable order:**
 
@@ -31,7 +31,7 @@ This sub-action repeats once per task in [[plan-decompose]]. The default mode is
 
 - A test stays RED after 3 attempts at fixing the code → halt and ask the user. Don't spiral.
 - A pre-commit hook blocks the commit → read the error, fix the actual blocker, do NOT work around with `--no-verify`.
-- You discover a real design gap in [[proposed-approach]] or data-contract that needs a user decision → halt and ask.
+- You discover a real design gap in `proposed-approach` or data-contract that needs a user decision → halt and ask.
 - An infrastructure step needs credentials / keys / accounts the user hasn't set up → halt and ask.
 
 **`touches:` is empty for this sub-action.** Reason: file paths vary per task (T01 touches different files than T02). Theme 4's pre-commit-touches hook applies the empty-touches rule = "no enforcement"; per-task file-staging discipline is on the agent. Phase C can introduce template syntax (e.g., `{task-id}` placeholders) if needed.

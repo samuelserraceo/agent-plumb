@@ -27,7 +27,7 @@ Common patterns:
 - Run a real test transaction (with a real card, in test mode if possible)
 - Verify the analytics dashboard shows new events
 
-**Anchor to [[acceptance-criteria]].** Any AC tagged `[PROD-ONLY]` lives here AND in SHIP's verify-prod-only-acs sub-action. They're the same list, surfaced twice for the user.
+**Anchor to `acceptance-criteria`.** Any AC tagged `[PROD-ONLY]` lives here AND in SHIP's verify-prod-only-acs sub-action. They're the same list, surfaced twice for the user.
 
 **Format:** 1-5 bullets. Each step: one sentence, action-oriented.
 
