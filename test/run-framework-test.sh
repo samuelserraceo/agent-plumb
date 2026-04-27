@@ -2491,6 +2491,32 @@ else
 fi
 
 # ============================================================
+# T70 — F4 atomic-step teaching: /next.md mentions per-step semantics
+#   /next.md (the slash command body shipped to projects) must teach the
+#   agent to advance ONE step per /next, key off the next-action.sh JSON
+#   `tag` field for the EXECUTE branch, and commit one step at a time.
+#   Pre-Phase-C: prose said "first [ ]" generically and used "section"
+#   as the unit. Post-Phase-C: prose names the rich JSON fields and the
+#   tag-based branching.
+#   RED if /next.md drops the rich-JSON references or re-introduces
+#   bundling-multiple-blockers prose.
+# ============================================================
+note "T70: /next.md teaches atomic-step semantics + tag-based EXECUTE"
+NEXT_MD="$FRAMEWORK_ROOT/templates/.claude/commands/next.md"
+miss=""
+for needle in 'one atomic step' 'next-action.sh' 'tag' 'USER-LED' 'AGENT-LED' 'BUILD-TASK' 'transition' '<action-slug>/<step-id>'; do
+  grep -q "$needle" "$NEXT_MD" || miss="$miss $needle"
+done
+# Anti-pattern: the v0.8 bundling rule should be GONE from /next.md.
+if grep -q 'batch multiple blockers' "$NEXT_MD"; then
+  bad "T70 /next.md still says 'batch multiple blockers' (v0.8 bundling rule)" "v0.9 atomic-step iteration replaces it"
+elif [ -z "$miss" ]; then
+  ok "T70 /next.md teaches atomic-step + tag-based EXECUTE (rich JSON fields + commit format)"
+else
+  bad "T70 /next.md missing v0.9 teaching:" "missing:$miss"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
