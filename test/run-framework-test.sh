@@ -2517,6 +2517,25 @@ else
 fi
 
 # ============================================================
+# T71 — F4 schema cleanup: legacy `bundling:` field removed from all actions
+#   Pre-Phase-C: 22 action frontmatters declared `bundling:
+#   bundle_all_fields_in_one_turn` or `bundling: n_a`. Bundling is
+#   superseded by F4 atomic-step granularity (one [ ] step = one commit;
+#   cognitive bundling is free-form). The field becomes dead metadata.
+#   This test asserts no action file still carries the legacy field.
+#   Mutation: re-introducing bundling: to any action frontmatter must
+#   make this test fail.
+# ============================================================
+note "T71: no action frontmatter declares legacy 'bundling:' field (F4 cleanup)"
+hits=$(grep -l "^bundling:" "$FRAMEWORK_ROOT"/templates/.sdd/actions/*.md 2>/dev/null | wc -l | tr -d ' ')
+if [ "$hits" -eq 0 ]; then
+  ok "T71 all 22 action frontmatters are clean of legacy bundling: field"
+else
+  bad "T71 legacy bundling: field still present in $hits action(s)" \
+      "$(grep -l '^bundling:' "$FRAMEWORK_ROOT"/templates/.sdd/actions/*.md 2>/dev/null | tr '\n' ' ')"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'

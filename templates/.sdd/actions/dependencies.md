@@ -6,7 +6,6 @@ title: "§8 Dependencies"
 short_label: "Dependencies"
 steps:
   - { id: deps, action: draft_external_services_with_pricing_math_scaled_to_success_volume, field: "§8" }
-bundling: n_a
 used_by: [feature]
 references: [success, proposed-approach]
 touches: []

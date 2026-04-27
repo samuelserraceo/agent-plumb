@@ -6,7 +6,6 @@ title: "§11 Acceptance criteria"
 short_label: "ACs"
 steps:
   - { id: approval, action: draft_iterate_approve_acs_with_constraint_coverage_check, field: "§11", triggers: [section_approved] }
-bundling: n_a
 used_by: [feature]
 references: [success, user-stories, flows, ux-brief, non-functional]
 touches: []

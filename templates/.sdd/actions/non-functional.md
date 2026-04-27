@@ -6,7 +6,6 @@ title: "§10 Non-functional"
 short_label: "Non-functional"
 steps:
   - { id: constraints, action: draft_performance_security_compliance_constraints, field: "§10" }
-bundling: n_a
 used_by: [feature]
 references: [problem, success, user-stories, proposed-approach]
 touches: []

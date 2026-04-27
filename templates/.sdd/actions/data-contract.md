@@ -6,7 +6,6 @@ title: "§6 Data contract"
 short_label: "Data contract"
 steps:
   - { id: approval, action: draft_iterate_approve_data_contract_sync_data_model_md, field: "§6", triggers: [section_approved] }
-bundling: n_a
 used_by: [feature]
 references: [problem, success, user-stories, proposed-approach]
 touches: [.sdd/data-model.md]

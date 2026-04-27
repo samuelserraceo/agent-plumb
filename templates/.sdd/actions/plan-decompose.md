@@ -6,7 +6,6 @@ title: "plan-decompose"
 short_label: "Plan"
 steps:
   - { id: tasks, action: convert_acs_to_ordered_tasks_one_test_file_per_task, field: "BUILD.tasks" }
-bundling: n_a
 used_by: [feature]
 references: [acceptance-criteria, success, user-stories, ux-brief]
 touches: []

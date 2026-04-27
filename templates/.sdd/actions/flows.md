@@ -6,7 +6,6 @@ title: "§7 Flows"
 short_label: "Flows"
 steps:
   - { id: flows, action: draft_1_to_3_critical_flows_referencing_user_stories, field: "§7" }
-bundling: n_a
 used_by: [feature]
 references: [user-stories, success]
 touches: []

@@ -6,7 +6,6 @@ title: "§12 Human sign-off steps"
 short_label: "Sign-off steps"
 steps:
   - { id: manual-steps, prompt: "What manual smoke tests do YOU need to do before SHIP, beyond the automated tests? 1-5 bullets.", field: "§12.manual-steps" }
-bundling: bundle_all_fields_in_one_turn
 used_by: [feature]
 references: [success, acceptance-criteria]
 touches: []

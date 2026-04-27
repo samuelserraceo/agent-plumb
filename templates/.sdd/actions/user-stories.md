@@ -6,7 +6,6 @@ title: "§3 User stories"
 short_label: "User stories"
 steps:
   - { id: stories, prompt: "Which personas matter? For each: 'As <persona>, I want <action>, so that <outcome>.' 2-5 stories total.", field: "§3.stories" }
-bundling: bundle_all_fields_in_one_turn
 used_by: [feature]
 references: [problem, success]
 touches: []
