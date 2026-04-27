@@ -17,6 +17,11 @@
       "expected_sha256": "91cb90e71fc431c5b81f00ca709bf6ce3bed8a5676e300794d75ffd565ec94eb",
       "path": ".sdd/scripts/load-playbook.sh",
       "trust": "framework"
+    },
+    "reapprove.sh": {
+      "expected_sha256": "fc17c3b9e6b39f08da36db3d1524f763b4b2c8ac72f1da97c703ab4313ac60e1",
+      "path": ".sdd/scripts/reapprove.sh",
+      "trust": "framework"
     }
   },
   "sdd_version": "0.8.0",

@@ -59,6 +59,7 @@ mkproj_v08() {
   cp "$FRAMEWORK_ROOT/templates/.sdd/.cache/manifest.json"            "$d/.sdd/.cache/manifest.json"
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/load-playbook.sh"        "$d/.sdd/scripts/load-playbook.sh"
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/hash-section.sh"         "$d/.sdd/scripts/hash-section.sh"
+  cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/reapprove.sh"            "$d/.sdd/scripts/reapprove.sh"
   cp "$VERIFY_STAGE" "$d/.sdd/scripts/verify-stage.sh" 2>/dev/null || true
   cp "$NEXT_ACTION"  "$d/.sdd/scripts/next-action.sh"  2>/dev/null || true
   ( cd "$d" \
@@ -1317,6 +1318,77 @@ if [ "$ec" -eq 2 ] && echo "$err" | grep -qiE 'not.*hex|64-char|sha-?256|invalid
   ok "T40 invalid hex BLOCKED"
 else
   bad "T40 invalid hex slipped through" "exit=$ec; err='$err'"
+fi
+
+# ============================================================
+# T41 — /re-approve recovery flow: section change → block → re-approve → allow
+#   This is the user-facing recovery path when an edit to a previously
+#   approved section is INTENTIONAL. End-to-end test:
+#     1. User approves §problem with hash H1, records in verification.json
+#     2. User legitimately edits §problem (new content, hash H2)
+#     3. Phase-advance commit attempt → moat BLOCKS (T39's behavior)
+#     4. User runs /re-approve problem → script writes H2 to verification.json
+#     5. Phase-advance commit attempt → moat ALLOWS (H2 now matches)
+#   RED until reapprove.sh exists + is wired in.
+# ============================================================
+note "T41: /re-approve recovery flow (section change → block → re-approve → allow)"
+d=$(mkproj_v08)
+cd "$d"
+# Step 1: original approved content
+cat > .sdd/features/001-test/spec.md <<'EOF'
+[PHASE: SPEC]
+
+## PHASE: SPEC
+
+### sub-action: problem
+- original strong content
+- with multiple specifics
+
+### Exit checks
+- [ ] C1: dummy — true
+EOF
+old_hash=$(bash .sdd/scripts/hash-section.sh \
+  .sdd/features/001-test/spec.md .sdd/subactions/problem.md)
+cat > .sdd/features/001-test/verification.json <<EOF
+{"phase":"SPEC","checks":[{"id":"C1","result":"pass"}],"approved_sections":{"problem":"$old_hash"}}
+EOF
+
+# Step 2: user legitimately changes section
+cat > .sdd/features/001-test/spec.md <<'EOF'
+[PHASE: SPEC]
+
+## PHASE: SPEC
+
+### sub-action: problem
+- updated content user wants to lock in instead
+
+### Exit checks
+- [ ] C1: dummy — true
+EOF
+git add .sdd/features/001-test/
+
+# Step 3: confirm moat BLOCKS without re-approve (T39 behavior)
+hook_stdin='{"tool_input":{"command":"git commit -m phase: SPEC -> BUILD"}}'
+ec=0
+echo "$hook_stdin" | bash "$MOAT_HOOK" >/dev/null 2>&1 || ec=$?
+if [ "$ec" -ne 2 ]; then
+  bad "T41 setup failed — moat didn't block on stale hash" "expected exit 2, got $ec"
+  cd - >/dev/null; rm -rf "$d"
+else
+  # Step 4: user runs /re-approve problem
+  reap_out=$(bash .sdd/scripts/reapprove.sh problem .sdd/features/001-test/ 2>&1)
+  reap_ec=$?
+  # Step 5: re-stage updated verification.json + retry commit
+  git add .sdd/features/001-test/verification.json
+  ec2=0
+  echo "$hook_stdin" | bash "$MOAT_HOOK" >/dev/null 2>&1 || ec2=$?
+  cd - >/dev/null
+  rm -rf "$d"
+  if [ "$reap_ec" -eq 0 ] && [ "$ec2" -eq 0 ]; then
+    ok "T41 /re-approve recovers from section change (moat now allows)"
+  else
+    bad "T41 /re-approve didn't fix the block" "reap_ec=$reap_ec; final ec=$ec2; reap_out='$reap_out'"
+  fi
 fi
 
 # ============================================================
