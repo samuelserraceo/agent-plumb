@@ -1502,6 +1502,42 @@ else
 fi
 
 # ============================================================
+# T45 — Round 1 reality-vs-theory finding #2: cross-commit attack via
+#       working-tree revert. Manifest pin checks WT only; if attacker
+#       commits tamper, then `git checkout HEAD^ -- file` to clean WT,
+#       the WT pin sees nothing while HEAD still has the tamper.
+#       The HEAD pin (this commit) closes that vector.
+# ============================================================
+note "T45: moat blocks cross-commit attack (tampered HEAD, clean working tree)"
+d=$(mkproj_v08)
+cd "$d"
+# Step 1: tamper feature.md and commit it (HEAD now has tampered version).
+echo "# tampered for cross-commit attack" >> .sdd/playbooks/feature.md
+git add .sdd/playbooks/feature.md
+git commit -q -m "tamper" >/dev/null 2>&1
+# Step 2: revert working tree to the pre-tamper version. WT now MATCHES
+# the manifest's expected_sha256, but HEAD does NOT.
+git checkout HEAD~1 -- .sdd/playbooks/feature.md 2>/dev/null
+# Step 3: stage a phase-advance verification.json. WT is clean.
+echo "[PHASE: SPEC]" > .sdd/features/001-test/spec.md
+cat > .sdd/features/001-test/verification.json <<'EOF'
+{"phase":"SPEC","checks":[{"id":"C-spec-problem-filled","result":"pass"}],"approved_sections":{}}
+EOF
+git add .sdd/features/001-test/
+hook_stdin='{"tool_input":{"command":"git commit -m phase: SPEC -> BUILD"}}'
+ec=0
+err=$(echo "$hook_stdin" | bash "$MOAT_HOOK" 2>&1 1>/dev/null) || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+# Expect BLOCK with HEAD-related error (or "cross-commit" / "tampered").
+# WT-only pin would silently allow because WT matches manifest.
+if [ "$ec" -eq 2 ] && echo "$err" | grep -qiE 'HEAD|cross-commit|tampered'; then
+  ok "T45 cross-commit attack BLOCKED (HEAD pin caught tampered HEAD)"
+else
+  bad "T45 cross-commit attack slipped through (HEAD pin missing or wrong error)" "exit=$ec; err='$err'"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'

@@ -195,23 +195,52 @@ except Exception as e:
     print(f"[moat] manifest.json malformed: {e}", file=sys.stderr)
     sys.exit(1)
 
-def normalized_sha256(path):
+def normalized_sha256_bytes(data):
     """SCHEMA.md §11.1: LF line endings, strip trailing ws per line,
     strip blank-line edges. Same algorithm as load-playbook.sh and
-    the manifest generator, so hashes always agree."""
-    try:
-        with open(path, "rb") as f:
-            data = f.read()
-    except OSError:
-        return None
+    the manifest generator, so hashes always agree.
+    Returns 'NUL' on NUL bytes (caller treats as mismatch + names file)."""
     if b"\x00" in data:
-        return "NUL"  # caller treats as mismatch + names file
+        return "NUL"
     text = data.decode("utf-8", errors="replace")
     lines = [ln.rstrip() for ln in
              text.replace("\r\n", "\n").replace("\r", "\n").split("\n")]
     while lines and lines[0] == "": lines.pop(0)
     while lines and lines[-1] == "": lines.pop()
     return hashlib.sha256("\n".join(lines).encode("utf-8")).hexdigest()
+
+def normalized_sha256(path):
+    """File-path variant. Returns None on read error."""
+    try:
+        with open(path, "rb") as f:
+            data = f.read()
+    except OSError:
+        return None
+    return normalized_sha256_bytes(data)
+
+def head_normalized_sha256(rel_path, project_dir):
+    """Fetch file content from HEAD via `git show HEAD:<path>` and hash it
+    using the same normalization as on-disk files. Returns:
+      - hash hex string if HEAD has the file
+      - 'NUL' if HEAD content has NUL bytes
+      - None if HEAD doesn't have the file (e.g., new file in this commit
+        that isn't yet in HEAD), git unavailable, or any other error
+    Skipping the check on missing-from-HEAD is correct: a brand-new file
+    can't have a HEAD tamper. The WT check covers the new file's hash.
+    The HEAD check exists specifically to catch the cross-commit attack:
+    file IS in HEAD with tampered content; agent has reverted WT to clean
+    so the WT pin sees nothing."""
+    import subprocess
+    try:
+        result = subprocess.run(
+            ["git", "show", f"HEAD:{rel_path}"],
+            capture_output=True, cwd=project_dir, timeout=10,
+        )
+        if result.returncode != 0:
+            return None  # File not in HEAD (legitimate new file)
+        return normalized_sha256_bytes(result.stdout)
+    except Exception:
+        return None  # Best-effort: if git is unavailable, skip HEAD check
 
 mismatches = []
 for section in ("playbooks", "subactions", "extensions", "scripts"):
@@ -224,13 +253,29 @@ for section in ("playbooks", "subactions", "extensions", "scripts"):
             continue
         actual = normalized_sha256(full)
         if actual == "NUL":
-            mismatches.append((rel, "contains NUL bytes", "NUL", expected))
+            mismatches.append((rel, "contains NUL bytes (working tree)", "NUL", expected))
             continue
         if actual is None:
-            mismatches.append((rel, "unreadable", "?", expected))
+            mismatches.append((rel, "unreadable (working tree)", "?", expected))
             continue
         if actual != expected:
-            mismatches.append((rel, "hash mismatch (tampered)", actual, expected))
+            mismatches.append((rel, "hash mismatch — working tree (tampered)", actual, expected))
+            continue  # WT already mismatched; HEAD check is redundant
+        # NEW: HEAD content check (Round 1 reality-vs-theory finding #2).
+        # Catches cross-commit attack: HEAD has tampered content, agent
+        # ran `git checkout HEAD^ -- <file>` to revert WT to clean.
+        # WT pin saw nothing; HEAD pin catches the lurking tamper.
+        head_actual = head_normalized_sha256(rel, proj)
+        if head_actual is None:
+            continue  # File not in HEAD (legitimate new file), skip
+        if head_actual == "NUL":
+            mismatches.append((rel, "contains NUL bytes (HEAD)", "NUL", expected))
+            continue
+        if head_actual != expected:
+            mismatches.append((rel,
+                "hash mismatch — HEAD (cross-commit attack? working tree "
+                "looks clean but HEAD has tampered content)",
+                head_actual, expected))
 
 if mismatches:
     print("[moat] manifest hash-pin failed — file(s) tampered or out of date.",
