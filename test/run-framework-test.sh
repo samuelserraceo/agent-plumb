@@ -2334,6 +2334,71 @@ else
 fi
 
 # ============================================================
+# T68 — F4 atomic-step scaffold: /start writes per-step [ ] rows
+#   v0.9 atomic-step granularity. Each action's frontmatter declares
+#   one or more `steps:`; spec.md must scaffold one `- [ ] <step-id>`
+#   row per declared step under the `### action: <slug>` heading.
+#   Pre-Phase-C: scaffold wrote one `[ ]  (waiting for /next to populate)`
+#   line per action — too coarse to advance step-by-step.
+#   Post-Phase-C: scaffold writes per-step rows so /next iterates
+#   one step (= one commit) at a time.
+#   problem.md declares 3 steps (who / why-now / what-breaks); the
+#   test asserts all three appear in the new feature's spec.md.
+# ============================================================
+note "T68: /start scaffolds per-step [ ] rows under each action (F4)"
+d=$(mkproj_v08)
+rm -rf "$d/.sdd/features"  # clear pre-existing scaffold
+cd "$d"
+bash "$START_SH" "build per-step test" >/dev/null 2>&1
+cd - >/dev/null
+spec_path="$d/.sdd/features/001-build-per-step-test/spec.md"
+if [ -f "$spec_path" ] \
+   && grep -qE '^- \[ \] who: ' "$spec_path" \
+   && grep -qE '^- \[ \] why-now: ' "$spec_path" \
+   && grep -qE '^- \[ \] what-breaks: ' "$spec_path"; then
+  ok "T68 spec.md scaffolded per-step rows for §1 problem (who / why-now / what-breaks)"
+else
+  bad "T68 per-step rows missing from scaffold" "spec under §problem: $(awk '/### action: problem/,/### action: success/' "$spec_path" 2>/dev/null | tr '\n' '|')"
+fi
+rm -rf "$d"
+
+# ============================================================
+# T68b — F4 mutation: legacy single-[ ] scaffold goes RED
+#   Mutation check: if start.sh reverts to writing one `[ ]` line per
+#   action (the v0.8 shape) instead of per-step rows, T68 must fail.
+#   This proves T68 is load-bearing (not a tautology of "spec.md exists").
+#   We simulate the mutation by patching the live start.sh in a temp dir
+#   to drop the steps loop, then verify the test would fail.
+# ============================================================
+note "T68b: mutation — single-[ ] scaffold (legacy) FAILS T68's per-step assertion"
+d=$(mkproj_v08)
+rm -rf "$d/.sdd/features"
+cd "$d"
+# Mutate start.sh to NOT load steps (simulate Phase-C revert).
+python3 <<'PYEOF'
+import re
+p = ".sdd/scripts/start.sh"
+text = open(p).read()
+# Replace the per-step loop body with the legacy single-[ ] line.
+text = re.sub(
+    r"steps = load_action_steps\(sa_slug\)[\s\S]+?spec_lines\.append\(\"\"\)",
+    'spec_lines.append("[ ]  (waiting for /next to populate)")\n    spec_lines.append("")',
+    text, count=1)
+open(p, "w").write(text)
+PYEOF
+bash .sdd/scripts/start.sh "mutation test" >/dev/null 2>&1
+cd - >/dev/null
+mut_spec="$d/.sdd/features/001-mutation-test/spec.md"
+if [ -f "$mut_spec" ] \
+   && ! grep -qE '^- \[ \] who: ' "$mut_spec" \
+   && grep -qE '\(waiting for /next to populate\)' "$mut_spec"; then
+  ok "T68b mutation produces legacy single-[ ] scaffold (proves T68 is load-bearing)"
+else
+  bad "T68b mutation didn't isolate to per-step loop" "spec content: $(head -20 "$mut_spec" 2>/dev/null | tr '\n' '|')"
+fi
+rm -rf "$d"
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'

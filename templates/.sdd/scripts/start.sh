@@ -233,10 +233,29 @@ os.makedirs(item_dir)
 
 # --- Generate spec.md skeleton ---
 # Use the FIRST stage (typically SPEC) as the active phase.
-# For each action, include `### action: <slug>` with placeholder body.
+# For each action, include `### action: <slug>` with one [ ] row per step
+# declared in that action's frontmatter (F4 atomic-step granularity).
 first_stage = stages[0]
 first_stage_id = first_stage.get("id", "SPEC")
 sub_slugs = first_stage.get("actions", []) or []
+
+# Helper — read one action's `steps:` frontmatter list. Returns [] if the
+# action file is missing or has no steps. Per-step `[ ]` rows are written
+# in spec.md so /next can advance one step (= one commit) at a time.
+def load_action_steps(action_slug):
+    path = os.path.join(proj, ".sdd", "actions", f"{action_slug}.md")
+    if not os.path.isfile(path):
+        return []
+    with open(path) as f:
+        text = f.read()
+    fm = re.match(r"^---\n(.*?)\n---", text, re.DOTALL)
+    if not fm:
+        return []
+    try:
+        meta = yaml.safe_load(fm.group(1)) or {}
+    except Exception:
+        return []
+    return meta.get("steps", []) or []
 
 spec_lines = [
     f"# {title}",
@@ -251,7 +270,21 @@ spec_lines = [
 for i, sa_slug in enumerate(sub_slugs, start=1):
     spec_lines.append(f"### action: {sa_slug}")
     spec_lines.append("")
-    spec_lines.append("[ ]  (waiting for /next to populate)")
+    steps = load_action_steps(sa_slug)
+    if steps:
+        for step in steps:
+            sid = (step.get("id") or "").strip()
+            label = (step.get("prompt") or step.get("action") or "").strip()
+            if not sid:
+                continue
+            if label:
+                spec_lines.append(f"- [ ] {sid}: {label}")
+            else:
+                spec_lines.append(f"- [ ] {sid}")
+    else:
+        # No steps declared (legacy action file) — fall back to single
+        # placeholder. Should not happen for v0.9 actions.
+        spec_lines.append("[ ]  (waiting for /next to populate)")
     spec_lines.append("")
 
 # Exit checks block
