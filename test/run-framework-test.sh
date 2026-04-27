@@ -14,6 +14,7 @@ MOAT_HOOK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-stage-verified.sh"
 LOAD_PLAYBOOK="$FRAMEWORK_ROOT/templates/.sdd/scripts/load-playbook.sh"
 COFILE_BLOCK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-cofile-block.sh"
 START_SH="$FRAMEWORK_ROOT/templates/.sdd/scripts/start.sh"
+ADVANCE_SH="$FRAMEWORK_ROOT/templates/.sdd/scripts/advance.sh"
 TOUCHES_HOOK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-touches.sh"
 FIXTURES_V08="$FRAMEWORK_ROOT/test/fixtures/v08-schema"
 
@@ -63,6 +64,7 @@ mkproj_v08() {
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/hash-section.sh"         "$d/.sdd/scripts/hash-section.sh"
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/reapprove.sh"            "$d/.sdd/scripts/reapprove.sh"
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/start.sh"                "$d/.sdd/scripts/start.sh"
+  cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/advance.sh"              "$d/.sdd/scripts/advance.sh"
   cp "$VERIFY_STAGE" "$d/.sdd/scripts/verify-stage.sh" 2>/dev/null || true
   cp "$NEXT_ACTION"  "$d/.sdd/scripts/next-action.sh"  2>/dev/null || true
   ( cd "$d" \
@@ -1773,6 +1775,64 @@ if grep -q 'pre-commit-touches\.sh' "$FRAMEWORK_ROOT/templates/.claude/settings.
   ok "T55 pre-commit-touches.sh registered in PreToolUse chain"
 else
   bad "T55 pre-commit-touches.sh missing from settings.json" "hook ships unfired"
+fi
+
+# ============================================================
+# T56 — advance.sh moves active blocker within a stage (problem → success)
+#   RED: advance.sh fails to update INDEX.md, or updates to wrong slug,
+#        or doesn't recognize the active sub-action's position in stage.
+# ============================================================
+note "T56: advance.sh moves active blocker within a stage (problem → success)"
+d=$(mkproj_v08)
+cd "$d"
+cat > .sdd/INDEX.md <<'EOF'
+**Active:** features/001-test
+**Playbook:** feature
+**Active blocker:** §1 (first sub-action: problem)
+
+## Active
+
+- features/001-test — Test (PHASE: SPEC)
+
+## Shipped
+EOF
+bash "$ADVANCE_SH" "$d" >/dev/null 2>&1
+out=$(grep '^\*\*Active blocker:\*\*' .sdd/INDEX.md)
+cd - >/dev/null
+rm -rf "$d"
+if echo "$out" | grep -q 'sub-action: success'; then
+  ok "T56 advanced problem → success within SPEC stage"
+else
+  bad "T56 advance failed within stage" "active blocker line: $out"
+fi
+
+# ============================================================
+# T57 — advance.sh handles stage transition (last of SPEC → first of BUILD)
+#   RED: advance.sh stays within stage, fails to find next stage's first
+#        sub-action, or stops at end of stage instead of transitioning.
+# ============================================================
+note "T57: advance.sh transitions across stages (plan-decompose → run-mode-chosen)"
+d=$(mkproj_v08)
+cd "$d"
+cat > .sdd/INDEX.md <<'EOF'
+**Active:** features/001-test
+**Playbook:** feature
+**Active blocker:** §14 (sub-action: plan-decompose)
+
+## Active
+
+- features/001-test — Test (PHASE: SPEC)
+
+## Shipped
+EOF
+bash "$ADVANCE_SH" "$d" >/dev/null 2>&1
+out=$(grep '^\*\*Active blocker:\*\*' .sdd/INDEX.md)
+cd - >/dev/null
+rm -rf "$d"
+if echo "$out" | grep -q 'BUILD sub-action: run-mode-chosen'; then
+  ok "T57 advanced plan-decompose (SPEC) → run-mode-chosen (BUILD) — stage transition"
+else
+  bad "T57 stage transition failed" "active blocker line: $out"
 fi
 
 # ============================================================
