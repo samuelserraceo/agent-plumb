@@ -14,6 +14,7 @@ MOAT_HOOK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-stage-verified.sh"
 LOAD_PLAYBOOK="$FRAMEWORK_ROOT/templates/.sdd/scripts/load-playbook.sh"
 COFILE_BLOCK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-cofile-block.sh"
 START_SH="$FRAMEWORK_ROOT/templates/.sdd/scripts/start.sh"
+TOUCHES_HOOK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-touches.sh"
 FIXTURES_V08="$FRAMEWORK_ROOT/test/fixtures/v08-schema"
 
 PASS=0
@@ -1665,6 +1666,113 @@ if [ "$ec" -ne 0 ] && echo "$out" | grep -qiE 'phase c|coming|use.*feature'; the
   ok "T51 unknown playbook rejected with plain-English error"
 else
   bad "T51 wrong error or accepted unknown playbook" "exit=$ec; out='$out'"
+fi
+
+# ============================================================
+# T52 — pre-commit-touches BLOCKS when an active sub-action's
+#       declared touches[] file isn't staged alongside spec.md.
+#       Closes the SYNC step of the 4-step inner loop (Theme 4).
+#       Active sub-action = data-contract (touches: data-model.md).
+# ============================================================
+note "T52: pre-commit-touches blocks when declared file missing"
+d=$(mkproj_v08)
+cd "$d"
+mkdir -p .sdd/features/001-test
+cat > .sdd/INDEX.md <<'EOF'
+**Active:** features/001-test
+**Playbook:** feature
+**Active blocker:** §6 (sub-action: data-contract)
+
+## Active
+
+- features/001-test — test (PHASE: SPEC)
+
+## Shipped
+
+EOF
+cat > .sdd/features/001-test/spec.md <<'EOF'
+[PHASE: SPEC]
+
+## PHASE: SPEC
+
+### sub-action: data-contract
+
+Some content here.
+EOF
+git add .sdd/INDEX.md .sdd/features/001-test/spec.md
+hook_stdin='{"tool_input":{"command":"git commit -m WIP"}}'
+ec=0
+echo "$hook_stdin" | bash "$TOUCHES_HOOK" >/dev/null 2>&1 || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 2 ]; then
+  ok "T52 missing touches file blocked (data-contract requires data-model.md)"
+else
+  bad "T52 missing touches file slipped through" "expected exit 2, got $ec"
+fi
+
+# ============================================================
+# T53 — pre-commit-touches ALLOWS when all declared touches[]
+#       files are staged alongside spec.md.
+# ============================================================
+note "T53: pre-commit-touches allows when all declared files staged"
+d=$(mkproj_v08)
+cd "$d"
+mkdir -p .sdd/features/001-test
+cat > .sdd/INDEX.md <<'EOF'
+**Active:** features/001-test
+**Playbook:** feature
+**Active blocker:** §6 (sub-action: data-contract)
+EOF
+cat > .sdd/features/001-test/spec.md <<'EOF'
+[PHASE: SPEC]
+
+## PHASE: SPEC
+
+### sub-action: data-contract
+
+Schema: users(id, email, verified_at).
+EOF
+echo "# data model" > .sdd/data-model.md
+git add .sdd/INDEX.md .sdd/features/001-test/spec.md .sdd/data-model.md
+hook_stdin='{"tool_input":{"command":"git commit -m sub-action: data-contract"}}'
+ec=0
+echo "$hook_stdin" | bash "$TOUCHES_HOOK" >/dev/null 2>&1 || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 0 ]; then
+  ok "T53 commit with data-model.md staged passed touches check"
+else
+  bad "T53 hook blocked a valid commit" "expected exit 0, got $ec"
+fi
+
+# ============================================================
+# T54 — pre-commit-touches passes through silently on non-commit Bash
+#       (Phase A's catastrophic-#4 empty-cmd safe default applies here).
+#       Without this, the hook would block every npm/ls/grep call.
+# ============================================================
+note "T54: pre-commit-touches passes through on non-commit Bash"
+hook_stdin='{"tool_input":{"command":"npm run test"}}'
+ec=0
+echo "$hook_stdin" | bash "$TOUCHES_HOOK" >/dev/null 2>&1 || ec=$?
+if [ "$ec" -eq 0 ]; then
+  ok "T54 non-commit Bash passes through silently"
+else
+  bad "T54 hook fired on non-commit Bash" "expected exit 0, got $ec"
+fi
+
+# ============================================================
+# T55 — settings.json registers pre-commit-touches.sh
+#   RED: hook ships in templates/.claude/hooks/ but isn't wired into
+#        Claude Code's PreToolUse chain in templates/.claude/settings.json.
+#        Phase B coverage reviewer caught the same bug class with the
+#        moat hook in T25 — registration needs explicit assertion.
+# ============================================================
+note "T55: settings.json registers pre-commit-touches.sh"
+if grep -q 'pre-commit-touches\.sh' "$FRAMEWORK_ROOT/templates/.claude/settings.json"; then
+  ok "T55 pre-commit-touches.sh registered in PreToolUse chain"
+else
+  bad "T55 pre-commit-touches.sh missing from settings.json" "hook ships unfired"
 fi
 
 # ============================================================
