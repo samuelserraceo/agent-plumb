@@ -1978,6 +1978,45 @@ else
 fi
 
 # ============================================================
+# T63 — pre-commit-size-cap warns at 200 + BLOCKS at 400 (Theme 7)
+#   RED: Phase A version was warn-only; if Theme 7 tightening doesn't
+#        flip the hard cap to BLOCK, runaway memory files silently
+#        accumulate past usability.
+# ============================================================
+note "T63: pre-commit-size-cap warns at 200 + BLOCKS at 400 (Theme 7)"
+SIZE_CAP_HOOK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-size-cap.sh"
+
+# Sub-test (a): file at 250 lines → soft warn (exit 0, stderr nudge)
+d=$(mkproj_v08)
+cd "$d"
+python3 -c "open('.sdd/patterns.md','w').write('\n'.join(['line %d' % i for i in range(250)]))"
+hook_stdin='{"tool_input":{"command":"git commit -m test"}}'
+ec_warn=0
+err_warn=$(echo "$hook_stdin" | bash "$SIZE_CAP_HOOK" 2>&1 1>/dev/null) || ec_warn=$?
+cd - >/dev/null
+rm -rf "$d"
+
+# Sub-test (b): file at 450 lines → HARD block (exit 2)
+d=$(mkproj_v08)
+cd "$d"
+python3 -c "open('.sdd/patterns.md','w').write('\n'.join(['line %d' % i for i in range(450)]))"
+ec_block=0
+err_block=$(echo "$hook_stdin" | bash "$SIZE_CAP_HOOK" 2>&1 1>/dev/null) || ec_block=$?
+cd - >/dev/null
+rm -rf "$d"
+
+# Both must hold: warn @ 250 (exit 0 + warn message), block @ 450 (exit 2)
+if [ "$ec_warn" -eq 0 ] \
+   && echo "$err_warn" | grep -q 'warn' \
+   && [ "$ec_block" -eq 2 ] \
+   && echo "$err_block" | grep -q 'HARD BLOCK'; then
+  ok "T63 size-cap: 250 lines warns (exit 0), 450 lines BLOCKS (exit 2)"
+else
+  bad "T63 size-cap thresholds incorrect" \
+      "warn ec=$ec_warn (expect 0); block ec=$ec_block (expect 2)"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
