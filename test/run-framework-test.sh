@@ -1538,6 +1538,50 @@ else
 fi
 
 # ============================================================
+# T46 — load-playbook.sh --validate succeeds on the full framework templates/
+#   Verifies all 23 sub-actions parse, feature.md's stages[].subactions[]
+#   all resolve, manifest is consistent with the disk state.
+#   RED if any new sub-action ships with malformed frontmatter, missing
+#   required field, slug-mismatch, unknown tag, etc.
+# ============================================================
+note "T46: load-playbook.sh --validate succeeds on full framework templates/"
+out=$(bash "$LOAD_PLAYBOOK" --validate "$FRAMEWORK_ROOT/templates" 2>&1) && ec=0 || ec=$?
+if [ "$ec" -eq 0 ]; then
+  ok "T46 framework validates (all sub-actions + feature.md resolve)"
+else
+  bad "T46 framework validation failed" "exit=$ec; out='$out'"
+fi
+
+# ============================================================
+# T47 — manifest covers every framework sub-action (no orphans, no missing)
+#   Coverage assertion. Mutation: add a new sub-action file without
+#   regenerating the manifest → T47 fails RED. Or: remove a sub-action
+#   file but leave its manifest entry → T47 fails RED.
+# ============================================================
+note "T47: manifest covers every framework sub-action"
+out=$(python3 - <<PYEOF
+import json, os, sys
+sub_dir = "$FRAMEWORK_ROOT/templates/.sdd/subactions"
+manifest_path = "$FRAMEWORK_ROOT/templates/.sdd/.cache/manifest.json"
+sub_files = set(f[:-3] for f in os.listdir(sub_dir) if f.endswith(".md"))
+manifest = json.load(open(manifest_path))
+manifest_subs = set(manifest.get("subactions", {}).keys())
+missing = sub_files - manifest_subs
+orphans = manifest_subs - sub_files
+if missing or orphans:
+    print(f"MISMATCH missing-from-manifest={sorted(missing)} orphans-in-manifest={sorted(orphans)}")
+    sys.exit(1)
+print(f"OK {len(sub_files)} sub-actions covered")
+sys.exit(0)
+PYEOF
+) && ec=0 || ec=$?
+if [ "$ec" -eq 0 ]; then
+  ok "T47 manifest covers every sub-action ($out)"
+else
+  bad "T47 manifest coverage mismatch" "$out"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
