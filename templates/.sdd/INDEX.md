@@ -52,7 +52,9 @@ _(none)_
 
 ## References
 
-- **Rubric (template for new features):** `.sdd/rubric.md`
+- **Playbooks:** `.sdd/playbooks/` (B-1 ships `feature.md`; Phase C will add `bug.md`, `idea.md`, etc.)
+- **Sub-actions library:** `.sdd/subactions/` (the prose each `/next` injects)
 - **Data model:** `.sdd/data-model.md`
 - **Patterns / cross-feature learnings:** `.sdd/patterns.md`
+- **Decisions audit log:** `.sdd/decisions.md`
 - **Project + workflow rules:** `CLAUDE.md` at project root

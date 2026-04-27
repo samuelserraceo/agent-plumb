@@ -14,21 +14,18 @@ You are working inside a Spec-Driven Development (SDD) project. The MANAGED sect
 
 **Canonical playbook**: `.sdd/playbooks/feature.md` (and any other playbook in `.sdd/playbooks/`). The frontmatter declares the stages (SPEC → BUILD → SHIP) and the sub-action sequence per stage; sub-action files at `.sdd/subactions/<slug>.md` carry the actual prose for each step. This file (CLAUDE.md) covers the cross-cutting rules; playbooks + sub-actions cover what each step actually requires.
 
-**Legacy phase names in this doc**: where you see references to "PLAN phase", "VERIFY phase", or "LEARN phase" below, they are sub-actions of SPEC or SHIP in the 3-phase spine, kept here for prose continuity:
-- "PLAN" → SPEC's `plan-decompose` sub-action (turning ACs into tasks)
-- "VERIFY" → SHIP's `verify-test-run` + `verify-prod-only-acs` sub-actions
-- "LEARN" → SHIP's `learn-summary` + `learn-lessons` sub-actions
-
 ## Slash commands available to the user
 
 | Command | Purpose | Branch | Phases |
 |---|---|---|---|
-| `/next` | Advance the active feature by one step | feature branch (auto-created on first call) | SPEC → BUILD → SHIP → SHIPPED |
-| `/bug` | Capture and fix a bug — smaller rubric (`.sdd/rubric-bug.md`) | bug branch (`sdd/<id>-bug-<slug>`) | SPEC → BUILD → SHIP (no plan-decompose) |
-| `/idea` | Capture an idea to backlog cheaply — single file, no commitment | main (lives in `.sdd/ideas/`) | none |
+| `/start` | Scaffold a new work item (feature for B-1; bug/idea/etc. arrive in Phase C) | feature branch (auto-created on first `/next`) | SPEC → BUILD → SHIP → SHIPPED |
+| `/next` | Advance the active work item by one step | active branch | SPEC → BUILD → SHIP → SHIPPED |
+| `/bug` | (B-1) routes to `/start [BUG] <title>`; Phase C ships a dedicated bug playbook | feature branch | SPEC → BUILD → SHIP |
+| `/idea` | Capture an idea to backlog cheaply — single file in `.sdd/ideas/`, no commitment | current branch | none |
 | `/status` | Print current workflow state | n/a | n/a |
 | `/ship` | Push branch, open PR, watch CI, mark shipped or capture bug | active branch | SHIP complete |
-| `/skip` | Skip a `[SKIPPABLE]` rubric section with a reason | active branch | any |
+| `/skip` | Skip a `[SKIPPABLE]` section with a reason | active branch | any |
+| `/re-approve <slug>` | Re-lock the new content of a previously-approved section | active branch | any |
 | `/compress` | Consolidate `patterns.md` or `data-model.md` when they grow noisy | n/a | n/a |
 
 **Picking the right entry point:**
@@ -285,7 +282,7 @@ The user is non-technical. When they need to open, view, edit, approve, or check
 - **Linux:** `xdg-open <path-or-url>`
 - **Windows (Git Bash / WSL):** `start <path-or-url>` or `explorer.exe <path>`
 
-Default to `open`. Apply this for spec.md / rubric.md / wireframe.html / dev-server URLs / CSV downloads / artifacts. Chain in one Bash call when multiple need opening.
+Default to `open`. Apply this for spec.md / wireframe.html / dev-server URLs / CSV downloads / artifacts. Chain in one Bash call when multiple need opening.
 
 **Exception:** don't auto-open files the user is about to use via their own shell (e.g., don't `open .env.local` if the user is about to `grep` from it).
 

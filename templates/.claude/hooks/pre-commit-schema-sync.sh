@@ -24,7 +24,7 @@ esac
 [ ! -d .sdd ] && exit 0
 
 # Only consider spec.md files that are MODIFIED in this commit (status M).
-# Newly-added spec.md files (status A) are bootstrap copies of rubric.md — every line is
+# Newly-added spec.md files (status A) are bootstrap copies from /start — every line is
 # technically an "addition" but nothing is real schema content yet. Skip them.
 modified_specs=$(git diff --cached --name-only --diff-filter=M 2>/dev/null | grep -E '^\.sdd/[a-z][a-z0-9_-]*/[^/]+/spec\.md$' || echo "")
 [ -z "$modified_specs" ] && exit 0

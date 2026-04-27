@@ -1,69 +1,35 @@
 ---
-description: Capture and fix a bug — uses the smaller bug rubric (skips UX/dependencies/etc, focuses on diagnosis + regression test).
+description: Capture a bug. (Phase C will ship a dedicated bug playbook; for B-1, /bug routes to /start with a [BUG] tag.)
 ---
 
 $ARGUMENTS
 
-Start a new bug-fix workflow. Bugs use a smaller rubric than features — see `.sdd/rubric-bug.md`.
+A dedicated bug playbook is coming in Phase C — it'll skip PLAN and produce a smaller, faster bug-fix flow. **For B-1, capture bugs as features with a `[BUG]` tag in the title and §1 Problem.** The standard SPEC → BUILD → SHIP flow then handles them; you just leave the wireframe / UX brief / data-contract sections skipped if they don't apply.
 
-## Trigger conditions
+## What to do
 
-- Use this command when the user reports something broken in shipped or in-flight code.
-- Do NOT use it for new functionality — that's `/next` (feature) territory.
-- If during SPEC you discover the "bug" actually requires significant new design / multiple data-model changes, STOP and tell the user "this looks like a feature, not a bug — want to escalate via `/promote-bug-to-feature <id>`?".
+If `$ARGUMENTS` is non-empty (the user gave a bug description):
 
-## Bootstrap protocol (MUST follow this exact order)
+1. Tell the user in plain English: *"A dedicated bug flow is coming in Phase C. For now, I'll capture this as a feature with `[BUG]` in the title — same SPEC → BUILD → SHIP process, you just skip the sections that don't apply."*
 
-Same shape as `/next`'s feature bootstrap, but using the bug rubric and bug branch naming.
+2. Run (or tell the user to run): `/start [BUG] <bug description>`
 
-**Step 1 — Confirm git is initialized + on main + clean.** Same as `/next` Section A. If not, halt and tell the user in plain English what to do.
+If `$ARGUMENTS` is empty:
 
-**Step 2 — Pick the bug id and slug.**
-- Scan `.sdd/features/` for the highest existing `NNN-` prefix (across all types — features and bugs share the numbering space). New id = highest + 1.
-- Slug from the user's description, kebab-case, ≤40 chars, prefix with `bug-`.
-- Final folder name: `<id>-bug-<slug>` (e.g., `005-bug-rate-limit-resets-on-hmr`).
+1. Ask: *"What's broken? Give me one sentence describing what goes wrong, plus the steps to reproduce it."*
 
-**Step 3 — Create the bug branch FROM main BEFORE any file writes.**
-```bash
-git checkout -b sdd/<id>-bug-<slug>
-```
+2. When they answer, run `/start [BUG] <a one-line title summarising their answer>`.
 
-**Step 4 — Create the bug feature folder.**
-```bash
-cp -R .sdd/features/_template .sdd/features/<id>-bug-<slug>
-cp .sdd/rubric-bug.md .sdd/features/<id>-bug-<slug>/spec.md
-```
-Note: bug rubric does NOT include a wireframe section — leave the `_template/wireframe.html` in place but mark it `<!-- skipped: bug -->` if you touch it.
+The feature scaffolded by `/start` follows the standard playbook:
+- §1 Problem — capture the reproduction steps + observed-vs-expected.
+- §11 Acceptance criteria — write a regression test that fails on current code.
+- BUILD — write the fix; the regression test goes RED → GREEN.
+- §LEARN — record "why we missed it" so the same class of bug doesn't ship again.
 
-**Step 5 — Edit `spec.md` header.**
-- Replace `<bug short name>` with the user's description
-- Set `**Branch:**` to the new branch name
-- Set `[TYPE: BUG]` and `[PHASE: SPEC]`
-- Set `Active blocker` to `§1 Problem — what goes wrong`
-
-**Step 6 — Update `.sdd/INDEX.md`.**
-- `**Active:**` line → `features/<id>-bug-<slug>   [BUG]   [SPEC]   blocker: §1 Problem`
-- Add to `## In flight` list with `[BUG]` tag
-
-**Step 7 — Hold the bootstrap commit.**
-DO NOT commit yet. The pre-commit-block hook would refuse because every section has `[ ]`. Instead: tell the user "Bug folder + branch ready. Now I need §1 Problem — can you reproduce it?". When they answer, commit scaffold + §1 fill together as `[SDD:<id>-bug-<slug>] spec: scaffold + §1 Problem`.
-
-## Phases (different from feature)
-
-Bug phases skip PLAN. Order: SPEC → BUILD → VERIFY → LEARN.
-
-In BUILD:
-- ONE regression test that FAILS on current code
-- Write the fix
-- Test PASSES
-- Run the affected feature's full suite — must still pass
-- Commit `[SDD:<id>-bug-<slug>] fix: <one-line summary>`
-
-In LEARN:
-- The §LEARN "Why we missed it" section feeds directly into `patterns.md` so the same class of bug doesn't ship again.
+Skippable sections (UX brief, dependencies, data-contract, wireframe) — use `/skip` with a one-line reason like "no UI surface — backend bug only" if they don't apply.
 
 ## End your turn
 
-Per CLAUDE.md, end with the explicit next-action prompt:
+Per the call-to-action rules in `.sdd/CLAUDE.md`, end with an explicit next-action prompt. Example:
 
-> Bug `<id>-bug-<slug>` started on branch `sdd/<id>-bug-<slug>`. First question: §1 — what exactly is broken? Give me one sentence + the steps to reproduce.
+> Bug captured as feature `<id>-bug-<slug>` (or whatever ID `/start` assigned). First question: §1 Problem — what exactly is broken, and what are the steps to reproduce? Type your answer and I'll fill it in.

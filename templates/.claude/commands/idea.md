@@ -1,58 +1,79 @@
 ---
-description: Capture an idea to the backlog — single small file, no phase, no commitment to build.
+description: Capture an idea to the backlog — single small file in .sdd/ideas/, no commitment to build.
 ---
 
 $ARGUMENTS
 
-Capture an idea cheaply. Ideas are NOT features. They live in `.sdd/ideas/` as a single small file with no phase progression. Promote to a feature later if/when they earn it.
+Capture an idea cheaply. Ideas live in `.sdd/ideas/<id>-<slug>.md` as a single small file. They have NO phase progression and NO commitment to build — promote later if/when they earn it.
 
 ## When to use
 
-- User says "I just thought of…" / "we should consider…" / "park this idea"
+- "I just thought of…" / "we should consider…" / "park this idea"
 - The thought might be valuable but isn't ready to spec yet
 - You want it in git so it's not lost, but not committed to building
 
-Do NOT use `/idea` for things the user clearly wants built now — that's `/next` (feature).
+Don't use `/idea` for things the user clearly wants built now — that's `/start` (feature) territory.
 
-## Bootstrap
+## What to do
 
-**Step 1 — Pick the idea id and slug.**
-- Scan `.sdd/ideas/` for the highest existing `NNN-` prefix. New id = highest + 1.
-- Slug from the user's description, kebab-case, ≤40 chars.
-- File: `.sdd/ideas/<id>-<slug>.md`
+**Step 1 — pick the idea id and slug.**
+- Scan `.sdd/ideas/` for the highest existing `NNN-` prefix. New id = highest + 1, zero-padded (`001`, `002`, …). If `.sdd/ideas/` doesn't exist, create it.
+- Slug from the user's description, kebab-case, ≤40 chars, ASCII only.
+- File path: `.sdd/ideas/<id>-<slug>.md`.
 
-**Step 2 — Create the file.**
-- Copy `.sdd/rubric-idea.md` to `.sdd/ideas/<id>-<slug>.md`.
-- Replace the `# Idea: <one-line summary>` heading with the actual one-liner.
-- Set `**Captured:**` to today's date.
-- Set `**Status:**` to `captured`.
+**Step 2 — ask the small question set in ONE message** (idea capture is fast — ≤60 seconds total):
 
-**Step 3 — Ask the user the small set of idea questions** (in one message, since the rubric is tiny):
 - What's the idea? (one paragraph)
 - What problem might it solve? (rough)
 - Why might it matter? (order-of-magnitude impact)
 - Confidence: half-baked / pretty sure / urgent?
 - Related features (if any)?
 
-The whole capture should take 60 seconds. If the user is writing a paragraph per question, push back: "Ideas are cheap — give me the rough version, we'll go deeper if it gets promoted."
+If the user starts writing a paragraph per question, push back: *"Ideas are cheap — give me the rough version, we'll go deeper if it gets promoted."*
 
-**Step 4 — Fill the file with their answers, commit on `main` (NOT a branch — ideas don't ship).**
+**Step 3 — write the file** (inline structure, no template needed):
+
+```markdown
+# Idea: <one-line summary>
+
+**Captured:** <YYYY-MM-DD>
+**Status:** captured
+
+## What's the idea?
+<their answer>
+
+## What problem might it solve?
+<their answer>
+
+## Why might it matter?
+<their answer>
+
+## Confidence
+<half-baked | pretty sure | urgent>
+
+## Related features
+<comma-separated feature IDs, or "none">
+```
+
+**Step 4 — update `.sdd/INDEX.md`.** Add to `## Backlog` (or create a `## Ideas` section after Backlog if it doesn't exist):
+- Format: `- ideas/<id>-<slug> — <one-line summary> — captured <YYYY-MM-DD>`
+
+**Step 5 — commit on the current branch.** No new branch — ideas don't ship on their own.
+
 ```bash
 git add .sdd/ideas/<id>-<slug>.md .sdd/INDEX.md
 git commit -m "[SDD] idea: <id>-<slug> — <one-line summary>"
 ```
 
-**Step 5 — Add to INDEX.md `## Backlog` (or new `## Ideas` section).**
-- Format: `- ideas/<id>-<slug> — <one-line summary> — captured <YYYY-MM-DD>`
-- If there's no `## Ideas` section yet, add one after `## Backlog`.
-
 ## Promotion path
 
-If the user later says "let's actually build that idea":
+When the user later says "let's actually build idea X":
 
-1. Run `/promote-idea <id>` (separate command — Round 4 work, not yet implemented).
-2. Until that exists, manually: `cp .sdd/ideas/<id>-<slug>.md .sdd/features/<new-id>-<slug>/spec.md`, copy the idea's "What's the idea" / "What problem" content into the feature spec's §1 / §2, then continue normal feature SPEC.
+1. Run `/start <description that incorporates the idea>`.
+2. In §1 Problem of the new feature, reference the idea file: *"Originated from [`.sdd/ideas/<id>-<slug>.md`](.sdd/ideas/<id>-<slug>.md) — see for context."*
+
+(Phase C may ship `/promote-idea <id>` for a smoother promotion path.)
 
 ## End your turn
 
-> Idea `<id>-<slug>` captured. Status: `captured`. It'll sit in the backlog until you promote it. Run `/idea` again any time you have another thought.
+> Idea `<id>-<slug>` captured. Status: `captured`. It'll sit in the backlog until you build it. Run `/idea` again any time you have another thought, or `/start <title>` when you're ready to build something.
