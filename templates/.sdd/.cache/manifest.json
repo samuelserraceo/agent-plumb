@@ -7,7 +7,7 @@
       "trust": "framework"
     },
     "project": {
-      "expected_sha256": "4a1c963e7d683ce34e0419140daea8c54c8d3f230fc7cace201b5761aad54129",
+      "expected_sha256": "4c6ce120e9000dfe522a38626398cc612fcc330ee05b8a8cdd448eed3b69f29a",
       "path": ".sdd/playbooks/project.md",
       "trust": "framework"
     }
@@ -181,7 +181,7 @@
       "trust": "framework"
     },
     "project-success": {
-      "expected_sha256": "4d9e94e1f7d2e76fad98bb0da3b87e700bd00c85ba3e1680f801449b60623a7c",
+      "expected_sha256": "e57918ffdef17b2ad1919bc78b7f7c8e6d6a20154e36aae5a9189b3583554309",
       "path": ".sdd/actions/project-success.md",
       "trust": "framework"
     },
