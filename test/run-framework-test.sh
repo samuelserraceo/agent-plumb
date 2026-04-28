@@ -3679,6 +3679,33 @@ else
 fi
 
 # ============================================================
+# T96 — F1 anti-regression: pre-commit-learn-sync + pre-commit-schema-sync stay retired
+#   These two legacy hooks were silently overlapping with F1's existing
+#   touches: enforcement: action `data-contract` already declares
+#   `touches: [.sdd/data-model.md]` (subsumes schema-sync); action
+#   `learn` declares `touches: [.sdd/patterns.md]` (subsumes the
+#   patterns.md half of learn-sync); `mark-shipped` declares
+#   `touches: [.sdd/INDEX.md]` (subsumes the INDEX.md half).
+#   The legacy hooks were dead code. C-5 (8/N) deletes them.
+#   T96 catches anyone re-introducing them.
+# ============================================================
+note "T96: pre-commit-learn-sync + pre-commit-schema-sync stay retired (anti-regression)"
+problems=""
+for legacy in pre-commit-learn-sync.sh pre-commit-schema-sync.sh; do
+  if [ -f "$FRAMEWORK_ROOT/templates/.claude/hooks/$legacy" ]; then
+    problems="$problems file:$legacy"
+  fi
+  if grep -q "$legacy" "$FRAMEWORK_ROOT/templates/.claude/settings.json"; then
+    problems="$problems settings:$legacy"
+  fi
+done
+if [ -z "$problems" ]; then
+  ok "T96 both sync hooks retired (file gone + settings clean); subsumed by F1 touches:"
+else
+  bad "T96 retired sync hook re-appeared:" "$problems"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'

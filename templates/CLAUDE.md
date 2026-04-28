@@ -482,11 +482,9 @@ These run without your involvement. If a hook blocks you, fix the blocker — do
 - `UserPromptSubmit` — injects `INDEX.md` + active phase section of `spec.md` + `patterns.md` every turn.
 - `PreToolUse(Bash)` on `git commit`:
   - `pre-commit-block.sh` — refuses commits while current phase has open `[ ]`.
-  - `pre-commit-learn-sync.sh` — SHIP-phase commits (where `learn-summary` / `learn-lessons` write lessons) require `patterns.md` + `INDEX.md` staged.
-  - `pre-commit-schema-sync.sh` — Data contract changes require `data-model.md` staged.
+  - `pre-commit-rules.sh` — F1 generic enforcer (Phase C-5). Reads action `touches:`, config `file_classes:` + `co_stage_block:`, `file_rules:` (`append_only`, `size_warn`/`size_block`, `managed_section`), and `folder_rules:`. Subsumes pre-commit-touches, pre-commit-cofile-block, pre-commit-decisions-append-only, pre-commit-size-cap, pre-commit-claude-md-managed, pre-commit-learn-sync, pre-commit-schema-sync.
   - `pre-commit-scope-guard.sh` — blocks UI copy ≥30 chars not in wireframe/spec; blocks new UI files without a `// spec:` reference comment.
-  - `pre-commit-claude-md-managed.sh` — warns (does not block) on edits inside the MANAGED section of CLAUDE.md without bumping the version.
-  - `pre-commit-size-cap.sh` — warns (does not block) when patterns.md / INDEX.md / data-model.md cross size thresholds. Pressure to compress, not refusal.
+  - `pre-commit-stage-verified.sh` — THE MOAT. Re-runs verify-stage on staged spec.md and refuses commits where `verification.json` claims pass-state that doesn't match.
 
 ## Shipped features are cold — do NOT re-read them
 

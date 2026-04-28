@@ -36,14 +36,6 @@
           },
           {
             "type": "command",
-            "command": ".claude/hooks/pre-commit-learn-sync.sh"
-          },
-          {
-            "type": "command",
-            "command": ".claude/hooks/pre-commit-schema-sync.sh"
-          },
-          {
-            "type": "command",
             "command": ".claude/hooks/pre-commit-scope-guard.sh"
           },
           {
