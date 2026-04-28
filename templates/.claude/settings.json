@@ -32,10 +32,6 @@
           },
           {
             "type": "command",
-            "command": ".claude/hooks/pre-commit-touches.sh"
-          },
-          {
-            "type": "command",
             "command": ".claude/hooks/pre-commit-rules.sh"
           },
           {

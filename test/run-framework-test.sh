@@ -15,7 +15,7 @@ LOAD_PLAYBOOK="$FRAMEWORK_ROOT/templates/.sdd/scripts/load-playbook.sh"
 COFILE_BLOCK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-cofile-block.sh"
 START_SH="$FRAMEWORK_ROOT/templates/.sdd/scripts/start.sh"
 ADVANCE_SH="$FRAMEWORK_ROOT/templates/.sdd/scripts/advance.sh"
-TOUCHES_HOOK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-touches.sh"
+RULES_HOOK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-rules.sh"
 DECISIONS_HOOK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-decisions-append-only.sh"
 FIXTURES_V08="$FRAMEWORK_ROOT/test/fixtures/v08-schema"
 
@@ -1683,12 +1683,13 @@ else
 fi
 
 # ============================================================
-# T52 — pre-commit-touches BLOCKS when an active action's
+# T52 — pre-commit-rules BLOCKS when an active action's
 #       declared touches[] file isn't staged alongside spec.md.
 #       Closes the SYNC step of the 4-step inner loop (Theme 4).
 #       Active action = data-contract (touches: data-model.md).
+#       v0.9: migrated from pre-commit-touches.sh (retired in C-5 3/N).
 # ============================================================
-note "T52: pre-commit-touches blocks when declared file missing"
+note "T52: pre-commit-rules blocks when declared touches file missing"
 d=$(mkproj_v08)
 cd "$d"
 mkdir -p .sdd/features/001-test
@@ -1716,7 +1717,7 @@ EOF
 git add .sdd/INDEX.md .sdd/features/001-test/spec.md
 hook_stdin='{"tool_input":{"command":"git commit -m WIP"}}'
 ec=0
-echo "$hook_stdin" | bash "$TOUCHES_HOOK" >/dev/null 2>&1 || ec=$?
+echo "$hook_stdin" | bash "$RULES_HOOK" >/dev/null 2>&1 || ec=$?
 cd - >/dev/null
 rm -rf "$d"
 if [ "$ec" -eq 2 ]; then
@@ -1726,10 +1727,11 @@ else
 fi
 
 # ============================================================
-# T53 — pre-commit-touches ALLOWS when all declared touches[]
+# T53 — pre-commit-rules ALLOWS when all declared touches[]
 #       files are staged alongside spec.md.
+#       v0.9: migrated from pre-commit-touches.sh.
 # ============================================================
-note "T53: pre-commit-touches allows when all declared files staged"
+note "T53: pre-commit-rules allows when all declared touches files staged"
 d=$(mkproj_v08)
 cd "$d"
 mkdir -p .sdd/features/001-test
@@ -1751,7 +1753,7 @@ echo "# data model" > .sdd/data-model.md
 git add .sdd/INDEX.md .sdd/features/001-test/spec.md .sdd/data-model.md
 hook_stdin='{"tool_input":{"command":"git commit -m action: data-contract"}}'
 ec=0
-echo "$hook_stdin" | bash "$TOUCHES_HOOK" >/dev/null 2>&1 || ec=$?
+echo "$hook_stdin" | bash "$RULES_HOOK" >/dev/null 2>&1 || ec=$?
 cd - >/dev/null
 rm -rf "$d"
 if [ "$ec" -eq 0 ]; then
@@ -1761,14 +1763,15 @@ else
 fi
 
 # ============================================================
-# T54 — pre-commit-touches passes through silently on non-commit Bash
+# T54 — pre-commit-rules passes through silently on non-commit Bash
 #       (Phase A's catastrophic-#4 empty-cmd safe default applies here).
 #       Without this, the hook would block every npm/ls/grep call.
+#       v0.9: migrated from pre-commit-touches.sh.
 # ============================================================
-note "T54: pre-commit-touches passes through on non-commit Bash"
+note "T54: pre-commit-rules passes through on non-commit Bash"
 hook_stdin='{"tool_input":{"command":"npm run test"}}'
 ec=0
-echo "$hook_stdin" | bash "$TOUCHES_HOOK" >/dev/null 2>&1 || ec=$?
+echo "$hook_stdin" | bash "$RULES_HOOK" >/dev/null 2>&1 || ec=$?
 if [ "$ec" -eq 0 ]; then
   ok "T54 non-commit Bash passes through silently"
 else
@@ -1776,17 +1779,33 @@ else
 fi
 
 # ============================================================
-# T55 — settings.json registers pre-commit-touches.sh
+# T55 — settings.json registers pre-commit-rules.sh
+#   v0.9: migrated from pre-commit-touches.sh (retired in C-5 3/N).
 #   RED: hook ships in templates/.claude/hooks/ but isn't wired into
 #        Claude Code's PreToolUse chain in templates/.claude/settings.json.
 #        Phase B coverage reviewer caught the same bug class with the
 #        moat hook in T25 — registration needs explicit assertion.
 # ============================================================
-note "T55: settings.json registers pre-commit-touches.sh"
-if grep -q 'pre-commit-touches\.sh' "$FRAMEWORK_ROOT/templates/.claude/settings.json"; then
-  ok "T55 pre-commit-touches.sh registered in PreToolUse chain"
+note "T55: settings.json registers pre-commit-rules.sh"
+if grep -q 'pre-commit-rules\.sh' "$FRAMEWORK_ROOT/templates/.claude/settings.json"; then
+  ok "T55 pre-commit-rules.sh registered in PreToolUse chain"
 else
-  bad "T55 pre-commit-touches.sh missing from settings.json" "hook ships unfired"
+  bad "T55 pre-commit-rules.sh missing from settings.json" "hook ships unfired"
+fi
+
+# ============================================================
+# T55b — anti-regression: pre-commit-touches.sh stays retired
+#   Mutation defence: catches anyone re-introducing the legacy hook.
+#   F1's job is to subsume; bringing back pre-commit-touches.sh would
+#   undo the subsumption and re-create double-enforcement.
+# ============================================================
+note "T55b: pre-commit-touches.sh stays retired (anti-regression)"
+if [ -f "$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-touches.sh" ]; then
+  bad "T55b legacy pre-commit-touches.sh re-appeared" "C-5 (3/N) retired this hook; it should not return"
+elif grep -q 'pre-commit-touches' "$FRAMEWORK_ROOT/templates/.claude/settings.json"; then
+  bad "T55b settings.json still references pre-commit-touches" "registration leftover from retirement"
+else
+  ok "T55b pre-commit-touches.sh stays retired (file gone + settings clean)"
 fi
 
 # ============================================================
