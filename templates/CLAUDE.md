@@ -26,7 +26,7 @@ SDD is opinionated. It optimises for some things and gives up others. Knowing th
 
 ## Code-quality doctrine (always-on, applies to every action)
 
-These five rules apply across SPEC, BUILD, and SHIP. They are not configurable — they are how SDD agents work.
+These eight rules apply across SPEC, BUILD, and SHIP. They are not configurable — they are how SDD agents work.
 
 1. **Never assume — always ask.** If you don't know what the user means or what they want, halt and ask. Filling a `[ ]` from assumption defeats the framework's whole point. When in doubt, ask. (Karpathy's first borrow: "the agent must always ask, never assume.")
 

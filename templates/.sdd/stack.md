@@ -66,6 +66,6 @@ Without `stack.md`, the agent forgets across sessions:
 - You decide on pgBoss → next session it proposes Trigger.dev
 - You set up Clerk → next session it asks "what auth provider?" again
 
-The agent reads this file on every session start, alongside `INDEX.md` / `decisions.md` / `patterns.md` / `data-model.md`. Now those decisions persist.
+The agent reads this file on every session start, alongside `INDEX.md` / `decisions.md` / `patterns.md` / `data-model.md` — **as documented in CLAUDE.md's "Your first move when you start a session" checklist** (step 2 in v0.10.1+). The mechanical wiring (UserPromptSubmit hook auto-injection) lands in v0.11 (issue #44); until then, the agent's session-start protocol covers it.
 
 **Add a new event in `config.md`** (`stack_changed`) if you want to fire side-effects when stack.md is edited (e.g., update README, refresh deployment docs). Today the file is read-only-as-context — no automated triggers.

@@ -114,9 +114,9 @@ A) Phase is BUILD and there is a RED task (the common case):
      * Reuse > reinvent — check if a well-known package solves this before writing custom logic.
    - Run the test → must be GREEN.
    - **Self-check before committing: "Can this be shorter without losing clarity?"** If yes, tighten. If no, proceed.
-   - Commit the code atomically: [SDD:<id>][T<n>] <short message>
+   - **Wireframe check (BEFORE the code commit):** if the task touches a UI file, update `wireframe.html` to reflect what was just built and stage it. Order matters: wireframe must be in the same atomic commit as the code change, not in a follow-up. The framework refuses commits that touch UI without staging the wireframe.
+   - Commit the code atomically (with wireframe.html if applicable): [SDD:<id>][T<n>] <short message>
    - Flip the task line status RED → GREEN in spec.md.
-   - **Wireframe check:** if the task touches a UI file, also stage `wireframe.html` and update it to reflect what was just built. The framework refuses commits that touch UI without staging the wireframe.
    - Commit the spec update: [SDD:<id>] task: T<n> GREEN
    - On your VERY LAST LINE, print exactly: RALPH_STATUS: CONTINUE T<n> <short phrase>
    - End your turn.
