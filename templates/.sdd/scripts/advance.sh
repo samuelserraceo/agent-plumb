@@ -68,7 +68,7 @@ m_active = re.search(r"^\*\*Active:\*\*\s+(.+)$", index_text, re.MULTILINE)
 m_playbook = re.search(r"^\*\*Playbook:\*\*\s+(\S+)$", index_text, re.MULTILINE)
 m_blocker = re.search(r"^\*\*Active blocker:\*\*\s+(.+)$", index_text, re.MULTILINE)
 
-if not m_active or m_active.group(1).strip() in ("", "none"):
+if not m_active or m_active.group(1).strip() in ("", "none", "_(none)_", "*(none)*"):
     print("[advance] no active work item in INDEX.md — nothing to do.")
     sys.exit(0)
 
@@ -178,8 +178,20 @@ new_index = re.sub(
     flags=re.MULTILINE,
 )
 
-with open(index_path, "w") as f:
-    f.write(new_index)
+# Atomic write: write to a sibling tempfile then rename. Prevents
+# partially-written INDEX.md if the process is interrupted mid-write
+# (catches CodeRabbit's atomic-replace concern).
+import tempfile
+tmp_dir = os.path.dirname(index_path) or "."
+fd, tmp_path = tempfile.mkstemp(prefix=".INDEX.tmp.", dir=tmp_dir)
+try:
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
+        f.write(new_index)
+    os.replace(tmp_path, index_path)
+except Exception:
+    if os.path.exists(tmp_path):
+        os.unlink(tmp_path)
+    raise
 
 # Theme 12 — token instrumentation. Append one line to .sdd/metrics.md
 # per /next iteration. Format:

@@ -79,14 +79,19 @@ if [ ! -d .git ]; then
 fi
 
 # Configure git user (test values)
-git config user.email "test@sdd-uat.local"
-git config user.name "UAT Test User"
+git config user.email "test@sdd-uat.local" || { echo "ERROR: git config user.email failed" >&2; exit 1; }
+git config user.name "UAT Test User" || { echo "ERROR: git config user.name failed" >&2; exit 1; }
 
 # UAT fix: wire the safety-check chain via native git pre-commit. Without
 # this, combined `git add && git commit` patterns bypass the moat (the
 # Phase B-1 UAT BLOCKER finding). Native pre-commit fires AFTER staging,
 # regardless of how the agent invoked git.
-git config core.hooksPath .claude/hooks
+git config core.hooksPath .claude/hooks || {
+  echo "ERROR: git config core.hooksPath failed — moat won't fire on combined" >&2
+  echo "       'git add && git commit' patterns. Refusing to scaffold UAT" >&2
+  echo "       project without the safety wiring." >&2
+  exit 1
+}
 
 # Copy framework files (preserve .git, don't overwrite any user modifications)
 echo "Copying framework files..."
@@ -105,8 +110,15 @@ cp "$PROJECT_ROOT/templates/CLAUDE.md" CLAUDE.md 2>/dev/null || {
   exit 1
 }
 
-# Initial commit
-git add .sdd .claude CLAUDE.md >/dev/null 2>&1 || true
+# Initial commit. CodeRabbit fix (4th-cycle): drop the `|| true`
+# silent-error swallow. If `git add` fails (disk full, permission
+# change, or anything weird), the subsequent commit would fail with
+# a confusing message — better to surface the staging error here.
+git add .sdd .claude CLAUDE.md >/dev/null 2>&1 || {
+  echo "ERROR: git add failed during scaffold — staging didn't pick up" >&2
+  echo "       framework files. Check disk space + permissions in $TARGET." >&2
+  exit 1
+}
 if git diff-index --quiet HEAD -- >/dev/null 2>&1; then
   # Already committed (e.g., re-run on same dir after cleanup)
   echo "Framework files already in place."
