@@ -55,8 +55,15 @@ command -v python3 >/dev/null 2>&1 || {
 
 # Idempotency stamp check: if we've already advanced for this HEAD,
 # refuse to re-advance. The stamp lives at .sdd/.advance.last-head.
+#
+# CodeRabbit cycle 12 fix: use `git rev-parse HEAD` directly instead of
+# `[ -d ".git" ]`. The directory check fails for git worktrees (where
+# .git is a FILE, not a dir) — the stamp would silently never fire.
+# Relying on `git rev-parse HEAD 2>/dev/null` succeeding is the
+# canonical "am I in a git repo?" check; it works for both regular
+# checkouts and worktrees.
 STAMP_FILE=".sdd/.advance.last-head"
-if command -v git >/dev/null 2>&1 && [ -d ".git" ]; then
+if command -v git >/dev/null 2>&1; then
   HEAD_SHA=$(git rev-parse HEAD 2>/dev/null || echo "")
   if [ -n "$HEAD_SHA" ] && [ -f "$STAMP_FILE" ]; then
     LAST_SHA=$(cat "$STAMP_FILE" 2>/dev/null | tr -d '[:space:]')
