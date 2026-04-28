@@ -1,0 +1,207 @@
+name: SDD CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Least-privilege GITHUB_TOKEN scope. The workflow only reads the repo to run
+# framework tests + the scope-guard diff; it does not post comments, create
+# checks via the API, push commits, or write any other resource. If a future
+# step needs additional scope, add the most-restrictive `read` value here —
+# never `write`.
+permissions:
+  contents: read
+
+jobs:
+  framework-tests:
+    name: Framework tests (mutation-verified)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run test/run-framework-test.sh
+        shell: bash
+        run: |
+          bash test/run-framework-test.sh
+
+  scope-guard:
+    name: Scope guard (UI copy + new-file spec refs)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine diff range
+        id: diff
+        shell: bash
+        run: |
+          # PR diff range: from PR base ref to PR head.
+          base="origin/${{ github.event.pull_request.base.ref }}"
+          head="HEAD"
+          echo "base=$base" >> "$GITHUB_OUTPUT"
+          echo "head=$head" >> "$GITHUB_OUTPUT"
+
+      - name: Scope-guard — UI copy ≥30 chars must be in spec.md or wireframe.html
+        shell: bash
+        run: |
+          set -uo pipefail
+          # Phase-C-7 (1/N) replacement of pre-commit-scope-guard.sh's local
+          # hook. Runs against the PR diff rather than the staged set.
+          # Same logic; CI lifecycle = no committer dev-loop interruption,
+          # but PRs still gated.
+
+          base="${{ steps.diff.outputs.base }}"
+          head="${{ steps.diff.outputs.head }}"
+
+          # Only run if there's an active SDD work item with at least one of
+          # spec.md or wireframe.html present (checked further down).
+          [ -d .sdd ] || { echo "[scope-guard-ci] no .sdd/ — skipping."; exit 0; }
+          [ -f .sdd/INDEX.md ] || { echo "[scope-guard-ci] no INDEX.md — skipping."; exit 0; }
+
+          active=$(awk '/^\*\*Active:\*\*/{print $2; exit}' .sdd/INDEX.md 2>/dev/null || echo "")
+          echo "$active" | grep -qE '^[a-z][a-z0-9_-]*/[A-Za-z0-9._-]+$' || active=""
+          [ -z "$active" ] && { echo "[scope-guard-ci] no active work item — skipping."; exit 0; }
+
+          spec=".sdd/$active/spec.md"
+          wireframe=".sdd/$active/wireframe.html"
+          # Copy is valid if it appears in spec.md OR wireframe.html — so a
+          # non-UI feature with no wireframe should still have its copy
+          # verified against spec.md. Only skip when BOTH are missing.
+          if [ ! -f "$spec" ] && [ ! -f "$wireframe" ]; then
+            echo "[scope-guard-ci] both spec and wireframe missing — skipping."
+            exit 0
+          fi
+
+          # Phase gate: BUILD or SHIP only. Phase is encoded in spec.md, so
+          # if spec.md is missing we cannot read the phase. In that case
+          # (wireframe-only) skip the gate and let the per-string loop run —
+          # it will simply check copy against the wireframe.
+          phase="(unknown)"
+          if [ -f "$spec" ]; then
+            phase=$(grep -m1 -oE '\[PHASE: [A-Z]+\]' "$spec" | grep -oE '[A-Z]+' | tail -1 || echo "")
+            case "$phase" in
+              BUILD|SHIP) ;;
+              *) echo "[scope-guard-ci] phase=$phase — scope-guard only runs BUILD/SHIP. skipping."; exit 0 ;;
+            esac
+          fi
+
+          # ─── Block 1: UI copy strings ─────────────────────────────────
+          # UI paths only — backend / scripts / tests don't need their copy
+          # strings cross-referenced against wireframe/spec. Path-spec mirrors
+          # Block 2's new-UI-files filter (app/, components/, pages/, src/*).
+          #
+          # Range form: `$base...$head` (three-dot). This is the PR-diff
+          # form — it diffs HEAD against the merge-base of base and HEAD,
+          # so commits that landed on main AFTER this PR branched are not
+          # counted as PR changes. The two-dot form (`$base..$head`) would
+          # let post-branch main commits leak in, producing false-positive
+          # violations on copy this PR never touched.
+          #
+          # Added-line filter: `grep -E '^\+[^+]'` keeps lines that start
+          # with one `+` followed by a non-`+` character. This excludes the
+          # `+++ b/path` file-header line that `--unified=0` still emits;
+          # without the negation, file paths with quote-like chars could
+          # slip into the per-string check.
+          added_strings=$(git diff --unified=0 "$base...$head" -- \
+            'app/**/*.tsx' 'app/**/*.jsx' 'app/**/*.ts' 'app/**/*.js' \
+            'components/**/*.tsx' 'components/**/*.jsx' 'components/**/*.ts' 'components/**/*.js' \
+            'pages/**/*.tsx' 'pages/**/*.jsx' 'pages/**/*.ts' 'pages/**/*.js' \
+            'src/app/**/*.tsx' 'src/app/**/*.jsx' 'src/app/**/*.ts' 'src/app/**/*.js' \
+            'src/components/**/*.tsx' 'src/components/**/*.jsx' 'src/components/**/*.ts' 'src/components/**/*.js' \
+            'src/pages/**/*.tsx' 'src/pages/**/*.jsx' 'src/pages/**/*.ts' 'src/pages/**/*.js' \
+            2>/dev/null \
+            | grep -E '^\+[^+]' \
+            | grep -oE '"[^"]{30,}"|>[^<>]{30,}<' \
+            | sed -E 's/^[">]|[<"]$//g' \
+            | sort -u || true)
+
+          # Per-string check. Try $spec if it exists, then $wireframe if it
+          # exists. A missing file is a no-op (not a false-positive miss) —
+          # the combined-skip above guarantees at least one is present.
+          violations=()
+          if [ -n "$added_strings" ]; then
+            while IFS= read -r str; do
+              [ -z "$str" ] && continue
+              if [ -f "$wireframe" ] && grep -qF -- "$str" "$wireframe" 2>/dev/null; then continue; fi
+              if [ -f "$spec" ]      && grep -qF -- "$str" "$spec"      2>/dev/null; then continue; fi
+              if [ -f "$wireframe" ] && grep -qiF -- "$str" "$wireframe" 2>/dev/null; then continue; fi
+              if [ -f "$spec" ]      && grep -qiF -- "$str" "$spec"      2>/dev/null; then continue; fi
+              violations+=("$str")
+            done <<< "$added_strings"
+          fi
+
+          if [ ${#violations[@]} -gt 0 ]; then
+            # Report whichever source files actually exist — a wireframe-less
+            # feature shouldn't see "Wireframe: <missing-path>" in its error.
+            sources=""
+            [ -f "$spec" ] && sources="$spec"
+            [ -f "$wireframe" ] && sources="${sources:+$sources, }$wireframe"
+            {
+              echo "::error::[SDD scope-guard] PR adds copy strings not in spec.md or wireframe.html"
+              echo ""
+              echo "  Active feature: $active"
+              echo "  Phase:          $phase"
+              echo "  Checked:        $sources"
+              echo ""
+              echo "  Unspec'd strings:"
+              for v in "${violations[@]}"; do
+                preview=$(echo "$v" | head -c 120)
+                echo "    • \"$preview\""
+              done
+              echo ""
+              echo "  Pick one:"
+              if [ -f "$wireframe" ]; then
+                echo "  1. Legitimate but missed: add the copy/element to wireframe.html,"
+                echo "     get it re-approved, force-push the branch."
+              else
+                echo "  1. Legitimate but missed: add the copy/element to spec.md,"
+                echo "     get it re-approved, force-push the branch."
+              fi
+              echo "  2. Not requested: remove the unspec'd copy, force-push."
+            } >&2
+            exit 1
+          fi
+
+          # ─── Block 2: new UI files must carry a `// spec:` reference ──
+          # Range form: three-dot — same reason as Block 1 above. Files
+          # added on main after the PR branched must not count as files
+          # this PR added.
+          new_ui_files=$(git diff --name-only --diff-filter=A "$base...$head" 2>/dev/null \
+            | grep -E '^(app|components|pages|src/app|src/components|src/pages)/.*\.(tsx|jsx|ts|js)$' \
+            | grep -vE '\.test\.|\.spec\.|/tests?/' \
+            || true)
+
+          missing_ref=()
+          if [ -n "$new_ui_files" ]; then
+            while IFS= read -r file; do
+              [ -z "$file" ] && continue
+              if ! head -10 "$file" | grep -qE '(//|/\*|\*).*spec:\s*(features/|\.sdd/|\S+\.md)' ; then
+                missing_ref+=("$file")
+              fi
+            done <<< "$new_ui_files"
+          fi
+
+          if [ ${#missing_ref[@]} -gt 0 ]; then
+            {
+              echo "::error::[SDD scope-guard] new UI files missing \`// spec:\` reference"
+              echo ""
+              echo "  Files:"
+              for f in "${missing_ref[@]}"; do
+                echo "    • $f"
+              done
+              echo ""
+              echo "  Add a comment in the first 10 lines, e.g.:"
+              if [ -f "$spec" ]; then
+                echo "    // spec: $spec §3 US2 — <what this file is for>"
+              else
+                echo "    // spec: $wireframe — <what this file is for>"
+              fi
+            } >&2
+            exit 1
+          fi
+
+          echo "[scope-guard-ci] OK — no unspec'd copy or missing-ref UI files."

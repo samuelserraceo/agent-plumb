@@ -28,27 +28,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/hooks/pre-commit-block.sh"
+            "command": ".claude/hooks/pre-commit-rules.sh"
           },
           {
             "type": "command",
-            "command": ".claude/hooks/pre-commit-learn-sync.sh"
-          },
-          {
-            "type": "command",
-            "command": ".claude/hooks/pre-commit-schema-sync.sh"
-          },
-          {
-            "type": "command",
-            "command": ".claude/hooks/pre-commit-scope-guard.sh"
-          },
-          {
-            "type": "command",
-            "command": ".claude/hooks/pre-commit-claude-md-managed.sh"
-          },
-          {
-            "type": "command",
-            "command": ".claude/hooks/pre-commit-size-cap.sh"
+            "command": ".claude/hooks/pre-commit-stage-verified.sh"
           }
         ]
       }

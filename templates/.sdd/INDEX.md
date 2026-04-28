@@ -52,7 +52,9 @@ _(none)_
 
 ## References
 
-- **Rubric (template for new features):** `.sdd/rubric.md`
+- **Playbooks:** `.sdd/playbooks/` (future playbooks for bugs and ideas — coming in a later release; today only the `feature` playbook ships)
+- **Actions library:** `.sdd/actions/` (the prose each `/next` injects)
 - **Data model:** `.sdd/data-model.md`
 - **Patterns / cross-feature learnings:** `.sdd/patterns.md`
+- **Decisions audit log:** `.sdd/decisions.md`
 - **Project + workflow rules:** `CLAUDE.md` at project root

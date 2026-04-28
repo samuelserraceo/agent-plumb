@@ -1,0 +1,169 @@
+{
+  "extensions": {},
+  "playbooks": {
+    "feature": {
+      "expected_sha256": "22be2621f79a0537dd4835d9008b04087c25ae86b52b3986d8cc3fd6b666e66f",
+      "path": ".sdd/playbooks/feature.md",
+      "trust": "framework"
+    }
+  },
+  "scripts": {
+    "advance.sh": {
+      "expected_sha256": "f383e85e1935a2cc36db17402edc48d16406531246b78ceb95b2f9498e843f96",
+      "path": ".sdd/scripts/advance.sh",
+      "trust": "framework"
+    },
+    "hash-section.sh": {
+      "expected_sha256": "f042a987b7386d435b521d364a36603323edda611dc885ab9694d4ace95158ac",
+      "path": ".sdd/scripts/hash-section.sh",
+      "trust": "framework"
+    },
+    "load-playbook.sh": {
+      "expected_sha256": "8ff9ee8b96954731d5132bf06ba2ca51d2153b12769f30069c8fa425d78d38be",
+      "path": ".sdd/scripts/load-playbook.sh",
+      "trust": "framework"
+    },
+    "reapprove.sh": {
+      "expected_sha256": "b7502ea30c6d135e0ea88c069fbc9e121996c7214068e761ba8a7787d5a5c14d",
+      "path": ".sdd/scripts/reapprove.sh",
+      "trust": "framework"
+    },
+    "start.sh": {
+      "expected_sha256": "bda7de07e83b253d3649e9e1a679f2f50517dcd8f7b10581528e586aecca5f3a",
+      "path": ".sdd/scripts/start.sh",
+      "trust": "framework"
+    },
+    "resolve-parameters.sh": {
+      "expected_sha256": "89483cb06e150e707661c0cd44d68022a869b3301474ce759e12be49590ed72e",
+      "path": ".sdd/scripts/resolve-parameters.sh",
+      "trust": "framework"
+    },
+    "read-events.sh": {
+      "expected_sha256": "f8d6a4b678b36dc97f71bb73a664e6b93556b09dfbf08c04a270e7278d492475",
+      "path": ".sdd/scripts/read-events.sh",
+      "trust": "framework"
+    },
+    "next-action.sh": {
+      "expected_sha256": "5af8b31b8a345d637b091b0fa054bc3fe8334c983774f60afcb25d41bde8a460",
+      "path": ".sdd/scripts/next-action.sh",
+      "trust": "framework"
+    },
+    "validate-sdd-path.sh": {
+      "expected_sha256": "c2ae85c19b90e7a3d979931ddc6b47255c4637adbf38142bc15a832cf4110b0d",
+      "path": ".sdd/scripts/validate-sdd-path.sh",
+      "trust": "framework"
+    }
+  },
+  "sdd_version": "0.9.0",
+  "actions": {
+    "acceptance-criteria": {
+      "expected_sha256": "3c2415ec6086d956d81cb723fae95b519ef5d7b69a0a5e8fb4ce1b33c46b62f4",
+      "path": ".sdd/actions/acceptance-criteria.md",
+      "trust": "framework"
+    },
+    "build-task": {
+      "expected_sha256": "65783b74c3e83bb061199761a5d24699c027aa108cc3abac707a4bb97b2ef29e",
+      "path": ".sdd/actions/build-task.md",
+      "trust": "framework"
+    },
+    "data-contract": {
+      "expected_sha256": "c58a24a301e198d0f544f19f03c393925b3143ef061b3ba3564448777b866813",
+      "path": ".sdd/actions/data-contract.md",
+      "trust": "framework"
+    },
+    "dependencies": {
+      "expected_sha256": "e26ac457abce77b922ff039348670c8ce60be506f79c587deee6326d561fa005",
+      "path": ".sdd/actions/dependencies.md",
+      "trust": "framework"
+    },
+    "flows": {
+      "expected_sha256": "e7fccca3d74b21832c8d6f3d1c4e0784c2330489ca9bee6d0e6d23a9ff0a5baf",
+      "path": ".sdd/actions/flows.md",
+      "trust": "framework"
+    },
+    "mark-shipped": {
+      "expected_sha256": "2299bcbe0aff908b229a4438e44c5d784ae5e113b97e20ab719cad2812d95dfb",
+      "path": ".sdd/actions/mark-shipped.md",
+      "trust": "framework"
+    },
+    "non-functional": {
+      "expected_sha256": "16d8c37d9f8542ea0ead600c4fab399e8bad75ea684627a75427d9f2a41a680b",
+      "path": ".sdd/actions/non-functional.md",
+      "trust": "framework"
+    },
+    "out-of-scope": {
+      "expected_sha256": "446bb797c2566dbd35250fa54a49259aa59ec0c6e8550d58ef5375b4479f4e82",
+      "path": ".sdd/actions/out-of-scope.md",
+      "trust": "framework"
+    },
+    "plan-decompose": {
+      "expected_sha256": "d31d9b8e504760989e2c3da1fe47c3f5f3959fc6526496399779aeba4d721e44",
+      "path": ".sdd/actions/plan-decompose.md",
+      "trust": "framework"
+    },
+    "problem": {
+      "expected_sha256": "058b81aa7fe5dea6556cc630f66c043ed447a40523fc39815c10b9812f7cfeea",
+      "path": ".sdd/actions/problem.md",
+      "trust": "framework"
+    },
+    "proposed-approach": {
+      "expected_sha256": "8fa17a6a8ecca8c4044c4df20edaf00acc781d233b331ed39fdd8d066c596710",
+      "path": ".sdd/actions/proposed-approach.md",
+      "trust": "framework"
+    },
+    "push-pr": {
+      "expected_sha256": "e89ca93bd107dfe604b259b99c2eb0c1362841d3656627273aed973c4f76df22",
+      "path": ".sdd/actions/push-pr.md",
+      "trust": "framework"
+    },
+    "run-mode-chosen": {
+      "expected_sha256": "a229e820065c1dc4b83a2aa6c4bf671299cc0c3166a41bdf0a7520fc83011db2",
+      "path": ".sdd/actions/run-mode-chosen.md",
+      "trust": "framework"
+    },
+    "signoff-steps": {
+      "expected_sha256": "5d97eaa4528563b745f2d80fb10053f03b94353c5d1711762fae8d6968e60f77",
+      "path": ".sdd/actions/signoff-steps.md",
+      "trust": "framework"
+    },
+    "success": {
+      "expected_sha256": "56db5711d9a56d40713071d7daef759af37c4fec4a117fdb3d6a97ca975bcdac",
+      "path": ".sdd/actions/success.md",
+      "trust": "framework"
+    },
+    "user-stories": {
+      "expected_sha256": "ab9b1245839e7629c58d5e8bd8437c86edc6d300da28543814a766c6c43b7394",
+      "path": ".sdd/actions/user-stories.md",
+      "trust": "framework"
+    },
+    "ux-brief": {
+      "expected_sha256": "da926ab54644279624e93c91f948b5f6d5ba7851e6b74968ae7a79858ead7411",
+      "path": ".sdd/actions/ux-brief.md",
+      "trust": "framework"
+    },
+    "verify-ci-green": {
+      "expected_sha256": "581ae5f0e6d79cbdec7061ab25dd753ae0a8d5ce5e73fe5a684cba334567fffd",
+      "path": ".sdd/actions/verify-ci-green.md",
+      "trust": "framework"
+    },
+    "verify-prod-only-acs": {
+      "expected_sha256": "c2e2d3ea7f8343d9526d9451d15427ae11bb51fdd83b8bad04895f743a20c4fd",
+      "path": ".sdd/actions/verify-prod-only-acs.md",
+      "trust": "framework"
+    },
+    "verify-test-run": {
+      "expected_sha256": "63aa059281836a4338051701daca2f18f605b6ba4d5fd1e63bece948f7369abe",
+      "path": ".sdd/actions/verify-test-run.md",
+      "trust": "framework"
+    },
+    "wireframe": {
+      "expected_sha256": "a55341a9ae206061076776f8995f1ff49c3cc1779325b78824418e6af89bfcaf",
+      "path": ".sdd/actions/wireframe.md",
+      "trust": "framework"
+    },
+    "learn": {
+      "path": ".sdd/actions/learn.md",
+      "expected_sha256": "da579e764d3f15d4dda15aca7eb4d4caeb948f9766823cc7acf5166eceee8877"
+    }
+  }
+}

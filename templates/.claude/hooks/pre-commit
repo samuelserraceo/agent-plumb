@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+# Native git pre-commit shim — closes the UAT moat-bypass finding.
+#
+# Why this file exists (no extension — that's how git recognizes it):
+# the SDD pre-commit-*.sh hooks are wired into Claude Code as
+# PreToolUse(Bash) hooks via .claude/settings.json. PreToolUse fires
+# BEFORE a Bash command runs. When an agent issues
+# `git add X && git commit -m Y` in one bash call, the hook reads
+# `git diff --cached --name-only` BEFORE `git add` runs, sees
+# nothing staged, exits silently — and the moat never fires.
+#
+# Native git pre-commit fires AFTER staging is complete, BEFORE the
+# commit object is created. Wiring the same hooks here closes that
+# bypass without changing any of the hook scripts. Both wirings
+# coexist for defense-in-depth (PreToolUse catches earlier failures
+# during split commits; native pre-commit catches everything else).
+#
+# Activation:
+#   Set `git config core.hooksPath .claude/hooks` once per project.
+#   /start does this automatically the first time it runs in a
+#   project where it isn't set; bootstrap-uat.sh does it during
+#   project scaffold. Once set, every git commit (combined or split,
+#   from agent or human) runs through this shim.
+
+set -uo pipefail
+
+HOOKS_DIR="$(cd "$(dirname "$0")" && pwd)"
+# Two levels up: <project>/.claude/hooks/ → <project>
+PROJECT_DIR="$(cd "$HOOKS_DIR/../.." && pwd)"
+SETTINGS="$PROJECT_DIR/.claude/settings.json"
+
+# No SDD settings.json → not an SDD project (or framework not
+# fully copied). Allow the commit; defer to whatever other hooks
+# might be wired.
+[ -f "$SETTINGS" ] || exit 0
+
+# Synthetic Claude Code PreToolUse(Bash) payload — emulates the JSON
+# format the existing hooks parse from stdin. Without this, every
+# hook's empty-cmd safe default exits 0 silently and nothing fires.
+SYNTHETIC_STDIN='{"tool_input":{"command":"git commit"}}'
+
+# Read the PreToolUse(Bash) hooks list from settings.json. Any new
+# hook added there gets picked up automatically — keeps the wiring
+# Lego-shaped (Pillar 2).
+#
+# CodeRabbit fix (2nd review): pass $SETTINGS via env var, not bash
+# string substitution. Earlier shape `with open('$SETTINGS')` would
+# break + injection-vulnerable when the path contains apostrophes
+# (e.g. `/tmp/sam's-project/.../settings.json`). The env-var approach
+# sidesteps both shell + Python escaping concerns.
+hooks=$(SETTINGS_PATH="$SETTINGS" python3 -c "
+import json, os, re, sys
+# CodeRabbit fix (5th cycle): strict regex match instead of startswith.
+# A startswith check would accept 'pre-commit-../../etc/passwd' which
+# escapes .claude/hooks/. The regex below requires the filename to be
+# a closed-enum slug shape.
+HOOK_PATH_RE = re.compile(r'^\.claude/hooks/pre-commit-[a-z][a-z0-9-]*\.sh$')
+try:
+    with open(os.environ['SETTINGS_PATH'], encoding='utf-8') as f:
+        settings = json.load(f)
+    for entry in settings.get('hooks', {}).get('PreToolUse', []) or []:
+        if entry.get('matcher') == 'Bash':
+            for h in entry.get('hooks', []) or []:
+                cmd = h.get('command', '')
+                if HOOK_PATH_RE.match(cmd):
+                    print(cmd)
+except Exception as e:
+    sys.stderr.write(f'[pre-commit shim] settings.json parse error: {e}\n')
+    sys.exit(1)
+") || exit 1
+
+[ -z "$hooks" ] && exit 0
+
+# Invoke each pre-commit-*.sh hook with synthetic stdin. Stop on
+# the first block; propagate exit code so git surfaces the right
+# error.
+while IFS= read -r hook; do
+  [ -z "$hook" ] && continue
+  hook_path="$PROJECT_DIR/$hook"
+  [ -f "$hook_path" ] || continue
+  printf '%s' "$SYNTHETIC_STDIN" | bash "$hook_path"
+  ec=$?
+  if [ $ec -ne 0 ]; then
+    exit $ec
+  fi
+done <<< "$hooks"
+
+exit 0
