@@ -1,68 +1,198 @@
 <!DOCTYPE html>
+<!--
+  SDD wireframe template — v0.11.0
+
+  Read CLAUDE.md "Wireframes" for the full rules. The short version:
+
+  - One file per feature at .sdd/features/<id>/wireframe.html (or
+    .sdd/projects/<id>/wireframe.html for project-level journey maps).
+  - Static HTML + Tailwind CDN, no build step. Open with `open` (macOS),
+    `xdg-open` (Linux), or `start` (Windows).
+  - Doctrine rule 5 (CLAUDE.md): wireframe ALWAYS reflects current spec.
+    Any UI-affecting action must update this file in the same commit.
+  - Plan-decompose coverage rule: every §4 UX constraint (mobile, dark
+    mode, accessibility, locale, etc.) must have a matching §11 AC.
+    Reflect those constraints in the screens below — empty / error /
+    loading states are not optional.
+  - Iterate with the user until they say "approved", then tick the
+    Approved box and update Status in the header.
+
+  Project-playbook variant (v0.11.0): when this file lives under
+  .sdd/projects/<id>/, repurpose Screen 1+ as the JOURNEY across
+  capabilities — show the user moving through the multi-feature flow,
+  not a single screen. Mark capability boundaries explicitly.
+-->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Wireframe — Feature: &lt;name&gt;</title>
+  <title>Wireframe — &lt;name&gt;</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     /* Wireframe markers: dashed borders so it's obvious this isn't final UI */
     .wf { border: 1px dashed #94a3b8; }
     .wf-note { background: #fef3c7; color: #92400e; padding: 2px 6px; border-radius: 4px; font-size: 11px; }
+    .wf-state-empty { background: #f1f5f9; }
+    .wf-state-error { background: #fef2f2; border-color: #fca5a5; }
+    .wf-state-loading { background: #eff6ff; border-color: #93c5fd; }
+    .frame-mobile { max-width: 390px; margin: 0 auto; }
+    .frame-tablet { max-width: 768px; margin: 0 auto; }
+    .frame-desktop { max-width: 1280px; margin: 0 auto; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-900 min-h-screen">
 
-  <!-- Header: feature metadata. Agent updates these. -->
+  <!-- ═══════════════════════════════════════════════════════════════════
+       HEADER: metadata the agent maintains. Status text moves through:
+         draft → in review → approved (replace text + colour accordingly)
+       ═══════════════════════════════════════════════════════════════════ -->
   <header class="bg-white border-b border-slate-200 px-6 py-4">
-    <div class="max-w-5xl mx-auto flex items-center justify-between">
+    <div class="max-w-5xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
       <div>
-        <div class="text-xs uppercase tracking-wider text-slate-500">Wireframe</div>
-        <h1 class="text-xl font-semibold">Feature: &lt;name&gt;</h1>
+        <div class="text-xs uppercase tracking-wider text-slate-500">Wireframe — Feature</div>
+        <h1 class="text-xl font-semibold">&lt;name&gt;</h1>
+        <div class="text-xs text-slate-500 mt-1">
+          <!-- Switch to "Project" when this file lives in .sdd/projects/. -->
+          For project-level journey maps, change the eyebrow text to "Wireframe — Project".
+        </div>
       </div>
-      <div class="text-right text-sm text-slate-600">
+      <div class="text-sm text-slate-600 sm:text-right">
         <div>Branch: <code class="text-xs bg-slate-100 px-1.5 py-0.5 rounded">sdd/&lt;id&gt;-&lt;slug&gt;</code></div>
         <div>Status: <span class="wf-note">draft — pending review</span></div>
+        <div>Approved: <span class="text-slate-400">— (set on approval)</span></div>
       </div>
     </div>
   </header>
 
-  <!-- Screens. One section per screen named in the user stories.
-       The agent replaces these with actual mockups. -->
-  <main class="max-w-5xl mx-auto px-6 py-8 space-y-10">
+  <!-- ═══════════════════════════════════════════════════════════════════
+       VIEWPORT TARGETS: which screen sizes does §4 UX brief commit to?
+       Match this to plan-decompose's §11 AC viewport coverage.
+       Delete the rows that don't apply.
+       ═══════════════════════════════════════════════════════════════════ -->
+  <section class="max-w-5xl mx-auto px-6 pt-6">
+    <div class="bg-white border border-slate-200 rounded-lg p-4 text-sm">
+      <div class="font-semibold mb-2">Viewport targets (per §4 UX brief)</div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+        <div class="border border-slate-200 rounded px-3 py-2">
+          <div class="font-medium">Mobile</div>
+          <div class="text-slate-500">≤ 390px (e.g. iPhone-13)</div>
+          <div class="mt-1 text-slate-600">Required: <span class="wf-note">yes / no</span></div>
+        </div>
+        <div class="border border-slate-200 rounded px-3 py-2">
+          <div class="font-medium">Tablet</div>
+          <div class="text-slate-500">390–1024px</div>
+          <div class="mt-1 text-slate-600">Required: <span class="wf-note">yes / no</span></div>
+        </div>
+        <div class="border border-slate-200 rounded px-3 py-2">
+          <div class="font-medium">Desktop</div>
+          <div class="text-slate-500">≥ 1024px</div>
+          <div class="mt-1 text-slate-600">Required: <span class="wf-note">yes / no</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-    <!-- Example screen skeleton. Duplicate and customize per user story. -->
-    <section class="space-y-3">
-      <div class="flex items-baseline justify-between">
+  <!-- ═══════════════════════════════════════════════════════════════════
+       SCREENS: one <section> per screen named in §3 user stories.
+       For each screen, also represent its empty / error / loading
+       states — these are not edge cases, they're acceptance criteria.
+       ═══════════════════════════════════════════════════════════════════ -->
+  <main class="max-w-5xl mx-auto px-6 py-8 space-y-12">
+
+    <!-- ────────── Screen 1 ────────── -->
+    <section class="space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2">
         <h2 class="text-lg font-semibold">Screen 1: &lt;screen name&gt;</h2>
-        <span class="wf-note">story: &lt;story ref&gt;</span>
+        <div class="flex flex-wrap gap-2 text-xs">
+          <span class="wf-note">story: &lt;story ref&gt;</span>
+          <span class="wf-note">capability: &lt;capability slug&gt;</span>
+          <span class="wf-note">viewport: mobile / tablet / desktop</span>
+        </div>
       </div>
-      <div class="wf bg-white rounded-lg p-6 min-h-[300px]">
-        <p class="text-slate-400 text-sm">(mockup goes here — form, list, chart, whatever the screen shows)</p>
+
+      <!-- Default / happy-path state -->
+      <div class="frame-desktop">
+        <div class="wf bg-white rounded-lg p-6 min-h-[260px]">
+          <div class="text-xs uppercase tracking-wider text-slate-400 mb-2">Default state</div>
+          <p class="text-slate-400 text-sm">(mockup goes here — form, list, chart, whatever the screen shows)</p>
+        </div>
       </div>
-      <div class="text-sm text-slate-600">
-        <strong>Interactions:</strong>
+
+      <!-- Edge-case states (delete rows that don't apply, add others as needed) -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="wf wf-state-empty rounded-lg p-4 min-h-[140px]">
+          <div class="text-xs uppercase tracking-wider text-slate-500 mb-2">Empty state</div>
+          <p class="text-slate-500 text-sm">(no data yet — onboarding nudge, CTA, etc.)</p>
+        </div>
+        <div class="wf wf-state-loading rounded-lg p-4 min-h-[140px]">
+          <div class="text-xs uppercase tracking-wider text-blue-700 mb-2">Loading state</div>
+          <p class="text-blue-900 text-sm">(skeleton, spinner, progressive reveal)</p>
+        </div>
+        <div class="wf wf-state-error rounded-lg p-4 min-h-[140px]">
+          <div class="text-xs uppercase tracking-wider text-red-700 mb-2">Error state</div>
+          <p class="text-red-900 text-sm">(plain-English error message + recovery action)</p>
+        </div>
+      </div>
+
+      <!-- Interactions: tie back to §11 ACs -->
+      <div class="text-sm text-slate-700">
+        <strong>Interactions (each maps to a §11 AC):</strong>
         <ul class="list-disc list-inside mt-1 space-y-0.5">
-          <li>describe what clicking X does</li>
-          <li>describe what submitting form Y does</li>
+          <li>describe what clicking X does → AC&lt;n&gt;</li>
+          <li>describe what submitting form Y does → AC&lt;n&gt;</li>
+          <li>describe what happens on validation failure → AC&lt;n&gt;</li>
         </ul>
       </div>
     </section>
 
-    <!-- Duplicate screen skeleton above for each additional screen. -->
+    <!-- Duplicate Screen 1 above for each additional screen named in §3. -->
 
   </main>
 
-  <!-- Feedback capture area. Open this file in a browser, copy anything that needs to change
-       into your chat with the agent. -->
-  <footer class="max-w-5xl mx-auto px-6 py-6 border-t border-slate-200 mt-10 text-sm text-slate-600">
-    <strong>Review checklist:</strong>
-    <ul class="list-disc list-inside mt-2 space-y-0.5">
-      <li>Does every user story have a screen?</li>
-      <li>Are interactions labelled clearly?</li>
-      <li>Any edge-case screens missing (empty states, errors, loading)?</li>
-      <li>If approved, tell the agent "wireframe approved".</li>
-    </ul>
+  <!-- ═══════════════════════════════════════════════════════════════════
+       REVIEW CHECKLIST: walk these before flagging "wireframe approved".
+       Reflects v0.10.1+ doctrine and plan-decompose coverage rule.
+       ═══════════════════════════════════════════════════════════════════ -->
+  <footer class="max-w-5xl mx-auto px-6 py-6 border-t border-slate-200 mt-10 text-sm text-slate-700 space-y-4">
+    <div>
+      <strong>Coverage (must hold before approval):</strong>
+      <ul class="list-disc list-inside mt-1 space-y-0.5">
+        <li>Every §3 user story has at least one screen above</li>
+        <li>Every §11 AC ties to an interaction shown above</li>
+        <li>Every §4 UX brief constraint (mobile, accessibility, locale, dark mode, etc.) is reflected in a viewport / state / annotation</li>
+        <li>Empty / loading / error states present for every screen with dynamic content</li>
+      </ul>
+    </div>
+
+    <div>
+      <strong>Plain-English review (per CLAUDE.md "Non-technical user lens"):</strong>
+      <ul class="list-disc list-inside mt-1 space-y-0.5">
+        <li>Labels read in &lt; 30 seconds without jargon</li>
+        <li>Error messages describe the user impact, not technical state codes</li>
+        <li>CTAs use verbs ("Send invite", not "Submit")</li>
+      </ul>
+    </div>
+
+    <div>
+      <strong>Accessibility (WCAG 2.1 AA quick check):</strong>
+      <ul class="list-disc list-inside mt-1 space-y-0.5">
+        <li>Tap targets ≥ 44 × 44 px on mobile</li>
+        <li>Colour contrast ≥ 4.5 : 1 for body text</li>
+        <li>Every form field has a visible label (not just placeholder)</li>
+        <li>Focus state visible on every interactive element</li>
+        <li>No information communicated by colour alone</li>
+      </ul>
+    </div>
+
+    <div>
+      <strong>Approval:</strong>
+      <ul class="list-none mt-1 space-y-0.5">
+        <li><label><input type="checkbox" class="mr-2"> Wireframe matches the approved §4 UX brief</label></li>
+        <li><label><input type="checkbox" class="mr-2"> All checklist sections above pass</label></li>
+        <li><label><input type="checkbox" class="mr-2"> Status updated in the header (draft → approved + date)</label></li>
+      </ul>
+      <p class="mt-3 text-slate-600">When all three boxes are ticked, tell the agent <code class="text-xs bg-slate-100 px-1.5 py-0.5 rounded">wireframe approved</code>.</p>
+    </div>
   </footer>
 
 </body>
