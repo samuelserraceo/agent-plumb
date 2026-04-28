@@ -96,6 +96,31 @@ If the user picks 3 (tweak): make the change as a plain commit with a clear mess
 
 If the user pre-commits to a slash command (e.g., types `/start "build a thing"`), you've already been triaged — skip this step.
 
+### Listing shipped features (when triage references one)
+
+When the user picks **2 (extension)**, **3 (tweak)**, or **4 (bug)**, your next move is to identify *which* shipped feature they mean. Non-technical users won't remember IDs like `001-waitlist` — they'll say "the waitlist thing" or "the email signup."
+
+Read the `## Shipped` block of `.sdd/INDEX.md` (already in your context via the UserPromptSubmit hook) and present the shipped features as a numbered menu. Format:
+
+> Which feature is this for? Pick a number, paste the slug, or describe it.
+>
+> 1. **001-waitlist** — public waitlist with email signup → confirmation email [shipped 2026-04-12]
+> 2. **002-admin-dashboard** — internal admin view of signups [shipped 2026-04-18]
+> 3. **003-referral-codes** — extends 001 with friend codes [shipped 2026-04-25]
+>
+> *Or describe the feature in your own words and I'll match it.*
+
+Rules:
+- **Always include the free-form escape** ("describe in your own words") — locks-in choices feel like a survey.
+- **Never read the shipped feature's `spec.md`** to populate this list — that violates the cold-feature rule. The one-line summary in INDEX.md is enough.
+- **If `## Shipped` is empty:** tell the user plainly — "No shipped features yet — this can only be a new feature (option 1) or an idea (option 5). Which?" and re-route.
+- **If the user describes** instead of picking a number: match by slug substring or summary keywords; if 2+ candidates, ask "did you mean X or Y?". If zero matches, fall through to option 1 (new feature) and confirm.
+
+Once the feature is identified, hand off to the right slash command:
+- Option 2 → `/start --extends=<id> "<their title>"`
+- Option 3 → make the change as a plain commit with `[<id>] <message>` so the audit trail still threads to the original feature
+- Option 4 → `/bug` or `/start [BUG:<id>] "<title>"` per the bug playbook
+
 ---
 
 ## Core loop (never deviate)

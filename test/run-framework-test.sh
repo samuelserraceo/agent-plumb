@@ -3228,6 +3228,26 @@ else
 fi
 
 # ============================================================
+# T87 — Triage UX: agent lists shipped features when picking which to
+#   extend / tweak / debug. Non-technical users don't remember IDs;
+#   they say "the waitlist thing." CLAUDE.md teaches the agent to walk
+#   `## Shipped` in INDEX.md and present a numbered menu with a
+#   free-form escape — same pattern as USER-LED multi-choice questions.
+#   Hard rule: must NOT read the shipped feature's spec.md (cold-feature
+#   rule). One-line INDEX.md summary is enough.
+# ============================================================
+note "T87: CLAUDE.md teaches 'list shipped features' UX for triage options 2/3/4"
+miss=""
+for needle in 'Listing shipped features' 'Pick a number' 'free-form escape' "Never read the shipped feature's" '## Shipped'; do
+  grep -qF -- "$needle" "$CLAUDE_MD" || miss="$miss $needle"
+done
+if [ -z "$miss" ]; then
+  ok "T87 CLAUDE.md teaches shipped-feature listing for triage handoff"
+else
+  bad "T87 CLAUDE.md missing shipped-listing UX phrasing:" "missing:$miss"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
