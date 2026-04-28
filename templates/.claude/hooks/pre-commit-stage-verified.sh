@@ -108,14 +108,10 @@ VERIFY_STAGE=$(locate_verify_stage) || {
 # fragile: a CRLF flip would force a re-pin here while the manifest
 # stayed silent. Now both layers use the same normalised algorithm.
 VERIFY_STAGE_EXPECTED_HASH="d51d3e16f31d72f8a78be721711a94f345b33b75bde1077ba2d59159ed9b9c8b"
-if ! command -v python3 >/dev/null 2>&1; then
-  cat >&2 <<EOF
-[moat] python3 is required for the verify-stage hash pin (the
-normalised-SHA-256 algorithm matches the manifest hash-pin below).
-Install python3 (most systems already have it) and retry.
-EOF
-  exit 2
-fi
+# Note: python3 existence already verified at the top of this hook
+# (the moat fails-closed if python3 is missing). CodeRabbit cycle 2
+# (PR #31): removed the duplicated `command -v python3` check that
+# used to live here — single source of truth for the dependency.
 actual_hash=$(VERIFY_STAGE="$VERIFY_STAGE" python3 -c '
 import hashlib, os, sys
 path = os.environ["VERIFY_STAGE"]

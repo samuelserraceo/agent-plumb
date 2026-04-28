@@ -38,8 +38,15 @@ cd "$PROJECT_DIR" || {
   exit 1
 }
 
-# Idempotency: skip if already initialized.
-if [ -d ".sdd" ] && [ -f "CLAUDE.md" ]; then
+# Idempotency: skip if already initialized. Look for the canonical
+# SDD marker (config.md inside .sdd/) — present on every fresh init,
+# never touched after.
+#
+# CodeRabbit cycle 1: requiring CLAUDE.md alongside .sdd/ meant users
+# with custom CLAUDE.md re-init'd repeatedly. CodeRabbit cycle 2:
+# bare `[ -d ".sdd" ]` would skip init even if user accidentally
+# created an empty `.sdd` for a different purpose. Check the marker.
+if [ -d ".sdd" ] && [ -f ".sdd/config.md" ]; then
   # Silent no-op on session restarts.
   exit 0
 fi

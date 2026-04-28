@@ -103,18 +103,23 @@ def set_at(d, dotted, value):
         if p not in cur or not isinstance(cur[p], dict):
             cur[p] = {}
         cur = cur[p]
-    # Coerce common scalars
+    # Coerce common scalars. CodeRabbit cycle-2 fix (PR #31): the
+    # earlier `value.lstrip("-").isdigit()` branch could match `--5`
+    # (which `int()` then rejects), and didn't handle a leading `+`.
+    # Use try/except on int() directly — the canonical "is this an
+    # integer?" check.
     if value.lower() == "true":
         cur[parts[-1]] = True
     elif value.lower() == "false":
         cur[parts[-1]] = False
-    elif value.lstrip("-").isdigit():
-        cur[parts[-1]] = int(value)
     else:
         try:
-            cur[parts[-1]] = float(value)
+            cur[parts[-1]] = int(value)
         except ValueError:
-            cur[parts[-1]] = value
+            try:
+                cur[parts[-1]] = float(value)
+            except ValueError:
+                cur[parts[-1]] = value
 
 def del_at(d, dotted):
     """Walk dotted path; delete leaf. Returns True if removed."""

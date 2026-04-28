@@ -45,6 +45,25 @@ MAX_ITERS="${MAX_ITERS:-50}"
 TIMEOUT_PER_ITER="${TIMEOUT_PER_ITER:-$(read_ralph_config timeout_per_iter)}"
 TIMEOUT_PER_ITER="${TIMEOUT_PER_ITER:-600}"
 
+# CodeRabbit cycle 2 (PR #31): validate the resolved values are
+# positive integers. Without this, a typo like MAX_ITERS=foo would
+# fail confusingly inside the arithmetic `[ "$iter" -lt "$MAX_ITERS" ]`
+# expansion below; better to fail loud here with a clear message.
+case "$MAX_ITERS" in
+  ''|*[!0-9]*)
+    echo "ERROR: MAX_ITERS must be a positive integer (got: '$MAX_ITERS')." >&2
+    echo "       Set via env (MAX_ITERS=20) or .sdd/config.md parameters.ralph.max_iters." >&2
+    exit 1 ;;
+esac
+case "$TIMEOUT_PER_ITER" in
+  ''|*[!0-9]*)
+    echo "ERROR: TIMEOUT_PER_ITER must be a positive integer in seconds (got: '$TIMEOUT_PER_ITER')." >&2
+    echo "       Set via env (TIMEOUT_PER_ITER=300) or .sdd/config.md parameters.ralph.timeout_per_iter." >&2
+    exit 1 ;;
+esac
+[ "$MAX_ITERS" -gt 0 ] || { echo "ERROR: MAX_ITERS must be > 0 (got: $MAX_ITERS)" >&2; exit 1; }
+[ "$TIMEOUT_PER_ITER" -gt 0 ] || { echo "ERROR: TIMEOUT_PER_ITER must be > 0 (got: $TIMEOUT_PER_ITER)" >&2; exit 1; }
+
 # ─── Preflight ──────────────────────────────────────────────────────
 
 if ! command -v claude >/dev/null 2>&1; then
