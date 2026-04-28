@@ -16,7 +16,31 @@
 
 set -euo pipefail
 
+# v0.10: read defaults from .sdd/config.md `parameters.ralph` if present;
+# env vars still override. Cascade: env > config.md > hardcoded fallback.
+read_ralph_config() {
+  local key="$1"
+  local fallback="$2"
+  if [ -f .sdd/config.md ] && command -v python3 >/dev/null 2>&1; then
+    python3 -c "
+import re, sys
+try:
+    import yaml
+except ImportError:
+    sys.exit(0)  # PyYAML missing — fall through to fallback
+with open('.sdd/config.md', encoding='utf-8') as f: t = f.read()
+m = re.match(r'^---\n(.*?)\n---', t, re.DOTALL)
+if not m: sys.exit(0)
+fm = yaml.safe_load(m.group(1)) or {}
+v = (fm.get('parameters') or {}).get('ralph', {}).get('$key')
+if v is not None: print(v)
+" 2>/dev/null
+  fi
+}
+
+MAX_ITERS="${MAX_ITERS:-$(read_ralph_config max_iters 50)}"
 MAX_ITERS="${MAX_ITERS:-50}"
+TIMEOUT_PER_ITER="${TIMEOUT_PER_ITER:-$(read_ralph_config timeout_per_iter 600)}"
 TIMEOUT_PER_ITER="${TIMEOUT_PER_ITER:-600}"
 
 # ─── Preflight ──────────────────────────────────────────────────────

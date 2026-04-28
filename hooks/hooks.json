@@ -1,0 +1,17 @@
+{
+  "description": "SDD framework lifecycle hooks. SessionStart bootstraps the project on first session if .sdd/ is missing.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/bin/sdd-init.sh",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

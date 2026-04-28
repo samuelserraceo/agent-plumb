@@ -14,6 +14,9 @@ parameters:
     translate_jargon_on_first_use: true
   pace:
     halt_on_red_after_attempts: 3
+  ralph:
+    max_iters: 50
+    timeout_per_iter: 600
 file_classes:
   CLAIM:
     - '(^|/)verification\.json$'

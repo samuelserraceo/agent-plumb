@@ -91,6 +91,7 @@ mkproj_v08() {
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/resolve-parameters.sh"   "$d/.sdd/scripts/resolve-parameters.sh"
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/read-events.sh"          "$d/.sdd/scripts/read-events.sh"
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/validate-sdd-path.sh"    "$d/.sdd/scripts/validate-sdd-path.sh"
+  cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/settings.sh"             "$d/.sdd/scripts/settings.sh" 2>/dev/null || true
   cp "$FRAMEWORK_ROOT/templates/.sdd/decisions.md"                    "$d/.sdd/decisions.md"
   cp "$VERIFY_STAGE" "$d/.sdd/scripts/verify-stage.sh" 2>/dev/null || true
   cp "$NEXT_ACTION"  "$d/.sdd/scripts/next-action.sh"  2>/dev/null || true
