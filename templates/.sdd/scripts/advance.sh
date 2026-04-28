@@ -6,9 +6,9 @@
 # INDEX.md's "**Active blocker:**" pointer.
 #
 # Why this isn't a real post-commit hook: Claude Code's hook chain is
-# PreToolUse only (no post-commit). For B-1, the agent invokes this
-# script explicitly after each /next's commit succeeds. Phase C may
-# add proper post-commit-via-Claude-Code support.
+# PreToolUse only (no post-commit). In v0.9, the agent invokes this
+# script explicitly after each /next's commit succeeds. A future
+# release may add proper post-commit-via-Claude-Code support.
 #
 # Usage:
 #   advance.sh                  # uses CLAUDE_PROJECT_DIR or pwd
@@ -228,7 +228,7 @@ except Exception:
 # Theme 12 — token instrumentation. Append one line to .sdd/metrics.md
 # per /next iteration. Format:
 #   <ISO-Z timestamp>  <work-item-path>  <slug>  <tag>  <tokens>  <duration-s>
-# B-1 ships timestamp + slug + tag (token count + duration require
+# v0.9 ships timestamp + slug + tag (token count + duration require
 # LLM-level data unavailable from a shell script; Phase C extension
 # can plumb them via the agent's own usage metadata).
 import time

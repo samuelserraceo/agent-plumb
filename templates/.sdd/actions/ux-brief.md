@@ -14,7 +14,7 @@ budget:
   max_minutes: 20
   max_tokens: 5000
   max_commits: 1
-requires_user_approval: false
+requires_user_approval: true
 ---
 
 **Skippable for non-UI features** (APIs, cron jobs, data migrations). Proactively offer to skip if `problem`, `success`, and `user-stories` mention no user-facing surface: *"§4 UX brief is for UI-facing features. This one is backend — skip? Reply `skip backend-only feature` (handled inline by `/next`) to continue."*

@@ -14,7 +14,7 @@ budget:
   max_minutes: 15
   max_tokens: 4000
   max_commits: 1
-requires_user_approval: false
+requires_user_approval: true
 ---
 
 **Skippable** if the feature uses no paid or external services. Proactively offer: *"§8 Dependencies covers external services (paid APIs, third-party tools). This feature [does/doesn't] seem to use any. Skip? Reply `skip no external dependencies` (handled inline by `/next`) or tell me what services you're using."*

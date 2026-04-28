@@ -8,7 +8,7 @@
 #
 # Usage:
 #   start.sh "<feature title>"          # uses default_playbook from config.md
-#   start.sh --playbook=<slug> "<title>"  # explicit playbook (B-1: only `feature` exists)
+#   start.sh --playbook=<slug> "<title>"  # explicit playbook (v0.9: only `feature` exists)
 #
 # Output:
 #   - Creates .sdd/<work_item_folder>/<NNN>-<slug>/spec.md
@@ -105,7 +105,12 @@ command -v python3 >/dev/null 2>&1 || {
 #      the silent override as a real footgun for adopters of SDD on
 #      existing repos.
 current_hookspath=$(git config --get core.hooksPath 2>/dev/null || echo "")
-if [ -d ".git" ]; then
+# CodeRabbit cycle 9/10/11: use `git rev-parse --is-inside-work-tree`
+# instead of `[ -d ".git" ]` to detect a git repo. The directory check
+# misses worktrees (where .git is a FILE, not a dir) — fairly common
+# for users running SDD inside `git worktree add` checkouts. The
+# rev-parse form handles both.
+if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   if [ "$current_hookspath" = ".claude/hooks" ]; then
     : # Already SDD's hooks; silent.
   elif [ -z "$current_hookspath" ]; then

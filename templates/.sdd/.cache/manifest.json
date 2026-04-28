@@ -9,7 +9,7 @@
   },
   "scripts": {
     "advance.sh": {
-      "expected_sha256": "20e6049da77708213473554b22fdcc81a5595d78ace5f13db16d397ea02e0d8d",
+      "expected_sha256": "3e8ddd931cfd1283b3809faa9b742f413559880a30a01c8d24cd6f0a10de2887",
       "path": ".sdd/scripts/advance.sh",
       "trust": "framework"
     },
@@ -29,7 +29,7 @@
       "trust": "framework"
     },
     "start.sh": {
-      "expected_sha256": "94118e6e8106d9131031e92186907710d4de6f893c3963dfdfc7a4fb32b40abd",
+      "expected_sha256": "9c4e49ac145da5504dccf991d8ee6f53fa0c40ac0cd2e718d9054d544fff0e09",
       "path": ".sdd/scripts/start.sh",
       "trust": "framework"
     },
@@ -72,12 +72,12 @@
       "trust": "framework"
     },
     "dependencies": {
-      "expected_sha256": "e49ba60fc0ec954c7285bfee85594dbe34967570189bb137d19cca4bcf221d4b",
+      "expected_sha256": "b02add4043aac257fda551f236dce4f299ef7e3277cecb6b3111665d85e202bc",
       "path": ".sdd/actions/dependencies.md",
       "trust": "framework"
     },
     "flows": {
-      "expected_sha256": "e7fccca3d74b21832c8d6f3d1c4e0784c2330489ca9bee6d0e6d23a9ff0a5baf",
+      "expected_sha256": "7a487fff038d2d8d2f505c53197519b1c6bc3d8a9100a4351de839a588291819",
       "path": ".sdd/actions/flows.md",
       "trust": "framework"
     },
@@ -87,7 +87,7 @@
       "trust": "framework"
     },
     "non-functional": {
-      "expected_sha256": "5c67addbf500e2d6bd5ba8ddcfb3514807bc3e471876f0014e1327d083439082",
+      "expected_sha256": "88ee6845e260ca0ae08b4e9c0a80c60307f321cc2d47c9335db38868a7267429",
       "path": ".sdd/actions/non-functional.md",
       "trust": "framework"
     },
@@ -97,7 +97,7 @@
       "trust": "framework"
     },
     "plan-decompose": {
-      "expected_sha256": "d31d9b8e504760989e2c3da1fe47c3f5f3959fc6526496399779aeba4d721e44",
+      "expected_sha256": "53bcdd7e8f5cc93d34a69298c21bfa939bc92baab80dbb1b961ef6dc652b123e",
       "path": ".sdd/actions/plan-decompose.md",
       "trust": "framework"
     },
@@ -137,7 +137,7 @@
       "trust": "framework"
     },
     "ux-brief": {
-      "expected_sha256": "c89f0ba76f83496c35d23301d1b33521b13db996ce1fca844b800fb554a1c430",
+      "expected_sha256": "8508705ee08d33fadb41ab351145a7ee7bd40e29ea70c2f0b5f83fb7e3c5d2db",
       "path": ".sdd/actions/ux-brief.md",
       "trust": "framework"
     },
@@ -163,7 +163,7 @@
     },
     "learn": {
       "path": ".sdd/actions/learn.md",
-      "expected_sha256": "da579e764d3f15d4dda15aca7eb4d4caeb948f9766823cc7acf5166eceee8877"
+      "expected_sha256": "5018602e347bfe650c8970b1f100a20baab376cd96b2cd7e680c1845a8572e9a"
     }
   }
 }
