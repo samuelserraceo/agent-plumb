@@ -2,7 +2,7 @@
   "extensions": {},
   "playbooks": {
     "feature": {
-      "expected_sha256": "81b96079f39668916197589cbafe48dd307e8bc68a3b63f3d425db96ed2e3a4f",
+      "expected_sha256": "81683bf56dc72e0daabf0e39e79c015be4e906a042c1c2244769d54951dcfc53",
       "path": ".sdd/playbooks/feature.md",
       "trust": "framework"
     }
@@ -14,12 +14,12 @@
       "trust": "framework"
     },
     "hash-section.sh": {
-      "expected_sha256": "b9a01c6377d31ce27a679da0bc43d0ec87283c68521411623da1e54d32ff8e95",
+      "expected_sha256": "f042a987b7386d435b521d364a36603323edda611dc885ab9694d4ace95158ac",
       "path": ".sdd/scripts/hash-section.sh",
       "trust": "framework"
     },
     "load-playbook.sh": {
-      "expected_sha256": "afb5d6c61f29accc222841913a1e99f8aeac852c632601f731529575ddfe8680",
+      "expected_sha256": "c0df1cd0e033db7440e0900b5b43d46ced7dc53de640f13a565cdd7944f3ff5c",
       "path": ".sdd/scripts/load-playbook.sh",
       "trust": "framework"
     },
@@ -107,7 +107,7 @@
       "trust": "framework"
     },
     "proposed-approach": {
-      "expected_sha256": "071bb21871003d23a2cca03322bc2e1438524ab3f0f3ce6076d9eba42079b3e4",
+      "expected_sha256": "8fa17a6a8ecca8c4044c4df20edaf00acc781d233b331ed39fdd8d066c596710",
       "path": ".sdd/actions/proposed-approach.md",
       "trust": "framework"
     },

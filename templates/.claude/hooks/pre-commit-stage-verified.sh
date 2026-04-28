@@ -135,7 +135,7 @@ fi
 # === MANIFEST HASH-PIN CHECK ===
 # When verification.json is staged, every framework file claimed by
 # .sdd/.cache/manifest.json must match its expected SHA-256 (normalized
-# per SCHEMA.md §11.1). Defends against the cross-commit attack:
+#). Defends against the cross-commit attack:
 #
 #   Commit N: agent tampers a playbook (no claim staged → cofile-block
 #             doesn't fire because there's no cross-class staging).
@@ -146,7 +146,7 @@ fi
 # Manifest hash-pin in the moat closes this — the pin compares on-disk
 # files to the manifest's expected hashes regardless of what's staged.
 #
-# Uses SCHEMA.md §11.1 normalization (LF, strip trailing whitespace,
+# Uses config.md "Hash normalisation" normalization (LF, strip trailing whitespace,
 # strip blank-line edges). NOT raw bytes (which would force re-pinning
 # on every CRLF flip in editors).
 #
@@ -170,7 +170,7 @@ except Exception as e:
     sys.exit(1)
 
 def normalized_sha256_bytes(data):
-    """SCHEMA.md §11.1: LF line endings, strip trailing ws per line,
+    """config.md "Hash normalisation": LF line endings, strip trailing ws per line,
     strip blank-line edges. Same algorithm as load-playbook.sh and
     the manifest generator, so hashes always agree.
     Returns 'NUL' on NUL bytes (caller treats as mismatch + names file)."""
@@ -357,7 +357,7 @@ phase = d.get("phase", "")
 # (`../attacker/evil`) which would let the moat read an attacker-controlled
 # file as the "playbook" — section-locking bypass via empty required_slugs.
 # The regex below restricts slugs to lowercase + digits + hyphens (the same
-# closed-enum SCHEMA.md §6 declares). Anything outside falls back silently
+# closed-enum config.md "Closed enums" declares). Anything outside falls back silently
 # to 'feature' (more strict than fail-open: "feature"'s required_slugs are
 # non-empty, so an empty approved_sections still gets caught).
 SAFE_PLAYBOOK_SLUG_RE = re.compile(r"^[a-z][a-z0-9-]*$")
@@ -493,7 +493,7 @@ for slug, expected in sorted(approved.items()):
     if not isinstance(expected, str) or not HEX64.match(expected):
         errors.append(
             f"approved_sections.{slug} = {expected!r} is not a 64-char "
-            f"lowercase hex SHA-256 (SCHEMA.md §5.2)"
+            f"lowercase hex SHA-256"
         )
         continue
 

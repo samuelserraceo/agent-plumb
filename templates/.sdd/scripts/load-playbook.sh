@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # load-playbook.sh — v0.8 schema loader and validator.
 #
-# Reads .sdd/ contents, validates against SCHEMA.md, verifies hash-pinned
+# Reads .sdd/ contents, validates against config.md, verifies hash-pinned
 # files against .sdd/.cache/manifest.json, and (Theme 7) persists the
 # slug-map to .sdd/.cache/slug-map.json so resolve-wikilink.sh can lookup
 # [[slug]] references without re-scanning the .sdd/ tree.
@@ -12,7 +12,7 @@
 # Usage:
 #   load-playbook.sh --validate <project-dir>
 #       Scan and validate every .sdd/ file. Exit 0 if all OK, exit 1 on
-#       any schema error. Errors go to stderr in plain English per SCHEMA.md.
+#       any schema error. Errors go to stderr in plain English per config.md.
 #
 #   load-playbook.sh --check-hashes <project-dir>
 #       Compare actual file SHAs against .sdd/.cache/manifest.json claims.
@@ -79,7 +79,7 @@ CMD = sys.argv[1]
 PROJ = sys.argv[2]
 SDD = os.path.join(PROJ, ".sdd")
 
-# Closed enums per SCHEMA.md §6
+# Closed enums
 VALID_TAGS = {"USER-LED", "AGENT-LED", "BUILD-TASK", "BUILD-SPIKE", "TRANSITION"}
 VALID_BUNDLING = {"bundle_all_fields_in_one_turn", "one_per_turn", "n_a"}
 VALID_TRUST = {"framework", "project"}
@@ -120,7 +120,7 @@ def read_text(path):
 FRONTMATTER_RE = re.compile(r"^---\n(.*?)\n---", re.DOTALL)
 
 def find_top_level_duplicates(yaml_text):
-    """Detect duplicate top-level YAML keys. SCHEMA.md §1.5/§2.6 last row."""
+    """Detect duplicate top-level YAML keys.."""
     keys_seen = []
     for line in yaml_text.split("\n"):
         # Top-level keys start at column 0, followed by colon
@@ -148,7 +148,7 @@ def parse_frontmatter(path, text):
     if dupes:
         err(f"{path} has duplicate YAML key(s): {', '.join(dupes)} — "
             f"YAML duplicates are silent corruption; fix and retry "
-            f"(SCHEMA.md §1.5/§2.6 / Codex finding #4)")
+            f"(config.md §1.5/§2.6 / Codex finding #4)")
         return None
 
     # Try PyYAML first; fall back to bash-style key:value parser if PyYAML missing
@@ -170,7 +170,7 @@ def parse_frontmatter(path, text):
 def simple_yaml_parse(text, path):
     """Minimal YAML-ish parser fallback when PyYAML isn't installed.
     Handles top-level scalars and inline lists/dicts in flow style.
-    Sufficient for the limited shapes SCHEMA.md uses."""
+    Sufficient for the limited shapes config.md uses."""
     out = {}
     for line in text.split("\n"):
         if not line.strip() or line.lstrip().startswith("#"):
@@ -194,71 +194,71 @@ def simple_yaml_parse(text, path):
 # Per-file validators
 # ---------------------------------------------------------------------------
 def validate_action(path, fm):
-    """Validate action frontmatter per SCHEMA.md §2."""
+    """Validate action frontmatter"""
     expected_slug = os.path.splitext(os.path.basename(path))[0]
     rel = os.path.relpath(path, PROJ)
 
     # Required: type
     if fm.get("type") != "action":
         err(f"{rel} has type {fm.get('type')!r} — expected 'action' "
-            f"(SCHEMA.md §2.1)")
+            f"(config.md §2.1)")
 
     # Required: slug equals filename
     declared_slug = fm.get("slug")
     if declared_slug != expected_slug:
         err(f"{rel} declares slug={declared_slug!r} but filename suggests "
             f"slug={expected_slug!r} — slug must equal filename without .md "
-            f"(SCHEMA.md §1.5/§2.6)")
+            f"(config.md §1.5/§2.6)")
 
     # Required: tag in closed enum
     tag = fm.get("tag")
     if tag is None:
-        err(f"{rel} is missing required field 'tag' (SCHEMA.md §2.2)")
+        err(f"{rel} is missing required field 'tag'")
     elif tag not in VALID_TAGS:
         err(f"{rel} has unknown tag {tag!r} — allowed: "
-            f"{', '.join(sorted(VALID_TAGS))} (SCHEMA.md §6)")
+            f"{', '.join(sorted(VALID_TAGS))}")
 
     # Required: title
     if not fm.get("title"):
-        err(f"{rel} is missing required field 'title' (SCHEMA.md §2.2)")
+        err(f"{rel} is missing required field 'title'")
 
     # Optional but enum-checked: bundling, trust
     bundling = fm.get("bundling", "n_a")
     if bundling not in VALID_BUNDLING:
         err(f"{rel} has unknown bundling {bundling!r} — allowed: "
-            f"{', '.join(sorted(VALID_BUNDLING))} (SCHEMA.md §6)")
+            f"{', '.join(sorted(VALID_BUNDLING))}")
 
     trust = fm.get("trust", "framework")
     if trust not in VALID_TRUST:
         err(f"{rel} has unknown trust value {trust!r} — allowed: "
-            f"{', '.join(sorted(VALID_TRUST))} (SCHEMA.md §6)")
+            f"{', '.join(sorted(VALID_TRUST))}")
 
 def validate_playbook(path, fm, available_actions=None):
-    """Validate playbook frontmatter per SCHEMA.md §1.
+    """Validate playbook frontmatter
 
     `available_actions` (optional set of slugs): when provided, every
-    subactions[] reference in the playbook must resolve. SCHEMA.md §1.5
+    subactions[] reference in the playbook must resolve.
     rule. Caller passes the set built from scanning .sdd/actions/.
     """
     expected_slug = os.path.splitext(os.path.basename(path))[0]
     rel = os.path.relpath(path, PROJ)
 
     if fm.get("type") != "playbook":
-        err(f"{rel} has type {fm.get('type')!r} — expected 'playbook' (SCHEMA.md §1.1)")
+        err(f"{rel} has type {fm.get('type')!r} — expected 'playbook'")
 
     if fm.get("slug") != expected_slug:
         err(f"{rel} declares slug={fm.get('slug')!r} but filename suggests "
-            f"slug={expected_slug!r} (SCHEMA.md §1.5)")
+            f"slug={expected_slug!r}")
 
     for required in ("title", "when_to_use", "work_item_folder",
                      "work_item_id_pattern", "stages"):
         if required not in fm or fm[required] in (None, "", []):
-            err(f"{rel} is missing required field {required!r} (SCHEMA.md §1.2)")
+            err(f"{rel} is missing required field {required!r}")
 
     pattern = fm.get("work_item_id_pattern", "")
     if "{NNN}" not in pattern or "{slug}" not in pattern:
         err(f"{rel} work_item_id_pattern {pattern!r} missing required "
-            f"tokens {{NNN}} and/or {{slug}} (SCHEMA.md §1.5)")
+            f"tokens {{NNN}} and/or {{slug}}")
 
     stages = fm.get("stages") or []
     seen_check_ids = set()
@@ -266,31 +266,31 @@ def validate_playbook(path, fm, available_actions=None):
         sid = stage.get("id", "")
         if not re.match(r"^[A-Z]+$", sid) or len(sid) > 16:
             err(f"{rel} stage id {sid!r} — must be UPPERCASE letters only, "
-                f"max 16 chars (SCHEMA.md §6)")
-        # Action resolution check — SCHEMA.md §1.5
+                f"max 16 chars")
+        # Action resolution check —
         if available_actions is not None:
             for slug in stage.get("actions", []) or []:
                 if slug not in available_actions:
                     err(f"{rel} stage {sid!r} references action "
                         f"{slug!r} but no .sdd/actions/{slug}.md exists "
-                        f"(SCHEMA.md §1.5)")
+                        f"(config.md §1.5)")
         for chk in stage.get("exit_checks", []) or []:
             cid = chk.get("id", "")
             if cid in seen_check_ids:
-                err(f"{rel} duplicate exit_check id {cid!r} (SCHEMA.md §1.5)")
+                err(f"{rel} duplicate exit_check id {cid!r}")
             seen_check_ids.add(cid)
 
 def validate_config(path, fm):
-    """Validate .sdd/config.md per SCHEMA.md §4."""
+    """Validate .sdd/config.md"""
     rel = os.path.relpath(path, PROJ)
     if fm.get("type") != "config":
-        err(f"{rel} has type {fm.get('type')!r} — expected 'config' (SCHEMA.md §4)")
+        err(f"{rel} has type {fm.get('type')!r} — expected 'config'")
     for required in ("sdd_version", "playbooks_available", "default_playbook", "extensions"):
         if required not in fm:
-            err(f"{rel} is missing required field {required!r} (SCHEMA.md §4.1)")
+            err(f"{rel} is missing required field {required!r}")
 
 # ---------------------------------------------------------------------------
-# Slug-map builder (multi-match detection — SCHEMA.md §10)
+# Slug-map builder (multi-match detection —)
 # ---------------------------------------------------------------------------
 def build_slug_map(file_records):
     """Detect duplicate slugs across all files. Each duplicate is an error."""
@@ -305,11 +305,11 @@ def build_slug_map(file_records):
             rels = [os.path.relpath(p, PROJ) for p in paths]
             err(f"duplicate slug {slug!r} — declared by multiple files: "
                 f"{', '.join(rels)}. Slugs must be unique across .sdd/ "
-                f"so [[{slug}]] wikilinks resolve unambiguously (SCHEMA.md §10)")
+                f"so [[{slug}]] wikilinks resolve unambiguously")
     return {slug: paths[0] for slug, paths in by_slug.items() if len(paths) == 1}
 
 # ---------------------------------------------------------------------------
-# Hash normalization (SCHEMA.md §9, §11.1)
+# Hash normalization (config.md "Hash normalisation", §11.1)
 # ---------------------------------------------------------------------------
 def normalized_sha256(text):
     """LF line endings, strip trailing whitespace per line, strip blank-line edges."""
@@ -376,7 +376,7 @@ def scan_files():
 def cmd_validate():
     records = scan_files()
     # Pre-collect available action slugs so playbook validation can
-    # check that every subactions[] reference resolves (SCHEMA.md §1.5).
+    # check that every subactions[] reference resolves.
     available_actions = {
         r["slug"] for r in records
         if r["type"] == "action" and r["slug"]
@@ -389,7 +389,7 @@ def cmd_validate():
         elif r["type"] == "config":
             validate_config(r["path"], r["fm"])
     # build_slug_map runs as part of validation (catches duplicate slugs
-    # across the framework — closed-enum invariant per SCHEMA.md). The
+    # across the framework — closed-enum invariant per config.md). The
     # slug-map cache writer was removed in Cut 4b: post-Cut-4 the
     # wikilink consumer was already stripped from action prose, and
     # leaving the writer in place would have shipped dead infrastructure.
@@ -423,7 +423,7 @@ def cmd_check_hashes():
             if actual != expected:
                 warn(f"{rel} hash mismatch — manifest says {expected[:12]}..., "
                      f"actual {actual[:12]}... → file is tampered or "
-                     f"customized; trust downgraded to project (SCHEMA.md §11.2)")
+                     f"customized; trust downgraded to project")
 
 # ---------------------------------------------------------------------------
 # Main

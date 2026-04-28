@@ -117,7 +117,7 @@ Total time depends on the feature. Small (a form, a CRUD endpoint): 1-2 hours. M
 
 The 23 actions in the frontmatter are **closed for B-1**. Adding new actions requires Phase C work (it touches schema validation + the action library). The order is also fixed — actions inside each stage must be filled in sequence.
 
-The plain-English `check:` strings in `exit_checks` are documentation. The actual evaluation logic lives in `verify-stage.sh` (per-check-ID bash). Adding a new check ID in B-1 requires editing `verify-stage.sh`. See SCHEMA.md §17 for why.
+The plain-English `check:` strings in `exit_checks` are documentation. The actual evaluation logic lives in `verify-stage.sh` (per-check-ID bash). Adding a new check ID in B-1 requires editing `verify-stage.sh`. Adding a new check ID requires editing verify-stage.sh's per-check-ID dispatch.
 
 ---
 

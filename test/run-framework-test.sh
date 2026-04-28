@@ -3875,6 +3875,44 @@ else
 fi
 
 # ============================================================
+# T102 — C-8: SCHEMA.md deleted; canonical content migrated
+#   783 lines of SCHEMA.md deleted. Closed enums (§6) + hash
+#   normalisation rules (§9 + §11.1) migrated to config.md as a
+#   "Closed enums" + "Hash normalisation" prose block. Stale
+#   "(SCHEMA.md §X)" parentheticals stripped from error messages
+#   in load-playbook.sh, hash-section.sh, pre-commit-stage-verified.sh,
+#   feature.md, proposed-approach.md.
+#   T102 anti-regression: SCHEMA.md must not exist; canonical
+#   migrations must be present in config.md.
+# ============================================================
+note "T102: SCHEMA.md deleted; canonical content migrated to config.md"
+problems=""
+if [ -f "$FRAMEWORK_ROOT/SCHEMA.md" ]; then
+  problems="$problems file:SCHEMA.md"
+fi
+# Migrations to config.md must be present.
+config_md="$FRAMEWORK_ROOT/templates/.sdd/config.md"
+for needle in 'Closed enums' 'Hash normalisation' 'USER-LED' 'AGENT-LED' 'BUILD-TASK' 'lowercase hex'; do
+  grep -qF -- "$needle" "$config_md" || problems="$problems missing-migration:$needle"
+done
+# Anti-pattern: any remaining SCHEMA.md references in critical files
+# would surface as broken pointers post-deletion. Catch them.
+for f in "$FRAMEWORK_ROOT/templates/.sdd/scripts/load-playbook.sh" \
+         "$FRAMEWORK_ROOT/templates/.sdd/scripts/hash-section.sh" \
+         "$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-stage-verified.sh" \
+         "$FRAMEWORK_ROOT/templates/.sdd/playbooks/feature.md" \
+         "$FRAMEWORK_ROOT/templates/.sdd/actions/proposed-approach.md"; do
+  if grep -q 'SCHEMA\.md' "$f" 2>/dev/null; then
+    problems="$problems stale-ref:$(basename "$f")"
+  fi
+done
+if [ -z "$problems" ]; then
+  ok "T102 SCHEMA.md retired; canonical content migrated to config.md; no stale refs"
+else
+  bad "T102 SCHEMA.md retirement incomplete:" "$problems"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'

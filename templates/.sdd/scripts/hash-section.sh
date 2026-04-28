@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # hash-section.sh — extract a action section from spec.md, normalize per
-# SCHEMA.md §9, output its lowercase-hex SHA-256.
+# config.md "Hash normalisation", output its lowercase-hex SHA-256.
 #
 # Usage:
 #   hash-section.sh <spec-path> <subaction-md-path>
@@ -29,7 +29,7 @@
 #
 # Section content is captured from the line AFTER the matched heading
 # until the next line matching ^### (fence-aware — code-fenced ### lines
-# are content, not boundaries). Normalized per SCHEMA.md §9 / §11.1:
+# are content, not boundaries). Normalized:
 #   - Convert CRLF/CR to LF
 #   - Strip BOM if present at start of content
 #   - Strip trailing whitespace from each line

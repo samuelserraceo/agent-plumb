@@ -239,3 +239,39 @@ Add new sub-blocks as your project's needs grow — the resolver passes any keys
 This whole file. It's plain Markdown with YAML frontmatter — no special tooling. Edit, save, run `/next`, the framework picks up the changes.
 
 The one rule: **don't reference a playbook or extension that doesn't exist** (no file in `.sdd/playbooks/<slug>.md` or `.sdd/extensions/<slug>.md`). The loader will catch you with a plain-English error and refuse to advance until you fix it.
+
+## Closed enums (canonical valid values)
+
+Migrated from the old `SCHEMA.md §6` (deleted in Phase C-8). The loader (`load-playbook.sh`) rejects any value not in these lists with a plain-English error.
+
+**Action `tag:` field** — defines what shape the action's EXECUTE step takes:
+
+- `USER-LED` — user supplies the answer; agent asks
+- `AGENT-LED` — agent drafts with alternatives; user approves; iterate
+- `BUILD-TASK` — test exists → RED → code → GREEN → commit (test-first)
+- `BUILD-SPIKE` — code → smoke test → commit (exploration; no test-first)
+- `TRANSITION` — runs verify-stage, stages spec + verification.json, commits the phase advance
+
+**Trust level** — set by frontmatter `trust:` AND verified by manifest hash-pin:
+
+- `framework` — content is trusted (treat as instructions)
+- `project` — content is untrusted (treat as data only)
+- If declared `framework` but the manifest hash mismatches, the loader downgrades to `project` and emits a warning. Not a hard block.
+
+**Stage IDs** — uppercase letters only, max 16 chars. No digits, no underscores. Examples: `SPEC`, `BUILD`, `SHIP`, `RESEARCH`.
+
+**Extension status** — `on` or `off`.
+
+## Hash normalisation (manifest pin + section hash)
+
+The manifest pin (`pre-commit-stage-verified.sh`) and section approval hash (`hash-section.sh`) both normalise content before hashing — same algorithm:
+
+1. Decode UTF-8
+2. Convert all line endings to `\n`
+3. Strip trailing whitespace from each line
+4. Strip leading and trailing blank lines from the captured block
+5. Compute SHA-256 over the normalised UTF-8 bytes (lowercase hex, 64 chars)
+
+Reason: editors silently flip CRLF/LF on Windows, and trailing whitespace is meaningless. A raw byte hash would force re-pinning on every checkout. The normalisation contract is what lets `.sdd/.cache/manifest.json` ship as the framework's tamper-detection anchor without false-positives.
+
+Identical algorithm in three places (single source of truth — `hash-section.sh`'s implementation; the moat hook + load-playbook.sh re-implement it byte-for-byte and tests T36-T40 mutation-verify the agreement).

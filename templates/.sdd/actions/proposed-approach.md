@@ -27,6 +27,6 @@ Propose a concrete approach with reasoning, alternatives, and what's traded off.
 
 **Iteration discipline.** This is AGENT-LED — propose first, then iterate with the user. Common feedback: "simpler", "swap X for Y", "show me what could go wrong with Z." Update the spec section, ask again until the user types **approve**.
 
-**On approval.** The framework hashes the §5 section content and writes the hash to `verification.json.approved_sections.proposed-approach`. After approval, edits to §5 require running `/re-approve §5` — the moat hook blocks phase advance if the section content changed without re-approval. (See SCHEMA.md §2.5 for the why.)
+**On approval.** The framework hashes the §5 section content and writes the hash to `verification.json.approved_sections.proposed-approach`. After approval, edits to §5 require running `/re-approve §5` — the moat hook blocks phase advance if the section content changed without re-approval. (Approved-section hashes are how the moat detects post-approval edits.)
 
 **End the turn with:** *"Reply `approve` if this works, or tell me what to change (e.g. 'simpler', 'use Postgres instead of SQLite', 'explain the rate-limit risk in plain English')."*
