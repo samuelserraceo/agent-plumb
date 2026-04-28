@@ -3248,6 +3248,61 @@ else
 fi
 
 # ============================================================
+# T88 — F1 cofile subsumption: pre-commit-rules.sh blocks CLAIM×POLICY
+#   co-staging via config.md file_classes + co_stage_block, independent
+#   of pre-commit-cofile-block.sh. Same scenarios T31/T33 cover (verify-
+#   stage + verification.json; playbook + verification.json) — but
+#   driven by the F1 generic enforcer reading config rather than a
+#   hardcoded hook.
+#   RED until pre-commit-rules.sh reads file_classes + applies block.
+# ============================================================
+note "T88: pre-commit-rules.sh blocks CLAIM×POLICY co-stage via config.md (F1)"
+d=$(mkproj_v08)
+cd "$d"
+# Mutation: NEUTER pre-commit-cofile-block.sh so only pre-commit-rules.sh fires.
+echo '#!/usr/bin/env bash
+exit 0' > .claude/hooks/pre-commit-cofile-block.sh
+chmod +x .claude/hooks/pre-commit-cofile-block.sh
+# Stage a CLAIM (verification.json) AND a POLICY (playbook).
+echo "# tampered" >> .sdd/playbooks/feature.md
+cat > .sdd/features/001-test/verification.json <<'EOF'
+{"phase":"SPEC","checks":[{"id":"C-spec-acs","result":"pass"}],"approved_sections":{}}
+EOF
+git add .sdd/playbooks/feature.md .sdd/features/001-test/verification.json
+hook_stdin='{"tool_input":{"command":"git commit -m phase: SPEC -> BUILD"}}'
+ec=0
+echo "$hook_stdin" | bash .claude/hooks/pre-commit-rules.sh >/dev/null 2>&1 || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 2 ]; then
+  ok "T88 pre-commit-rules.sh blocked CLAIM×POLICY co-stage (cofile-block neutered)"
+else
+  bad "T88 rules.sh let CLAIM×POLICY co-stage through" "exit=$ec (expected 2)"
+fi
+
+# ============================================================
+# T88b — F1 cofile mutation: rules.sh allows when only one class staged
+#   Inverse of T88. Stage ONLY a POLICY file (no CLAIM) — rules.sh must
+#   allow. Proves the block is gated on the CROSS-CLASS pair, not on
+#   any policy edit alone.
+# ============================================================
+note "T88b: pre-commit-rules.sh allows policy-only commit (no CLAIM staged)"
+d=$(mkproj_v08)
+cd "$d"
+echo "# legitimate edit" >> .sdd/playbooks/feature.md
+git add .sdd/playbooks/feature.md
+hook_stdin='{"tool_input":{"command":"git commit -m policy: minor playbook update"}}'
+ec=0
+echo "$hook_stdin" | bash .claude/hooks/pre-commit-rules.sh >/dev/null 2>&1 || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 0 ]; then
+  ok "T88b rules.sh allowed policy-only commit (CROSS-CLASS gate proven)"
+else
+  bad "T88b rules.sh blocked legitimate policy-only commit" "exit=$ec (expected 0)"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'

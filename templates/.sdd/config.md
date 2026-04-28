@@ -14,6 +14,21 @@ parameters:
     translate_jargon_on_first_use: true
   pace:
     halt_on_red_after_attempts: 3
+file_classes:
+  CLAIM:
+    - '(^|/)verification\.json$'
+    - '^\.git/sdd/approvals\.jsonl$'
+  POLICY:
+    - '^\.sdd/\.cache/manifest\.json$'
+    - '^\.sdd/playbooks/[^/]+\.md$'
+    - '^\.sdd/actions/[^/]+\.md$'
+    - '^\.sdd/extensions/[^/]+\.md$'
+    - '^\.sdd/scripts/[^/]+\.sh$'
+    - '^\.claude/hooks/[^/]+\.sh$'
+    - '^\.claude/settings\.json$'
+    - '^CLAUDE\.md$'
+co_stage_block:
+  - [CLAIM, POLICY]
 events:
   section_approved:
     actions:
@@ -66,6 +81,19 @@ You'll never have to write the YAML by hand — `/start` and the migration scrip
 ### `size_thresholds:` (optional, not shown above)
 
 Override the framework's default warn/block thresholds for your memory files. Defaults are in SCHEMA.md §4.2. Most projects don't need to touch this. Add it if your project has a working pattern of, say, an unusually large `data-model.md` that the framework keeps complaining about.
+
+### `file_classes:` + `co_stage_block:` (path-based file classes for cofile-block rule)
+
+Declares named classes of files (by regex pattern) and which class pairs cannot be staged in the same commit. The framework's central tampering defence — without it, an adversary could weaken policy in commit N (e.g., neuter a hook) and ship a fabricated CLAIM in commit N+1; the per-commit moat wouldn't catch the cross-commit pair.
+
+Two named classes ship in the template:
+
+- **`CLAIM`** — files that ASSERT state (the agent's claim that it did the work). Includes `verification.json` and `.git/sdd/approvals.jsonl`.
+- **`POLICY`** — files that DEFINE the rules being claimed against. Includes the manifest, all `playbooks/`, `actions/`, `extensions/`, `scripts/`, `hooks/`, `settings.json`, and `CLAUDE.md` itself.
+
+`co_stage_block:` is a list of `[ClassA, ClassB]` pairs. Each pair declares "any commit that stages files from BOTH classes is refused." The framework ships with `[CLAIM, POLICY]` — forcing any policy edit and any claim edit into separate auditable commits.
+
+To add a new class: add a name + pattern list to `file_classes:`. To add a new co-stage rule: add a new pair to `co_stage_block:`. Both are read by F1 generic enforcer (Phase C-5); no hook code changes.
 
 ### `events:` (event → file-action map, F2 slimmed)
 

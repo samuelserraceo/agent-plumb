@@ -58,6 +58,103 @@ git rev-parse --is-inside-work-tree >/dev/null 2>&1 || exit 0
 staged=$(git diff --cached --name-only 2>/dev/null || echo "")
 [ -z "$staged" ] && exit 0
 
+# === FILE_CLASSES + CO_STAGE_BLOCK enforcement ===
+# Read config.md `file_classes:` (named regex pattern lists) and
+# `co_stage_block:` (pairs of class names that cannot co-stage). Refuse
+# any commit that stages files from both classes of any blocked pair.
+# Subsumes pre-commit-cofile-block.sh's hardcoded CLAIM/POLICY rule
+# while keeping the schema extensible: projects can declare more
+# classes + pairs without changing this hook.
+#
+# Runs on EVERY commit with staged files (not gated on spec.md) — the
+# cofile-block defends the framework against tampered-policy + fabricated-
+# claim pairs regardless of whether the agent is doing action work.
+class_block_result=$(STAGED="$staged" python3 - <<'PYEOF' 2>/dev/null || echo "ALLOW"
+import os, re, sys
+try:
+    import yaml
+except Exception:
+    print("ALLOW"); sys.exit(0)
+
+try:
+    with open(".sdd/config.md") as f:
+        text = f.read()
+except OSError:
+    print("ALLOW"); sys.exit(0)
+m = re.match(r"^---\n(.*?)\n---", text, re.DOTALL)
+if not m:
+    print("ALLOW"); sys.exit(0)
+try:
+    fm = yaml.safe_load(m.group(1)) or {}
+except Exception:
+    print("ALLOW"); sys.exit(0)
+
+classes = fm.get("file_classes") or {}
+blocks  = fm.get("co_stage_block") or []
+if not classes or not blocks:
+    print("ALLOW"); sys.exit(0)
+
+compiled = {}
+for name, pats in classes.items():
+    if not isinstance(pats, list): continue
+    compiled[name] = [re.compile(p) for p in pats if isinstance(p, str)]
+
+buckets = {name: [] for name in compiled}
+for line in os.environ.get("STAGED", "").splitlines():
+    line = line.strip()
+    if not line: continue
+    for name, pats in compiled.items():
+        if any(p.search(line) for p in pats):
+            buckets[name].append(line)
+
+for pair in blocks:
+    if not isinstance(pair, list) or len(pair) != 2: continue
+    a, b = pair
+    if buckets.get(a) and buckets.get(b):
+        print("BLOCK")
+        print(f"PAIR: {a} × {b}")
+        print(f"{a}:")
+        for f in buckets[a]: print(f"  {f}")
+        print(f"{b}:")
+        for f in buckets[b]: print(f"  {f}")
+        sys.exit(0)
+print("ALLOW")
+PYEOF
+)
+
+case "$class_block_result" in
+  ALLOW*) ;;
+  BLOCK*)
+    cat >&2 <<EOF
+
+[SDD rules / cofile-block] This commit stages files from two classes
+that the framework refuses to mix in one commit.
+
+$(printf '%s\n' "$class_block_result" | sed -n '2,$p')
+
+Why this is blocked:
+  Each cross-class pair lets a tampered policy ship with a matching
+  fabricated claim in the same atomic commit. SDD requires policy
+  changes and claim changes to be SEPARATE auditable commits.
+
+How to fix (pick one):
+  1. Unstage one class, commit the other:
+       git reset HEAD <files-from-one-class>
+       git commit
+     Then commit the other class separately.
+
+  2. If you genuinely need both, run /next first so the framework
+     regenerates the claim against the new policy, then commit each
+     class on its own.
+
+The class definitions live in .sdd/config.md \`file_classes:\` and
+\`co_stage_block:\`. Project owners can extend them.
+EOF
+    exit 2
+    ;;
+esac
+
+# === TOUCHES: enforcement (action-step gated) ===
 # Touches: enforcement only fires when an action's spec.md is staged.
 # Other commits (typo fixes, README updates, framework upgrades) don't
 # need to honour the active action's touches: declaration.
@@ -107,6 +204,7 @@ for t in (fm.get("touches") or []):
 PYEOF
 )
 
+# If no touches: declared, the cofile-block above was the only check; allow.
 [ -z "$touches_files" ] && exit 0
 
 # Path-safety check: every declared `touches:` path must pass
