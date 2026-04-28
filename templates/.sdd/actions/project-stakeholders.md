@@ -10,7 +10,7 @@ steps:
   - { id: gatekeepers, action: ask, field: "§3.gatekeepers" }
 used_by: [project]
 references: [project-problem, project-capabilities]
-touches: [".sdd/projects/<work-item>/spec.md"]
+touches: [".sdd/<work-item>/spec.md"]
 trust: framework
 budget:
   max_minutes: 8

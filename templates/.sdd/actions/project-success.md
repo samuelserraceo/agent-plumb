@@ -10,7 +10,7 @@ steps:
   - { id: timeline, action: ask, field: "§2.timeline" }
 used_by: [project]
 references: [project-problem, project-capabilities]
-touches: [".sdd/projects/<work-item>/spec.md"]
+touches: [".sdd/<work-item>/spec.md"]
 trust: framework
 budget:
   max_minutes: 10

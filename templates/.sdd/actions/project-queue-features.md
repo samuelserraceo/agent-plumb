@@ -8,7 +8,7 @@ steps:
   - { id: write-backlog, action: do, field: "§6.queue" }
 used_by: [project]
 references: [project-capabilities, project-priorities, project-start-first]
-touches: [".sdd/INDEX.md", ".sdd/projects/<work-item>/spec.md"]
+touches: [".sdd/INDEX.md", ".sdd/<work-item>/spec.md"]
 trust: framework
 budget:
   max_minutes: 5

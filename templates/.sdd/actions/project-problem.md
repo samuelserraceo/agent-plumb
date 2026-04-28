@@ -10,7 +10,7 @@ steps:
   - { id: today, action: ask, field: "§1.today" }
 used_by: [project]
 references: [project-success]
-touches: [".sdd/projects/<work-item>/spec.md"]
+touches: [".sdd/<work-item>/spec.md"]
 trust: framework
 budget:
   max_minutes: 10

@@ -8,7 +8,7 @@ steps:
   - { id: capability-list, action: draft_with_alternatives, field: "§4.capabilities" }
 used_by: [project]
 references: [project-problem, project-success, project-priorities]
-touches: [".sdd/projects/<work-item>/spec.md"]
+touches: [".sdd/<work-item>/spec.md"]
 trust: framework
 budget:
   max_minutes: 30

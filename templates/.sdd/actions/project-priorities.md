@@ -9,7 +9,7 @@ steps:
   - { id: dependency-graph, action: draft, field: "§5.dependencies" }
 used_by: [project]
 references: [project-capabilities, project-queue-features]
-touches: [".sdd/projects/<work-item>/spec.md"]
+touches: [".sdd/<work-item>/spec.md"]
 trust: framework
 budget:
   max_minutes: 20
@@ -53,7 +53,7 @@ This determines build order: a P1 capability that nothing depends on can wait. A
 
 The combination of priority tiers + dependencies gives you a build order — a numbered list that becomes INDEX.md's `## Backlog`. Example:
 
-```
+```text
 1. email-signup        [P0, no deps]
 2. profile-setup       [P0, depends on 1]
 3. add-first-contact   [P0, depends on 2]
