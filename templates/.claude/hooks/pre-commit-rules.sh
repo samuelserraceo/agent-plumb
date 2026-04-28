@@ -712,7 +712,13 @@ PYEOF
 # Path-safety check: every declared `touches:` path must pass
 # validate-sdd-path.sh. Catches drift in the action library where a
 # malicious or buggy edit declares a path outside .sdd/ — F1 audit A1.
-unsafe=""
+#
+# CodeRabbit cycle 9 fix: build the unsafe-paths list as real
+# newline-separated lines (not literal `\n` accumulated in a string).
+# The earlier `printf "        - %s\n" $(printf '%s' "$unsafe")` shape
+# word-split on whitespace, so any path containing a space would
+# render incorrectly in the error message.
+unsafe_lines=""
 while IFS= read -r tf; do
   [ -z "$tf" ] && continue
   # Skip placeholder-templated paths (handled per-action in older code;
@@ -721,16 +727,21 @@ while IFS= read -r tf; do
     continue
   fi
   if ! bash .sdd/scripts/validate-sdd-path.sh "$tf" >/dev/null 2>&1; then
-    unsafe="${unsafe}${tf}\n"
+    if [ -z "$unsafe_lines" ]; then
+      unsafe_lines="        - $tf"
+    else
+      unsafe_lines="$unsafe_lines
+        - $tf"
+    fi
   fi
 done <<< "$touches_files"
 
-if [ -n "$unsafe" ]; then
+if [ -n "$unsafe_lines" ]; then
   cat >&2 <<EOF
 
 [SDD] action '$active_slug' declares 'touches:' paths that are unsafe:
 
-$(printf "        - %s\n" $(printf '%s' "$unsafe"))
+$unsafe_lines
 
       The framework refuses paths that are absolute, contain '..'
       segments, or sit outside '.sdd/'. Edit the action's
@@ -742,7 +753,10 @@ fi
 
 # Touches-staged check: every declared file (sans templated paths)
 # must be in the staged set.
-missing=""
+#
+# Same word-splitting fix as the unsafe block above: build a real
+# newline-separated string instead of accumulating literal `\n`.
+missing_lines=""
 while IFS= read -r tf; do
   [ -z "$tf" ] && continue
   tf_clean="${tf#/}"
@@ -750,18 +764,23 @@ while IFS= read -r tf; do
     continue
   fi
   if ! echo "$staged" | grep -qxF "$tf_clean"; then
-    missing="${missing}${tf_clean}\n"
+    if [ -z "$missing_lines" ]; then
+      missing_lines="        - $tf_clean"
+    else
+      missing_lines="$missing_lines
+        - $tf_clean"
+    fi
   fi
 done <<< "$touches_files"
 
-if [ -n "$missing" ]; then
+if [ -n "$missing_lines" ]; then
   cat >&2 <<EOF
 
 [SDD] action '$active_slug' declares files it MUST also stage,
       but you committed without including all of them.
 
       Missing from this commit:
-$(printf "        - %s\n" $(printf '%s' "$missing"))
+$missing_lines
 
       The action's frontmatter at $action_path declares
       \`touches: [...]\`. Each file in that list MUST be staged in the
