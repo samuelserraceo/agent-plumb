@@ -53,6 +53,13 @@ esac
 
 # Reject any segment equal to `..` (after normalising separators).
 # Strategy: split on `/`, check each segment.
+#
+# CodeRabbit cycle 9: the prefix check + final emit must use the
+# normalised form, not the raw input. Otherwise a Windows-style
+# input (`.sdd\\foo\\bar`) would normalise to `.sdd/foo/bar`,
+# pass the `..`-segment check, then echo back the raw mixed-slash
+# form — leaving downstream callers to either re-normalise or
+# trip on the wrong separator. Emit canonical.
 normalised="${path//\\//}"  # back-slashes → forward-slashes (Windows tolerance)
 IFS='/' read -r -a parts <<< "$normalised"
 for seg in "${parts[@]}"; do
@@ -65,7 +72,7 @@ done
 # Require the path to start with `.sdd/` (or be a literal `.sdd` directory ref).
 # This is intentionally strict: framework declarations are always inside .sdd/.
 # A future relaxation may allow a configurable prefix list.
-case "$path" in
+case "$normalised" in
   .sdd|.sdd/*)
     ;;
   *)
@@ -74,6 +81,7 @@ case "$path" in
     ;;
 esac
 
-# Pass — echo the path so callers can chain `path=$(validate-sdd-path.sh "$x")`.
-printf '%s\n' "$path"
+# Emit the CANONICAL (normalised) form so callers chain on a single
+# separator convention: `path=$(validate-sdd-path.sh "$x")`.
+printf '%s\n' "$normalised"
 exit 0

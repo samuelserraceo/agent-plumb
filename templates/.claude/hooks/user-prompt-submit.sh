@@ -75,7 +75,12 @@ emit_state() {
   # injection (`**Active:** ../../etc/passwd` would otherwise pull arbitrary
   # file content into the [PROJECT DATA] block).
   active_path=$(awk '/^\*\*Active:\*\*/{print $2; exit}' .sdd/INDEX.md 2>/dev/null || echo "")
-  echo "$active_path" | grep -qE '^[a-z][a-z0-9_-]*/[A-Za-z0-9._-]+$' || active_path=""
+  # CodeRabbit cycle 9/10/11: the regex was inconsistent with
+  # session-start.sh's variant — this one allowed a leading `.` in the
+  # second segment (would let `features/.git` slip through), the other
+  # didn't. Aligned to the safer form: second segment cannot start with
+  # `.`, preventing hidden-directory traversal via INDEX.md.
+  echo "$active_path" | grep -qE '^[a-z][a-z0-9_-]*/[A-Za-z0-9_-][A-Za-z0-9._-]*$' || active_path=""
 
   if [ -n "$active_path" ] && [ -f ".sdd/$active_path/spec.md" ]; then
     spec=".sdd/$active_path/spec.md"

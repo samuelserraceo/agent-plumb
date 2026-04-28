@@ -74,10 +74,21 @@ except Exception as e:
 # Invoke each pre-commit-*.sh hook with synthetic stdin. Stop on
 # the first block; propagate exit code so git surfaces the right
 # error.
+#
+# CodeRabbit cycle 9/10: missing hook files used to be silently
+# skipped, masking config typos (the user thinks the hook is
+# enforcing but the file isn't on disk). Now warn loudly to stderr
+# and continue — don't block commits on a config drift, but don't
+# hide it either. If you really need a hook removed, drop it from
+# settings.json's PreToolUse(Bash) array.
 while IFS= read -r hook; do
   [ -z "$hook" ] && continue
   hook_path="$PROJECT_DIR/$hook"
-  [ -f "$hook_path" ] || continue
+  if [ ! -f "$hook_path" ]; then
+    echo "[pre-commit shim] WARNING: hook declared in settings.json is missing on disk: $hook" >&2
+    echo "[pre-commit shim]          (commit allowed; fix settings.json to silence this warning)" >&2
+    continue
+  fi
   printf '%s' "$SYNTHETIC_STDIN" | bash "$hook_path"
   ec=$?
   if [ $ec -ne 0 ]; then

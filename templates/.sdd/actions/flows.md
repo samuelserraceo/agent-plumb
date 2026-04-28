@@ -14,7 +14,7 @@ budget:
   max_minutes: 25
   max_tokens: 6000
   max_commits: 1
-requires_user_approval: false
+requires_user_approval: true
 ---
 
 Draw 1-3 critical user flows, from open-page through done. Reference `user-stories` explicitly — every flow maps to one or more stories.

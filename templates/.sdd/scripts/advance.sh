@@ -6,9 +6,9 @@
 # INDEX.md's "**Active blocker:**" pointer.
 #
 # Why this isn't a real post-commit hook: Claude Code's hook chain is
-# PreToolUse only (no post-commit). For B-1, the agent invokes this
-# script explicitly after each /next's commit succeeds. Phase C may
-# add proper post-commit-via-Claude-Code support.
+# PreToolUse only (no post-commit). In v0.9, the agent invokes this
+# script explicitly after each /next's commit succeeds. A future
+# release may add proper post-commit-via-Claude-Code support.
 #
 # Usage:
 #   advance.sh                  # uses CLAUDE_PROJECT_DIR or pwd
@@ -26,18 +26,17 @@
 #   0 — INDEX.md updated (or no-op if no active work item)
 #   1 — error (file not found, malformed, no next action found)
 #
-# Idempotency caveat (KNOWN, NOT YET FIXED — deferred to v0.10):
-# Running advance.sh twice without an intervening commit re-reads the
-# already-advanced INDEX.md and re-advances, skipping an action.
+# Idempotency stamp (v0.9.1 fix for the cycle-7 finding):
+# Running advance.sh twice without an intervening commit would re-read
+# the already-advanced INDEX.md and re-advance, skipping an action.
+# Fix: record the HEAD sha at the moment of advance into a stamp file
+# `.sdd/.advance.last-head`. On entry, if the stamp matches current
+# HEAD, exit 0 as a no-op (no commit happened since last advance).
+# After a successful advance, write the current HEAD sha to the stamp.
 #
-# Earlier C-10 attempts at "compare HEAD's `**Active blocker:**` line
-# to working-tree's" produced a false-positive after every normal step
-# commit (HEAD == working tree post-commit by definition), blocking
-# all legitimate advances. That approach is rejected. The proper fix
-# requires tracking "last advance happened at commit X" via a stamp
-# in INDEX.md and refusing to advance when working-tree stamp ==
-# HEAD stamp without an intervening commit. That's v0.10 state-
-# tracking work — not band-aided here.
+# This stamp file is RUNTIME STATE — should be gitignored (the install
+# scaffold adds it). Earlier C-10 attempts at comparing INDEX.md
+# content directly were rejected as false-positive-prone.
 
 set -uo pipefail
 
@@ -54,7 +53,28 @@ command -v python3 >/dev/null 2>&1 || {
   exit 1
 }
 
-PROJ="$PROJECT_DIR" python3 <<'PYEOF'
+# Idempotency stamp check: if we've already advanced for this HEAD,
+# refuse to re-advance. The stamp lives at .sdd/.advance.last-head.
+#
+# CodeRabbit cycle 12 fix: use `git rev-parse HEAD` directly instead of
+# `[ -d ".git" ]`. The directory check fails for git worktrees (where
+# .git is a FILE, not a dir) — the stamp would silently never fire.
+# Relying on `git rev-parse HEAD 2>/dev/null` succeeding is the
+# canonical "am I in a git repo?" check; it works for both regular
+# checkouts and worktrees.
+STAMP_FILE=".sdd/.advance.last-head"
+if command -v git >/dev/null 2>&1; then
+  HEAD_SHA=$(git rev-parse HEAD 2>/dev/null || echo "")
+  if [ -n "$HEAD_SHA" ] && [ -f "$STAMP_FILE" ]; then
+    LAST_SHA=$(cat "$STAMP_FILE" 2>/dev/null | tr -d '[:space:]')
+    if [ "$LAST_SHA" = "$HEAD_SHA" ]; then
+      echo "[advance] already advanced for HEAD $HEAD_SHA — no-op (commit a new step before next advance)."
+      exit 0
+    fi
+  fi
+fi
+
+PROJ="$PROJECT_DIR" ADVANCE_HEAD_SHA="${HEAD_SHA:-}" python3 <<'PYEOF'
 import os, re, sys
 try:
     import yaml
@@ -66,7 +86,7 @@ except ImportError:
 proj = os.environ["PROJ"]
 index_path = os.path.join(proj, ".sdd", "INDEX.md")
 
-with open(index_path) as f:
+with open(index_path, encoding="utf-8") as f:
     index_text = f.read()
 
 # Parse current state from INDEX.md header lines.
@@ -120,7 +140,7 @@ if not os.path.isfile(playbook_path):
     print(f"[advance] playbook not found: {playbook_path}", file=sys.stderr)
     sys.exit(1)
 
-with open(playbook_path) as f:
+with open(playbook_path, encoding="utf-8") as f:
     pb_text = f.read()
 pb_fm_match = re.match(r"^---\n(.*?)\n---", pb_text, re.DOTALL)
 if not pb_fm_match:
@@ -212,10 +232,33 @@ except Exception:
         os.unlink(tmp_path)
     raise
 
+# Idempotency stamp write — moved here from after metrics append.
+# CodeRabbit cycle 13 finding: if a downstream non-idempotent
+# operation (metrics append, event resolution) failed, the stamp
+# wouldn't write and a re-run could re-advance. Stamping right after
+# the atomic INDEX.md replace is the correct ordering: as soon as the
+# advance is durably visible in INDEX.md, record it.
+#
+# Only reached when a real advance happened — the early-exit paths
+# (no active work item, terminal state) sys.exit(0) before getting
+# here.
+head_sha = os.environ.get("ADVANCE_HEAD_SHA", "").strip()
+if head_sha:
+    stamp_path = os.path.join(proj, ".sdd", ".advance.last-head")
+    try:
+        with open(stamp_path, "w", encoding="utf-8") as f:
+            f.write(head_sha + "\n")
+    except OSError as e:
+        # Don't fail the whole advance if the stamp can't be written.
+        # Worst case: the next /next call advances twice — annoying
+        # but recoverable. Better than locking out a real advance.
+        print(f"[advance] warning: could not write stamp {stamp_path}: {e}",
+              file=sys.stderr)
+
 # Theme 12 — token instrumentation. Append one line to .sdd/metrics.md
 # per /next iteration. Format:
 #   <ISO-Z timestamp>  <work-item-path>  <slug>  <tag>  <tokens>  <duration-s>
-# B-1 ships timestamp + slug + tag (token count + duration require
+# v0.9 ships timestamp + slug + tag (token count + duration require
 # LLM-level data unavailable from a shell script; Phase C extension
 # can plumb them via the agent's own usage metadata).
 import time
@@ -226,7 +269,7 @@ sa_path = os.path.join(proj, ".sdd", "actions", f"{active_slug}.md")
 tag = "?"
 if os.path.isfile(sa_path):
     try:
-        with open(sa_path) as f:
+        with open(sa_path, encoding="utf-8") as f:
             sa_text = f.read()
         sa_fm_match = re.match(r"^---\n(.*?)\n---", sa_text, re.DOTALL)
         if sa_fm_match:
@@ -239,8 +282,12 @@ ts = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 metrics_line = f"{ts}  {work_item}  {active_slug}  {tag}  -  -\n"
 # Append-only — never edit prior lines (decisions.md / metrics.md are
 # event logs per handoff Theme 7, Theme 12).
-with open(metrics_path, "a") as f:
+with open(metrics_path, "a", encoding="utf-8") as f:
     f.write(metrics_line)
+
+# Note: idempotency stamp moved earlier — it now writes immediately
+# after the atomic INDEX.md replace, so a metrics append failure
+# can't leave the advance unrecorded.
 
 if terminal:
     print(f"[advance] {active_slug} was the last action — work item "

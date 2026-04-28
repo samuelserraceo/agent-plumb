@@ -14,7 +14,7 @@ budget:
   max_minutes: 30
   max_tokens: 8000
   max_commits: 1
-requires_user_approval: false
+requires_user_approval: true
 ---
 
 Convert `acceptance-criteria` into ordered tasks. Each task = one test file + one commit. This is what BUILD will execute.

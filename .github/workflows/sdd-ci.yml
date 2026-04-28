@@ -106,6 +106,18 @@ jobs:
           # `+++ b/path` file-header line that `--unified=0` still emits;
           # without the negation, file paths with quote-like chars could
           # slip into the per-string check.
+          # Copy-extractor regex: capture quoted/templated UI strings ≥30
+          # chars from added lines. Covers four shapes:
+          #   "double-quoted"  → most JSX attribute strings
+          #   'single-quoted'  → JS/TS string literals
+          #   `template literal` → JSX text and string interpolation
+          #   >JSX text<  → bare JSX children between tags
+          # Pattern built into a variable so the bash quoting is
+          # readable. Single quote inside a single-quoted bash string
+          # is encoded as '\'' (close, escaped quote, reopen).
+          # CodeRabbit cycle 9/10: earlier regex missed single-quoted
+          # and backtick-template strings.
+          copy_re='"[^"]{30,}"|'"'"'[^'"'"']{30,}'"'"'|`[^`]{30,}`|>[^<>]{30,}<'
           added_strings=$(git diff --unified=0 "$base...$head" -- \
             'app/**/*.tsx' 'app/**/*.jsx' 'app/**/*.ts' 'app/**/*.js' \
             'components/**/*.tsx' 'components/**/*.jsx' 'components/**/*.ts' 'components/**/*.js' \
@@ -115,8 +127,8 @@ jobs:
             'src/pages/**/*.tsx' 'src/pages/**/*.jsx' 'src/pages/**/*.ts' 'src/pages/**/*.js' \
             2>/dev/null \
             | grep -E '^\+[^+]' \
-            | grep -oE '"[^"]{30,}"|>[^<>]{30,}<' \
-            | sed -E 's/^[">]|[<"]$//g' \
+            | grep -oE "$copy_re" \
+            | sed -E "s/^[\"'\`>]|[<\"'\`]$//g" \
             | sort -u || true)
 
           # Per-string check. Try $spec if it exists, then $wireframe if it

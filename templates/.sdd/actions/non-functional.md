@@ -14,10 +14,10 @@ budget:
   max_minutes: 15
   max_tokens: 4000
   max_commits: 1
-requires_user_approval: false
+requires_user_approval: true
 ---
 
-**Skippable** if there are no real performance, security, or compliance constraints. Proactively offer: *"§10 covers performance budgets, security constraints, and compliance. Does this feature have any of those? If not, reply `/skip no NFRs apply`."*
+**Skippable** if there are no real performance, security, or compliance constraints. Proactively offer: *"§10 covers performance budgets, security constraints, and compliance. Does this feature have any of those? If not, reply `skip no NFRs apply` (handled inline by `/next`)."*
 
 **Test for "is this a real constraint?":** *"Would it be a deal-breaker if X took 5 seconds?"* If yes, it's a constraint.
 

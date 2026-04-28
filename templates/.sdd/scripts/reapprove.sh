@@ -34,7 +34,7 @@
 #   0 — verification.json updated successfully (new hash printed to stdout)
 #   1 — error (file missing, hash failed, JSON malformed). Stderr explains.
 
-set -uo pipefail
+set -euo pipefail
 
 if [ $# -ne 2 ]; then
   echo "reapprove: usage: reapprove.sh <slug> <work-item-dir>" >&2
@@ -109,9 +109,17 @@ HASH_SECTION="$PROJECT_DIR/.sdd/scripts/hash-section.sh"
   exit 1
 }
 
-# Compute new hash for the §<slug> section in the current spec.md
-new_hash=$(bash "$HASH_SECTION" "$spec" "$sa_path")
-hs_ec=$?
+# Compute new hash for the §<slug> section in the current spec.md.
+#
+# CodeRabbit cycle 12 fix: capture the exit code WITHOUT letting
+# `set -euo pipefail` short-circuit. With `set -e`, any non-zero exit
+# from `bash "$HASH_SECTION"` would kill the script BEFORE
+# `hs_ec=$?` could read it — the script needs to read the failure
+# explicitly to print the diagnostic. Use `||` to mark the failure as
+# handled so set -e doesn't fire, then read `$?` from the failed
+# subshell via a different mechanism.
+new_hash=$(bash "$HASH_SECTION" "$spec" "$sa_path") || hs_ec=$?
+hs_ec=${hs_ec:-0}
 if [ $hs_ec -ne 0 ] || [ -z "$new_hash" ]; then
   echo "reapprove: hash-section.sh failed for slug '$slug' (exit $hs_ec)" >&2
   exit 1

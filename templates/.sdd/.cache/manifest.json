@@ -9,7 +9,7 @@
   },
   "scripts": {
     "advance.sh": {
-      "expected_sha256": "f383e85e1935a2cc36db17402edc48d16406531246b78ceb95b2f9498e843f96",
+      "expected_sha256": "ebf14f5227cb83d23e340928c62b10f42905a4b9ef8d3d2567f1a9da441c15ef",
       "path": ".sdd/scripts/advance.sh",
       "trust": "framework"
     },
@@ -24,32 +24,32 @@
       "trust": "framework"
     },
     "reapprove.sh": {
-      "expected_sha256": "b7502ea30c6d135e0ea88c069fbc9e121996c7214068e761ba8a7787d5a5c14d",
+      "expected_sha256": "3895b148e65dcca6c440ad904b0d332d196f0f4ba58326a0f880bfad5dbfc070",
       "path": ".sdd/scripts/reapprove.sh",
       "trust": "framework"
     },
     "start.sh": {
-      "expected_sha256": "bda7de07e83b253d3649e9e1a679f2f50517dcd8f7b10581528e586aecca5f3a",
+      "expected_sha256": "9c4e49ac145da5504dccf991d8ee6f53fa0c40ac0cd2e718d9054d544fff0e09",
       "path": ".sdd/scripts/start.sh",
       "trust": "framework"
     },
     "resolve-parameters.sh": {
-      "expected_sha256": "89483cb06e150e707661c0cd44d68022a869b3301474ce759e12be49590ed72e",
+      "expected_sha256": "33a9b0226d4c2a62562febaab85b12f99c481bbc861ad9d17dc4a27cf16bccc5",
       "path": ".sdd/scripts/resolve-parameters.sh",
       "trust": "framework"
     },
     "read-events.sh": {
-      "expected_sha256": "f8d6a4b678b36dc97f71bb73a664e6b93556b09dfbf08c04a270e7278d492475",
+      "expected_sha256": "b35550dda478a092470aa323b5f00804f0b27319445c8e159ca5c84eb92fef7c",
       "path": ".sdd/scripts/read-events.sh",
       "trust": "framework"
     },
     "next-action.sh": {
-      "expected_sha256": "5af8b31b8a345d637b091b0fa054bc3fe8334c983774f60afcb25d41bde8a460",
+      "expected_sha256": "f4bcb0c354e4d532ad65d472a8a61217d5673fb883df137f5342cc85409d5300",
       "path": ".sdd/scripts/next-action.sh",
       "trust": "framework"
     },
     "validate-sdd-path.sh": {
-      "expected_sha256": "c2ae85c19b90e7a3d979931ddc6b47255c4637adbf38142bc15a832cf4110b0d",
+      "expected_sha256": "5035174640d824d171c1d551bf51794651069b1b362de910c7b51954256a7ec6",
       "path": ".sdd/scripts/validate-sdd-path.sh",
       "trust": "framework"
     }
@@ -72,12 +72,12 @@
       "trust": "framework"
     },
     "dependencies": {
-      "expected_sha256": "e26ac457abce77b922ff039348670c8ce60be506f79c587deee6326d561fa005",
+      "expected_sha256": "b02add4043aac257fda551f236dce4f299ef7e3277cecb6b3111665d85e202bc",
       "path": ".sdd/actions/dependencies.md",
       "trust": "framework"
     },
     "flows": {
-      "expected_sha256": "e7fccca3d74b21832c8d6f3d1c4e0784c2330489ca9bee6d0e6d23a9ff0a5baf",
+      "expected_sha256": "7a487fff038d2d8d2f505c53197519b1c6bc3d8a9100a4351de839a588291819",
       "path": ".sdd/actions/flows.md",
       "trust": "framework"
     },
@@ -87,7 +87,7 @@
       "trust": "framework"
     },
     "non-functional": {
-      "expected_sha256": "16d8c37d9f8542ea0ead600c4fab399e8bad75ea684627a75427d9f2a41a680b",
+      "expected_sha256": "88ee6845e260ca0ae08b4e9c0a80c60307f321cc2d47c9335db38868a7267429",
       "path": ".sdd/actions/non-functional.md",
       "trust": "framework"
     },
@@ -97,7 +97,7 @@
       "trust": "framework"
     },
     "plan-decompose": {
-      "expected_sha256": "d31d9b8e504760989e2c3da1fe47c3f5f3959fc6526496399779aeba4d721e44",
+      "expected_sha256": "53bcdd7e8f5cc93d34a69298c21bfa939bc92baab80dbb1b961ef6dc652b123e",
       "path": ".sdd/actions/plan-decompose.md",
       "trust": "framework"
     },
@@ -137,7 +137,7 @@
       "trust": "framework"
     },
     "ux-brief": {
-      "expected_sha256": "da926ab54644279624e93c91f948b5f6d5ba7851e6b74968ae7a79858ead7411",
+      "expected_sha256": "8508705ee08d33fadb41ab351145a7ee7bd40e29ea70c2f0b5f83fb7e3c5d2db",
       "path": ".sdd/actions/ux-brief.md",
       "trust": "framework"
     },
@@ -157,13 +157,13 @@
       "trust": "framework"
     },
     "wireframe": {
-      "expected_sha256": "a55341a9ae206061076776f8995f1ff49c3cc1779325b78824418e6af89bfcaf",
+      "expected_sha256": "0aa8ac8867b2110e4bc14793abed5ba8768c0e6768a316eb9f06939e629be509",
       "path": ".sdd/actions/wireframe.md",
       "trust": "framework"
     },
     "learn": {
       "path": ".sdd/actions/learn.md",
-      "expected_sha256": "da579e764d3f15d4dda15aca7eb4d4caeb948f9766823cc7acf5166eceee8877"
+      "expected_sha256": "5018602e347bfe650c8970b1f100a20baab376cd96b2cd7e680c1845a8572e9a"
     }
   }
 }

@@ -8,7 +8,7 @@
 #
 # Usage:
 #   start.sh "<feature title>"          # uses default_playbook from config.md
-#   start.sh --playbook=<slug> "<title>"  # explicit playbook (B-1: only `feature` exists)
+#   start.sh --playbook=<slug> "<title>"  # explicit playbook (v0.9: only `feature` exists)
 #
 # Output:
 #   - Creates .sdd/<work_item_folder>/<NNN>-<slug>/spec.md
@@ -105,7 +105,12 @@ command -v python3 >/dev/null 2>&1 || {
 #      the silent override as a real footgun for adopters of SDD on
 #      existing repos.
 current_hookspath=$(git config --get core.hooksPath 2>/dev/null || echo "")
-if [ -d ".git" ]; then
+# CodeRabbit cycle 9/10/11: use `git rev-parse --is-inside-work-tree`
+# instead of `[ -d ".git" ]` to detect a git repo. The directory check
+# misses worktrees (where .git is a FILE, not a dir) — fairly common
+# for users running SDD inside `git worktree add` checkouts. The
+# rev-parse form handles both.
+if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   if [ "$current_hookspath" = ".claude/hooks" ]; then
     : # Already SDD's hooks; silent.
   elif [ -z "$current_hookspath" ]; then
@@ -153,7 +158,7 @@ extends_raw = os.environ.get("EXTENDS", "").strip()
 
 # --- Read config.md frontmatter ---
 config_path = os.path.join(proj, ".sdd", "config.md")
-with open(config_path) as f:
+with open(config_path, encoding="utf-8") as f:
     config_text = f.read()
 m = re.match(r"^---\n(.*?)\n---", config_text, re.DOTALL)
 if not m:
@@ -194,7 +199,7 @@ playbook_path = os.path.join(proj, ".sdd", "playbooks", f"{chosen}.md")
 if not os.path.isfile(playbook_path):
     print(f"[/start] playbook file not found: .sdd/playbooks/{chosen}.md", file=sys.stderr)
     sys.exit(1)
-with open(playbook_path) as f:
+with open(playbook_path, encoding="utf-8") as f:
     playbook_text = f.read()
 m = re.match(r"^---\n(.*?)\n---", playbook_text, re.DOTALL)
 if not m:
@@ -291,7 +296,7 @@ def load_action_steps(action_slug):
     path = os.path.join(proj, ".sdd", "actions", f"{action_slug}.md")
     if not os.path.isfile(path):
         return []
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         text = f.read()
     fm = re.match(r"^---\n(.*?)\n---", text, re.DOTALL)
     if not fm:
@@ -358,7 +363,7 @@ if exit_checks:
     spec_lines.append("")
 
 spec_md = os.path.join(item_dir, "spec.md")
-with open(spec_md, "w") as f:
+with open(spec_md, "w", encoding="utf-8") as f:
     f.write("\n".join(spec_lines))
 
 # --- Update INDEX.md ---
@@ -366,7 +371,7 @@ index_path = os.path.join(proj, ".sdd", "INDEX.md")
 work_item_rel = f"{work_item_folder.rstrip('/')}/{folder_name}"
 
 if os.path.isfile(index_path):
-    with open(index_path) as f:
+    with open(index_path, encoding="utf-8") as f:
         index_text = f.read()
 else:
     index_text = ""
@@ -402,7 +407,7 @@ if "## Shipped" not in body:
     body += "\n## Shipped\n\n"
 
 new_index = "\n".join(header_lines) + body.lstrip("\n") + ("\n" if not body.endswith("\n") else "")
-with open(index_path, "w") as f:
+with open(index_path, "w", encoding="utf-8") as f:
     f.write(new_index)
 
 # --- Plain-English success message to stdout ---

@@ -211,7 +211,11 @@ PY
   fi
 
   git add .sdd/INDEX.md "$spec" ".sdd/$active/.shipped"
-  git commit -m "[SDD:$feature_id] ship: CI green; spec marked cold (.shipped)" || true
+  # CodeRabbit cycle 9/10/11: drop the `|| true` swallowing commit
+  # failures. If the commit fails (hook block, no diff, etc.) the
+  # script should fail loud — silent success would push an empty
+  # branch state to remote and confuse the user.
+  git commit -m "[SDD:$feature_id] ship: CI green; spec marked cold (.shipped)"
   git push
 
   echo ""

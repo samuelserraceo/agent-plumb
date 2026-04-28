@@ -1,12 +1,12 @@
 # v0.8 Schema Test Fixtures
 
-These fixtures exercise edge cases of the v0.8 schema (defined in repo-root `SCHEMA.md`). Theme 1's loader tests (T27-T30) and Theme 1.5's manifest tests (T34-T35) consume them.
+These fixtures exercise edge cases of the v0.8 schema (defined in `.sdd/config.md` (closed enums section)). Theme 1's loader tests (T27-T30) and Theme 1.5's manifest tests (T34-T35) consume them.
 
 | Fixture | Demonstrates | Expected loader behavior |
 |---|---|---|
 | `valid-playbook.md` | Complete valid playbook with 1 stage / 1 action / 1 exit_check | LOAD OK |
 | `valid-subaction.md` | Complete valid USER-LED action | LOAD OK |
-| `invalid-unknown-tag.md` | `tag: BOGUS` (not in SCHEMA.md §6 closed enum) | ERROR — unknown tag |
+| `invalid-unknown-tag.md` | `tag: BOGUS` (not in config.md closed enum) | ERROR — unknown tag |
 | `invalid-slug-mismatch.md` | `slug: actual-slug` inside, but filename suggests different slug | ERROR — slug must equal filename |
 | `invalid-missing-tag.md` | Action missing required `tag:` field | ERROR — missing required field |
 | `invalid-yaml-duplicate.md` | Duplicate YAML key (Codex finding #4) | ERROR — duplicate YAML key (silent corruption risk) |

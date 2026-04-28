@@ -15,7 +15,7 @@ budget:
   max_minutes: 30
   max_tokens: 8000
   max_commits: 2
-requires_user_approval: false
+requires_user_approval: true
 ---
 
 Two parts of the same closing reflection: first capture **what just shipped** (one paragraph anyone can read cold), then extract **the one or two cross-feature lessons** that future features will benefit from. Each part is its own atomic step + commit.

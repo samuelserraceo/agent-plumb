@@ -615,8 +615,10 @@ new entry instead:
     # then append the new entry, re-stage, re-commit
 
 If you genuinely need to rebuild the whole file (e.g., recovering
-from corruption), use the configured reset phrase in your commit
-message — that's the documented escape hatch.
+from corruption), do it manually outside the framework's contract:
+restore from a known-good commit (\`git checkout <sha> -- <path>\`),
+or rewrite history on a branch and review the result before merge.
+There is no in-band escape hatch — the file is sacred.
 
 The file_rules definitions live in .sdd/config.md \`file_rules:\`.
 EOF
