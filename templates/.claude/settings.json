@@ -48,14 +48,6 @@
           },
           {
             "type": "command",
-            "command": ".claude/hooks/pre-commit-claude-md-managed.sh"
-          },
-          {
-            "type": "command",
-            "command": ".claude/hooks/pre-commit-size-cap.sh"
-          },
-          {
-            "type": "command",
             "command": ".claude/hooks/pre-commit-stage-verified.sh"
           }
         ]

@@ -1977,41 +1977,47 @@ else
 fi
 
 # ============================================================
-# T63 — pre-commit-size-cap warns at 200 + BLOCKS at 400 (Theme 7)
-#   RED: Phase A version was warn-only; if Theme 7 tightening doesn't
-#        flip the hard cap to BLOCK, runaway memory files silently
-#        accumulate past usability.
+# T63 — pre-commit-rules warns at size_warn + BLOCKS at size_block (file_rules)
+#   v0.9 C-5 (6b/N): migrated from pre-commit-size-cap.sh. The size_warn
+#   / size_block thresholds + advice now live in config.md `file_rules:`.
+#   The hook contract (warn at 200 lines, block at 400 lines for the three
+#   growth-prone files) is unchanged.
 # ============================================================
-note "T63: pre-commit-size-cap warns at 200 + BLOCKS at 400 (Theme 7)"
-SIZE_CAP_HOOK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-size-cap.sh"
+note "T63: pre-commit-rules warns at size_warn (200) + blocks at size_block (400)"
 
 # Sub-test (a): file at 250 lines → soft warn (exit 0, stderr nudge)
 d=$(mkproj_v08)
 cd "$d"
+git init -q
+git config user.email t@t.com && git config user.name T
 python3 -c "open('.sdd/patterns.md','w').write('\n'.join(['line %d' % i for i in range(250)]))"
+git add .sdd/patterns.md
 hook_stdin='{"tool_input":{"command":"git commit -m test"}}'
 ec_warn=0
-err_warn=$(echo "$hook_stdin" | bash "$SIZE_CAP_HOOK" 2>&1 1>/dev/null) || ec_warn=$?
+err_warn=$(echo "$hook_stdin" | bash "$RULES_HOOK" 2>&1 1>/dev/null) || ec_warn=$?
 cd - >/dev/null
 rm -rf "$d"
 
-# Sub-test (b): file at 450 lines → HARD block (exit 2)
+# Sub-test (b): file at 450 lines → hard block (exit 2)
 d=$(mkproj_v08)
 cd "$d"
+git init -q
+git config user.email t@t.com && git config user.name T
 python3 -c "open('.sdd/patterns.md','w').write('\n'.join(['line %d' % i for i in range(450)]))"
+git add .sdd/patterns.md
 ec_block=0
-err_block=$(echo "$hook_stdin" | bash "$SIZE_CAP_HOOK" 2>&1 1>/dev/null) || ec_block=$?
+err_block=$(echo "$hook_stdin" | bash "$RULES_HOOK" 2>&1 1>/dev/null) || ec_block=$?
 cd - >/dev/null
 rm -rf "$d"
 
-# Both must hold: warn @ 250 (exit 0 + warn message), block @ 450 (exit 2)
+# Both must hold: warn @ 250 (exit 0 + warn message), block @ 450 (exit 2 + size_block message)
 if [ "$ec_warn" -eq 0 ] \
-   && echo "$err_warn" | grep -q 'warn' \
+   && echo "$err_warn" | grep -qiE 'warn|size' \
    && [ "$ec_block" -eq 2 ] \
-   && echo "$err_block" | grep -q 'HARD BLOCK'; then
-  ok "T63 size-cap: 250 lines warns (exit 0), 450 lines BLOCKS (exit 2)"
+   && echo "$err_block" | grep -qiE 'size_block|file_rules'; then
+  ok "T63 size enforcement: 250 lines warns (exit 0), 450 lines blocks (exit 2)"
 else
-  bad "T63 size-cap thresholds incorrect" \
+  bad "T63 size_warn/size_block thresholds incorrect" \
       "warn ec=$ec_warn (expect 0); block ec=$ec_block (expect 2)"
 fi
 
