@@ -3619,6 +3619,66 @@ else
 fi
 
 # ============================================================
+# T95 — Option B: folder_rules: warns on stray-root + deferred-path commits
+#   Pairs with the "Where things live" doctrine (T94). pre-commit-rules.sh
+#   reads config.md `folder_rules:` and warns (default_action: warn) when:
+#     - any staged path starts with a deferred_paths: prefix (.sdd/topics/,
+#       .sdd/archive/, .sdd/bugs/)
+#     - any top-level file isn't in root_allowed:
+#   Project owners can flip default_action to block per their tolerance.
+# ============================================================
+note "T95: pre-commit-rules.sh warns on deferred-path or stray-root commit (Option B)"
+d=$(mkproj_v08)
+cd "$d"
+git init -q
+git config user.email t@t.com && git config user.name T
+# Stage a file in a deferred path AND a stray root file.
+mkdir -p .sdd/topics
+echo "topic" > .sdd/topics/email-handling.md
+echo "stray" > NOTES.md
+git add .sdd/topics/email-handling.md NOTES.md
+hook_stdin='{"tool_input":{"command":"git commit -m chore: stray paths"}}'
+ec=0
+err=$(echo "$hook_stdin" | bash .claude/hooks/pre-commit-rules.sh 2>&1 1>/dev/null) || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+# Default is warn — should ALLOW (exit 0) but write a warn to stderr
+# naming both violations.
+if [ "$ec" -eq 0 ] \
+   && echo "$err" | grep -qF '.sdd/topics/email-handling.md' \
+   && echo "$err" | grep -qF 'NOTES.md' \
+   && echo "$err" | grep -qiE 'deferred|stray-root'; then
+  ok "T95 folder_rules warned on both deferred path + stray root file (warn-only by default)"
+else
+  bad "T95 folder_rules didn't warn correctly" "ec=$ec; err=$(echo "$err" | head -3 | tr '\n' '|')"
+fi
+
+# ============================================================
+# T95b — Option B mutation: clean commit gets no folder_rules warn
+#   Inverse of T95. Stage a legitimate file in .sdd/ideas/ — folder_rules
+#   should stay silent (no warn, exit 0). Proves the warn is gated on
+#   real violations, not always-on noise.
+# ============================================================
+note "T95b: pre-commit-rules.sh stays silent on canonical-path commit"
+d=$(mkproj_v08)
+cd "$d"
+git init -q
+git config user.email t@t.com && git config user.name T
+mkdir -p .sdd/ideas
+echo "valid idea" > .sdd/ideas/use-postgres.md
+git add .sdd/ideas/use-postgres.md
+hook_stdin='{"tool_input":{"command":"git commit -m idea: postgres switch"}}'
+ec=0
+err=$(echo "$hook_stdin" | bash .claude/hooks/pre-commit-rules.sh 2>&1 1>/dev/null) || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 0 ] && ! echo "$err" | grep -qiE 'folder_rules|deferred|stray-root'; then
+  ok "T95b folder_rules stayed silent on canonical commit (no false-positive warn)"
+else
+  bad "T95b folder_rules false-positive warn on canonical commit" "ec=$ec; err=$err"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'

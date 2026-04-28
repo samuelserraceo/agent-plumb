@@ -58,6 +58,94 @@ git rev-parse --is-inside-work-tree >/dev/null 2>&1 || exit 0
 staged=$(git diff --cached --name-only 2>/dev/null || echo "")
 [ -z "$staged" ] && exit 0
 
+# === FOLDER_RULES enforcement (Option B — warn-only by default) ===
+# Read config.md `folder_rules:` and warn (no block by default) when:
+#   - any staged path starts with a `deferred_paths:` prefix
+#   - any staged path at the project root isn't in `root_allowed:`
+# Project owners can flip default_action to "block" if they want strict
+# enforcement — defaults to warn so the framework signals discipline
+# without breaking dev flows.
+folder_rules_result=$(STAGED="$staged" python3 - <<'PYEOF' || echo "ALLOW"
+import os, re, sys
+try:
+    import yaml
+except Exception:
+    print("ALLOW"); sys.exit(0)
+
+try:
+    text = open(".sdd/config.md").read()
+except OSError:
+    print("ALLOW"); sys.exit(0)
+m = re.match(r"^---\n(.*?)\n---", text, re.DOTALL)
+if not m:
+    print("ALLOW"); sys.exit(0)
+try:
+    fm = yaml.safe_load(m.group(1)) or {}
+except Exception:
+    print("ALLOW"); sys.exit(0)
+
+rules = fm.get("folder_rules") or {}
+if not rules:
+    print("ALLOW"); sys.exit(0)
+
+default_action = (rules.get("default_action") or "warn").lower()
+deferred = rules.get("deferred_paths") or []
+root_allowed = set(rules.get("root_allowed") or [])
+
+violations = []  # list of (path, kind, hint)
+for line in os.environ.get("STAGED", "").splitlines():
+    p = line.strip()
+    if not p:
+        continue
+    # deferred_paths: any staged file under one of these prefixes is flagged.
+    for pref in deferred:
+        if p.startswith(pref):
+            violations.append((p, "deferred", f"{pref} is reserved for Phase C+; do not write here yet"))
+            break
+    # root_allowed: a top-level file (no slash) must be in the allow-list.
+    if "/" not in p:
+        if p not in root_allowed:
+            violations.append((p, "stray-root", "use .sdd/ideas/<name>.md for one-off notes; per-feature artifacts go in .sdd/<work_item>/<NNN>-<slug>/"))
+
+if not violations:
+    print("ALLOW"); sys.exit(0)
+
+# Emit warn (or block, if default_action == block).
+if default_action == "block":
+    print("BLOCK")
+else:
+    # Warn → write to stderr but mark ALLOW for the case-statement.
+    sys.stderr.write("\n  ⚠  SDD folder_rules — staged paths are out of the canonical map:\n")
+    for p, kind, hint in violations:
+        sys.stderr.write(f"     - [{kind}] {p}\n       → {hint}\n")
+    sys.stderr.write("     See CLAUDE.md \"Where things live\" for the canonical layout.\n\n")
+    print("ALLOW"); sys.exit(0)
+
+# block path
+for p, kind, hint in violations:
+    print(f"PATH: {p}")
+    print(f"KIND: {kind}")
+    print(f"HINT: {hint}")
+PYEOF
+)
+
+case "$folder_rules_result" in
+  ALLOW*) ;;
+  BLOCK*)
+    cat >&2 <<EOF
+
+[SDD rules / folder_rules] Staged path violates the canonical folder map.
+
+$(printf '%s\n' "$folder_rules_result" | sed -n '2,$p')
+
+See CLAUDE.md "Where things live (canonical folder map)" for the
+allowed layout. To soften this hook back to warn-only, set
+\`folder_rules.default_action: warn\` in .sdd/config.md.
+EOF
+    exit 2
+    ;;
+esac
+
 # === FILE_CLASSES + CO_STAGE_BLOCK enforcement ===
 # Read config.md `file_classes:` (named regex pattern lists) and
 # `co_stage_block:` (pairs of class names that cannot co-stage). Refuse
