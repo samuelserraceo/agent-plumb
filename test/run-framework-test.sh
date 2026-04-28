@@ -2930,6 +2930,30 @@ else
 fi
 
 # ============================================================
+# T82 — Manifest pin coverage: next-action.sh is in the pin list
+#   Pre-Phase-C: next-action.sh was on disk but not pinned in
+#   templates/.sdd/.cache/manifest.json. A tampered next-action.sh
+#   could lie about which step is next; the moat's pre-commit-block
+#   independently catches phase-advance with open `[ ]`, but layered
+#   defense says trust-but-pin every framework-trusted script.
+#   Post-Phase-C: next-action.sh is pinned; this test asserts it stays
+#   pinned (catches regression if someone removes it from the manifest).
+#   verify-stage.sh stays deliberately UN-pinned per the moat's
+#   special co-stage block handling — see moat hook §72.
+# ============================================================
+note "T82: next-action.sh is pinned in the manifest (closes B1 audit gap)"
+manifest="$FRAMEWORK_ROOT/templates/.sdd/.cache/manifest.json"
+if python3 -c "
+import json, sys
+m = json.load(open('$manifest'))
+sys.exit(0 if 'next-action.sh' in (m.get('scripts') or {}) else 1)
+" 2>/dev/null; then
+  ok "T82 next-action.sh declared in manifest scripts: section"
+else
+  bad "T82 next-action.sh missing from manifest scripts: section" "manifest pin gap reopened"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
