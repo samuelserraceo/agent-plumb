@@ -87,26 +87,43 @@ VERIFY_STAGE=$(locate_verify_stage) || {
 #      moat — it's the trust anchor for the verifier itself.
 
 # Hash pin: refuse if the verifier on disk doesn't match the expected hash.
-VERIFY_STAGE_EXPECTED_HASH="33bc6d0dc87014d891fd1a405819acdf8a690394e3aba3a92f7d9e8012bd8790"
-# Compute hash. Try shasum (macOS default), sha256sum (most Linux), then
-# python3 hashlib as a guaranteed fallback (python3 is already required for
-# JSON parsing below — if it's missing the hook can't function anyway).
-# Reviewer round 3 caught the original silent-disable when neither shasum
-# nor sha256sum were on PATH.
-if command -v shasum >/dev/null 2>&1; then
-  actual_hash=$(shasum -a 256 "$VERIFY_STAGE" 2>/dev/null | cut -d' ' -f1)
-elif command -v sha256sum >/dev/null 2>&1; then
-  actual_hash=$(sha256sum "$VERIFY_STAGE" 2>/dev/null | cut -d' ' -f1)
-elif command -v python3 >/dev/null 2>&1; then
-  actual_hash=$(python3 -c "import hashlib,sys;print(hashlib.sha256(open(sys.argv[1],'rb').read()).hexdigest())" "$VERIFY_STAGE" 2>/dev/null)
-else
-  actual_hash=""
+#
+# CodeRabbit cycle 9 (v0.9.1 fix): unified the hash algorithm with the
+# manifest pin. Earlier this hook used RAW SHA-256 (shasum/sha256sum
+# default), but the manifest pin below uses NORMALIZED SHA-256 (LF
+# line endings + strip trailing whitespace + strip blank-line edges).
+# Two algorithms in the same security boundary made the trust model
+# fragile: a CRLF flip would force a re-pin here while the manifest
+# stayed silent. Now both layers use the same normalised algorithm.
+VERIFY_STAGE_EXPECTED_HASH="d51d3e16f31d72f8a78be721711a94f345b33b75bde1077ba2d59159ed9b9c8b"
+if ! command -v python3 >/dev/null 2>&1; then
+  cat >&2 <<EOF
+[moat] python3 is required for the verify-stage hash pin (the
+normalised-SHA-256 algorithm matches the manifest hash-pin below).
+Install python3 (most systems already have it) and retry.
+EOF
+  exit 2
 fi
+actual_hash=$(VERIFY_STAGE="$VERIFY_STAGE" python3 -c '
+import hashlib, os, sys
+path = os.environ["VERIFY_STAGE"]
+try:
+    with open(path, "rb") as f: data = f.read()
+except OSError:
+    sys.exit(0)  # empty stdout → caller treats as missing hasher
+if b"\x00" in data:
+    print("NUL"); sys.exit(0)
+text = data.decode("utf-8", errors="replace")
+lines = [ln.rstrip() for ln in text.replace("\r\n","\n").replace("\r","\n").split("\n")]
+while lines and lines[0] == "": lines.pop(0)
+while lines and lines[-1] == "": lines.pop()
+print(hashlib.sha256("\n".join(lines).encode("utf-8")).hexdigest())
+' 2>/dev/null)
 if [ -z "$actual_hash" ]; then
   cat >&2 <<EOF
-[moat] no SHA-256 hasher available (shasum, sha256sum, python3 all
-absent) — refusing to commit. The hash pin cannot verify
-verify-stage.sh's integrity without a hasher.
+[moat] could not hash verify-stage.sh — refusing to commit. The
+script may be unreadable or python3 may have failed. Check that
+$VERIFY_STAGE exists and is readable.
 EOF
   exit 2
 fi
