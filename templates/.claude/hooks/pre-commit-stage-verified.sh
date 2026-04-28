@@ -52,16 +52,25 @@ esac
 git rev-parse --git-dir >/dev/null 2>&1 || exit 0
 
 # Find staged verification.json AND staged spec.md paths (one per active
-# feature, usually).
+# feature, usually). ALSO check whether the manifest itself is being staged
+# — UAT v0.10.1 finding (#48): a commit that staged ONLY the manifest
+# bypassed the hash-pin check because the moat exited early below. The
+# attacker's recipe was: tamper a framework file in commit N (no manifest
+# update, no verification.json staged), then stage manifest.json with
+# matching tampered hashes in commit N+1 to "legitimise" the tamper. Both
+# commits would slip through. Now: manifest staging ALSO fires the
+# manifest hash-pin check, with the strict semantics that every entry's
+# `expected_sha256` must match the on-disk file's normalised hash. So if
+# a user updates the manifest to match tampered files, the check fires
+# with both the file AND the manifest itself reported as mismatched (the
+# manifest's pin can't be self-validating, but the underlying file is).
 staged_files=$(git diff --cached --name-only --diff-filter=ACM 2>/dev/null || true)
 staged_verifications=$(printf '%s\n' "$staged_files" | grep -E '(^|/)verification\.json$' || true)
 staged_specs=$(printf '%s\n' "$staged_files" | grep -E '(^|/)spec\.md$' || true)
+staged_manifest=$(printf '%s\n' "$staged_files" | grep -E '(^|/)\.sdd/\.cache/manifest\.json$' || true)
 
-# Neither staged → not a verification-relevant commit → allow.
-# (UAT/T64 finding: spec-only commits also need re-checking when HEAD has
-# an approved verification.json — see the spec-only-attack block at the
-# bottom of this file.)
-[ -z "$staged_verifications" ] && [ -z "$staged_specs" ] && exit 0
+# Nothing staged that triggers manifest checks → allow.
+[ -z "$staged_verifications" ] && [ -z "$staged_specs" ] && [ -z "$staged_manifest" ] && exit 0
 
 # Locate verify-stage.sh. Search project-relative first (real installed
 # project), then framework template (for in-tree tests).
@@ -181,15 +190,38 @@ check_manifest_pins() {
   local manifest_path="$PROJECT_DIR/.sdd/.cache/manifest.json"
   [ -f "$manifest_path" ] || return 0
 
-  MANIFEST="$manifest_path" PROJ="$PROJECT_DIR" python3 <<'PYEOF'
-import hashlib, json, os, sys
+  # CodeRabbit cycle-4 PR #53: when manifest.json is itself staged, the
+  # commit will use the index (staged) blob, not the working tree. The
+  # earlier code always read the WT manifest, so an attacker could stage
+  # a clean manifest while leaving a tampered one in WT — the moat saw
+  # the tampered hashes (matching tampered WT framework files) and let
+  # the commit through, but the COMMITTED state would mix a clean
+  # manifest with tampered files. Now: read the staged blob when staged,
+  # so validation runs against the content that will actually be in HEAD.
+  MANIFEST="$manifest_path" PROJ="$PROJECT_DIR" \
+    STAGED_MANIFEST_PATH="$staged_manifest" python3 <<'PYEOF'
+import hashlib, json, os, subprocess, sys
 
 manifest_path = os.environ["MANIFEST"]
 proj = os.environ["PROJ"]
+staged_manifest_path = os.environ.get("STAGED_MANIFEST_PATH", "")
 
 try:
-    with open(manifest_path) as f:
-        manifest = json.load(f)
+    if staged_manifest_path:
+        # Manifest is staged — validate against the staged blob (the
+        # content the commit will actually contain), not the WT.
+        result = subprocess.run(
+            ["git", "show", ":" + staged_manifest_path],
+            capture_output=True, cwd=proj, timeout=10,
+        )
+        if result.returncode != 0:
+            print("[moat] cannot extract staged manifest blob from index",
+                  file=sys.stderr)
+            sys.exit(1)
+        manifest = json.loads(result.stdout.decode("utf-8", errors="replace"))
+    else:
+        with open(manifest_path) as f:
+            manifest = json.load(f)
 except Exception as e:
     print(f"[moat] manifest.json malformed: {e}", file=sys.stderr)
     sys.exit(1)

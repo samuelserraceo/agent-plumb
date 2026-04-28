@@ -117,7 +117,14 @@ jobs:
           # is encoded as '\'' (close, escaped quote, reopen).
           # CodeRabbit cycle 9/10: earlier regex missed single-quoted
           # and backtick-template strings.
-          copy_re='"[^"]{30,}"|'"'"'[^'"'"']{30,}'"'"'|`[^`]{30,}`|>[^<>]{30,}<'
+          # Issue #33 (v0.9.2): handle escape sequences. Earlier the
+          # `[^"]{30,}` form would split on inline `\"` escapes (the inner
+          # `"` would terminate the match early). Now: each delimiter
+          # uses a `([^delim\\]|\\.){30,}` form that allows escaped
+          # characters within the string. Same pattern for single
+          # quotes and backticks. JSX text `>...<` doesn't have escape
+          # semantics so it's unchanged.
+          copy_re='"([^"\\]|\\.){30,}"|'"'"'([^'"'"'\\]|\\.){30,}'"'"'|`([^`\\]|\\.){30,}`|>[^<>]{30,}<'
           added_strings=$(git diff --unified=0 "$base...$head" -- \
             'app/**/*.tsx' 'app/**/*.jsx' 'app/**/*.ts' 'app/**/*.js' \
             'components/**/*.tsx' 'components/**/*.jsx' 'components/**/*.ts' 'components/**/*.js' \
