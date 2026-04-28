@@ -196,7 +196,7 @@
       "trust": "framework"
     },
     "project-priorities": {
-      "expected_sha256": "0a4d11b3eab7c66ceb91749d6d32447a09101a442914b66fd8f42bf18e734d99",
+      "expected_sha256": "27c16201141e1306ff72051f5c389edf1eec142fa093f596b75a6f28b3a94352",
       "path": ".sdd/actions/project-priorities.md",
       "trust": "framework"
     },
@@ -206,7 +206,7 @@
       "trust": "framework"
     },
     "project-start-first": {
-      "expected_sha256": "2f4316ef524715efd76154b3249c29bc8577bde9ccb3cde27f15b215a605d50e",
+      "expected_sha256": "a40def1c0ea9f02485f0e48f41295d171730d8fc385a7e360a388211f28f961b",
       "path": ".sdd/actions/project-start-first.md",
       "trust": "framework"
     }

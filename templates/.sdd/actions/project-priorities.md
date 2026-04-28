@@ -55,13 +55,13 @@ The combination of priority tiers + dependencies gives you a build order — a n
 
 ```text
 1. email-signup        [P0, no deps]
-2. profile-setup       [P0, depends on 1]
-3. add-first-contact   [P0, depends on 2]
-4. contacts-list       [P0, depends on 3]
-5. contact-detail      [P1, depends on 4]
-6. bulk-import         [P1, depends on 4]
-7. dashboard           [P0, depends on 4]
-8. team-invites        [P2, depends on 2]
+2. profile-setup       [P0, depends on email-signup]
+3. add-first-contact   [P0, depends on profile-setup]
+4. contacts-list       [P0, depends on add-first-contact]
+5. contact-detail      [P1, depends on contacts-list]
+6. bulk-import         [P1, depends on contacts-list]
+7. dashboard           [P0, depends on contacts-list]
+8. team-invites        [P2, depends on profile-setup]
 ```
 
 The first capability is what you start working on. The rest sit in INDEX.md backlog and get pulled in as you ship each one.

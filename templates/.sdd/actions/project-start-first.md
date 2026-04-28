@@ -41,7 +41,7 @@ After this commit, the user is in normal `feature` playbook mode for the first c
 
 ## What carries forward from the project to the feature
 
-- The feature's spec.md `extends:` field references the project: `extends: project/<NNN>-<slug>`
+- The cross-reference back to the project lives in the feature's INDEX.md entry (`Source: .sdd/projects/<NNN>-<project-slug>/spec.md (§4.<capability-slug>)`) — written by project-queue-features. `start.sh` does NOT auto-populate the feature spec's `extends:` field; that flag is for `/start --extends=<id>` (extending a SHIPPED feature), which is a different workflow.
 - The feature gets a richer §1 Problem / §2 Success since the project context is already known — `/next` will offer to summarise from the roadmap rather than ask from scratch
 - The feature's INDEX.md entry shows the capability tier (P0/P1/P2) so future readers know its priority
 
@@ -49,7 +49,7 @@ After this commit, the user is in normal `feature` playbook mode for the first c
 
 The project playbook hits its terminal state. INDEX.md shows:
 - `## In flight`: the first feature, in SPEC phase, ready for `/next`
-- `## Backlog`: the remaining 7 capabilities, ordered
+- `## Backlog`: the remaining capabilities (i.e., everything queued by project-queue-features minus the one just kicked off), ordered
 - `## Shipped`: empty (until features start landing)
 
 User runs `/next` and starts working on the first feature.
