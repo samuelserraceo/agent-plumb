@@ -129,6 +129,22 @@ def phase_advance_open_blockers():
         first = ns.stdout.splitlines()[0].split("\t")[0] if ns.stdout.splitlines() else ""
         if first == "A":
             return None  # bootstrap commit
+    # NUL guard. Check the STAGED blob bytes first — if it contains NUL,
+    # any phase-advance regex on `git diff` would see "Binary files differ"
+    # and silently miss the change. Block any spec.md staged with NUL.
+    # (Same defence as the legacy pre-commit-block.sh round-4 fix.)
+    nul_check = None
+    try:
+        sb_pre = subprocess.run(
+            ["git", "show", f":{spec}"],
+            capture_output=True, check=False,
+        )
+        if sb_pre.returncode == 0 and b"\x00" in sb_pre.stdout:
+            nul_check = "NUL"
+    except Exception:
+        pass
+    if nul_check == "NUL":
+        return ("NUL bytes in staged spec.md — refusing", [])
     # Phase-advance detection: staged diff changes [PHASE: X] line.
     try:
         diff = subprocess.run(

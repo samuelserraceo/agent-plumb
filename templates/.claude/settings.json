@@ -28,10 +28,6 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/hooks/pre-commit-block.sh"
-          },
-          {
-            "type": "command",
             "command": ".claude/hooks/pre-commit-rules.sh"
           },
           {

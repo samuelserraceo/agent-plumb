@@ -36,17 +36,34 @@ bad()  { printf '  ❌ %s\n     %s\n' "$1" "$2"; FAIL=$((FAIL+1)); FAILURES+=("$
 # Includes a baseline git init + scaffold commit so subsequent `git add -A`
 # in tests doesn't pull verify-stage.sh into the staged set (which would
 # false-trigger the moat's co-stage block on every test).
+#
+# Phase-C addition: a minimal .sdd/config.md ships with the state_rules
+# entry needed for pre-commit-rules.sh's open-blockers check to fire.
+# Without this, tests using mkproj would pass through silently (no
+# config → state_rules absent → ALLOW), defeating the legacy
+# pre-commit-block.sh contract that the F1 enforcer subsumes.
 mkproj() {
   local d
   d=$(mktemp -d)
   mkdir -p "$d/.sdd/features/001-test" "$d/.sdd/scripts"
   cp "$VERIFY_STAGE" "$d/.sdd/scripts/verify-stage.sh" 2>/dev/null || true
   cp "$NEXT_ACTION"  "$d/.sdd/scripts/next-action.sh"  2>/dev/null || true
+  cat > "$d/.sdd/config.md" <<'CFG'
+---
+type: config
+state_rules:
+  - id: no-open-blockers-on-phase-advance
+    when: phase_advance_with_open_blockers
+    refuse: true
+    message: |
+      Phase-advance blocked: source phase still has open `[ ]` blockers.
+---
+CFG
   ( cd "$d" \
     && git init -q 2>/dev/null \
     && git config user.email t@t.com \
     && git config user.name T \
-    && git add .sdd/scripts/ \
+    && git add .sdd/scripts/ .sdd/config.md \
     && git commit -q -m "scaffold" >/dev/null 2>&1 ) || true
   echo "$d"
 }
@@ -456,7 +473,7 @@ rm -f .sdd/features/001-test/spec.md.bak
 git add -A
 e=0
 echo '{"tool_input":{"command":"git commit -m \"[SDD:001] spec: §2 fill\""}}' \
-  | CLAUDE_PROJECT_DIR="$d" bash "$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-block.sh" >/dev/null 2>&1 || e=$?
+  | CLAUDE_PROJECT_DIR="$d" bash "$RULES_HOOK" >/dev/null 2>&1 || e=$?
 cd - >/dev/null
 rm -rf "$d"
 if [ "$e" -eq 0 ]; then
@@ -491,7 +508,7 @@ git add -A
 e=0
 # Commit message body literally contains the phase-advance convention as an example
 echo '{"tool_input":{"command":"git commit -m \"[SDD:001] spec: §1 — example: [SDD:001] phase: SPEC → BUILD shows the convention\""}}' \
-  | CLAUDE_PROJECT_DIR="$d" bash "$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-block.sh" >/dev/null 2>&1 || e=$?
+  | CLAUDE_PROJECT_DIR="$d" bash "$RULES_HOOK" >/dev/null 2>&1 || e=$?
 cd - >/dev/null
 rm -rf "$d"
 if [ "$e" -eq 0 ]; then
@@ -526,7 +543,7 @@ rm -f .sdd/features/001-test/spec.md.bak
 git add -A
 e=0
 echo '{"tool_input":{"command":"git commit -m \"[SDD:001] phase: SPEC → BUILD\""}}' \
-  | CLAUDE_PROJECT_DIR="$d" bash "$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-block.sh" >/dev/null 2>&1 || e=$?
+  | CLAUDE_PROJECT_DIR="$d" bash "$RULES_HOOK" >/dev/null 2>&1 || e=$?
 cd - >/dev/null
 rm -rf "$d"
 if [ "$e" -eq 2 ]; then
@@ -567,7 +584,7 @@ rm -f .sdd/features/001-test/spec.md.bak
 git add -A
 e=0
 echo '{"tool_input":{"command":"git commit -m \"[SDD:001] phase: SPEC → BUILD\""}}' \
-  | CLAUDE_PROJECT_DIR="$d" bash "$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-block.sh" >/dev/null 2>&1 || e=$?
+  | CLAUDE_PROJECT_DIR="$d" bash "$RULES_HOOK" >/dev/null 2>&1 || e=$?
 cd - >/dev/null
 rm -rf "$d"
 if [ "$e" -eq 0 ]; then
@@ -811,7 +828,7 @@ git add .sdd/features/001-test/spec.md
 # Now blank out the working-tree INDEX.md to try to bypass
 echo "" > .sdd/INDEX.md
 e=$(echo '{"tool_input":{"command":"git commit -m \"[SDD:001] phase: SPEC->BUILD\""}}' \
-      | CLAUDE_PROJECT_DIR="$d" bash "$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-block.sh" >/dev/null 2>&1; echo $?)
+      | CLAUDE_PROJECT_DIR="$d" bash "$RULES_HOOK" >/dev/null 2>&1; echo $?)
 cd - >/dev/null
 rm -rf "$d"
 if [ "$e" -eq 2 ]; then
@@ -885,7 +902,7 @@ git add -A && git commit -q -m "init"
 binary_blob=$(printf '[PHASE: BUILD]\n\n## PHASE: SPEC\n- [ ] §1: STILL OPEN\n\x00poison\n## PHASE: BUILD\n' | git hash-object -w --stdin)
 git update-index --add --cacheinfo 100644 "$binary_blob" .sdd/features/001-test/spec.md
 e=$(echo '{"tool_input":{"command":"git commit -m \"[SDD:001] phase: SPEC->BUILD\""}}' \
-      | CLAUDE_PROJECT_DIR="$d" bash "$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-block.sh" >/dev/null 2>&1; echo $?)
+      | CLAUDE_PROJECT_DIR="$d" bash "$RULES_HOOK" >/dev/null 2>&1; echo $?)
 cd - >/dev/null
 rm -rf "$d"
 if [ "$e" -eq 2 ]; then
@@ -2312,7 +2329,7 @@ rm -f .sdd/bugs/001-test/spec.md.bak
 git add -A
 e=0
 echo '{"tool_input":{"command":"git commit -m \"[SDD:001-test] phase: SPEC -> BUILD\""}}' \
-  | CLAUDE_PROJECT_DIR="$d" bash "$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-block.sh" >/dev/null 2>&1 || e=$?
+  | CLAUDE_PROJECT_DIR="$d" bash "$RULES_HOOK" >/dev/null 2>&1 || e=$?
 cd - >/dev/null
 rm -rf "$d"
 if [ "$e" -ne 0 ]; then
@@ -3832,6 +3849,28 @@ if [ "$ec" -eq 0 ]; then
   ok "T98b state_rules allowed per-section commit (gate is on phase-flip, not open [ ])"
 else
   bad "T98b rules.sh blocked legitimate per-section commit" "exit=$ec (expected 0)"
+fi
+
+# ============================================================
+# T99 — F1 anti-regression: pre-commit-block.sh stays retired
+#   The framework's central guarantee (block phase-advance with open
+#   `[ ]`) now lives in pre-commit-rules.sh's state_rules handler with
+#   the `phase_advance_with_open_blockers` recogniser. C-5 (9b/N)
+#   deleted the legacy hook + removed it from settings.json. T99
+#   catches anyone re-introducing it.
+# ============================================================
+note "T99: pre-commit-block.sh stays retired (anti-regression)"
+problems=""
+if [ -f "$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-block.sh" ]; then
+  problems="$problems file:pre-commit-block.sh"
+fi
+if grep -q 'pre-commit-block\.sh' "$FRAMEWORK_ROOT/templates/.claude/settings.json"; then
+  problems="$problems settings:pre-commit-block.sh"
+fi
+if [ -z "$problems" ]; then
+  ok "T99 pre-commit-block.sh retired (file gone + settings clean); subsumed by F1 state_rules"
+else
+  bad "T99 retired pre-commit-block.sh re-appeared:" "$problems"
 fi
 
 # ============================================================
