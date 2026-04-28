@@ -48,11 +48,53 @@ If any of those tradeoffs feel wrong for your project, SDD is the wrong tool. If
 
 **Picking the right entry point:**
 - User wants to build new functionality → `/start <one-line title>`
+- User wants to extend or evolve a shipped feature → `/start --extends=<id> <one-line title>` (lighter SPEC; references the prior feature's distilled context)
 - User reports something broken → `/bug` (B-1: routes to `/start [BUG] <title>`; Phase C ships a dedicated bug playbook)
 - User has a half-formed thought worth remembering but not building → `/idea`
 - An active work item already exists, advance it one step → `/next`
 
 If a "bug" mid-SPEC turns out to require significant new design, escalate by telling the user "this looks like a feature, not a bug — want to switch?".
+
+## When SDD applies (and when it doesn't)
+
+SDD enforces 30–90 minute SPEC ceremonies on changes that need them. Forcing that on a typo fix is the wrong tool, makes adoption painful, and trains users to bypass the framework. The rule:
+
+**Use SDD (run `/start`) when:**
+- The change is user-facing or behaviour-changing.
+- The change adds or modifies an entity, field, flow, page, screen, API endpoint, dependency, or integration.
+- The change introduces design choices a non-technical reviewer needs to understand.
+- The change risks regression in unrelated code paths.
+
+**Use plain commits (skip SDD) when:**
+- Typo fixes / copy edits / micro-copy adjustments with no behaviour change.
+- Cosmetic CSS tweaks (colour swaps, spacing, font weights) that don't change layout or interaction.
+- Dependency version bumps (npm, pip, etc.) that don't change call signatures.
+- Pure refactors with zero behaviour change AND a single caller (rename, move file, extract pure helper).
+- Inline code comments / doc strings.
+- README / `docs/` updates.
+
+**When in doubt, ASK** — the user is non-technical and won't necessarily phrase the request with the right framing. If the user's first message of a session isn't a slash command, your first job is to **TRIAGE**: classify the request before doing the work. See *Triage on first message* below.
+
+**Refactor halt-trigger:** if a refactor crosses a module/file boundary AND has more than one caller, halt and ask the user whether this should go through SDD. "Mechanical rename across 5 files" is exactly the shape that hides regressions; the framework's mutation-verified test discipline is what catches that — don't skip it without explicit user consent.
+
+## Triage on first message
+
+When the user's first message of a session is NOT a slash command (no leading `/start`, `/next`, `/bug`, `/idea`, `/status`), your first turn must be triage. Don't start coding. Don't start specing. Ask which lane this is in. Format:
+
+> Before we start, what kind of work is this?
+>
+> 1. **New feature** — something new that didn't exist (`/start <title>`)
+> 2. **Extension** of a shipped feature — adding to or evolving something that's live (`/start --extends=<id> <title>`)
+> 3. **Tweak** of shipped code — typo, copy, cosmetic, no behaviour change (plain commits, no SDD ceremony)
+> 4. **Bug** — something is broken (`/bug` or `/start [BUG] <title>`)
+> 5. **Idea** — capture for later, no commitment now (`/idea <one-liner>`)
+> 6. **Refactor** — restructuring; tell me what's getting moved and I'll judge whether SDD applies
+>
+> Reply `1`–`6`, or describe in your own words.
+
+If the user picks 3 (tweak): make the change as a plain commit with a clear message; do NOT invoke `/start`. If they pick 6 (refactor): apply the refactor halt-trigger above.
+
+If the user pre-commits to a slash command (e.g., types `/start "build a thing"`), you've already been triaged — skip this step.
 
 ---
 

@@ -3206,6 +3206,28 @@ else
 fi
 
 # ============================================================
+# T86 — SDD doctrine: CLAUDE.md teaches when SDD applies + triage rule
+#   Pre-Phase-C: framework implicitly assumed every change runs through
+#   /start, with no doctrine for plain-commits work (typos, cosmetic
+#   CSS, dep bumps, pure refactors) or for triaging the user's first
+#   message. Adoption pain: typo fixes felt heavier than they should.
+#   Post-Phase-C: CLAUDE.md has explicit "When SDD applies" section
+#   listing the plain-commits zone, the refactor halt-trigger, and the
+#   "Triage on first message" rule (agent classifies before coding when
+#   user's first turn isn't a slash command).
+# ============================================================
+note "T86: CLAUDE.md states SDD-applies doctrine + triage rule + refactor halt"
+miss=""
+for needle in 'When SDD applies' 'Use plain commits' 'Triage on first message' 'Refactor halt-trigger' '--extends='; do
+  grep -qF -- "$needle" "$CLAUDE_MD" || miss="$miss $needle"
+done
+if [ -z "$miss" ]; then
+  ok "T86 CLAUDE.md teaches SDD-applies doctrine + triage + refactor halt + extends entry-point"
+else
+  bad "T86 CLAUDE.md missing doctrine phrasing:" "missing:$miss"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
