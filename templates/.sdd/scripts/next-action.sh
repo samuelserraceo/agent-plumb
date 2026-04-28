@@ -7,6 +7,9 @@
 #   - Recognises the v0.9 step-row shape `- [ ] <step-id>: <prompt>` under
 #     a `### action: <slug>` heading and looks up the step's frontmatter
 #     entry from `.sdd/actions/<slug>.md`.
+#   - For step-row matches, calls `resolve-parameters.sh` to compute the
+#     F5 cascade (project → work item → stage → action → step) and embeds
+#     the resolved parameters block in the JSON output.
 #
 # Output JSON keys (always emitted; v0.9 fields populated when the step
 # is recognisable, otherwise null):
@@ -18,6 +21,8 @@
 #   field       — where in spec.md the answer goes or null
 #   sub_action  — legacy: the literal `[ ]` line from spec.md (or null)
 #   transition  — null, or "X→Y" when the active phase has no open `[ ]`
+#   parameters  — resolved F5 cascade (object) or null when the step
+#                 isn't recognisable / the resolver fails
 #
 # Determinism: pure file walk + frontmatter read; no $RANDOM, no
 # timestamps. JSON emitted via json.dumps(sort_keys=True) so two
@@ -123,6 +128,7 @@ if first_open_line is None:
         "prompt": None, "field": None,
         "sub_action": None,
         "transition": transition,
+        "parameters": None,
     })
     sys.exit(0)
 
@@ -154,6 +160,36 @@ if active_action and step_id:
             # legacy fields stay null, sub_action still echoes the line.
             pass
 
+# F5 cascade: read playbook from INDEX.md, then call resolve-parameters.sh
+# to compute the merged effective parameters. Failure of any sub-step
+# leaves `parameters` as null — degrades gracefully (T75 covers this).
+parameters = None
+if active_action and step_id:
+    playbook_slug = None
+    index_path = os.path.join(proj, ".sdd", "INDEX.md")
+    if os.path.isfile(index_path):
+        try:
+            with open(index_path) as f:
+                for ln in f:
+                    pm = re.match(r'^\*\*Playbook:\*\*\s*([a-z][a-z0-9_-]*)\s*$', ln)
+                    if pm:
+                        playbook_slug = pm.group(1)
+                        break
+        except OSError:
+            pass
+    resolver = os.path.join(proj, ".sdd", "scripts", "resolve-parameters.sh")
+    if playbook_slug and os.path.isfile(resolver):
+        try:
+            import subprocess
+            r = subprocess.run(
+                ["bash", resolver, spec_path, playbook_slug, phase, active_action, step_id],
+                capture_output=True, timeout=10, cwd=proj,
+            )
+            if r.returncode == 0 and r.stdout:
+                parameters = json.loads(r.stdout.decode("utf-8"))
+        except Exception:
+            parameters = None
+
 emit({
     "phase": phase,
     "action": active_action,
@@ -163,5 +199,6 @@ emit({
     "field": step_meta.get("field"),
     "sub_action": first_open_line,
     "transition": None,
+    "parameters": parameters,
 })
 PYEOF

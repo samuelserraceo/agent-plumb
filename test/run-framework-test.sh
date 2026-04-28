@@ -2648,6 +2648,59 @@ else
 fi
 
 # ============================================================
+# T75 — F5 wiring: next-action.sh embeds resolved parameters in JSON
+#   When next-action.sh recognises a step row, it should call
+#   resolve-parameters.sh under the hood (using the playbook from
+#   INDEX.md) and embed the resolved cascade as the JSON `parameters`
+#   field. /next reads this directly — no second invocation needed.
+#   RED until next-action.sh wires in the resolver subprocess + reads
+#   playbook from INDEX.md.
+# ============================================================
+note "T75: next-action.sh embeds F5 resolved parameters in JSON output"
+d=$(mkproj_v08)
+rm -rf "$d/.sdd/features"
+cd "$d"
+bash "$START_SH" "f5 wiring test" >/dev/null 2>&1
+spec="$d/.sdd/features/001-f5-wiring-test/spec.md"
+# /start writes a generic Active blocker line; we need to ensure INDEX.md
+# has a Playbook: line for the resolver to pick up. /start does write that.
+out=$(bash "$NEXT_ACTION" "$spec" 2>&1)
+cd - >/dev/null
+rm -rf "$d"
+if echo "$out" | grep -q '"parameters":[[:space:]]*{' \
+   && echo "$out" | grep -q '"plain_english":[[:space:]]*true' \
+   && echo "$out" | grep -q '"max_minutes":[[:space:]]*5'; then
+  ok "T75 next-action.sh embeds parameters block (project + action cascade visible)"
+else
+  bad "T75 parameters block missing or wrong" "got: $out"
+fi
+
+# ============================================================
+# T75b — F5 wiring mutation: missing INDEX.md → parameters null (graceful)
+#   If INDEX.md is missing or has no Playbook: line, the resolver can't
+#   run (it needs a playbook slug). next-action.sh must degrade
+#   gracefully: parameters=null, all other fields populated as usual.
+#   Proves the wiring is opportunistic, not a crash path.
+# ============================================================
+note "T75b: missing INDEX.md → parameters null (graceful degradation)"
+d=$(mkproj_v08)
+rm -rf "$d/.sdd/features"
+cd "$d"
+bash "$START_SH" "graceful test" >/dev/null 2>&1
+rm -f .sdd/INDEX.md  # mutation: strip INDEX.md after start.sh wrote it
+spec="$d/.sdd/features/001-graceful-test/spec.md"
+out=$(bash "$NEXT_ACTION" "$spec" 2>&1)
+cd - >/dev/null
+rm -rf "$d"
+if echo "$out" | grep -q '"parameters":[[:space:]]*null' \
+   && echo "$out" | grep -q '"action":[[:space:]]*"problem"' \
+   && echo "$out" | grep -q '"step":[[:space:]]*"who"'; then
+  ok "T75b missing INDEX.md → parameters=null but action/step still resolve (graceful)"
+else
+  bad "T75b graceful degradation broken" "got: $out"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
