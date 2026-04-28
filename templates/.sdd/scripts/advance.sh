@@ -232,6 +232,29 @@ except Exception:
         os.unlink(tmp_path)
     raise
 
+# Idempotency stamp write — moved here from after metrics append.
+# CodeRabbit cycle 13 finding: if a downstream non-idempotent
+# operation (metrics append, event resolution) failed, the stamp
+# wouldn't write and a re-run could re-advance. Stamping right after
+# the atomic INDEX.md replace is the correct ordering: as soon as the
+# advance is durably visible in INDEX.md, record it.
+#
+# Only reached when a real advance happened — the early-exit paths
+# (no active work item, terminal state) sys.exit(0) before getting
+# here.
+head_sha = os.environ.get("ADVANCE_HEAD_SHA", "").strip()
+if head_sha:
+    stamp_path = os.path.join(proj, ".sdd", ".advance.last-head")
+    try:
+        with open(stamp_path, "w", encoding="utf-8") as f:
+            f.write(head_sha + "\n")
+    except OSError as e:
+        # Don't fail the whole advance if the stamp can't be written.
+        # Worst case: the next /next call advances twice — annoying
+        # but recoverable. Better than locking out a real advance.
+        print(f"[advance] warning: could not write stamp {stamp_path}: {e}",
+              file=sys.stderr)
+
 # Theme 12 — token instrumentation. Append one line to .sdd/metrics.md
 # per /next iteration. Format:
 #   <ISO-Z timestamp>  <work-item-path>  <slug>  <tag>  <tokens>  <duration-s>
@@ -262,23 +285,9 @@ metrics_line = f"{ts}  {work_item}  {active_slug}  {tag}  -  -\n"
 with open(metrics_path, "a", encoding="utf-8") as f:
     f.write(metrics_line)
 
-# Idempotency stamp write (v0.9.1 fix): record the current HEAD sha
-# so a second advance.sh invocation without an intervening commit
-# will short-circuit at the bash check above. Only reached when a
-# real advance happened — the early-exit paths (no active work item,
-# terminal state) sys.exit(0) before getting here.
-head_sha = os.environ.get("ADVANCE_HEAD_SHA", "").strip()
-if head_sha:
-    stamp_path = os.path.join(proj, ".sdd", ".advance.last-head")
-    try:
-        with open(stamp_path, "w", encoding="utf-8") as f:
-            f.write(head_sha + "\n")
-    except OSError as e:
-        # Don't fail the whole advance if the stamp can't be written.
-        # Worst case: the next /next call advances twice — annoying
-        # but recoverable. Better than locking out a real advance.
-        print(f"[advance] warning: could not write stamp {stamp_path}: {e}",
-              file=sys.stderr)
+# Note: idempotency stamp moved earlier — it now writes immediately
+# after the atomic INDEX.md replace, so a metrics append failure
+# can't leave the advance unrecorded.
 
 if terminal:
     print(f"[advance] {active_slug} was the last action — work item "
