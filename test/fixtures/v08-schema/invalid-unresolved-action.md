@@ -16,8 +16,8 @@ stages:
 
 Synthetic fixture for the unresolved-subaction-reference test.
 
-SCHEMA.md §1.5 says: "Every `subactions[]` slug must reference an
-existing `.sdd/actions/<slug>.md`." Loader MUST detect that
+config.md (closed enums section) says: "Every `subactions[]` slug must
+reference an existing `.sdd/actions/<slug>.md`." Loader MUST detect that
 `does-not-exist` has no corresponding file and emit a plain-English
 error per the plain-English error message convention.
 
