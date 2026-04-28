@@ -3087,6 +3087,106 @@ else
 fi
 
 # ============================================================
+# T85 — F1 base: pre-commit-rules.sh enforces touches: independently
+#   The new generic enforcer parallel-fires alongside the legacy
+#   pre-commit-touches.sh. Same scenario (commit without staging a
+#   declared touches: file) must be caught by pre-commit-rules.sh on
+#   its own. Test by neutering pre-commit-touches.sh to a no-op stub
+#   then committing — pre-commit-rules.sh must still block.
+#   RED until pre-commit-rules.sh reads action frontmatter + enforces.
+# ============================================================
+note "T85: pre-commit-rules.sh blocks missing-touches commit independently of touches.sh"
+d=$(mkproj_v08)
+cd "$d"
+git init -q
+git config user.email t@t.com && git config user.name T
+# Set up an active feature with INDEX.md pointing at data-contract action
+# (which declares touches: [.sdd/data-model.md]).
+mkdir -p .sdd/features/001-test
+cat > .sdd/INDEX.md <<'EOF'
+**Active:** features/001-test
+**Playbook:** feature
+**Active blocker:** § (SPEC action: data-contract)
+
+## Active
+
+- features/001-test — test
+EOF
+cat > .sdd/features/001-test/spec.md <<'EOF'
+[PHASE: SPEC]
+
+## PHASE: SPEC
+
+### action: data-contract
+- [ ] approval: draft + iterate
+EOF
+git add -A
+git commit -q -m scaffold
+
+# Mutation: NEUTER pre-commit-touches.sh so only pre-commit-rules.sh fires.
+echo '#!/usr/bin/env bash
+exit 0' > .claude/hooks/pre-commit-touches.sh
+chmod +x .claude/hooks/pre-commit-touches.sh
+
+# Now stage spec.md WITHOUT data-model.md — should be blocked by rules.sh.
+echo "edit" >> .sdd/features/001-test/spec.md
+git add .sdd/features/001-test/spec.md
+hook_stdin='{"tool_input":{"command":"git commit -m spec: data-contract/approval"}}'
+ec=0
+echo "$hook_stdin" | bash .claude/hooks/pre-commit-rules.sh >/dev/null 2>&1 || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 2 ]; then
+  ok "T85 pre-commit-rules.sh blocked missing-touches commit (touches.sh neutered)"
+else
+  bad "T85 pre-commit-rules.sh let through missing-touches commit" "exit=$ec (expected 2)"
+fi
+
+# ============================================================
+# T85b — F1 base mutation: rules.sh accepts when touches: is staged
+#   Inverse of T85. With the same setup but data-model.md ALSO staged,
+#   pre-commit-rules.sh must allow the commit. Proves the block in T85
+#   is gated on missing files specifically, not "always block."
+# ============================================================
+note "T85b: pre-commit-rules.sh allows commit when touches: file IS staged"
+d=$(mkproj_v08)
+cd "$d"
+git init -q
+git config user.email t@t.com && git config user.name T
+mkdir -p .sdd/features/001-test
+cat > .sdd/INDEX.md <<'EOF'
+**Active:** features/001-test
+**Playbook:** feature
+**Active blocker:** § (SPEC action: data-contract)
+EOF
+cat > .sdd/features/001-test/spec.md <<'EOF'
+[PHASE: SPEC]
+
+## PHASE: SPEC
+
+### action: data-contract
+- [ ] approval: draft + iterate
+EOF
+echo "model content" > .sdd/data-model.md
+git add -A
+git commit -q -m scaffold
+
+# Stage spec.md AND data-model.md.
+echo "edit" >> .sdd/features/001-test/spec.md
+echo "schema" >> .sdd/data-model.md
+git add .sdd/features/001-test/spec.md .sdd/data-model.md
+hook_stdin='{"tool_input":{"command":"git commit -m spec: data-contract/approval"}}'
+ec=0
+echo "$hook_stdin" | bash .claude/hooks/pre-commit-rules.sh >/dev/null 2>&1 || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 0 ]; then
+  ok "T85b pre-commit-rules.sh allowed commit when touches: file staged"
+else
+  bad "T85b pre-commit-rules.sh blocked legitimate commit" "exit=$ec (expected 0)"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
