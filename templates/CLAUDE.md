@@ -36,22 +36,20 @@ If any of those tradeoffs feel wrong for your project, SDD is the wrong tool. If
 
 | Command | Purpose | Branch | Phases |
 |---|---|---|---|
-| `/start` | Scaffold a new work item (feature for B-1; bug/idea/etc. arrive in Phase C) | feature branch (auto-created on first `/next`) | SPEC → BUILD → SHIP → SHIPPED |
-| `/next` | Advance the active work item by one step | active branch | SPEC → BUILD → SHIP → SHIPPED |
-| `/bug` | (B-1) routes to `/start [BUG] <title>`; Phase C ships a dedicated bug playbook | feature branch | SPEC → BUILD → SHIP |
+| `/start` | Scaffold a new work item — pass `--extends=<id>` for evolution of an existing feature | feature branch (auto-created on first `/next`) | SPEC → BUILD → SHIP → SHIPPED |
+| `/next` | Advance the active work item by one step. Also handles inline skip / re-approve / bug-routing — see /next's prose. | active branch | SPEC → BUILD → SHIP → SHIPPED |
 | `/idea` | Capture an idea to backlog cheaply — single file in `.sdd/ideas/`, no commitment | current branch | none |
-| `/status` | Print current workflow state | n/a | n/a |
+| `/status` | Print current workflow state + resolved F5 parameters with provenance | n/a | n/a |
 | `/ship` | Push branch, open PR, watch CI, mark shipped or capture bug | active branch | SHIP complete |
-| `/skip` | Skip a `[SKIPPABLE]` section with a reason | active branch | any |
-| `/re-approve <slug>` | Re-lock the new content of a previously-approved section | active branch | any |
 | `/compress` | Consolidate `patterns.md` or `data-model.md` when they grow noisy | n/a | n/a |
 
 **Picking the right entry point:**
 - User wants to build new functionality → `/start <one-line title>`
 - User wants to extend or evolve a shipped feature → `/start --extends=<id> <one-line title>` (lighter SPEC; references the prior feature's distilled context)
-- User reports something broken → `/bug` (B-1: routes to `/start [BUG] <title>`; Phase C ships a dedicated bug playbook)
+- User reports something broken → `/start [BUG] <title>` (the standard playbook handles bugs; skip sections that don't apply via inline-skip in `/next`)
 - User has a half-formed thought worth remembering but not building → `/idea`
 - An active work item already exists, advance it one step → `/next`
+- Skipping a `[SKIPPABLE]` step OR re-approving a previously-approved section after intentional edits — handled inline by `/next` (see /next's prose).
 
 If a "bug" mid-SPEC turns out to require significant new design, escalate by telling the user "this looks like a feature, not a bug — want to switch?".
 

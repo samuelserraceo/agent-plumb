@@ -3706,6 +3706,35 @@ else
 fi
 
 # ============================================================
+# T97 — C-9 trim: /bug, /re-approve, /skip stay retired (anti-regression)
+#   These three slash commands were deleted in C-9 (1/N) because their
+#   functionality folded into /next:
+#     /bug       → handled by triage doctrine + /start [BUG]
+#     /re-approve → inline in /next when moat blocks on stale hash
+#     /skip      → inline in /next when active step is [SKIPPABLE]
+#   T97 catches anyone re-introducing them.
+# ============================================================
+note "T97: /bug + /re-approve + /skip stay retired (anti-regression)"
+problems=""
+for legacy in bug.md re-approve.md skip.md; do
+  if [ -f "$FRAMEWORK_ROOT/templates/.claude/commands/$legacy" ]; then
+    problems="$problems file:$legacy"
+  fi
+done
+# CLAUDE.md slash-command table should NOT have these as their own rows
+# (mentions inside other prose, like the entry-point list, are fine —
+# we only check for table rows starting with `| \``).
+table_rows=$(grep -E '^\| `/(bug|re-approve|skip)\b' "$CLAUDE_MD" 2>/dev/null || echo "")
+if [ -n "$table_rows" ]; then
+  problems="$problems table-rows-present"
+fi
+if [ -z "$problems" ]; then
+  ok "T97 retired slash commands stay deleted (3 files gone + CLAUDE.md table clean)"
+else
+  bad "T97 retired slash command re-appeared:" "$problems"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'

@@ -46,6 +46,16 @@ You are running the SDD workflow. **Do exactly one atomic step — no more, no l
    - Phase advance: `[SDD:<id>] phase: <from> → <to>`
    - INDEX.md status update: `[SDD] index: <id> <status>`
 
+## Inline situations /next handles (no separate slash command needed)
+
+The framework's slash-command surface stays small (Pillar 1: Simplicity). Three situations that used to have their own slash command in v0.8 now live inside `/next`:
+
+- **Skipping a `[SKIPPABLE]` step.** When the active step or section is marked `[SKIPPABLE: <condition>]`, proactively offer to skip BEFORE asking any question: *"§N is marked skippable for X. This work item Y, so I think we should skip. Reply `skip <one-line reason>` to skip, or tell me what does apply."* On `skip <reason>`: replace every `[ ]` in the section with `⏭ skipped — <reason>`, append `[SKIPPED]` to the heading, and commit `[SDD:<id>] spec: skip <action-slug>/<step-id> — <reason>`. Never skip §1, §2, §3, §5, §6, §7, §11, §12 — they're not marked skippable.
+
+- **Re-approving a section after intentional edits.** When the moat blocks a phase-advance commit with `"section §<slug> CHANGED since you approved it"` AND the new content is intentional, treat it as a re-approval step. Show the diff between the original-approved content and the new content. Ask the user: *"You previously approved this section, then edited it. Reply `approve` to re-lock the new content as canonical, or tell me what to change."* On `approve`: re-run `.sdd/scripts/hash-section.sh <action-slug> <work-item-dir>`, write the new hash into `verification.json.approved_sections.<action-slug>`, append a re-approval entry to `decisions.md`, commit `[SDD:<id>] spec: re-approve <action-slug>`.
+
+- **Reporting a bug mid-conversation.** If the user describes something broken (not a feature request), don't run `/start` automatically. First confirm: *"Sounds like a bug. I'll capture this as a feature with `[BUG]` in the title — same SPEC → BUILD → SHIP flow, you'll skip sections that don't apply. Reply `confirm` or `no, it's a feature`."* On `confirm`, route to `/start [BUG] <one-line summary>`.
+
 ## Rules
 
 - **Never** fill a `[ ]` step without the user's input in USER-LED steps.
