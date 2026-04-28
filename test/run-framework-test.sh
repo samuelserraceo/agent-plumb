@@ -67,6 +67,7 @@ mkproj_v08() {
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/start.sh"                "$d/.sdd/scripts/start.sh"
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/advance.sh"              "$d/.sdd/scripts/advance.sh"
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/resolve-parameters.sh"   "$d/.sdd/scripts/resolve-parameters.sh"
+  cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/read-events.sh"          "$d/.sdd/scripts/read-events.sh"
   cp "$FRAMEWORK_ROOT/templates/.sdd/decisions.md"                    "$d/.sdd/decisions.md"
   cp "$VERIFY_STAGE" "$d/.sdd/scripts/verify-stage.sh" 2>/dev/null || true
   cp "$NEXT_ACTION"  "$d/.sdd/scripts/next-action.sh"  2>/dev/null || true
@@ -2719,6 +2720,53 @@ if [ -z "$miss" ]; then
   ok "T76 /status.md teaches F5 cascade output (parameters + provenance + next-action.sh)"
 else
   bad "T76 /status.md missing F5 references:" "missing:$miss"
+fi
+
+# ============================================================
+# T77 — F2 events schema: read-events.sh resolves event → file actions
+#   F2 slimmed: config.md frontmatter `events:` block declares which file
+#   actions fire on each event (section_approved / phase_transition /
+#   ship_complete). read-events.sh resolves a single event's actions
+#   with `<work-item>` placeholder substituted from a passed argument.
+#   Pre-Phase-C: no events: schema; advance.sh hardcoded the file lists.
+#   Post-Phase-C: schema in config; resolver outputs JSON; F1 generic
+#   enforcer (later) reads this map.
+# ============================================================
+note "T77: read-events.sh resolves section_approved event from config.md (F2)"
+d=$(mkproj_v08)
+cd "$d"
+out=$(bash .sdd/scripts/read-events.sh section_approved features/001-test 2>&1)
+cd - >/dev/null
+rm -rf "$d"
+if echo "$out" | grep -q '"event":[[:space:]]*"section_approved"' \
+   && echo "$out" | grep -q '"target":[[:space:]]*".sdd/decisions.md"' \
+   && echo "$out" | grep -q '"action":[[:space:]]*"append"' \
+   && echo "$out" | grep -q '"target":[[:space:]]*".sdd/features/001-test/verification.json"' \
+   && echo "$out" | grep -q '"action":[[:space:]]*"record_section_hash"'; then
+  ok "T77 events resolver returns the 2 actions for section_approved with placeholder filled"
+else
+  bad "T77 events resolver missing actions or placeholder unfilled" "got: $out"
+fi
+
+# ============================================================
+# T77b — F2 mutation: undeclared event → empty actions + _note
+#   Mutation: ask the resolver for an event that isn't in config.md. It
+#   should return an empty actions list + a _note message — graceful
+#   degradation, not a crash. Proves the resolver isn't tautologically
+#   matching anything.
+# ============================================================
+note "T77b: undeclared event → empty actions + plain-English _note"
+d=$(mkproj_v08)
+cd "$d"
+out=$(bash .sdd/scripts/read-events.sh not_a_real_event 2>&1)
+cd - >/dev/null
+rm -rf "$d"
+if echo "$out" | grep -q '"event":[[:space:]]*"not_a_real_event"' \
+   && echo "$out" | grep -q '"actions":[[:space:]]*\[\]' \
+   && echo "$out" | grep -q '"_note":'; then
+  ok "T77b undeclared event → empty actions + _note (graceful degradation)"
+else
+  bad "T77b undeclared event not handled gracefully" "got: $out"
 fi
 
 # ============================================================

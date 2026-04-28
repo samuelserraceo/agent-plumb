@@ -14,6 +14,22 @@ parameters:
     translate_jargon_on_first_use: true
   pace:
     halt_on_red_after_attempts: 3
+events:
+  section_approved:
+    actions:
+      - { target: ".sdd/decisions.md",         action: append }
+      - { target: ".sdd/<work-item>/verification.json", action: record_section_hash }
+  phase_transition:
+    actions:
+      - { target: ".sdd/decisions.md",         action: append }
+      - { target: ".sdd/INDEX.md",             action: rewrite_active_block }
+      - { target: ".sdd/<work-item>/spec.md",  action: scaffold_next_phase }
+  ship_complete:
+    actions:
+      - { target: ".sdd/decisions.md",         action: append }
+      - { target: ".sdd/patterns.md",          action: append_lesson }
+      - { target: ".sdd/INDEX.md",             action: rewrite_shipped_block }
+      - { target: ".sdd/<work-item>/.shipped", action: create_marker }
 ---
 
 # SDD project configuration
@@ -50,6 +66,18 @@ You'll never have to write the YAML by hand — `/start` and the migration scrip
 ### `size_thresholds:` (optional, not shown above)
 
 Override the framework's default warn/block thresholds for your memory files. Defaults are in SCHEMA.md §4.2. Most projects don't need to touch this. Add it if your project has a working pattern of, say, an unusually large `data-model.md` that the framework keeps complaining about.
+
+### `events:` (event → file-action map, F2 slimmed)
+
+Maps the framework's three known events to the file changes they imply. When an action's step declares `triggers: [section_approved]` (in its frontmatter), the framework fires the event; the `events:` block declares **what happens** when the event fires — which files get appended, hashed, rewritten, or marked.
+
+Three events ship with the template:
+
+- `section_approved` — fires when the user approves a section that requires approval (`proposed-approach`, `acceptance-criteria`, `out-of-scope`, `data-contract`). Appends a one-paragraph entry to `.sdd/decisions.md` and records the approved-section hash in the work item's `verification.json`.
+- `phase_transition` — fires on SPEC → BUILD → SHIP → SHIPPED. Appends to `decisions.md`, rewrites the active-block in `INDEX.md`, scaffolds the next phase headings in `spec.md`.
+- `ship_complete` — fires on the final SHIP commit. Appends to `decisions.md`, appends the new lesson to `patterns.md`, rewrites the shipped block in `INDEX.md`, creates the `.shipped` marker file.
+
+Path placeholders (`<work-item>`) are resolved at runtime against `INDEX.md`'s `**Active:**` line. You can add new events by adding a key here — the F1 generic enforcer (Phase C) reads this map to validate that staged commits match the declared events. Action frontmatter step rows reference events via `triggers:`, so adding an event flow is a 2-line change (one entry here + one `triggers:` reference in the action that fires it).
 
 ### `parameters:` (project-level defaults)
 

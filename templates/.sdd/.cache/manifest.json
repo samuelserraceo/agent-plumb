@@ -37,6 +37,11 @@
       "expected_sha256": "89483cb06e150e707661c0cd44d68022a869b3301474ce759e12be49590ed72e",
       "path": ".sdd/scripts/resolve-parameters.sh",
       "trust": "framework"
+    },
+    "read-events.sh": {
+      "expected_sha256": "1563771cda0cf3bce90879d1f0e6189e84071ec57f512169120cd13f6eb12868",
+      "path": ".sdd/scripts/read-events.sh",
+      "trust": "framework"
     }
   },
   "sdd_version": "0.8.0",

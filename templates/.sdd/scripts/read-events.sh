@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+# read-events.sh — F2 events resolver.
+#
+# Reads .sdd/config.md frontmatter `events:` block and resolves a
+# specific event name to the list of file actions it fires.
+#
+# Usage:
+#   read-events.sh <event-name>             — list all events if name omitted
+#   read-events.sh <event-name> [<work-item>] — resolve <work-item> placeholder
+#
+# Output (stdout):
+#   JSON: { "event": "...", "actions": [ { "target": "...", "action": "..." }, ... ] }
+#
+# Path placeholders:
+#   The events block uses `<work-item>` as a placeholder for the active
+#   work-item path (e.g., "features/001-foo"). Pass the work item as
+#   second arg; the script substitutes it. If omitted, paths are emitted
+#   verbatim (placeholder visible) — useful for printing the full schema.
+#
+# Determinism: pure file walk + frontmatter read; JSON via
+# json.dumps(sort_keys=True, ensure_ascii=False).
+
+set -uo pipefail
+
+EVENT="${1:-}"
+WORK_ITEM="${2:-}"
+PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(pwd)}"
+
+EVENT="$EVENT" WORK_ITEM="$WORK_ITEM" PROJ="$PROJECT_DIR" python3 <<'PYEOF'
+import json, os, re, sys
+
+proj      = os.environ["PROJ"]
+event     = os.environ["EVENT"]
+work_item = os.environ["WORK_ITEM"]
+
+config_path = os.path.join(proj, ".sdd", "config.md")
+events = {}
+
+if os.path.isfile(config_path):
+    try:
+        with open(config_path) as f:
+            text = f.read()
+        m = re.match(r'^---\n(.*?)\n---', text, re.DOTALL)
+        if m:
+            import yaml
+            fm = yaml.safe_load(m.group(1)) or {}
+            events = fm.get("events") or {}
+    except Exception as e:
+        sys.stderr.write(f'{{"error":"config.md frontmatter parse: {e}"}}\n')
+        sys.exit(1)
+
+def resolve_paths(actions, wi):
+    """Substitute <work-item> placeholder if work_item provided."""
+    if not wi:
+        return actions
+    out = []
+    for a in actions:
+        a2 = dict(a)
+        if "target" in a2 and isinstance(a2["target"], str):
+            a2["target"] = a2["target"].replace("<work-item>", wi)
+        out.append(a2)
+    return out
+
+if not event:
+    # List all events.
+    out = {
+        name: {"actions": resolve_paths((spec or {}).get("actions") or [], work_item)}
+        for name, spec in sorted(events.items())
+    }
+    sys.stdout.write(json.dumps({"events": out}, sort_keys=True, ensure_ascii=False) + "\n")
+    sys.exit(0)
+
+if event not in events:
+    sys.stdout.write(json.dumps(
+        {"event": event, "actions": [], "_note": f"event '{event}' not declared in config.md"},
+        sort_keys=True, ensure_ascii=False) + "\n")
+    sys.exit(0)
+
+spec = events[event] or {}
+actions = resolve_paths(spec.get("actions") or [], work_item)
+sys.stdout.write(json.dumps(
+    {"event": event, "actions": actions},
+    sort_keys=True, ensure_ascii=False) + "\n")
+PYEOF
