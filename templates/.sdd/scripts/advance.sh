@@ -64,32 +64,78 @@ command -v python3 >/dev/null 2>&1 || {
 # checkouts and worktrees.
 STAMP_FILE=".sdd/.advance.last-head"
 LOCK_FILE=".sdd/.advance.lock"
-LOCK_FD=""
+LOCK_DIR=".sdd/.advance.lock.d"
+STALE_LOCK_SECONDS=300  # 5 min — anything older is from a killed run
 
 # Issue #32 (v0.9.2): concurrency lock around the stamp check + write.
 # Without it, two simultaneous advance.sh runs could both pass the
 # pre-check before either writes the stamp, then both advance — losing
-# one step. Use flock if available; mkdir-based fallback for systems
-# that lack flock. Lock is held until the script exits.
+# one step.
+#
+# CodeRabbit cycle 1 (PR #53) hardening:
+#   - flock path now FAIL-CLOSES on exec or flock errors (was: silently
+#     continued unlocked)
+#   - mkdir-based fallback now detects + recovers stale locks (was:
+#     deadlocked after a hard kill since trap only fires on normal EXIT)
 if command -v git >/dev/null 2>&1; then
   HEAD_SHA=$(git rev-parse HEAD 2>/dev/null || echo "")
   if [ -n "$HEAD_SHA" ]; then
     mkdir -p .sdd
     if command -v flock >/dev/null 2>&1; then
-      # flock-based mutual exclusion. Open fd 9 on the lock file and
-      # hold the exclusive lock for the rest of the script's lifetime.
-      exec 9>>"$LOCK_FILE"
-      if ! flock -n 9; then
+      # flock-based mutual exclusion. Fail-close on every step.
+      if ! exec 9>>"$LOCK_FILE"; then
+        echo "[advance] cannot open lock file $LOCK_FILE — refusing to advance unlocked." >&2
+        exit 1
+      fi
+      if ! flock -n 9 2>/dev/null; then
         echo "[advance] another advance.sh is running on this project — waiting..." >&2
-        flock 9
+        if ! flock 9; then
+          echo "[advance] flock failed even after wait — refusing to advance unlocked." >&2
+          exit 1
+        fi
       fi
     else
-      # mkdir-based fallback: atomic check-and-create.
-      while ! mkdir "$LOCK_FILE.d" 2>/dev/null; do
-        echo "[advance] another advance.sh is running — waiting..." >&2
+      # mkdir-based fallback. Stale-lock recovery: if a lock dir exists
+      # and its mtime is older than STALE_LOCK_SECONDS, it's from a
+      # killed run; remove and retry. PID file inside helps diagnostics.
+      stale_check_and_retry() {
+        if [ -d "$LOCK_DIR" ]; then
+          # Compute age in seconds (portable across mac + linux)
+          age=$(python3 -c "
+import os, time
+try:
+    mtime = os.path.getmtime('$LOCK_DIR')
+    print(int(time.time() - mtime))
+except OSError:
+    print(0)
+" 2>/dev/null || echo 0)
+          if [ "$age" -gt "$STALE_LOCK_SECONDS" ]; then
+            stale_pid=$(cat "$LOCK_DIR/pid" 2>/dev/null || echo "?")
+            echo "[advance] stale lock detected (pid $stale_pid, age ${age}s > ${STALE_LOCK_SECONDS}s) — removing." >&2
+            rm -rf "$LOCK_DIR" 2>/dev/null
+            return 0  # caller should retry mkdir
+          fi
+        fi
+        return 1  # not stale — caller should keep waiting
+      }
+      attempts=0
+      while ! mkdir "$LOCK_DIR" 2>/dev/null; do
+        attempts=$((attempts + 1))
+        if stale_check_and_retry; then
+          continue  # try mkdir again
+        fi
+        if [ "$attempts" -eq 1 ]; then
+          echo "[advance] another advance.sh is running — waiting..." >&2
+        fi
         sleep 1
+        if [ "$attempts" -gt 600 ]; then  # 10 min max wait
+          echo "[advance] timeout waiting for lock $LOCK_DIR — refusing to advance unlocked." >&2
+          exit 1
+        fi
       done
-      trap 'rmdir ".sdd/.advance.lock.d" 2>/dev/null || true' EXIT
+      # Write PID for diagnostics + stale-detection
+      echo "$$" > "$LOCK_DIR/pid" 2>/dev/null || true
+      trap 'rm -rf "'"$LOCK_DIR"'" 2>/dev/null || true' EXIT INT TERM
     fi
     # Now we hold the lock. Check the stamp.
     if [ -f "$STAMP_FILE" ]; then
