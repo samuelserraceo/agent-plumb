@@ -17,7 +17,7 @@
 # Idempotent: safe to re-run on the same directory (overwrites files).
 # Fails loudly if templates/ dir not found.
 
-set -uo pipefail
+set -euo pipefail
 
 # Resolve the SDD project root (where this script lives)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -97,11 +97,21 @@ cd "$TARGET" || { echo "ERROR: failed to cd into $TARGET" >&2; exit 1; }
 # TARGET know it's a discardable UAT scratch dir (the existence-check
 # at the top of this script reads it). Created BEFORE git init so
 # even if git init fails, the marker is in place.
-touch .sdd-uat-bootstrap
+#
+# CodeRabbit cycle 9/10/11: explicit error guards on touch + git init.
+# With `set -euo pipefail` above these would already fail-stop, but
+# the explicit messages give the user a clearer diagnostic.
+touch .sdd-uat-bootstrap || {
+  echo "ERROR: failed to create sentinel file in $TARGET — check permissions." >&2
+  exit 1
+}
 
 # Initialize git repo
 if [ ! -d .git ]; then
-  git init -q
+  git init -q || {
+    echo "ERROR: git init failed in $TARGET — refusing to scaffold without a git repo." >&2
+    exit 1
+  }
 fi
 
 # Configure git user (test values)

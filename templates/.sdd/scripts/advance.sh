@@ -79,7 +79,7 @@ except ImportError:
 proj = os.environ["PROJ"]
 index_path = os.path.join(proj, ".sdd", "INDEX.md")
 
-with open(index_path) as f:
+with open(index_path, encoding="utf-8") as f:
     index_text = f.read()
 
 # Parse current state from INDEX.md header lines.
@@ -133,7 +133,7 @@ if not os.path.isfile(playbook_path):
     print(f"[advance] playbook not found: {playbook_path}", file=sys.stderr)
     sys.exit(1)
 
-with open(playbook_path) as f:
+with open(playbook_path, encoding="utf-8") as f:
     pb_text = f.read()
 pb_fm_match = re.match(r"^---\n(.*?)\n---", pb_text, re.DOTALL)
 if not pb_fm_match:
@@ -239,7 +239,7 @@ sa_path = os.path.join(proj, ".sdd", "actions", f"{active_slug}.md")
 tag = "?"
 if os.path.isfile(sa_path):
     try:
-        with open(sa_path) as f:
+        with open(sa_path, encoding="utf-8") as f:
             sa_text = f.read()
         sa_fm_match = re.match(r"^---\n(.*?)\n---", sa_text, re.DOTALL)
         if sa_fm_match:
@@ -252,7 +252,7 @@ ts = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 metrics_line = f"{ts}  {work_item}  {active_slug}  {tag}  -  -\n"
 # Append-only — never edit prior lines (decisions.md / metrics.md are
 # event logs per handoff Theme 7, Theme 12).
-with open(metrics_path, "a") as f:
+with open(metrics_path, "a", encoding="utf-8") as f:
     f.write(metrics_line)
 
 # Idempotency stamp write (v0.9.1 fix): record the current HEAD sha

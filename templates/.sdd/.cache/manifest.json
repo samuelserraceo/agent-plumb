@@ -9,7 +9,7 @@
   },
   "scripts": {
     "advance.sh": {
-      "expected_sha256": "f67c31ba54c39664be6317f8bf84d14a145e9ebfb7bc9c8f8a5a83813fef5da8",
+      "expected_sha256": "20e6049da77708213473554b22fdcc81a5595d78ace5f13db16d397ea02e0d8d",
       "path": ".sdd/scripts/advance.sh",
       "trust": "framework"
     },
@@ -24,27 +24,27 @@
       "trust": "framework"
     },
     "reapprove.sh": {
-      "expected_sha256": "b7502ea30c6d135e0ea88c069fbc9e121996c7214068e761ba8a7787d5a5c14d",
+      "expected_sha256": "ef4038b9ee5ec2cf353241410278e0875ca713ce59d948be587cbcc989629b9e",
       "path": ".sdd/scripts/reapprove.sh",
       "trust": "framework"
     },
     "start.sh": {
-      "expected_sha256": "bda7de07e83b253d3649e9e1a679f2f50517dcd8f7b10581528e586aecca5f3a",
+      "expected_sha256": "94118e6e8106d9131031e92186907710d4de6f893c3963dfdfc7a4fb32b40abd",
       "path": ".sdd/scripts/start.sh",
       "trust": "framework"
     },
     "resolve-parameters.sh": {
-      "expected_sha256": "89483cb06e150e707661c0cd44d68022a869b3301474ce759e12be49590ed72e",
+      "expected_sha256": "33a9b0226d4c2a62562febaab85b12f99c481bbc861ad9d17dc4a27cf16bccc5",
       "path": ".sdd/scripts/resolve-parameters.sh",
       "trust": "framework"
     },
     "read-events.sh": {
-      "expected_sha256": "f8d6a4b678b36dc97f71bb73a664e6b93556b09dfbf08c04a270e7278d492475",
+      "expected_sha256": "b35550dda478a092470aa323b5f00804f0b27319445c8e159ca5c84eb92fef7c",
       "path": ".sdd/scripts/read-events.sh",
       "trust": "framework"
     },
     "next-action.sh": {
-      "expected_sha256": "5af8b31b8a345d637b091b0fa054bc3fe8334c983774f60afcb25d41bde8a460",
+      "expected_sha256": "f4bcb0c354e4d532ad65d472a8a61217d5673fb883df137f5342cc85409d5300",
       "path": ".sdd/scripts/next-action.sh",
       "trust": "framework"
     },

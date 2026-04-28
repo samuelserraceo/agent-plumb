@@ -50,7 +50,7 @@ def read_frontmatter(path):
     if not os.path.isfile(path):
         return {}
     try:
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             t = f.read()
         m = re.match(r'^---\n(.*?)\n---', t, re.DOTALL)
         if not m:
@@ -84,16 +84,10 @@ config_fm = read_frontmatter(os.path.join(proj, ".sdd", "config.md"))
 project_params = config_fm.get("parameters") or {}
 
 provenance = {}
-def stamp(d, label, prefix=""):
-    """Initial provenance: every leaf in `d` is sourced at `label`."""
-    if not isinstance(d, dict):
-        return
-    for k, v in d.items():
-        path = f"{prefix}{k}" if prefix == "" else f"{prefix}.{k}"
-        if isinstance(v, dict):
-            stamp(v, label, path)
-        else:
-            provenance[path] = label
+# CodeRabbit cycle 9/10/11: removed unused `stamp()` helper. Earlier
+# revisions used it to seed provenance from project_params; deep_merge
+# now records provenance inline as it walks each level, so stamp()
+# became dead code.
 
 resolved = {}
 resolved = deep_merge(resolved, project_params, "project", provenance)

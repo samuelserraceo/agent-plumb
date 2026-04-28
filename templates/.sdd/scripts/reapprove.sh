@@ -34,7 +34,7 @@
 #   0 — verification.json updated successfully (new hash printed to stdout)
 #   1 — error (file missing, hash failed, JSON malformed). Stderr explains.
 
-set -uo pipefail
+set -euo pipefail
 
 if [ $# -ne 2 ]; then
   echo "reapprove: usage: reapprove.sh <slug> <work-item-dir>" >&2

@@ -59,7 +59,7 @@ def emit(d):
 
 # Read spec.md.
 try:
-    with open(spec_path) as f:
+    with open(spec_path, encoding="utf-8") as f:
         spec_lines = f.read().split("\n")
 except OSError as e:
     sys.stderr.write(json.dumps({"error": f"cannot read spec: {e}"}) + "\n")
@@ -145,7 +145,7 @@ if active_action and step_id:
     if os.path.isfile(action_path):
         try:
             import yaml
-            with open(action_path) as f:
+            with open(action_path, encoding="utf-8") as f:
                 t = f.read()
             fm = re.match(r'^---\n(.*?)\n---', t, re.DOTALL)
             if fm:
@@ -169,7 +169,7 @@ if active_action and step_id:
     index_path = os.path.join(proj, ".sdd", "INDEX.md")
     if os.path.isfile(index_path):
         try:
-            with open(index_path) as f:
+            with open(index_path, encoding="utf-8") as f:
                 for ln in f:
                     pm = re.match(r'^\*\*Playbook:\*\*\s*([a-z][a-z0-9_-]*)\s*$', ln)
                     if pm:
