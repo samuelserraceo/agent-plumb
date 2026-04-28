@@ -58,6 +58,193 @@ git rev-parse --is-inside-work-tree >/dev/null 2>&1 || exit 0
 staged=$(git diff --cached --name-only 2>/dev/null || echo "")
 [ -z "$staged" ] && exit 0
 
+# === STATE_RULES enforcement (refuse on state condition) ===
+# Read config.md `state_rules:` (list of { id, when, refuse, message } entries)
+# and apply each entry's condition recogniser. Today's only recogniser:
+#   phase_advance_with_open_blockers
+#     - this commit changes the [PHASE: X] line in spec.md
+#     - AND the source phase (read from HEAD's spec) still has `[ ]` step rows
+#     - subsumes pre-commit-block.sh's central guarantee
+#
+# Adding a new rule type = a new `when:` value + a new branch below.
+state_rules_result=$(STAGED="$staged" python3 - <<'PYEOF' || echo "ALLOW"
+import os, re, subprocess, sys
+try:
+    import yaml
+except Exception:
+    print("ALLOW"); sys.exit(0)
+
+try:
+    text = open(".sdd/config.md").read()
+except OSError:
+    print("ALLOW"); sys.exit(0)
+m = re.match(r"^---\n(.*?)\n---", text, re.DOTALL)
+if not m:
+    print("ALLOW"); sys.exit(0)
+try:
+    fm = yaml.safe_load(m.group(1)) or {}
+except Exception:
+    print("ALLOW"); sys.exit(0)
+
+rules = fm.get("state_rules") or []
+if not rules:
+    print("ALLOW"); sys.exit(0)
+
+# Helper: get the active work-item path from STAGED INDEX.md (anti-tamper).
+def staged_active_path():
+    try:
+        r = subprocess.run(
+            ["git", "show", ":.sdd/INDEX.md"],
+            capture_output=True, check=False, text=True,
+        )
+    except Exception:
+        return None
+    if r.returncode != 0:
+        return None
+    for ln in r.stdout.splitlines():
+        m2 = re.match(r"^\*\*Active:\*\*\s+(\S+)", ln)
+        if m2:
+            p = m2.group(1).strip()
+            # R3 strict shape — lowercase folder / alphanumeric item, no traversal.
+            if re.match(r"^[a-z][a-z0-9_-]*/[A-Za-z0-9._-]+$", p):
+                return p
+            return None
+    return None
+
+# Helper: phase_advance_with_open_blockers recogniser.
+def phase_advance_open_blockers():
+    active = staged_active_path()
+    if not active:
+        return None  # no active feature → rule doesn't apply
+    spec = f".sdd/{active}/spec.md"
+    # Bootstrap exception: spec.md status A → first creation, allow.
+    try:
+        ns = subprocess.run(
+            ["git", "diff", "--cached", "--name-status", "--", spec],
+            capture_output=True, check=False, text=True,
+        )
+    except Exception:
+        return None
+    if ns.returncode == 0 and ns.stdout:
+        first = ns.stdout.splitlines()[0].split("\t")[0] if ns.stdout.splitlines() else ""
+        if first == "A":
+            return None  # bootstrap commit
+    # Phase-advance detection: staged diff changes [PHASE: X] line.
+    try:
+        diff = subprocess.run(
+            ["git", "diff", "--cached", "--", spec],
+            capture_output=True, check=False, text=True,
+        )
+    except Exception:
+        return None
+    if diff.returncode != 0 or not diff.stdout:
+        return None
+    if not re.search(r'^[+-]\[PHASE:\s*[A-Z]+\]', diff.stdout, re.MULTILINE):
+        return None  # not a phase-advance commit
+    # Source phase from HEAD.
+    try:
+        head = subprocess.run(
+            ["git", "show", f"HEAD:{spec}"],
+            capture_output=True, check=False, text=True,
+        )
+    except Exception:
+        return None
+    if head.returncode != 0:
+        return None
+    src_match = re.search(r'\[PHASE:\s*([A-Z]+)\]', head.stdout)
+    if not src_match:
+        return None
+    source_phase = src_match.group(1)
+    # Read STAGED spec, walk source phase body, fence-aware, AC/T/C- skip.
+    try:
+        sb = subprocess.run(
+            ["git", "show", f":{spec}"],
+            capture_output=True, check=False,
+        )
+    except Exception:
+        return None
+    if sb.returncode != 0:
+        return None
+    # NUL guard.
+    if b"\x00" in sb.stdout:
+        return ("NUL bytes in spec.md — refusing", [])
+    text = sb.stdout.decode("utf-8", errors="replace")
+    in_phase = False
+    in_fence = False
+    open_blockers = []
+    target = f"## PHASE: {source_phase}"
+    for line in text.split("\n"):
+        if line.startswith("## "):
+            if line == target:
+                in_phase = True; in_fence = False; continue
+            elif in_phase:
+                break
+            else:
+                continue
+        if not in_phase: continue
+        if re.match(r'^\s*```', line):
+            in_fence = not in_fence; continue
+        if in_fence: continue
+        if re.match(r'^\s*-\s*\[ \]\s+(AC|T|C-)[A-Za-z0-9_-]', line):
+            continue
+        if "[ ]" in line:
+            open_blockers.append(line)
+            if len(open_blockers) >= 5:
+                break
+    if open_blockers:
+        return (source_phase, open_blockers)
+    return None
+
+# Dispatch.
+recognisers = {
+    "phase_advance_with_open_blockers": phase_advance_open_blockers,
+}
+
+for rule in rules:
+    if not isinstance(rule, dict): continue
+    if not rule.get("refuse"): continue
+    when = rule.get("when") or ""
+    rec = recognisers.get(when)
+    if rec is None:
+        continue  # unknown condition — silently skip (forwards-compat)
+    hit = rec()
+    if hit is None:
+        continue
+    msg = rule.get("message") or "state_rule violation"
+    print("BLOCK")
+    print(f"RULE: {rule.get('id') or when}")
+    print(f"MESSAGE: {msg.strip()}")
+    if isinstance(hit, tuple):
+        ctx_label, ctx_items = hit
+        if isinstance(ctx_items, list) and ctx_items:
+            print(f"CONTEXT: source phase {ctx_label}, open blockers (first 5):")
+            for ln in ctx_items:
+                print(f"  {ln}")
+        else:
+            print(f"CONTEXT: {ctx_label}")
+    sys.exit(0)
+
+print("ALLOW")
+PYEOF
+)
+
+case "$state_rules_result" in
+  ALLOW*) ;;
+  BLOCK*)
+    cat >&2 <<EOF
+
+[SDD rules / state_rules] State-condition refusal triggered.
+
+$(printf '%s\n' "$state_rules_result" | sed -n '2,$p')
+
+To soften this rule (project owners), edit .sdd/config.md
+\`state_rules:\` and set \`refuse: false\` on the matching entry,
+or remove the entry. Fill the open blockers, then retry.
+EOF
+    exit 2
+    ;;
+esac
+
 # === FOLDER_RULES enforcement (Option B — warn-only by default) ===
 # Read config.md `folder_rules:` and warn (no block by default) when:
 #   - any staged path starts with a `deferred_paths:` prefix

@@ -51,6 +51,17 @@ file_rules:
       close: "SDD-MANAGED-END"
       bump_marker: ".sdd/CLAUDE.version"
       on_edit: warn
+state_rules:
+  - id: no-open-blockers-on-phase-advance
+    when: phase_advance_with_open_blockers
+    refuse: true
+    message: |
+      Phase-advance blocked: the source phase (the one you're leaving)
+      still has open `[ ]` blockers. Per-section commits during a phase
+      are allowed — only the phase-advance commit is gated.
+
+      Fill the open blockers (or skip a [SKIPPABLE] section inline via
+      /next), then retry.
 folder_rules:
   default_action: warn
   deferred_paths:
@@ -159,6 +170,30 @@ file_rules:
 ```
 
 Adding a new file-rule = a new key in this map + a new rule-handler in `pre-commit-rules.sh`. The handler is the only code change; the schema is declarative.
+
+### `state_rules:` (state-condition refusal rules)
+
+Generic refusal rules driven by the project's current state. Each entry has the same shape; the framework's F1 enforcer reads them and applies a matching condition recogniser. This is **Option B-lite** from Sam's Q&A round — one rule today, schema ready for future ones.
+
+Schema:
+
+```yaml
+state_rules:
+  - id: <slug>                    # human-readable rule name
+    when: <condition-name>        # closed-enum condition the enforcer recognises
+    refuse: true                  # block the commit on match
+    message: |                    # plain-English explanation shown to the user
+      Why this is blocked + how to fix.
+```
+
+Today's only entry, **`phase_advance_with_open_blockers`** — refuses any commit that flips `[PHASE: X]` in spec.md while the source phase (the one being left) still has open `[ ]` step rows. Per-section commits during a phase pass through unchanged; only the phase-advance commit is gated. The rule prevents the framework's central drift mode: "I'll come back to those" advancing the phase with unfinished work.
+
+Future condition names (sketches — none implemented yet, schema is ready):
+- `ship_commit_with_red_acs` — refuse SHIP-final commit when any AC line is still RED
+- `phase_advance_with_stale_approval` — refuse phase advance when a previously-approved section's hash mismatches (today the moat handles this; could subsume into state_rules)
+- `commit_during_halt` — refuse any commit while a halt-trigger marker file is present
+
+Adding a future rule = a new `state_rules:` entry + a new condition recogniser in pre-commit-rules.sh's handler. The schema doesn't change.
 
 ### `folder_rules:` (canonical-folder enforcement; Option B)
 

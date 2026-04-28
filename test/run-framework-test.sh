@@ -3735,6 +3735,106 @@ else
 fi
 
 # ============================================================
+# T98 — F1 state_rules: pre-commit-rules.sh blocks phase-advance with
+#   open `[ ]` blockers, independent of pre-commit-block.sh. Subsumes
+#   the framework's central guarantee via the new state_rules: schema.
+#   Mutation: neuter pre-commit-block.sh; assert pre-commit-rules.sh
+#   independently catches a phase-advance commit that leaves `[ ]`
+#   open in the source phase.
+# ============================================================
+note "T98: pre-commit-rules.sh blocks phase-advance with open blockers (state_rules)"
+d=$(mkproj_v08)
+cd "$d"
+git init -q
+git config user.email t@t.com && git config user.name T
+# Set up an active feature in PHASE: SPEC with one open [ ] blocker.
+mkdir -p .sdd/features/001-test
+cat > .sdd/INDEX.md <<'EOF'
+**Active:** features/001-test
+**Playbook:** feature
+**Active blocker:** § (SPEC action: problem)
+EOF
+cat > .sdd/features/001-test/spec.md <<'EOF'
+[PHASE: SPEC]
+
+## PHASE: SPEC
+
+### action: problem
+- [ ] who: Who specifically has this problem?
+EOF
+git add -A
+git commit -q -m scaffold
+
+# Mutation: NEUTER pre-commit-block.sh.
+echo '#!/usr/bin/env bash
+exit 0' > .claude/hooks/pre-commit-block.sh
+chmod +x .claude/hooks/pre-commit-block.sh
+
+# Try to advance phase: change [PHASE: SPEC] → [PHASE: BUILD] while [ ] open.
+sed -i.bak 's/\[PHASE: SPEC\]/[PHASE: BUILD]/' .sdd/features/001-test/spec.md
+rm -f .sdd/features/001-test/spec.md.bak
+git add .sdd/features/001-test/spec.md
+hook_stdin='{"tool_input":{"command":"git commit -m phase: SPEC -> BUILD"}}'
+ec=0
+echo "$hook_stdin" | bash .claude/hooks/pre-commit-rules.sh >/dev/null 2>&1 || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 2 ]; then
+  ok "T98 pre-commit-rules.sh blocked phase-advance with open [ ] (legacy hook neutered)"
+else
+  bad "T98 rules.sh let phase-advance through with open blockers" "exit=$ec (expected 2)"
+fi
+
+# ============================================================
+# T98b — F1 state_rules mutation: per-section commit allowed
+#   Inverse of T98. Stage a per-section spec.md edit (no [PHASE: X]
+#   change) → state_rules must allow. Proves the rule is gated on
+#   "phase advance" specifically, not "any [ ] in spec.md."
+# ============================================================
+note "T98b: pre-commit-rules.sh allows per-section commit (state_rules gates on phase-flip)"
+d=$(mkproj_v08)
+cd "$d"
+git init -q
+git config user.email t@t.com && git config user.name T
+mkdir -p .sdd/features/001-test
+cat > .sdd/INDEX.md <<'EOF'
+**Active:** features/001-test
+**Playbook:** feature
+**Active blocker:** § (SPEC action: problem)
+EOF
+cat > .sdd/features/001-test/spec.md <<'EOF'
+[PHASE: SPEC]
+
+## PHASE: SPEC
+
+### action: problem
+- [ ] who: Who specifically has this problem?
+- [ ] why-now: Why now?
+EOF
+git add -A
+git commit -q -m scaffold
+
+# Mutation: NEUTER pre-commit-block (so only state_rules fires).
+echo '#!/usr/bin/env bash
+exit 0' > .claude/hooks/pre-commit-block.sh
+chmod +x .claude/hooks/pre-commit-block.sh
+
+# Per-section commit: fill ONE [ ] (no [PHASE: X] change). Other [ ] still open.
+sed -i.bak 's/- \[ \] who:.*$/- [x] who: recruiters from Twitter/' .sdd/features/001-test/spec.md
+rm -f .sdd/features/001-test/spec.md.bak
+git add .sdd/features/001-test/spec.md
+hook_stdin='{"tool_input":{"command":"git commit -m spec: problem/who"}}'
+ec=0
+echo "$hook_stdin" | bash .claude/hooks/pre-commit-rules.sh >/dev/null 2>&1 || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 0 ]; then
+  ok "T98b state_rules allowed per-section commit (gate is on phase-flip, not open [ ])"
+else
+  bad "T98b rules.sh blocked legitimate per-section commit" "exit=$ec (expected 0)"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
