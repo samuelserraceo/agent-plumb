@@ -14,6 +14,24 @@ You are working inside a Spec-Driven Development (SDD) project. The MANAGED sect
 
 **Canonical playbook**: `.sdd/playbooks/feature.md` (and any other playbook in `.sdd/playbooks/`). The frontmatter declares the stages (SPEC → BUILD → SHIP) and the action sequence per stage; action files at `.sdd/actions/<slug>.md` carry the actual prose for each step. This file (CLAUDE.md) covers the cross-cutting rules; playbooks + actions cover what each step actually requires.
 
+## What SDD is — and isn't (explicit tradeoff statement)
+
+SDD is opinionated. It optimises for some things and gives up others. Knowing the trade upfront prevents misunderstanding: every rule that follows is downstream of these choices.
+
+**SDD optimises for:**
+- **Honest review over fast iteration.** Every step's content + commit shape is reviewable. Re-approval ceremony for changed approved sections. Append-only audit log. Mutation-verified tests. The framework is slow on purpose.
+- **Plain English over technical precision.** Non-technical users drive specs; jargon gets translated on first use; status output reads in 30 seconds. The framework refuses to assume the user knows what an "API" is.
+- **Explicit over clever.** Each step declares its tag, its touches, its triggers. No magic. No discovery. The agent reads the rule to advance — no rule, no work.
+- **Predictability over flexibility.** Same 4-step inner loop every iteration. Same commit shape. Same hook chain. Customisation is by adding rows in the standard format, not by changing the format.
+
+**SDD explicitly gives up:**
+- **Power-user ergonomics.** Engineer-comfortable shorthand isn't here. Every word is sized to a reader who isn't paid to read code.
+- **One-shot speed.** A SPEC takes 30–90 minutes the first time. The framework is the wrong choice for "I want it built right now."
+- **Technical-precision in prose.** Hook stderr says *"the database can't be reached so the signup form shows 'please try again'"* — not *"DB unreachable, returning 503."* The trade is real and chosen.
+- **Free-form architecture.** You can't side-step the rubric for a "quick exception." If a step doesn't apply, mark it skipped with a reason; don't bypass the discipline.
+
+If any of those tradeoffs feel wrong for your project, SDD is the wrong tool. If they feel right, every rule below makes sense in service of them.
+
 ## Slash commands available to the user
 
 | Command | Purpose | Branch | Phases |

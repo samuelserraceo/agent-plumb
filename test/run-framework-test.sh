@@ -2911,6 +2911,25 @@ else
 fi
 
 # ============================================================
+# T81 — Karpathy borrow #12: explicit tradeoff statement at top of CLAUDE.md
+#   The framework explicitly states what it OPTIMISES for vs what it
+#   GIVES UP. Naming the tradeoff stops users from misinterpreting later
+#   rules as bugs. Pre-Phase-C: 4 pillars implied tradeoffs but didn't
+#   name them. Post-Phase-C: section "What SDD is — and isn't" lists
+#   four optimisation choices and four explicit costs.
+# ============================================================
+note "T81: CLAUDE.md states explicit tradeoff (Karpathy borrow #12)"
+miss=""
+for needle in 'optimises for' 'gives up' 'Honest review over fast' 'Plain English over technical' 'explicitly gives up' 'Power-user ergonomics'; do
+  grep -q "$needle" "$CLAUDE_MD" || miss="$miss $needle"
+done
+if [ -z "$miss" ]; then
+  ok "T81 CLAUDE.md states explicit tradeoff (4 optimisation choices + 4 costs)"
+else
+  bad "T81 CLAUDE.md missing tradeoff phrasing:" "missing:$miss"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
