@@ -190,15 +190,38 @@ check_manifest_pins() {
   local manifest_path="$PROJECT_DIR/.sdd/.cache/manifest.json"
   [ -f "$manifest_path" ] || return 0
 
-  MANIFEST="$manifest_path" PROJ="$PROJECT_DIR" python3 <<'PYEOF'
-import hashlib, json, os, sys
+  # CodeRabbit cycle-4 PR #53: when manifest.json is itself staged, the
+  # commit will use the index (staged) blob, not the working tree. The
+  # earlier code always read the WT manifest, so an attacker could stage
+  # a clean manifest while leaving a tampered one in WT — the moat saw
+  # the tampered hashes (matching tampered WT framework files) and let
+  # the commit through, but the COMMITTED state would mix a clean
+  # manifest with tampered files. Now: read the staged blob when staged,
+  # so validation runs against the content that will actually be in HEAD.
+  MANIFEST="$manifest_path" PROJ="$PROJECT_DIR" \
+    STAGED_MANIFEST_PATH="$staged_manifest" python3 <<'PYEOF'
+import hashlib, json, os, subprocess, sys
 
 manifest_path = os.environ["MANIFEST"]
 proj = os.environ["PROJ"]
+staged_manifest_path = os.environ.get("STAGED_MANIFEST_PATH", "")
 
 try:
-    with open(manifest_path) as f:
-        manifest = json.load(f)
+    if staged_manifest_path:
+        # Manifest is staged — validate against the staged blob (the
+        # content the commit will actually contain), not the WT.
+        result = subprocess.run(
+            ["git", "show", ":" + staged_manifest_path],
+            capture_output=True, cwd=proj, timeout=10,
+        )
+        if result.returncode != 0:
+            print("[moat] cannot extract staged manifest blob from index",
+                  file=sys.stderr)
+            sys.exit(1)
+        manifest = json.loads(result.stdout.decode("utf-8", errors="replace"))
+    else:
+        with open(manifest_path) as f:
+            manifest = json.load(f)
 except Exception as e:
     print(f"[moat] manifest.json malformed: {e}", file=sys.stderr)
     sys.exit(1)

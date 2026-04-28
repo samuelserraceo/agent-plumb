@@ -50,7 +50,11 @@ elif [ $# -eq 3 ]; then
   # was wrong — that bracketed form doesn't appear in spec.md; the
   # actual heading shape is `## PHASE: X`. Match the heading form so
   # STAGE actually resolves instead of always falling through to SPEC.
-  STAGE=$(grep -oE '^##\s*PHASE:\s*[A-Z]+' "$SPEC" 2>/dev/null | grep -oE '[A-Z]+$' | tail -1 || echo "")
+  # CodeRabbit cycle 4 fix (PR #53): `\s` is a GNU grep extension and
+  # silently fails on BSD grep (macOS default), so STAGE never resolved
+  # for users on macOS. Switched to POSIX `[[:space:]]` so the regex
+  # works portably on both grep flavours.
+  STAGE=$(grep -oE '^##[[:space:]]*PHASE:[[:space:]]*[A-Z]+' "$SPEC" 2>/dev/null | grep -oE '[A-Z]+$' | tail -1 || echo "")
   [ -z "$STAGE" ] && STAGE="SPEC"
 else
   cat >&2 <<EOF

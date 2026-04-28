@@ -274,6 +274,14 @@ elif cmd == "reset":
     if not key:
         print("[settings] usage: settings.sh reset <key>", file=sys.stderr)
         sys.exit(1)
+    # CodeRabbit cycle-4 PR #53: apply the same prefix normalisation
+    # used by set_at + get_at, so /settings reset accepts the relative
+    # form (e.g. `budget.max_minutes`) and resolves it to the canonical
+    # `parameters.budget.max_minutes` branch. Without this, reset on an
+    # unprefixed key silently no-ops because del_at walks a non-existent
+    # top-level path.
+    if not key.startswith(("parameters.", "events.", "file_rules.", "state_rules.", "folder_rules.", "file_classes.", "co_stage_block.")):
+        key = "parameters." + key
     if not del_at(fm, key):
         print(f"[settings] key not found: {key}", file=sys.stderr)
         sys.exit(2)
