@@ -28,10 +28,10 @@ For each capability in priority order, append to `## Backlog`:
 ```markdown
 - features/<NNN>-<slug> — <headline> [<priority tier>] [<size>] [<deps>]
   - Depends on: <list of capability slugs that must ship first>
-  - Source: projects/<NNN>-<project-slug>/roadmap.md (§4.<capability-slug>)
+  - Source: .sdd/projects/<NNN>-<project-slug>/spec.md (§4.<capability-slug>)
 ```
 
-The `<NNN>` is auto-numbered starting from 001 (or whatever's next if the project's been running).
+The `<NNN>` is auto-numbered starting from 001 (or whatever's next if the project's been running). All Source pointers use the canonical `.sdd/` prefix so cross-references resolve deterministically.
 
 ## Example
 
@@ -42,15 +42,15 @@ After the agent writes:
 
 - features/001-email-signup — Email magic-link signup with 7-day session [P0] [M]
   - Depends on: (root)
-  - Source: projects/001-pipelogic/roadmap.md (§4.email-signup)
+  - Source: .sdd/projects/001-pipelogic/spec.md (§4.email-signup)
 
 - features/002-profile-setup — Three-step onboarding [P0] [S]
   - Depends on: email-signup
-  - Source: projects/001-pipelogic/roadmap.md (§4.profile-setup)
+  - Source: .sdd/projects/001-pipelogic/spec.md (§4.profile-setup)
 
 - features/003-add-first-contact — Paste or form-add contacts [P0] [M]
   - Depends on: profile-setup
-  - Source: projects/001-pipelogic/roadmap.md (§4.add-first-contact)
+  - Source: .sdd/projects/001-pipelogic/spec.md (§4.add-first-contact)
 ... (8 total)
 ```
 
@@ -58,7 +58,7 @@ After the agent writes:
 
 The action writes the entries automatically — the user doesn't have to. After the action runs, INDEX.md has 8 features queued.
 
-When the user later runs `/ship` on one feature, the framework offers: "Backlog has features/002-profile-setup ready next. Start it now? (y/n)". If yes → automatic `/start --extends=001` style kickoff. If no → backlog stays untouched, user picks when ready.
+When the user later runs `/ship` on one feature, the framework offers: "Backlog has features/002-profile-setup ready next. Start it now? (y/n)". If yes → run `/start "<headline>"` (a NORMAL new-feature start; NOT `/start --extends=<id>` which is for extending shipped features — backlog items are independent features, not extensions). If no → backlog stays untouched, user picks when ready.
 
 ---
 

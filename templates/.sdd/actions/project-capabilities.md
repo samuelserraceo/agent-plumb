@@ -27,7 +27,7 @@ This is an AGENT-LED step. The agent drafts a list; you approve, adjust, or rewr
 
 - **Vertically slice-able.** One capability = one feature = one PR. Not "the database layer" (that's horizontal infra) but "user signup flow" (vertical, ships value).
 - **Independently testable.** Can you put it in front of a user and see if it works? If not, it's not a capability — it's plumbing.
-- **Sized for ~10-15 BUILD tasks.** Bigger = should be split. Smaller = combine with a sibling.
+- **Sized within the S/M/L band below.** Bigger than L = must be split. Smaller than S = combine with a sibling. The single sizing convention is the S/M/L rubric used in the per-capability frontmatter — there's no separate "10-15 BUILD tasks" target; the L upper bound IS the project-wide cap.
 - **Has a clear "done" state.** "Auth works" isn't a capability; "Email-magic-link signup with 7-day session" is.
 
 ## Limits
@@ -41,7 +41,7 @@ For each capability, the agent fills:
 - **Slug**: `lowercase-with-dashes` (becomes feature folder name)
 - **One-line headline**: what it does
 - **2-3 line plain-English description**: who uses it, what changes
-- **Estimated size**: S (1-3 tasks) / M (4-10 tasks) / L (11+ tasks; split if possible)
+- **Estimated size**: S (1-4 tasks) / M (5-10 tasks) / L (11-15 tasks). Anything that would exceed 15 tasks MUST be split into 2+ capabilities — that's the project-wide single sizing policy.
 - **Depends on**: other capability slugs that must ship before this one (often empty)
 
 ## Example output

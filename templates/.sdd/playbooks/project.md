@@ -56,7 +56,7 @@ Don't use this when:
 - `.sdd/projects/<NNN>-<slug>/roadmap.md` — the project-level spec
 - `.sdd/INDEX.md` `## Backlog` — list of features to build, in priority order
 - `.sdd/INDEX.md` `## In flight` — the first feature, automatically started
-- `.sdd/decisions.md` — append entry on each VISION/BREAKDOWN/KICKOFF approval
+- `.sdd/decisions.md` — **append entry** on each VISION/BREAKDOWN/KICKOFF approval. Use `cat >>`, never `>` (overwrite). The append-only contract is enforced by the F1 rule (`file_rules.append_only` in config.md) — any commit that mutates an existing entry is refused. Each decision append must be staged in the **same commit** as the related spec/state/verification change (same-commit coupling preserves audit integrity).
 
 ## After kickoff
 

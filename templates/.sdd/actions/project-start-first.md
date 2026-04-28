@@ -8,7 +8,7 @@ steps:
   - { id: start-first, action: do, field: "§7.kickoff" }
 used_by: [project]
 references: [project-queue-features]
-touches: [".sdd/INDEX.md", ".sdd/features/<first-feature>/spec.md"]
+touches: [".sdd/INDEX.md", ".sdd/features/<work-item>/spec.md"]
 trust: framework
 budget:
   max_minutes: 5
@@ -24,10 +24,12 @@ The project's roadmap is written. INDEX.md backlog is queued. Time to start work
 ## What this action does
 
 1. Read INDEX.md `## Backlog` — find the first entry (highest priority, no unfulfilled dependencies)
-2. Move that entry from `## Backlog` to `## In flight`
-3. Run `start.sh` for that feature — same as if the user had typed `/start "<headline>"`
-4. Set `**Active:**` to the new feature
+2. Remove that entry from `## Backlog`; **append** it to the existing `## In flight` section (don't replace — `## In flight` is a list and may already contain other parallel work items)
+3. Run `start.sh` for that feature — same as the user typing `/start "<headline>"` (a normal new-feature start, NOT `/start --extends=...` which is for extending shipped features)
+4. Set `**Active:**` to the new feature (this line points to the user's CURRENT focus; when they switch git branches to work on a different in-flight feature, they update this line manually — see CLAUDE.md "Multi-feature parallel work")
 5. The feature's spec.md gets scaffolded with all the standard `feature` playbook actions
+
+**Note:** `## In flight` can hold multiple parallel work items at once (one per branch is the typical pattern). `**Active:**` is just the current focus marker; `## In flight` is the canonical list of work-in-progress.
 
 After this commit, the user is in normal `feature` playbook mode for the first capability. The project playbook is "done" — it produced the roadmap and got the first feature started.
 
