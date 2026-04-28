@@ -63,13 +63,41 @@ command -v python3 >/dev/null 2>&1 || {
 # canonical "am I in a git repo?" check; it works for both regular
 # checkouts and worktrees.
 STAMP_FILE=".sdd/.advance.last-head"
+LOCK_FILE=".sdd/.advance.lock"
+LOCK_FD=""
+
+# Issue #32 (v0.9.2): concurrency lock around the stamp check + write.
+# Without it, two simultaneous advance.sh runs could both pass the
+# pre-check before either writes the stamp, then both advance — losing
+# one step. Use flock if available; mkdir-based fallback for systems
+# that lack flock. Lock is held until the script exits.
 if command -v git >/dev/null 2>&1; then
   HEAD_SHA=$(git rev-parse HEAD 2>/dev/null || echo "")
-  if [ -n "$HEAD_SHA" ] && [ -f "$STAMP_FILE" ]; then
-    LAST_SHA=$(cat "$STAMP_FILE" 2>/dev/null | tr -d '[:space:]')
-    if [ "$LAST_SHA" = "$HEAD_SHA" ]; then
-      echo "[advance] already advanced for HEAD $HEAD_SHA — no-op (commit a new step before next advance)."
-      exit 0
+  if [ -n "$HEAD_SHA" ]; then
+    mkdir -p .sdd
+    if command -v flock >/dev/null 2>&1; then
+      # flock-based mutual exclusion. Open fd 9 on the lock file and
+      # hold the exclusive lock for the rest of the script's lifetime.
+      exec 9>>"$LOCK_FILE"
+      if ! flock -n 9; then
+        echo "[advance] another advance.sh is running on this project — waiting..." >&2
+        flock 9
+      fi
+    else
+      # mkdir-based fallback: atomic check-and-create.
+      while ! mkdir "$LOCK_FILE.d" 2>/dev/null; do
+        echo "[advance] another advance.sh is running — waiting..." >&2
+        sleep 1
+      done
+      trap 'rmdir ".sdd/.advance.lock.d" 2>/dev/null || true' EXIT
+    fi
+    # Now we hold the lock. Check the stamp.
+    if [ -f "$STAMP_FILE" ]; then
+      LAST_SHA=$(cat "$STAMP_FILE" 2>/dev/null | tr -d '[:space:]')
+      if [ "$LAST_SHA" = "$HEAD_SHA" ]; then
+        echo "[advance] already advanced for HEAD $HEAD_SHA — no-op (commit a new step before next advance)."
+        exit 0
+      fi
     fi
   fi
 fi
