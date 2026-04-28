@@ -161,6 +161,16 @@ def set_at(d, dotted, value):
                   file=sys.stderr)
             print(f"[settings] Try: settings.sh set {dotted} 30", file=sys.stderr)
             sys.exit(1)
+        # CodeRabbit cycle 2 fix (PR #53): also reject 0 and negative
+        # values. KNOWN_INT_FIELDS are all caps/limits/timeouts that
+        # require a positive integer (max_minutes=0 means "warn after
+        # zero minutes" which always fires; max_iters=0 means Ralph
+        # never starts; etc.).
+        if coerced <= 0:
+            print(f"[settings] {dotted} expects a positive integer. Got: {coerced} (must be > 0).",
+                  file=sys.stderr)
+            print(f"[settings] Try: settings.sh set {dotted} 30", file=sys.stderr)
+            sys.exit(1)
     elif dotted in KNOWN_BOOL_FIELDS:
         if value.lower() in ("true", "yes", "on", "1"):
             coerced = True
