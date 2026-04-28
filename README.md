@@ -324,7 +324,7 @@ Currently at **v0.9.0** (Phase C ship). Hardened through:
 
 - **Phase A (v0.7.5)** — proved the SPEC + BUILD + ship loop on real Next.js + Vercel projects. 26 mutation-verified tests catching catastrophic bug classes.
 - **Phase B-1 (v0.8.0)** — section-locking moat, multi-playbook engine bones, trust-boundary teaching against prompt injection from repo prose, hash-pinned manifest, slim memory layer, append-only audit log. Three rounds of adversarial reviewer council found and closed gaps. 69 tests, all mutation-verified.
-- **Phase C (v0.9.0)** — F1 generic enforcer (7 hooks subsumed → 1), F2 events schema, F4 atomic-step granularity, F5 cascading parameters, Catalog work (rich INDEX.md with cross-references), SCHEMA.md retired (783 lines deleted), scope-guard moved to GitHub Actions CI, "Where things live" canonical folder map, "Triage on first message" doctrine. **121 tests passing**, all mutation-verified.
+- **Phase C (v0.9.0)** — F1 generic enforcer (7 hooks subsumed → 1), F2 events schema, F4 atomic-step granularity, F5 cascading parameters, Catalog work (rich INDEX.md with cross-references), SCHEMA.md retired (783 lines deleted), scope-guard moved to GitHub Actions CI, "Where things live" canonical folder map, "Triage on first message" doctrine. **120 tests passing**, all mutation-verified.
 
 Next on the roadmap (Phase D): `bug` + `idea` playbooks, `stack:` config block (test runner / VCS / PR tool / wireframe runtime), retrofit-existing-project install mode, plugin packaging (so SDD lives globally as a Claude Code plugin instead of being copied into each project).
 
