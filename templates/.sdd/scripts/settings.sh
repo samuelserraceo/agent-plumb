@@ -145,12 +145,17 @@ def set_at(d, dotted, value):
     if the dotted path doesn't start with parameters./events./… and the
     full form `parameters.<dotted>` is in KNOWN_INT/BOOL_FIELDS, normalise."""
     # Normalise the dotted path: if a relative form (e.g.
-    # `budget.max_minutes`) maps to a known field with the parameters
-    # prefix, use the full form so the type-validation hits.
+    # `budget.max_minutes`) doesn't start with a top-level config block
+    # prefix, fall back to `parameters.<dotted>` — same rule as get_at.
+    # Earlier this normalisation only fired when the prefixed form
+    # matched KNOWN_INT/BOOL_FIELDS, creating an asymmetry: a /settings
+    # set on an unknown-but-valid relative key would write to the wrong
+    # branch of the YAML tree (set_at would create top-level
+    # `<key>: <value>` instead of `parameters.<key>: <value>`). Now:
+    # set_at + get_at both fall back to `parameters.<dotted>` for any
+    # unprefixed key. CodeRabbit cycle-3 PR #53.
     if not dotted.startswith(("parameters.", "events.", "file_rules.", "state_rules.", "folder_rules.", "file_classes.", "co_stage_block.")):
-        prefixed = "parameters." + dotted
-        if prefixed in KNOWN_INT_FIELDS or prefixed in KNOWN_BOOL_FIELDS:
-            dotted = prefixed
+        dotted = "parameters." + dotted
 
     # Type-validate before coercion.
     if dotted in KNOWN_INT_FIELDS:
