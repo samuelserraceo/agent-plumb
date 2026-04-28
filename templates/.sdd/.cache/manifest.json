@@ -39,7 +39,7 @@
       "trust": "framework"
     },
     "read-events.sh": {
-      "expected_sha256": "4f0b112f2f1b7002f08212f57a86c0439549bb0f11242b157cb8372c5e205eda",
+      "expected_sha256": "f8d6a4b678b36dc97f71bb73a664e6b93556b09dfbf08c04a270e7278d492475",
       "path": ".sdd/scripts/read-events.sh",
       "trust": "framework"
     },

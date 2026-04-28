@@ -57,7 +57,12 @@ if os.path.isfile(config_path):
             if not isinstance(events, dict):
                 events = {}
     except Exception as e:
-        sys.stderr.write(f'{{"error":"config.md frontmatter parse: {e}"}}\n')
+        # Use json.dumps to escape the exception message safely. Earlier
+        # f-string-built JSON would emit malformed output if `e` contained
+        # double-quotes or backslashes (CodeRabbit cycle 9).
+        sys.stderr.write(json.dumps({
+            "error": f"config.md frontmatter parse: {e}"
+        }) + "\n")
         sys.exit(1)
 
 def resolve_paths(actions, wi):
