@@ -15,7 +15,7 @@ trust: framework
 budget:
   max_minutes: 5
   max_tokens: 2000
-  max_commits: 1
+  max_commits: 3
 requires_user_approval: false
 ---
 

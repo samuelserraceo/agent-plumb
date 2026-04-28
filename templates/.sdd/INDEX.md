@@ -52,7 +52,7 @@ _(none)_
 
 ## References
 
-- **Playbooks:** `.sdd/playbooks/` (B-1 ships `feature.md`; Phase C will add `bug.md`, `idea.md`, etc.)
+- **Playbooks:** `.sdd/playbooks/` (B-1 ships `feature.md`; Phase D will add `bug.md`, `idea.md`, etc.)
 - **Actions library:** `.sdd/actions/` (the prose each `/next` injects)
 - **Data model:** `.sdd/data-model.md`
 - **Patterns / cross-feature learnings:** `.sdd/patterns.md`

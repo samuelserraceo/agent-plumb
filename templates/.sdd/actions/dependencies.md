@@ -29,4 +29,4 @@ requires_user_approval: false
 
 **Output:** fill `spec.md` under `### §8 Dependencies` with one sub-section per service.
 
-**End the turn with:** *"Reply `approve` if these dependencies look right, or tell me what's wrong (e.g. 'we're not using Stripe, just Lemon Squeezy', 'add Cloudflare Turnstile', 'pricing math is off — we expect 5x that volume')."*
+**End the turn with:** *"Reply `looks good` if these dependencies look right, or tell me what's wrong (e.g. 'we're not using Stripe, just Lemon Squeezy', 'add Cloudflare Turnstile', 'pricing math is off — we expect 5x that volume'). Then run `/next` to continue."*

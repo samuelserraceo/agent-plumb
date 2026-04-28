@@ -19,6 +19,11 @@
 #
 # Determinism: pure file walk + frontmatter read; JSON via
 # json.dumps(sort_keys=True, ensure_ascii=False).
+#
+# Requires: PyYAML (Python's `yaml` module). If PyYAML is missing,
+# install with `pip install pyyaml`. The script's broad except below
+# treats an ImportError the same as a parse error — exits 1 with a JSON
+# error blob — so callers can detect the failure and surface it.
 
 set -uo pipefail
 

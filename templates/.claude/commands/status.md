@@ -64,6 +64,11 @@ PYEOF
 fi
 ```
 
-Then give a one-line summary to the user: *"You're on `<work-item>`, phase `<phase>`, on action `<action>`/step `<step>`. Run `/next` to advance one step."*
+Then give a one-line summary to the user. Match what the Python block actually printed:
+
+- **Active step present** (action + step both populated): *"You're on `<work-item>`, phase `<phase>`, on action `<action>`/step `<step>`. Run `/next` to advance one step."*
+- **Transition signal** (Python printed "transition signal"): *"You're on `<work-item>`, phase `<phase>` — all step rows in this phase are filled. Run `/next` to advance to the next phase."*
+- **No active step / legacy spec** (Python printed "No active step"): *"You're on `<work-item>`, phase `<phase>` — no atomic step rows yet. Run `/next` to start the first one."*
+- **No active work item** (the `active=""` branch above): *"No active work item. Run `/start <one-line title>` to scaffold a new one."*
 
 If `parameters` was empty or null, mention it briefly: *"(parameters cascade not resolved — INDEX.md `**Playbook:**` line missing? Check with `cat .sdd/INDEX.md`.)"*

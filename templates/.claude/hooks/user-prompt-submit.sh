@@ -111,6 +111,12 @@ if [ "$size" -gt "$SDD_INJECTION_CAP_CHARS" ]; then
   # tells the agent (a) it WAS truncated, (b) at what budget, (c) what
   # the original size was, (d) where the full state lives so it can
   # re-read explicitly if needed.
+  #
+  # CodeRabbit fix: re-emit the closing trust markers AFTER truncation.
+  # If we cut mid-payload, the agent could see an opened [PROJECT DATA]
+  # without a matching [END PROJECT DATA] / `=== END SDD STATE ===`,
+  # which leaks framework instructions / project data across the
+  # boundary. Always close the trust frame.
   truncated="${content:0:$SDD_INJECTION_CAP_CHARS}"
   printf '%s\n' "$truncated"
   printf '\n'
@@ -120,6 +126,8 @@ if [ "$size" -gt "$SDD_INJECTION_CAP_CHARS" ]; then
 'you need detail beyond the truncated context.]\n' \
     "$SDD_INJECTION_CAP_CHARS" "$size" \
     "$((SDD_INJECTION_CAP_CHARS / 4000))" "$((size / 4000))"
+  printf '\n[END PROJECT DATA]\n'
+  printf '\n=== END SDD STATE ===\n'
 else
   printf '%s\n' "$content"
 fi

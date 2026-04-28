@@ -11,7 +11,7 @@ references: [push-pr]
 touches: []
 trust: framework
 budget:
-  max_minutes: 5
+  max_minutes: 15
   max_tokens: 1000
   max_commits: 1
 requires_user_approval: false

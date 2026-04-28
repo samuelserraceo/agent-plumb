@@ -20,7 +20,7 @@
 set -uo pipefail
 
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(pwd)}"
-cd "$PROJECT_DIR"
+cd "$PROJECT_DIR" || { echo "[moat] failed to cd into $PROJECT_DIR" >&2; exit 0; }
 
 # Parse stdin from Claude Code.
 input=$(cat 2>/dev/null || true)
@@ -488,7 +488,17 @@ if not approved:
 HEX64 = re.compile(r"^[0-9a-f]{64}$")
 errors = []
 
+SLUG_RE = re.compile(r"^[a-z][a-z0-9_-]*$")
 for slug, expected in sorted(approved.items()):
+    # Slug shape validation BEFORE any os.path.join — slugs come from
+    # user-controlled JSON; values like "../../../tmp/evil" must not
+    # escape .sdd/actions/. Closed-enum shape per v0.9 action library.
+    if not isinstance(slug, str) or not SLUG_RE.match(slug):
+        errors.append(
+            f"approved_sections key {slug!r} is not a valid action slug "
+            f"— must match ^[a-z][a-z0-9_-]*$"
+        )
+        continue
     # Schema validation: hash must be 64-char lowercase hex SHA-256.
     if not isinstance(expected, str) or not HEX64.match(expected):
         errors.append(

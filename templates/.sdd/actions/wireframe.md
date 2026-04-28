@@ -25,10 +25,10 @@ requires_user_approval: false
 
 **Iterate with user.** They open in browser, request changes (*"move button left", "add error state", "show loading spinner"*). You update the file and tell them to refresh.
 
-**Continue until user types `approved`.** Tick the `Approved by user: [ ]` box in spec.md.
+**Continue until user says `looks good` (or equivalent).** Tick the `Approved by user: [ ]` box in spec.md.
 
-**Sync requirement (Theme 4's pre-commit-touches hook):** the commit that closes SPEC must stage `wireframe.html` alongside `spec.md`.
+**Sync requirement (F1 generic enforcer (`pre-commit-rules.sh`)'s `touches:` enforcement):** the commit that closes SPEC must stage `wireframe.html` alongside `spec.md`.
 
 **Output:** the HTML file at `.sdd/features/<id>/wireframe.html` + filled `Approved by user: [x]` in spec.md.
 
-**End the turn with:** *"Drafting wireframe.html now. Open it with `open .sdd/features/<id>/wireframe.html`. Reply with feedback or `approve`."*
+**End the turn with:** *"Drafting wireframe.html now. Open it with `open .sdd/features/<id>/wireframe.html`. Reply with feedback or `looks good` once it captures every screen — then run `/next` to continue."*

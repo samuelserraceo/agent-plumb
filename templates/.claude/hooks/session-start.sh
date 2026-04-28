@@ -24,7 +24,7 @@ fi
 # folder / alphanumeric item, no path traversal, no extra slashes. Anything
 # outside this shape → empty (treated as no active feature).
 active_path=$(awk '/^\*\*Active:\*\*/{print $2; exit}' .sdd/INDEX.md 2>/dev/null || echo "")
-echo "$active_path" | grep -qE '^[a-z][a-z0-9_-]*/[A-Za-z0-9._-]+$' || active_path=""
+echo "$active_path" | grep -qE '^[a-z][a-z0-9_-]*/[A-Za-z0-9_-][A-Za-z0-9._-]*$' || active_path=""
 
 echo "───── SDD workflow ─────"
 if [ -z "$active_path" ]; then

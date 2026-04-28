@@ -30,7 +30,7 @@ Every entity, field, transition, and edge case must be named before code. The da
 
 **Push hard on edge cases.** Ask: *"What if a user signs up twice? What if they try to delete their account while a transaction is pending? What if two writers race to update the same row?"* If you can't articulate what happens, the design is incomplete.
 
-**Sync requirement (enforced by Theme 4's pre-commit-touches hook):** when this section is committed, `.sdd/data-model.md` MUST be staged in the same commit. Never duplicate schema definitions in spec.md — reference by name.
+**Sync requirement (enforced by F1 generic enforcer (`pre-commit-rules.sh`)'s `touches:` enforcement):** when this section is committed, `.sdd/data-model.md` MUST be staged in the same commit. Never duplicate schema definitions in spec.md — reference by name.
 
 **On approval.** Hash recorded in `verification.json.approved_sections.data-contract`. Future edits require `/re-approve §6`.
 

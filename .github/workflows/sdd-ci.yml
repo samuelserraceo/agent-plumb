@@ -6,6 +6,14 @@ on:
   push:
     branches: [main]
 
+# Least-privilege GITHUB_TOKEN scope. The workflow only reads the repo to run
+# framework tests + the scope-guard diff; it does not post comments, create
+# checks via the API, push commits, or write any other resource. If a future
+# step needs additional scope, add the most-restrictive `read` value here —
+# never `write`.
+permissions:
+  contents: read
+
 jobs:
   framework-tests:
     name: Framework tests (mutation-verified)
@@ -49,7 +57,8 @@ jobs:
           base="${{ steps.diff.outputs.base }}"
           head="${{ steps.diff.outputs.head }}"
 
-          # Only run if there's an active SDD work item AND a wireframe.
+          # Only run if there's an active SDD work item with at least one of
+          # spec.md or wireframe.html present (checked further down).
           [ -d .sdd ] || { echo "[scope-guard-ci] no .sdd/ — skipping."; exit 0; }
           [ -f .sdd/INDEX.md ] || { echo "[scope-guard-ci] no INDEX.md — skipping."; exit 0; }
 
@@ -59,15 +68,26 @@ jobs:
 
           spec=".sdd/$active/spec.md"
           wireframe=".sdd/$active/wireframe.html"
-          [ -f "$spec" ] || { echo "[scope-guard-ci] $spec missing — skipping."; exit 0; }
-          [ -f "$wireframe" ] || { echo "[scope-guard-ci] no wireframe (skippable phase) — skipping."; exit 0; }
+          # Copy is valid if it appears in spec.md OR wireframe.html — so a
+          # non-UI feature with no wireframe should still have its copy
+          # verified against spec.md. Only skip when BOTH are missing.
+          if [ ! -f "$spec" ] && [ ! -f "$wireframe" ]; then
+            echo "[scope-guard-ci] both spec and wireframe missing — skipping."
+            exit 0
+          fi
 
-          # Phase gate: BUILD or SHIP only.
-          phase=$(grep -m1 -oE '\[PHASE: [A-Z]+\]' "$spec" | grep -oE '[A-Z]+' | tail -1 || echo "")
-          case "$phase" in
-            BUILD|SHIP) ;;
-            *) echo "[scope-guard-ci] phase=$phase — scope-guard only runs BUILD/SHIP. skipping."; exit 0 ;;
-          esac
+          # Phase gate: BUILD or SHIP only. Phase is encoded in spec.md, so
+          # if spec.md is missing we cannot read the phase. In that case
+          # (wireframe-only) skip the gate and let the per-string loop run —
+          # it will simply check copy against the wireframe.
+          phase="(unknown)"
+          if [ -f "$spec" ]; then
+            phase=$(grep -m1 -oE '\[PHASE: [A-Z]+\]' "$spec" | grep -oE '[A-Z]+' | tail -1 || echo "")
+            case "$phase" in
+              BUILD|SHIP) ;;
+              *) echo "[scope-guard-ci] phase=$phase — scope-guard only runs BUILD/SHIP. skipping."; exit 0 ;;
+            esac
+          fi
 
           # ─── Block 1: UI copy strings ─────────────────────────────────
           added_strings=$(git diff --unified=0 "$base..$head" -- '*.tsx' '*.jsx' '*.ts' '*.js' 2>/dev/null \
@@ -76,25 +96,33 @@ jobs:
             | sed -E 's/^[">]|[<"]$//g' \
             | sort -u || true)
 
+          # Per-string check. Try $spec if it exists, then $wireframe if it
+          # exists. A missing file is a no-op (not a false-positive miss) —
+          # the combined-skip above guarantees at least one is present.
           violations=()
           if [ -n "$added_strings" ]; then
             while IFS= read -r str; do
               [ -z "$str" ] && continue
-              if grep -qF -- "$str" "$wireframe" 2>/dev/null; then continue; fi
-              if grep -qF -- "$str" "$spec" 2>/dev/null; then continue; fi
-              if grep -qiF -- "$str" "$wireframe" 2>/dev/null; then continue; fi
-              if grep -qiF -- "$str" "$spec" 2>/dev/null; then continue; fi
+              if [ -f "$wireframe" ] && grep -qF -- "$str" "$wireframe" 2>/dev/null; then continue; fi
+              if [ -f "$spec" ]      && grep -qF -- "$str" "$spec"      2>/dev/null; then continue; fi
+              if [ -f "$wireframe" ] && grep -qiF -- "$str" "$wireframe" 2>/dev/null; then continue; fi
+              if [ -f "$spec" ]      && grep -qiF -- "$str" "$spec"      2>/dev/null; then continue; fi
               violations+=("$str")
             done <<< "$added_strings"
           fi
 
           if [ ${#violations[@]} -gt 0 ]; then
+            # Report whichever source files actually exist — a wireframe-less
+            # feature shouldn't see "Wireframe: <missing-path>" in its error.
+            sources=""
+            [ -f "$spec" ] && sources="$spec"
+            [ -f "$wireframe" ] && sources="${sources:+$sources, }$wireframe"
             {
               echo "::error::[SDD scope-guard] PR adds copy strings not in spec.md or wireframe.html"
               echo ""
               echo "  Active feature: $active"
               echo "  Phase:          $phase"
-              echo "  Wireframe:      $wireframe"
+              echo "  Checked:        $sources"
               echo ""
               echo "  Unspec'd strings:"
               for v in "${violations[@]}"; do
@@ -103,8 +131,13 @@ jobs:
               done
               echo ""
               echo "  Pick one:"
-              echo "  1. Legitimate but missed: add the copy/element to wireframe.html,"
-              echo "     get it re-approved, force-push the branch."
+              if [ -f "$wireframe" ]; then
+                echo "  1. Legitimate but missed: add the copy/element to wireframe.html,"
+                echo "     get it re-approved, force-push the branch."
+              else
+                echo "  1. Legitimate but missed: add the copy/element to spec.md,"
+                echo "     get it re-approved, force-push the branch."
+              fi
               echo "  2. Not requested: remove the unspec'd copy, force-push."
             } >&2
             exit 1
@@ -136,7 +169,11 @@ jobs:
               done
               echo ""
               echo "  Add a comment in the first 10 lines, e.g.:"
-              echo "    // spec: $spec §3 US2 — <what this file is for>"
+              if [ -f "$spec" ]; then
+                echo "    // spec: $spec §3 US2 — <what this file is for>"
+              else
+                echo "    // spec: $wireframe — <what this file is for>"
+              fi
             } >&2
             exit 1
           fi

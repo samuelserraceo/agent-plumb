@@ -42,4 +42,4 @@ For each flow:
 
 **Output:** fill `spec.md` under `### §7 Flows` with 1-3 flows in this format.
 
-**End the turn with:** *"Reply `approve` if these capture the flows correctly, or tell me what to add/change (e.g. 'add abandoned-cart flow', 'merge flows 1+2', 'failure path missing for X')."*
+**End the turn with:** *"Reply `looks good` if these capture the flows correctly, or tell me what to add/change (e.g. 'add abandoned-cart flow', 'merge flows 1+2', 'failure path missing for X'). Then run `/next` to continue."*

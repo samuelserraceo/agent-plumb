@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# bootstrap-uat.sh — scaffold a clean SDD v0.8 test project for UAT.
+# bootstrap-uat.sh — scaffold a clean SDD v0.9 test project for UAT.
 #
 # Usage:
 #   bootstrap-uat.sh [target-dir]
@@ -42,7 +42,7 @@ else
   echo "Created: $TARGET"
 fi
 
-cd "$TARGET"
+cd "$TARGET" || { echo "ERROR: failed to cd into $TARGET" >&2; exit 1; }
 
 # Initialize git repo
 if [ ! -d .git ]; then
@@ -94,7 +94,7 @@ fi
 cat <<EOF
 
 ====================================================================
-SDD v0.8 UAT Project Ready
+SDD v0.9 UAT Project Ready
 ====================================================================
 
 Location: $TARGET

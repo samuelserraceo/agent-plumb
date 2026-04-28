@@ -24,9 +24,9 @@ Ask: *"What are we explicitly NOT building this round? Anything related to §1-3
 
 **Anchor to context.** Reference `problem`, `success`, `user-stories`. If a story came up in §3 but isn't in scope, list it. If §1 mentioned a related pain point that's a separate feature, list that.
 
-**Format:** 1-5 bullets. Each item: one line name + one line reason.
+**Format:** 1-5 bullets. Each entry: one bullet, name + reason inline.
 
-```
+```text
 - Admin dashboard — not part of MVP, defer to v2
 - Multi-language support — single-locale only this round, i18n is its own feature
 - Mobile native app — web-only this round

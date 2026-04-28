@@ -5,13 +5,14 @@
 > WHY past-you committed to something — patterns.md captures the
 > *what* and *how*; this file captures the *when* and *why*.
 >
-> **Enforced**: `pre-commit-decisions-append-only.sh` blocks any
-> commit that removes or modifies an existing entry. Edits to past
-> entries fail the pre-commit hook with a plain-English error.
+> **Enforced**: `pre-commit-rules.sh` (via `file_rules: append_only`
+> in `config.md`) blocks any commit that removes or modifies an
+> existing entry. Edits to past entries fail the pre-commit hook
+> with a plain-English error.
 >
 > **Format**: each entry is one Markdown level-2 section:
 >
-> ```
+> ```text
 > ## <ISO-Z timestamp>  [<work-item-id>]  <playbook>/<action>
 > <one-paragraph summary in plain English of what was decided>
 > Hash: <sha256 if section was approved> (optional)

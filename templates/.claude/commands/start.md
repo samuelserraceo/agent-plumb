@@ -29,7 +29,8 @@ Begin a new work item. Pick the kind of work, give it a one-line title, and the 
 
 - It does NOT make a git branch. The first `/next` after `/start` does that.
 - It does NOT auto-fill any of the spec sections. You walk through them with `/next`.
-- It does NOT pick a playbook by guessing your intent. In B-1 there's only one option, so it just uses `feature`. In Phase C, when multiple playbooks exist, the framework asks you which.
+- It does NOT pick a playbook by guessing your intent. v0.9 ships only `feature`, so it just uses that. When future playbooks (`bug`, `idea`, etc.) ship, the framework will ask you which.
+- It DOES accept `--extends=<id>` (or `--extends <id>`) for evolving a shipped feature. The flag resolves leniently against the work-item folder (exact slug, bare NNN, substring); the new spec.md frontmatter records `extends: [features/<id>-<slug>]`, and `mark-shipped` writes a richer `## Shipped` block with cross-references. Plain-English failures on no-match or ambiguity tell the user to run `/status` to see what's shipped.
 
 ## Implementation
 

@@ -42,7 +42,7 @@ SDD is opinionated. It optimises for some things and gives up others. Knowing th
 
 ## The 3-phase spine (v0.9)
 
-```
+```bash
 SPEC → BUILD → SHIP → SHIPPED
   ↑              ↓
   └── (bug task) ← CI fail
@@ -69,6 +69,8 @@ git clone https://github.com/samuelserraceo/spec-driven-dev-workflow ~/Projects/
 ```
 
 ### 2. Drop SDD into your project
+
+Requires Python 3 with PyYAML (`pip install pyyaml`) — the framework's scripts and hooks parse YAML.
 
 ```bash
 cd <your-project>

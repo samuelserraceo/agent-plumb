@@ -42,4 +42,4 @@ If multiple tasks cluster as L or XL, split them. *"Implement the entire payment
 
 **Output:** fill `spec.md` under `### plan-decompose` with the task list.
 
-**End the turn with:** *"SPEC is now complete. Reply `approve` to advance to BUILD, or tell me what to reorder/split/merge."*
+**End the turn with:** *"SPEC is now complete. Reply `looks good` to advance to BUILD, or tell me what to reorder/split/merge. Then run `/next` to continue."*

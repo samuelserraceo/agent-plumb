@@ -120,7 +120,7 @@ def read_text(path):
 FRONTMATTER_RE = re.compile(r"^---\n(.*?)\n---", re.DOTALL)
 
 def find_top_level_duplicates(yaml_text):
-    """Detect duplicate top-level YAML keys.."""
+    """Detect duplicate top-level YAML keys."""
     keys_seen = []
     for line in yaml_text.split("\n"):
         # Top-level keys start at column 0, followed by colon
@@ -403,7 +403,7 @@ def cmd_check_hashes():
             f"run --validate first or generate manifest (Theme 1.5)")
         return
     try:
-        with open(manifest_path) as f:
+        with open(manifest_path, encoding="utf-8") as f:
             manifest = json.load(f)
     except (OSError, json.JSONDecodeError) as e:
         err(f"manifest.json malformed: {e}")

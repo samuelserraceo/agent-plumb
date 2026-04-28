@@ -41,7 +41,7 @@ One paragraph (4-6 sentences) capturing what just shipped.
 
 **Commits with**: `spec.md` only.
 
-**End the turn with:** *"Summary drafted. Reply `approve` or tell me what's off, then we move to lessons."*
+**End the turn with:** *"Summary drafted. Reply `looks good` or tell me what's off, then we move to lessons."*
 
 ---
 
@@ -59,7 +59,7 @@ The distilled value of the feature. **One or two cross-feature lessons** — pat
 
 **Format:** one paragraph per lesson. No jargon. Actionable. Each lesson should answer *"if you read this in 6 months, what would you do differently?"*
 
-**Sync requirement (`pre-commit-touches` enforces it):** stage `.sdd/patterns.md` in this commit. If `patterns.md` doesn't exist yet, create it. Append the new lessons under a `## Feature: <id>-<slug>` heading.
+**Sync requirement (F1 generic enforcer (`pre-commit-rules.sh`)'s `touches:` enforcement):** stage `.sdd/patterns.md` in this commit. If `patterns.md` doesn't exist yet, create it. Append the new lessons under a `## Feature: <id>-<slug>` heading.
 
 **Topic-page lifecycle (Phase C+ deferred):**
 

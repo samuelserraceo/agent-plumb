@@ -31,4 +31,4 @@ requires_user_approval: false
 
 **Output:** fill `spec.md` under `### §10 Non-functional`.
 
-**End the turn with:** *"Reply `approve` if these NFRs match what you actually need, or tell me what to tighten/loosen ('faster', 'add audit log', 'we don't care about EU users yet')."*
+**End the turn with:** *"Reply `looks good` if these NFRs match what you actually need, or tell me what to tighten/loosen ('faster', 'add audit log', 'we don't care about EU users yet'). Then run `/next` to continue."*

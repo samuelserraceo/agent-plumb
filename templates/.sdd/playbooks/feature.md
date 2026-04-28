@@ -82,7 +82,7 @@ LOCATE + EXECUTE are agent-driven prose. SYNC + ADVANCE are structural (real bas
 
 The 23 actions in this playbook's frontmatter are **closed for B-1**. Adding new actions requires Phase C work (touches schema validation + the action library). The order is also fixed — actions inside each stage must be filled in sequence.
 
-Three actions default to **`requires_user_approval: true`** in their frontmatter:
+Four actions default to **`requires_user_approval: true`** in their frontmatter:
 - `proposed-approach` — closes Codex's silent-design-softening attack
 - `acceptance-criteria` — closes Codex's silent-AC-softening attack (the central attack)
 - `out-of-scope` — closes silent-scope-expansion attack
@@ -91,33 +91,6 @@ Three actions default to **`requires_user_approval: true`** in their frontmatter
 When the user approves any of these, the framework hashes the section content. On phase-advance, the moat re-extracts the section from the staged spec.md and refuses the commit if the hash diverges. Re-approval (`/re-approve <slug>`) is the legitimate path for intentional edits.
 
 The plain-English `check:` strings in `exit_checks` are documentation. The actual evaluation logic lives in `verify-stage.sh` (per-check-ID bash). Adding a new check ID in B-1 requires editing `verify-stage.sh`.
-
-## When this playbook fits
-
-You want to build something **new**: a feature, a screen, a workflow, a backend job, an API endpoint. You'd describe it as "I want to be able to ___" or "the product should now do ___."
-
-This playbook is **not** for:
-- Reporting or fixing something broken → Phase C will ship `bug.md`
-- Capturing a half-formed thought without commitment → Phase C will ship `idea.md`
-- Investigating an open question with no clear answer yet → Phase C will ship `question.md`
-
-If you're not sure, pick `feature` and the agent will redirect if your work item turns out to be a different shape.
-
-## What to expect
-
-Three stages, walking left-to-right:
-
-1. **SPEC** — 14 questions / drafts that turn the idea into a concrete plan. Some you answer (USER-LED), some the agent drafts and you approve (AGENT-LED). About 30-90 minutes the first time you run a feature, less as you build a feel for it.
-2. **BUILD** — write a test, write code to pass the test, commit, repeat. The agent does the work; you decide pace via "run mode" (step-by-step, checkpointed, or autonomous).
-3. **SHIP** — verify, summarize lessons, open PR, watch CI, mark shipped.
-
-Total time depends on the feature. Small (a form, a CRUD endpoint): 1-2 hours. Medium (a multi-screen flow with a third-party integration): 4-8 hours. Large (rebuild a whole flow): a day or more — and at that point we'd suggest splitting it into smaller features.
-
-## What's locked, what's not
-
-The 23 actions in the frontmatter are **closed for B-1**. Adding new actions requires Phase C work (it touches schema validation + the action library). The order is also fixed — actions inside each stage must be filled in sequence.
-
-The plain-English `check:` strings in `exit_checks` are documentation. The actual evaluation logic lives in `verify-stage.sh` (per-check-ID bash). Adding a new check ID in B-1 requires editing `verify-stage.sh`. Adding a new check ID requires editing verify-stage.sh's per-check-ID dispatch.
 
 ---
 

@@ -37,11 +37,12 @@ Each AC is a **concrete, testable assertion**. Each AC maps to **one task** in `
 **`[PROD-ONLY]` tag.** Some ACs can't be tested in dev (real Stripe charge, real email bounce webhook, real Turnstile token, real DNS propagation). Tag those `[PROD-ONLY]` at line end. SHIP's verify-prod-only-acs walks them manually post-deploy. Don't use `[PROD-ONLY]` to dodge writing tests — it's only for the impossible-in-dev cases.
 
 **Format:**
-```
+
+```text
 - [ ] AC1: New user signs up with valid email, inbox shows confirmation email → tests/task-001.mjs
 - [ ] AC2: Empty submission returns 400 with error message → tests/task-002.mjs
 - [ ] AC3: Mobile viewport (iPhone-13) renders without horizontal scroll → tests/task-003.mjs
-- [ ] AC5: Turnstile rejects automated requests with invalid token → 400 [PROD-ONLY] → tests/task-005.mjs
+- [ ] AC4: Turnstile rejects automated requests with invalid token → 400 [PROD-ONLY] → tests/task-004.mjs
 ```
 
 4-8 ACs is typical. Fewer = scope too narrow; more = scope too broad.

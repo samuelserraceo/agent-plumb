@@ -710,7 +710,7 @@ if [ -n "$unsafe" ]; then
 
 [SDD] action '$active_slug' declares 'touches:' paths that are unsafe:
 
-$(printf "        - %s\n" $(printf "$unsafe"))
+$(printf "        - %s\n" $(printf '%s' "$unsafe"))
 
       The framework refuses paths that are absolute, contain '..'
       segments, or sit outside '.sdd/'. Edit the action's
@@ -741,7 +741,7 @@ if [ -n "$missing" ]; then
       but you committed without including all of them.
 
       Missing from this commit:
-$(printf "        - %s\n" $(printf "$missing"))
+$(printf "        - %s\n" $(printf '%s' "$missing"))
 
       The action's frontmatter at $action_path declares
       \`touches: [...]\`. Each file in that list MUST be staged in the

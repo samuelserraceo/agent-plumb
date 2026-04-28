@@ -34,4 +34,4 @@ requires_user_approval: false
 
 **Output:** fill `spec.md` under `### §4 UX & Design brief` with the user's chosen options.
 
-**End the turn with:** *"Reply `approve` if this works, or tell me what to change (e.g. 'tone too formal', 'mobile-first instead', 'add dark mode')."*
+**End the turn with:** *"Reply `looks good` if this works, or tell me what to change (e.g. 'tone too formal', 'mobile-first instead', 'add dark mode'). Then run `/next` to continue."*

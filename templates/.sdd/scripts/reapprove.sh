@@ -80,7 +80,7 @@ ver_path = os.environ["VER_PATH"]
 
 if os.path.isfile(ver_path):
     try:
-        with open(ver_path) as f:
+        with open(ver_path, encoding="utf-8") as f:
             d = json.load(f)
     except Exception as e:
         print(f"reapprove: verification.json malformed: {e}", file=sys.stderr)
@@ -99,7 +99,7 @@ if approved is None or not isinstance(approved, dict):
 approved[slug] = new_hash
 d["approved_sections"] = approved
 
-with open(ver_path, "w") as f:
+with open(ver_path, "w", encoding="utf-8") as f:
     json.dump(d, f, indent=2, sort_keys=True)
     f.write("\n")
 PYEOF

@@ -26,9 +26,13 @@
 #   0 — INDEX.md updated (or no-op if no active work item)
 #   1 — error (file not found, malformed, no next action found)
 #
-# Idempotency: running twice without intervening commits is a no-op
-# from the perspective of phase progression — the second run reads the
-# already-advanced INDEX.md and re-advances. (B-2 may add a guard.)
+# Idempotency guard: if HEAD's INDEX.md `**Active blocker:**` line is
+# identical to the working-tree's, no commit has bumped INDEX.md since
+# the last advance — skip with a message rather than re-advancing past
+# the action that should come next. The check uses `git show HEAD:` so
+# uncommitted dirty edits to INDEX.md don't disguise a missing commit
+# as "progress made." If HEAD has no INDEX.md (first run on a fresh
+# repo), the guard is a no-op.
 
 set -uo pipefail
 
@@ -44,6 +48,19 @@ command -v python3 >/dev/null 2>&1 || {
   echo "[advance] python3 required but not on PATH" >&2
   exit 1
 }
+
+# Idempotency guard: skip if HEAD's INDEX.md `**Active blocker:**` line
+# matches the working tree's — no commit has bumped it since the last
+# advance, so re-running would skip past the next action.
+if git rev-parse --git-dir >/dev/null 2>&1; then
+  head_blocker=$(git show "HEAD:.sdd/INDEX.md" 2>/dev/null \
+    | grep -m1 -E '^\*\*Active blocker:\*\*' || true)
+  wt_blocker=$(grep -m1 -E '^\*\*Active blocker:\*\*' .sdd/INDEX.md || true)
+  if [ -n "$head_blocker" ] && [ "$head_blocker" = "$wt_blocker" ]; then
+    echo "[advance] INDEX.md unchanged since last advance — idempotency skip."
+    exit 0
+  fi
+fi
 
 PROJ="$PROJECT_DIR" python3 <<'PYEOF'
 import os, re, sys, yaml
