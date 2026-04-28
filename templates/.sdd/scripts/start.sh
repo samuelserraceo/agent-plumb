@@ -396,13 +396,21 @@ for line in index_text.split("\n"):
     in_old_header = False
     new_lines.append(line)
 
-# Ensure ## Active and ## Shipped sections exist.
+# Ensure ## In flight and ## Shipped sections exist.
+# v0.10.1: changed from "## Active" to "## In flight" to align with the
+# INDEX.md template + enable multi-feature parallel work. Multiple features
+# can sit in `## In flight` simultaneously; **Active:** at the top points
+# to whichever one the user is working on RIGHT NOW.
 body = "\n".join(new_lines).strip()
-if "## Active" not in body:
-    body += "\n\n## Active\n\n" + f"- {work_item_rel} — {title} (PHASE: {first_stage_id})\n"
+if "## In flight" not in body:
+    body += "\n\n## In flight\n\n" + f"- {work_item_rel} — {title} (PHASE: {first_stage_id})\n"
 else:
-    # Append under ## Active section
-    body = re.sub(r"(## Active\n\n)", r"\1- " + f"{work_item_rel} — {title} (PHASE: {first_stage_id})\n", body, count=1)
+    # Append under ## In flight section. Replace "_(none yet)_" placeholder
+    # if present, otherwise insert as new top item.
+    if "_(none yet)_" in body:
+        body = body.replace("_(none yet)_", f"- {work_item_rel} — {title} (PHASE: {first_stage_id})", 1)
+    else:
+        body = re.sub(r"(## In flight\n(?:<!--[^>]*-->\s*\n)?\n?)", r"\1- " + f"{work_item_rel} — {title} (PHASE: {first_stage_id})\n", body, count=1)
 if "## Shipped" not in body:
     body += "\n## Shipped\n\n"
 

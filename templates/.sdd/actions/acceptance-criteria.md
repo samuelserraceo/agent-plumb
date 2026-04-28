@@ -50,3 +50,13 @@ Each AC is a **concrete, testable assertion**. Each AC maps to **one task** in `
 **On approval (Theme 1.6 hook).** Hash recorded. Future edits to §11 require `/re-approve §11`.
 
 **End the turn with:** *"Reply `approve` to lock the ACs (this section can't be silently softened after approval), or tell me what to add/remove/sharpen."*
+
+---
+
+## Wireframe-up-to-date check (v0.10.1 doctrine, CLAUDE.md rule 5)
+
+If this action's answer changes anything user-visible (a screen, a button, a flow, a page transition, a form field), **also update `wireframe.html`** in the same commit. The wireframe is the non-technical user's primary visibility tool — never let it drift from the spec.
+
+If the feature has no UI (backend cron, internal data migration), `wireframe.html` may not exist — skip this check.
+
+Mechanical enforcement (a state_rule that refuses spec commits without wireframe staging when wireframe.html exists) lands in v0.11 — see issue #45.

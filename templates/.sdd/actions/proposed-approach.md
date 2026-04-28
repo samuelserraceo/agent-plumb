@@ -30,3 +30,13 @@ Propose a concrete approach with reasoning, alternatives, and what's traded off.
 **On approval.** The framework hashes the §5 section content and writes the hash to `verification.json.approved_sections.proposed-approach`. After approval, edits to §5 require running `/re-approve §5` — the moat hook blocks phase advance if the section content changed without re-approval. (Approved-section hashes are how the moat detects post-approval edits.)
 
 **End the turn with:** *"Reply `approve` if this works, or tell me what to change (e.g. 'simpler', 'use Postgres instead of SQLite', 'explain the rate-limit risk in plain English')."*
+
+---
+
+## Wireframe-up-to-date check (v0.10.1 doctrine, CLAUDE.md rule 5)
+
+If this action's answer changes anything user-visible (a screen, a button, a flow, a page transition, a form field), **also update `wireframe.html`** in the same commit. The wireframe is the non-technical user's primary visibility tool — never let it drift from the spec.
+
+If the feature has no UI (backend cron, internal data migration), `wireframe.html` may not exist — skip this check.
+
+Mechanical enforcement (a state_rule that refuses spec commits without wireframe staging when wireframe.html exists) lands in v0.11 — see issue #45.
