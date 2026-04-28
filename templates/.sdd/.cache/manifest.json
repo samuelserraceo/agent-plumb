@@ -29,7 +29,7 @@
       "trust": "framework"
     },
     "start.sh": {
-      "expected_sha256": "9c4e49ac145da5504dccf991d8ee6f53fa0c40ac0cd2e718d9054d544fff0e09",
+      "expected_sha256": "21babd7070ec89b61f6e9670fb13dfb0109aabec18a083ba2eee09db083ae9be",
       "path": ".sdd/scripts/start.sh",
       "trust": "framework"
     },
@@ -59,10 +59,10 @@
       "trust": "framework"
     }
   },
-  "sdd_version": "0.10.0",
+  "sdd_version": "0.10.1",
   "actions": {
     "acceptance-criteria": {
-      "expected_sha256": "3c2415ec6086d956d81cb723fae95b519ef5d7b69a0a5e8fb4ce1b33c46b62f4",
+      "expected_sha256": "fec1a8ff749a42f99b37cf19d04e9b2ffe3ee21b0c43bd0bf15a524a447c04b6",
       "path": ".sdd/actions/acceptance-criteria.md",
       "trust": "framework"
     },
@@ -82,12 +82,12 @@
       "trust": "framework"
     },
     "flows": {
-      "expected_sha256": "7a487fff038d2d8d2f505c53197519b1c6bc3d8a9100a4351de839a588291819",
+      "expected_sha256": "69f3ba8f15c5d20859859e59cad800488175a3646abd7abb81123f7340b38412",
       "path": ".sdd/actions/flows.md",
       "trust": "framework"
     },
     "mark-shipped": {
-      "expected_sha256": "2299bcbe0aff908b229a4438e44c5d784ae5e113b97e20ab719cad2812d95dfb",
+      "expected_sha256": "ac8f290ab70aa3b5d3c51c926f1c34b4ad6502aa17f3d50539a1fbaa833afb50",
       "path": ".sdd/actions/mark-shipped.md",
       "trust": "framework"
     },
@@ -102,7 +102,7 @@
       "trust": "framework"
     },
     "plan-decompose": {
-      "expected_sha256": "53bcdd7e8f5cc93d34a69298c21bfa939bc92baab80dbb1b961ef6dc652b123e",
+      "expected_sha256": "49c3518624efd8b0aadcbef3ed5edbb586696f138cb28b65815abcf026ab18a7",
       "path": ".sdd/actions/plan-decompose.md",
       "trust": "framework"
     },
@@ -112,7 +112,7 @@
       "trust": "framework"
     },
     "proposed-approach": {
-      "expected_sha256": "8fa17a6a8ecca8c4044c4df20edaf00acc781d233b331ed39fdd8d066c596710",
+      "expected_sha256": "3bd8ccac8eee9fb70f7757574292b111825447eda13aac65e9aeab9a1b5d8708",
       "path": ".sdd/actions/proposed-approach.md",
       "trust": "framework"
     },

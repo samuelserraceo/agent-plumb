@@ -108,9 +108,14 @@ Then do EXACTLY ONE of these:
 A) Phase is BUILD and there is a RED task (the common case):
    - Write the agent-browser test file at the path named in the task line (if missing).
    - Run the test → must be RED (no code yet).
-   - Write the code to make it GREEN.
+   - Write the code to make it GREEN. **Code-quality discipline (CLAUDE.md):**
+     * Conciseness is an asset — write the shortest code that works.
+     * Don't over-engineer — no factory patterns, no premature abstractions.
+     * Reuse > reinvent — check if a well-known package solves this before writing custom logic.
    - Run the test → must be GREEN.
-   - Commit the code atomically: [SDD:<id>][T<n>] <short message>
+   - **Self-check before committing: "Can this be shorter without losing clarity?"** If yes, tighten. If no, proceed.
+   - **Wireframe check (BEFORE the code commit):** if the task touches a UI file, update `wireframe.html` to reflect what was just built and stage it. Order matters: wireframe must be in the same atomic commit as the code change, not in a follow-up. The framework refuses commits that touch UI without staging the wireframe.
+   - Commit the code atomically (with wireframe.html if applicable): [SDD:<id>][T<n>] <short message>
    - Flip the task line status RED → GREEN in spec.md.
    - Commit the spec update: [SDD:<id>] task: T<n> GREEN
    - On your VERY LAST LINE, print exactly: RALPH_STATUS: CONTINUE T<n> <short phrase>

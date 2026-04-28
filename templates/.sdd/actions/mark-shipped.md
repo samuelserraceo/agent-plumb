@@ -17,7 +17,7 @@ budget:
 requires_user_approval: false
 ---
 
-Final SHIP action. Move the work item from `## Active` to `## Shipped` in INDEX.md as a richer catalog entry, drop a `.shipped` marker, commit.
+Final SHIP action. Move the work item from `## In flight` to `## Shipped` in INDEX.md as a richer catalog entry, drop a `.shipped` marker, commit.
 
 **Actions:**
 
@@ -40,7 +40,7 @@ Final SHIP action. Move the work item from `## Active` to `## Shipped` in INDEX.
    - One blank line between shipped entries for readability.
    - Keep the line count under the `size_warn: 200` (config.md `file_rules:`) by archiving older entries to `.sdd/archive/INDEX.md` once that warn fires (deferred to `/compress index`).
 
-3. **Remove the work item line from `## Active`.**
+3. **Remove the work item line from `## In flight`.**
 
 4. **Drop marker file:** `touch .sdd/<work_item_folder>/<id>-<slug>/.shipped` — signals CLAUDE.md's "shipped features are cold" rule that future sessions should NOT re-read this folder unless explicitly asked.
 

@@ -6,7 +6,7 @@
      SDD ships an update. Your edits inside this block will be lost.
      Your project-specific rules go BELOW the END marker.
      ════════════════════════════════════════════════════════════════════ -->
-<!-- SDD-MANAGED-START version: 0.9.0 -->
+<!-- SDD-MANAGED-START version: 0.10.1 -->
 
 # CLAUDE.md
 
@@ -24,6 +24,34 @@ SDD is opinionated. It optimises for some things and gives up others. Knowing th
 - **Explicit over clever.** Each step declares its tag, its touches, its triggers. No magic. No discovery. The agent reads the rule to advance — no rule, no work.
 - **Predictability over flexibility.** Same 4-step inner loop every iteration. Same commit shape. Same hook chain. Customisation is by adding rows in the standard format, not by changing the format.
 
+## Code-quality doctrine (always-on, applies to every action)
+
+These eight rules apply across SPEC, BUILD, and SHIP. They are not configurable — they are how SDD agents work.
+
+1. **Never assume — always ask.** If you don't know what the user means or what they want, halt and ask. Filling a `[ ]` from assumption defeats the framework's whole point. When in doubt, ask. (Karpathy's first borrow: "the agent must always ask, never assume.")
+
+2. **Conciseness is an asset.** Shorter code is easier to read, easier to maintain, and breaks less. After every BUILD task lands GREEN, ask yourself: *"Can this be shorter without losing clarity?"* If yes, propose the shorter version to the user before flagging the task complete. Same for spec prose — propose tightening every section before locking it.
+
+3. **Don't over-engineer.** Prefer the simplest thing that works. AIs default to over-abstraction (factory patterns, premature dependency-injection, defensive layers nobody needs). Counter that bias deliberately. If a function is 5 lines and works, don't refactor it into a class hierarchy.
+
+4. **Reuse > reinvent.** Before writing custom logic, check whether a well-known package already does it. Before designing a custom data shape, check the language ecosystem's standard idioms. Use Stripe SDK, don't reimplement card validation. Use Zod / Pydantic, don't write your own runtime type-checker. The framework is allergic to reinventing wheels.
+
+5. **Wireframe always reflects current state.** Any action that changes user-visible behaviour MUST update `wireframe.html` in the same commit as the spec change. **This is enforced mechanically, not by reminder:** every UI-affecting action (proposed-approach, flows, acceptance-criteria, plan-decompose, plus BUILD tasks with UI in their `touches:`) must declare `wireframe.html` in their `touches:` field. The F1 generic enforcer (pre-commit-rules.sh) refuses commits that touch the spec without staging the wireframe. The wireframe is the non-technical user's primary visibility tool — the framework never lets it drift from the spec.
+
+6. **No time estimates in hours or days.** AI is much faster than human-sourced training data — task estimates calibrated on human pace are wrong by 5-10x. Don't say "this will take 2 hours" or "this is a 3-day feature." Instead size in framework-native units:
+   - **Count atomic steps** (one `[ ]` = one commit) — "this is a 4-step feature" or "this is 12 tasks in BUILD"
+   - **Count files touched** — "this changes 3 files across 2 actions"
+   - **Use S/M/L with definitions** — S = single file/single concern, M = 2-3 files / one cross-cutting change, L = needs multiple features (project-level scoping)
+   - When the user explicitly asks "how long will this take?" — answer in clock-time only if you've done it before and have empirical data; otherwise say "I haven't built this exact shape before — I'd rather count steps and you can multiply by your own pace."
+
+**Plus the existing two from v0.9 (re-stated for prominence):**
+
+7. **Minimum diff** — when editing existing files, prefer the smallest change that does the job. Don't refactor while you're there; don't reformat passively; don't auto-format whitespace.
+
+8. **Plain English first** — every technical term gets a translation on first use; describe by what things DO for the user, not what they ARE.
+
+---
+
 **SDD explicitly gives up:**
 - **Power-user ergonomics.** Engineer-comfortable shorthand isn't here. Every word is sized to a reader who isn't paid to read code.
 - **One-shot speed.** A SPEC takes 30–90 minutes the first time. The framework is the wrong choice for "I want it built right now."
@@ -31,6 +59,21 @@ SDD is opinionated. It optimises for some things and gives up others. Knowing th
 - **Free-form architecture.** You can't side-step the rubric for a "quick exception." If a step doesn't apply, mark it skipped with a reason; don't bypass the discipline.
 
 If any of those tradeoffs feel wrong for your project, SDD is the wrong tool. If they feel right, every rule below makes sense in service of them.
+
+## Multi-feature parallel work (v0.10.1)
+
+INDEX.md's `## In flight` section can hold multiple work items at once — one per branch. The `**Active:**` line at the top of INDEX.md points to whichever is the user's current focus.
+
+**Typical multi-feature workflow:**
+1. `/start "feature A"` → adds to `## In flight`, sets `**Active:**` to it, creates branch `sdd/001-feature-a`
+2. Work on feature A through SPEC and into BUILD
+3. Need to start feature B before A is done? `git checkout main && git checkout -b sdd/002-feature-b && /start "feature B"` → adds B to `## In flight`, sets `**Active:**` to B
+4. Switch back to A: `git checkout sdd/001-feature-a` and update `**Active:**` line to point at A's path
+5. Both are visible in `## In flight`; only one is `**Active:**` at a time
+
+**Limitation today:** `**Active:**` is a single line in a shared INDEX.md, so switching branches requires manually updating that line (or `/status` to see what's on each branch). Full per-branch active state (branch-aware lookup) lands in v0.11 — see issue #42.
+
+For Pipelogic-style projects with 3-5 features in flight at once, this scaffold supports the workflow today; the per-branch UX polish lands later.
 
 ## Slash commands available to the user
 
@@ -134,6 +177,7 @@ Once the feature is identified, hand off to the right slash command:
 │   ├── config.md                     ← project config (parameters, events, file_classes, file_rules)
 │   ├── decisions.md                  ← APPEND-ONLY audit trail (every approval, every phase advance)
 │   ├── data-model.md                 ← shared entities/fields across features (single source of truth)
+│   ├── stack.md                      ← tech stack (services, providers, version pins, architecture facts) — agent reads on session start
 │   ├── patterns.md                   ← cross-feature lessons (one block per feature; auto-appended by `learn` action)
 │   ├── playbooks/<slug>.md           ← workflow templates (`feature.md` ships v0.9; `bug.md` etc. arrive later)
 │   ├── actions/<slug>.md             ← 22 action files (problem, success, proposed-approach, etc.)
@@ -160,7 +204,7 @@ Once the feature is identified, hand off to the right slash command:
 
 1. **Per-work-item artifact** (anything that exists because of one specific feature/bug) → goes in `.sdd/<work_item_folder>/<NNN>-<slug>/`. Examples: spec.md, verification.json, wireframe.html, tests, screenshots, architecture diagrams scoped to this feature.
 
-2. **Cross-feature artifact** (anything multiple features benefit from knowing) → goes in one of these top-level files: `.sdd/data-model.md` (entities/fields), `.sdd/patterns.md` (lessons), `.sdd/INDEX.md` (catalog), `.sdd/decisions.md` (timeline). Don't invent a new top-level file.
+2. **Cross-feature artifact** (anything multiple features benefit from knowing) → goes in one of these top-level files: `.sdd/data-model.md` (entities/fields), `.sdd/patterns.md` (lessons), `.sdd/INDEX.md` (catalog), `.sdd/decisions.md` (timeline), `.sdd/stack.md` (services / providers / version pins / architecture facts). Don't invent a new top-level file.
 
 3. **Framework-shipped artifact** (a playbook, an action prose, a script, a hook) → goes in its declared folder under `.sdd/` or `.claude/`. Don't put a new playbook at `.sdd/my-playbook.md` — it goes in `.sdd/playbooks/`.
 
@@ -519,11 +563,12 @@ If a feature folder has no `.shipped` marker, treat it as in-flight and read nor
 ## Your first move when you start a session
 
 1. Cat `.sdd/INDEX.md`.
-2. Identify the active feature.
-3. Cat `.sdd/features/<active-id>/spec.md`.
-4. Find the active blocker.
-5. State out loud (one short sentence): "We're on `<feature>`, phase `<phase>`, next blocker is `<section>`. The question is: `<question>`."
-6. Ask or propose.
+2. **Cat `.sdd/stack.md`** — refresh on the project's tech stack (running services, providers, version pins, architecture facts). Don't propose alternatives that contradict what's already in stack.md.
+3. Identify the active feature.
+4. Cat `.sdd/features/<active-id>/spec.md`.
+5. Find the active blocker.
+6. State out loud (one short sentence): "We're on `<feature>`, phase `<phase>`, next blocker is `<section>`. The question is: `<question>`."
+7. Ask or propose.
 
 That's it. Do this every single session.
 

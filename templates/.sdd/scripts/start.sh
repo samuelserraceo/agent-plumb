@@ -384,25 +384,60 @@ header_lines = [
     "",
 ]
 
-# Strip any existing **Active:**/**Playbook:**/**Active blocker:** lines from the top.
+# Strip ANY **Active:**/**Playbook:**/**Active blocker:** lines from the
+# entire body. UAT v0.10.1 finding: the original "from the top until first
+# blank" logic broke when INDEX.md template starts with `# Project Index`
+# heading — the first iteration set in_old_header=False and subsequent
+# Active/Playbook lines slipped through, leaving a duplicate
+# `**Active:** _(none)_` boilerplate even after start.sh inserted the
+# canonical pointer. Now: scan whole body, strip every match. The
+# canonical header_lines we're prepending is the only one that should
+# remain.
 new_lines = []
-in_old_header = True
 for line in index_text.split("\n"):
-    if in_old_header and re.match(r"^\*\*(Active|Playbook|Active blocker):\*\*", line):
+    if re.match(r"^\*\*(Active|Playbook|Active blocker):\*\*", line):
         continue
-    if in_old_header and line.strip() == "":
-        in_old_header = False
-        continue
-    in_old_header = False
     new_lines.append(line)
+# Collapse leading blank lines that the strip may have created.
+while new_lines and new_lines[0].strip() == "":
+    new_lines.pop(0)
 
-# Ensure ## Active and ## Shipped sections exist.
+# Ensure ## In flight and ## Shipped sections exist.
+# v0.10.1: changed from "## Active" to "## In flight" to align with the
+# INDEX.md template + enable multi-feature parallel work. Multiple features
+# can sit in `## In flight` simultaneously; **Active:** at the top points
+# to whichever one the user is working on RIGHT NOW.
 body = "\n".join(new_lines).strip()
-if "## Active" not in body:
-    body += "\n\n## Active\n\n" + f"- {work_item_rel} — {title} (PHASE: {first_stage_id})\n"
+if "## In flight" not in body:
+    body += "\n\n## In flight\n\n" + f"- {work_item_rel} — {title} (PHASE: {first_stage_id})\n"
 else:
-    # Append under ## Active section
-    body = re.sub(r"(## Active\n\n)", r"\1- " + f"{work_item_rel} — {title} (PHASE: {first_stage_id})\n", body, count=1)
+    # Append under ## In flight section. Three cases:
+    #  1. The "_(none yet)_" placeholder is still in place (fresh project) → replace it
+    #  2. Other in-flight items already exist → insert this one as new top item under the heading
+    #  3. The section heading exists but has only the HTML comment + blank lines → insert under heading
+    # CodeRabbit cycle 1 fix (PR #47): the earlier regex had a fragile match that
+    # didn't account for the placeholder wrapped in italics or for the comment
+    # being on the same line as the heading. Now: try replace first, fall back
+    # to a heading-anchored insert that works regardless of section state.
+    new_entry = f"- {work_item_rel} — {title} (PHASE: {first_stage_id})"
+    # CodeRabbit cycle 2 (PR #47): scope the placeholder replacement to
+    # the `## In flight` section only. Earlier `"_(none yet)_" in body`
+    # would match the placeholder in any section if one ever migrated
+    # there. Now: extract the section first, modify it, splice back.
+    section_match = re.search(r"(?ms)^## In flight\b.*?(?=^## |\Z)", body)
+    if section_match:
+        sec_start, sec_end = section_match.span()
+        in_flight_section = section_match.group(0)
+        if "_(none yet)_" in in_flight_section:
+            in_flight_section = in_flight_section.replace("_(none yet)_", new_entry, 1)
+        else:
+            in_flight_section = re.sub(
+                r"(## In flight\b[^\n]*\n)((?:<!--[^>]*-->[^\n]*\n)?)",
+                r"\1\2" + new_entry + "\n",
+                in_flight_section,
+                count=1,
+            )
+        body = body[:sec_start] + in_flight_section + body[sec_end:]
 if "## Shipped" not in body:
     body += "\n## Shipped\n\n"
 
