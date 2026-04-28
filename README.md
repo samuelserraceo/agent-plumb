@@ -22,7 +22,25 @@ You bring the *what* (in plain English). The agent proposes the *how* (with trad
 
 ---
 
-## The 3-phase spine (v0.8)
+## What SDD is — and isn't (explicit tradeoff)
+
+SDD is opinionated. It optimises for some things and gives up others. Knowing the trade upfront prevents misunderstanding:
+
+**SDD optimises for:**
+- **Honest review over fast iteration.** Every step's content + commit shape is reviewable. Re-approval ceremony for changed approved sections. Append-only audit log. Mutation-verified tests.
+- **Plain English over technical precision.** Non-technical users drive specs; jargon gets translated on first use; status output reads in 30 seconds.
+- **Explicit over clever.** Each step declares its tag, its touches, its triggers. No magic. No discovery.
+- **Predictability over flexibility.** Same 4-step inner loop every iteration. Same commit shape. Customisation = adding rows in the standard format, not changing the format.
+
+**SDD explicitly gives up:**
+- **Power-user ergonomics.** Engineer-comfortable shorthand isn't here.
+- **One-shot speed.** A SPEC takes 30–90 minutes the first time. The wrong choice for "I want it built right now."
+- **Technical-precision in prose.** Hook stderr says *"the database can't be reached so the form shows 'please try again'"* — not *"DB unreachable, returning 503."*
+- **Free-form architecture.** Side-stepping the rubric isn't allowed. Skip a section explicitly with a reason or stay in the discipline.
+
+---
+
+## The 3-phase spine (v0.9)
 
 ```
 SPEC → BUILD → SHIP → SHIPPED
@@ -30,15 +48,15 @@ SPEC → BUILD → SHIP → SHIPPED
   └── (bug task) ← CI fail
 ```
 
-Each phase has its own sub-actions (small focused steps). You can never skip a phase. You can never advance while the current phase has unanswered `[ ]` blockers — the safety net (the moat) refuses the commit.
+Each phase has its own actions (small focused steps). You can never skip a phase. You can never advance while the current phase has unanswered `[ ]` blockers — the safety net (the `pre-commit-rules.sh` enforcer with state_rules) refuses the commit.
 
-| Phase | Sub-actions inside (sample) | What happens |
+| Phase | Actions inside (sample) | What happens |
 |---|---|---|
-| **SPEC** | problem · success · user-stories · ux-brief · proposed-approach · data-contract · acceptance-criteria · plan-decompose · … | Agent walks the playbook. Asks you the *what* (problem, users, success). Proposes the *how* (tech, data, flows) with tradeoffs. You approve. Last sub-action turns ACs into BUILD tasks. |
+| **SPEC** | problem · success · user-stories · ux-brief · proposed-approach · data-contract · acceptance-criteria · plan-decompose · … | Agent walks the playbook. Asks you the *what* (problem, users, success). Proposes the *how* (tech, data, flows) with tradeoffs. You approve. Last action turns ACs into BUILD tasks. |
 | **BUILD** | run-mode-chosen · build-task (×N) | Strict test-first. Write the test (must fail) → write the code → test passes → commit. One task at a time. |
-| **SHIP** | verify-test-run · verify-prod-only-acs · verify-ci-green · push-pr · learn-summary · learn-lessons · mark-shipped | Run all tests. Open the PR. Watch CI. Capture lessons. Mark feature cold. Update institutional memory. |
+| **SHIP** | verify-test-run · verify-prod-only-acs · learn · push-pr · verify-ci-green · mark-shipped | Run all tests. Capture lessons. Open the PR. Watch CI. Mark feature cold. Update institutional memory. |
 
-The legacy v0.7 phase names (PLAN, VERIFY, LEARN) are now sub-actions inside SPEC and SHIP — same work, simpler spine.
+**v0.9 atomic-step granularity (F4):** each `[ ]` row in spec.md is one atomic step = one commit. The agent advances exactly one step per `/next`.
 
 ---
 
@@ -73,7 +91,15 @@ A banner shows the current state. On a fresh project: *"No active feature."*
 /start build a waitlist landing page
 ```
 
-`/start` is the single entry point for new work. It scaffolds the work item folder, writes a `spec.md` skeleton with all the playbook's sub-action headings, updates `INDEX.md`, and tells you the exact `/next` to run first. On first install, it sets `git config core.hooksPath .claude/hooks` (with a halt-and-ask if your project already uses Husky / lefthook / a custom hooks tool).
+`/start` is the single entry point for new work. It scaffolds the work item folder, writes a `spec.md` skeleton with per-step `[ ]` rows under each action heading, updates `INDEX.md`, and tells you the exact `/next` to run first. On first install, it sets `git config core.hooksPath .claude/hooks` (with a halt-and-ask if your project already uses Husky / lefthook / a custom hooks tool).
+
+**For evolving a shipped feature** rather than starting fresh:
+
+```
+/start --extends=001 add referral codes to the waitlist
+```
+
+The new spec.md frontmatter records `extends:`, and `mark-shipped` writes a richer `## Shipped` block with cross-references — see *The catalog* below.
 
 ### 5. Walk the playbook
 
@@ -81,7 +107,7 @@ A banner shows the current state. On a fresh project: *"No active feature."*
 /next
 ```
 
-The agent advances by one sub-action per `/next`. Most are USER-LED (it asks you in plain English; common patterns offered as multiple choice with a free-form escape). Some are AGENT-LED (it proposes a concrete answer with at least 2 alternatives; you push back or approve).
+The agent advances by one atomic step per `/next`. Each step is one commit. USER-LED steps ask you in plain English (common patterns offered as multiple choice with a free-form escape). AGENT-LED steps propose a concrete answer with at least 2 alternatives; you push back or approve. BUILD-TASK steps run test-first.
 
 When SPEC is fully filled, the agent transitions you to BUILD. At BUILD entry the agent asks **how you want to run it**:
 
@@ -96,7 +122,7 @@ When SPEC is fully filled, the agent transitions you to BUILD. At BUILD entry th
 /ship
 ```
 
-Pushes the branch, opens a PR, watches CI. On pass: marks shipped, distills the feature to a one-liner in INDEX, marks the feature folder cold. On fail: captures the CI error as a bug task, flips back to BUILD. The remaining SHIP sub-actions (`learn-summary`, `learn-lessons`) capture lessons before merge.
+Pushes the branch, opens a PR, watches CI. On pass: marks shipped, distills the feature to a rich one-liner block in INDEX with cross-references, marks the feature folder cold. On fail: captures the CI error as a bug task, flips back to BUILD.
 
 ---
 
@@ -104,93 +130,138 @@ Pushes the branch, opens a PR, watches CI. On pass: marks shipped, distills the 
 
 | Command | What it does |
 |---|---|
-| `/start <title>` | Scaffold a new work item. Single entry point. |
-| `/next` | Advance the active work item by one sub-action. |
-| `/bug` | (B-1) routes to `/start [BUG] <title>`. Phase C ships a dedicated bug playbook. |
+| `/start <title>` | Scaffold a new work item. Pass `--extends=<id>` for evolution of an existing feature. |
+| `/next` | Advance the active work item by one step. Also handles inline skip / re-approve / bug-routing — see /next.md. |
 | `/idea` | Capture an idea cheaply — no phase, no branch, just a small file in `.sdd/ideas/`. |
-| `/status` | Print the current workflow state. |
+| `/status` | Print the current workflow state + resolved F5 parameters with provenance source. |
 | `/ship` | Push branch, open PR, watch CI, mark shipped or capture bug. |
-| `/skip <reason>` | Skip a `[SKIPPABLE]` section with a reason. |
-| `/re-approve <slug>` | Re-lock a previously approved section after intentional edits. |
 | `/compress` | Consolidate `patterns.md` or `data-model.md` when they grow noisy. |
 
-The agent picks the right command from your wording — you rarely type them yourself.
+The agent picks the right command from your wording — you rarely type them yourself. v0.9 retired `/bug`, `/re-approve`, and `/skip` — the framework's "Triage on first message" rule routes new requests, and `/next` handles re-approval + skip inline.
 
 ---
 
-## What's in the box
+## The 4-step inner loop (v0.9 atomic-step)
+
+Every `/next` runs the same 4-step container:
+
+| Step | What |
+|---|---|
+| **LOCATE** | Read `INDEX.md` → find active work item → find next `[ ]` step row in `spec.md` → load that step's frontmatter from the action library. |
+| **EXECUTE** | Variable shape per action `tag:`. USER-LED asks. AGENT-LED proposes/iterates. BUILD-TASK does test-first. |
+| **SYNC** | Action's `touches:` files staged. Hook chain refuses otherwise. |
+| **ADVANCE** | Flip `[ ]` → `[x]`. Commit. Fire `triggers:` (e.g., `section_approved` → append decisions.md). |
+
+Cognitive prep before the commit is free-form (multi-turn iteration allowed for AGENT-LED). The framework only enforces commit shape: one step = one commit.
+
+---
+
+## What's in the box (v0.9)
 
 ```
 .
 ├── README.md
-├── SCHEMA.md                              # locked v0.8 schema (the contract)
-├── templates/                             # what init.sh drops into your project
-│   ├── CLAUDE.md                          # workflow rules (managed) + your project rules (yours)
-│   ├── DEPRECATED.list                    # files removed in each version (used by update.sh)
-│   ├── migrations/                        # per-version migration scripts
+├── .github/workflows/sdd-ci.yml             # framework tests + scope-guard on PRs
+├── templates/                               # what init.sh drops into your project
+│   ├── CLAUDE.md                            # workflow rules (managed) + your project rules (yours)
+│   ├── DEPRECATED.list                      # files removed in each version (used by update.sh)
+│   ├── migrations/                          # per-version migration scripts
 │   ├── .sdd/
-│   │   ├── INDEX.md                       # table of contents + active pointer + shipped + live state
-│   │   ├── config.md                      # per-project config (playbooks, extensions, size caps)
-│   │   ├── playbooks/feature.md           # the v0.8 feature playbook (declares stages + sub-actions)
-│   │   ├── subactions/*.md                # 23 sub-action prose files (the playbook's body)
-│   │   ├── decisions.md                   # append-only audit log
-│   │   ├── data-model.md                  # canonical schema, single source of truth
-│   │   ├── patterns.md                    # cross-feature learnings
-│   │   ├── CLAUDE.version                 # current SDD version (0.8.0)
-│   │   ├── .cache/manifest.json           # hash-pinned framework files (tamper detection)
-│   │   ├── archive/                       # frozen history (compressed patterns, old shipped)
-│   │   ├── ideas/                         # captured ideas, one file each
-│   │   └── scripts/                       # per-project runtime (load-playbook, advance, etc.)
+│   │   ├── INDEX.md                         # work-item catalog (Active + Shipped with cross-references)
+│   │   ├── config.md                        # per-project config (parameters / events / file_classes /
+│   │   │                                       co_stage_block / file_rules / state_rules / folder_rules /
+│   │   │                                       closed enums / hash normalisation)
+│   │   ├── playbooks/feature.md             # the v0.9 feature playbook
+│   │   ├── actions/*.md                     # 22 action files (the playbook's body)
+│   │   ├── decisions.md                     # append-only audit log
+│   │   ├── data-model.md                    # canonical schema, single source of truth
+│   │   ├── patterns.md                      # cross-feature learnings
+│   │   ├── CLAUDE.version                   # current SDD version
+│   │   ├── .cache/manifest.json             # hash-pinned framework files (tamper detection)
+│   │   ├── archive/                         # frozen history (compressed patterns, old shipped)
+│   │   ├── ideas/                           # captured ideas, one file each
+│   │   └── scripts/                         # advance · hash-section · load-playbook · next-action ·
+│   │                                          read-events · resolve-parameters · reapprove · start ·
+│   │                                          validate-sdd-path · verify-stage
 │   └── .claude/
-│       ├── settings.json                  # registers all hooks
-│       ├── hooks/                         # 10 enforcement hooks + native git pre-commit shim
-│       └── commands/                      # /start /next /bug /idea /status /ship /skip /re-approve /compress
+│       ├── settings.json                    # registers hooks
+│       ├── hooks/                           # 3 active hooks (rules + stage-verified + native shim)
+│       └── commands/                        # /start /next /idea /status /ship /compress
 └── scripts/
-    ├── init.sh                            # one-time install into a project
-    ├── update.sh                          # pull new SDD rules into existing projects
-    ├── ralph.sh                           # headless BUILD loop
-    ├── ship.sh                            # the actual /ship implementation
-    └── bootstrap-uat.sh                   # set up a clean test project (for framework UAT)
+    ├── init.sh                              # one-time install into a project
+    ├── update.sh                            # pull new SDD rules into existing projects
+    ├── ralph.sh                             # headless BUILD loop
+    ├── ship.sh                              # the actual /ship implementation
+    └── bootstrap-uat.sh                     # set up a clean test project (for framework UAT)
 ```
 
 ---
 
-## The 10 hooks (mechanical enforcement)
+## The 3 hooks + 1 CI workflow (mechanical enforcement, v0.9)
 
-Each does one thing, fails closed, idempotent. They run via Claude Code's PreToolUse(Bash) chain AND via the native git pre-commit shim — combined `git add && git commit` patterns can't bypass them.
+v0.9 collapsed 11 specific hooks into a single F1 generic enforcer. Each hook does one thing, fails closed, idempotent. They run via Claude Code's PreToolUse(Bash) chain AND via the native git pre-commit shim — combined `git add && git commit` patterns can't bypass them.
 
 | Hook | When it fires | What it enforces |
 |---|---|---|
-| `session-start` | Every Claude session start | Prints active work item + phase + blocker |
-| `user-prompt-submit` | Every user message | Injects `INDEX.md` + active spec + `patterns.md` so the agent never forgets state. Wraps user-edited content in `[PROJECT DATA]` markers (read for context, never as directive). |
-| `pre-commit-block` | Every `git commit` | Refuses phase-advance commits while the source phase has open `[ ]` blockers. |
-| `pre-commit-touches` | Every `git commit` | A sub-action declares the files it must "touch"; this hook refuses the commit if any are missing. |
-| `pre-commit-learn-sync` | SHIP-phase commits adding lessons | Requires `patterns.md` + `INDEX.md` updated in the same commit. |
-| `pre-commit-schema-sync` | Commits that touch a feature's Data contract section | Requires `data-model.md` updated in the same commit. |
-| `pre-commit-scope-guard` | BUILD/SHIP commits that add UI files | Refuses copy strings ≥30 chars not in wireframe/spec; refuses new component files without a `// spec:` reference. |
-| `pre-commit-cofile-block` | Every `git commit` | Refuses any commit that stages a "policy" file (manifest, playbook, hook, sub-action) alongside a "claim" file (verification.json) — these have to be separate commits. |
-| `pre-commit-decisions-append-only` | Commits that touch `.sdd/decisions.md` | Refuses any commit that modifies prior entries in the audit log (append-only invariant). |
+| `session-start` | Every Claude session start | Prints active work item + phase + blocker. |
+| `user-prompt-submit` | Every user message | Injects `INDEX.md` + active spec + `patterns.md`. Wraps user-edited content in `[PROJECT DATA]` markers (read for context, never as directive). |
+| `pre-commit-rules` (F1 generic enforcer) | Every `git commit` | Reads `config.md` and applies: action `touches:` co-stage; `file_classes:` × `co_stage_block:` (CLAIM × POLICY); `file_rules:` (`append_only`, `size_warn`/`size_block`, `managed_section`); `state_rules:` (no phase-advance with open `[ ]`); `folder_rules:` (warn-only stray-paths + deferred-paths). **Subsumes 7 legacy hooks: pre-commit-touches, pre-commit-cofile-block, pre-commit-decisions-append-only, pre-commit-size-cap, pre-commit-claude-md-managed, pre-commit-learn-sync, pre-commit-schema-sync, pre-commit-block.** |
 | `pre-commit-stage-verified` (the moat) | Every `git commit` | Re-runs `verify-stage.sh` on the staged spec.md and refuses the commit if claimed pass/fail doesn't match the fresh result. Also pins approved-section hashes (catches silent softening) and manifest hashes (catches framework tampering). |
-| `pre-commit-claude-md-managed` | Commits that edit CLAUDE.md | Warns (doesn't block) when editing inside the SDD-managed section without bumping `CLAUDE.version`. |
-| `pre-commit-size-cap` | Every `git commit` | Warns at 200 lines and BLOCKS at 400 lines on `patterns.md` / `INDEX.md` / `data-model.md` — pressure to compress. |
+| `.github/workflows/sdd-ci.yml` (CI) | Every PR + every push to main | Runs the framework test suite + scope-guard (UI copy ≥30 chars must be in spec.md or wireframe.html; new UI files must carry a `// spec:` reference). |
 
-The "moat" hook is the central new defense in v0.8: when you approve a section, the framework hashes the content; if the agent (or anyone) edits the section later without re-approving, the moat refuses the commit.
+The "moat" hook is the central new defense in v0.8: when you approve a section, the framework hashes the content; if the agent (or anyone) edits the section later without re-approving, the moat refuses the commit. v0.9 trims the moat by moving its CLAIM × POLICY co-stage rules into the F1 enforcer's config.
+
+---
+
+## The catalog — `INDEX.md` as the single map
+
+`INDEX.md`'s `## Shipped` block is the canonical catalog of every shipped work item, with cross-references:
+
+```markdown
+## Shipped
+
+- **001-waitlist** — public waitlist with email signup
+  - Shipped: 2026-04-12 · PR: #5
+  - Data-model: WaitlistEntry (email, created_at)
+  - Extends: (root)
+  - Lesson: race-condition-safe email join key (see patterns.md)
+
+- **003-referral-codes** — friend-code referral tied to waitlist
+  - Shipped: 2026-04-25 · PR: #11
+  - Data-model: WaitlistEntry.referral_code (added)
+  - Extends: 001-waitlist
+  - Lesson: codes must be 6-char base32 (see patterns.md)
+```
+
+The Triage rule in CLAUDE.md uses this block to ask non-tech users which feature they mean by name (no need to remember IDs). `mark-shipped` writes the rich block automatically.
 
 ---
 
 ## The playbook
 
-See [`templates/.sdd/playbooks/feature.md`](templates/.sdd/playbooks/feature.md) for the v0.8 feature playbook. Summary of its sub-actions:
+See [`templates/.sdd/playbooks/feature.md`](templates/.sdd/playbooks/feature.md) for the v0.9 feature playbook. Summary of its actions:
 
-| Stage | Sub-actions | Notes |
+| Stage | Actions | Notes |
 |---|---|---|
-| **SPEC** | problem · success · user-stories · ux-brief · proposed-approach · flows · dependencies · data-contract · non-functional · out-of-scope · wireframe · acceptance-criteria · signoff-steps · plan-decompose | 14 sub-actions. The framework's depth lives here — that's why specs are sharp. |
-| **BUILD** | run-mode-chosen · build-task | `build-task` repeats once per task in the plan. |
-| **SHIP** | verify-test-run · verify-prod-only-acs · verify-ci-green · push-pr · mark-shipped · learn-summary · learn-lessons | 7 sub-actions covering ship + lessons capture. |
+| **SPEC** | problem · success · user-stories · ux-brief · proposed-approach · data-contract · flows · dependencies · out-of-scope · non-functional · acceptance-criteria · signoff-steps · wireframe · plan-decompose | 14 actions. The framework's depth lives here — that's why specs are sharp. |
+| **BUILD** | run-mode-chosen · build-task | `build-task` repeats once per task in the plan (3 inner steps: test → code → green). |
+| **SHIP** | verify-test-run · verify-prod-only-acs · learn · push-pr · verify-ci-green · mark-shipped | 6 actions covering ship + lessons capture. |
 
-Sub-actions live as separate prose files in [`templates/.sdd/subactions/`](templates/.sdd/subactions/) — the framework loads them on demand. Forking the framework means forking individual sub-actions, not the whole playbook.
+Actions live as separate prose files in [`templates/.sdd/actions/`](templates/.sdd/actions/) — the framework loads them on demand. Forking the framework means forking individual actions, not the whole playbook.
 
-The `feature` playbook is the only one shipped in B-1. Phase C will add a dedicated `bug` playbook (skipping plan-decompose) and `idea` playbook (single-file capture).
+The `feature` playbook is the only one shipped in v0.9. Phase D will add a dedicated `bug` playbook (skipping plan-decompose) and `idea` playbook (single-file capture).
+
+---
+
+## v0.9 architecture (the 5 themes)
+
+| Theme | What it does | Status |
+|---|---|---|
+| **F1** Generic rule-enforcer | One `pre-commit-rules.sh` reads `config.md` and replaces 7 specific hooks. | ✅ shipped |
+| **F2 slimmed** Event-trigger schema | `events:` map in config.md (section_approved, phase_transition, ship_complete) drives file-action contracts. | ✅ shipped |
+| **F4** Atomic-step granularity | One `/next` = one atomic step = one commit. Same shape every iteration. | ✅ shipped |
+| **F5** Cascading parameters | `parameters:` at every level (project → work item → stage → action → step) with provenance-aware resolver. | ✅ shipped |
+| **C-8** SCHEMA.md retired | 783-line schema doc deleted; closed enums + hash normalisation migrated to config.md. | ✅ shipped |
 
 ---
 
@@ -203,7 +274,7 @@ cd <your-project>
 
 Reads `CLAUDE.version` in your project, compares to the template, applies:
 
-- Updated playbooks, sub-actions, hooks, commands, settings
+- Updated playbooks, actions, hooks, commands, settings
 - Updated SDD-managed section of `CLAUDE.md` (your project rules below the marker are untouched)
 - Removes deprecated files (per `DEPRECATED.list`)
 - Runs migration scripts (per `migrations/to-X.Y.sh`) for any version steps you crossed
@@ -217,7 +288,7 @@ Your data is never touched: `INDEX.md`, `data-model.md`, `patterns.md`, `decisio
 `CLAUDE.md` at your project root has two clearly-marked sections:
 
 ```
-<!-- SDD-MANAGED-START version: 0.8.0 -->
+<!-- SDD-MANAGED-START version: 0.9.0 -->
    (workflow rules — overwritten by update.sh)
 <!-- SDD-MANAGED-END -->
 
@@ -227,34 +298,36 @@ Your data is never touched: `INDEX.md`, `data-model.md`, `patterns.md`, `decisio
 
 Add anything project-specific (your stack, your team's conventions, your domain language) below the END marker. SDD updates won't touch it.
 
-If you want to customize the workflow rules themselves, you can — but bump `CLAUDE.version` in the same commit to signal intent (otherwise a soft-warning hook flags the edit).
+If you want to customize the workflow rules themselves, you can — but bump `CLAUDE.version` in the same commit to signal intent (otherwise the F1 enforcer's `managed_section` rule warns).
 
 ---
 
-## Honest caveats (v0.8.0)
+## Honest caveats (v0.9.0)
 
 - **The playbook is 80% of the product.** If a question is weak, the system is weak. Fork and iterate — it's just markdown.
 - **"Non-technical" has limits.** The agent proposes technical options; you decide what feels right. If you don't know what you *want the feature to do*, no workflow saves you.
 - **Hooks have escape hatches.** Each one tells you in plain English how to proceed when blocked legitimately. Read the message — don't try to bypass.
-- **B-1 ships ONE playbook (`feature`).** The multi-playbook engine is in place; Phase C adds `bug`, `idea`, etc. without code changes.
-- **Sub-action prose still carries some JS-stack assumptions** (mentions of `tests/task-NNN.mjs`, Playwright, Tailwind, `gh pr create`). Phase C ships a `stack:` config block so non-JS adopters can override per-project. Until then, fork the affected sub-actions for your stack.
-- **Hook error messages still use some engineer terms** (manifest hash-pin, co-stage block, etc.). A focused B-2 theme rewrites these for non-tech audiences.
-- **This scales to roughly 50 in-flight features / 500 total.** Beyond that, you want real tooling. The current cold-tier + size caps + auto-archival keep working memory bounded forever, but at some scale you'll outgrow plain markdown.
+- **v0.9 ships ONE playbook (`feature`).** The multi-playbook engine is in place; future phases add `bug`, `idea`, etc. without code changes.
+- **Action prose still carries some JS-stack assumptions** (mentions of `tests/task-NNN.mjs`, Playwright, Tailwind, `gh pr create`). A future phase ships a `stack:` config block so non-JS adopters can override per-project. Until then, fork the affected actions for your stack.
+- **Hook error messages improved but still imperfect.** The F1 enforcer's plain-English block messages are better than v0.8's stderr; the moat hook's manifest-pin output is still engineer-leaning.
+- **This scales to roughly 50 in-flight features / 500 total.** Beyond that, you want real tooling. The cold-tier + size caps + auto-archival keep working memory bounded forever, but at some scale you'll outgrow plain markdown.
+- **Retrofitting onto an existing project may need v0.10.** The `init.sh` install assumes a clean repo. Retrofit on a project with its own conventions (Husky / Drizzle migrations / existing PRDs) may need an "absorb existing" install mode that's deferred to v0.10.
 - **Not a silver bullet.** It makes drift expensive and deep questioning cheap. It doesn't turn a bad idea into a good one.
 
 ---
 
 ## Status
 
-Currently at **v0.8.0** (Phase B-1 ship). Hardened through:
+Currently at **v0.9.0** (Phase C ship). Hardened through:
 
 - **Phase A (v0.7.5)** — proved the SPEC + BUILD + ship loop on real Next.js + Vercel projects. 26 mutation-verified tests catching catastrophic bug classes.
 - **Phase B-1 (v0.8.0)** — section-locking moat, multi-playbook engine bones, trust-boundary teaching against prompt injection from repo prose, hash-pinned manifest, slim memory layer, append-only audit log. Three rounds of adversarial reviewer council found and closed gaps. 69 tests, all mutation-verified.
+- **Phase C (v0.9.0)** — F1 generic enforcer (7 hooks subsumed → 1), F2 events schema, F4 atomic-step granularity, F5 cascading parameters, Catalog work (rich INDEX.md with cross-references), SCHEMA.md retired (783 lines deleted), scope-guard moved to GitHub Actions CI, "Where things live" canonical folder map, "Triage on first message" doctrine. **120 tests passing**, all mutation-verified.
 
-Next on the roadmap (B-2 / Phase C): hook error messages translated to non-tech English, `stack:` config block (test runner / VCS / PR tool / wireframe runtime), bug + idea playbooks, plugin packaging (so SDD lives globally as a Claude Code plugin instead of being copied into each project).
+Next on the roadmap (Phase D): `bug` + `idea` playbooks, `stack:` config block (test runner / VCS / PR tool / wireframe runtime), retrofit-existing-project install mode, plugin packaging (so SDD lives globally as a Claude Code plugin instead of being copied into each project).
 
 ---
 
 ## License
 
-MIT.
+(see LICENSE file)

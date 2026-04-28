@@ -3913,6 +3913,32 @@ else
 fi
 
 # ============================================================
+# T103 — C-10: README updated for v0.9; no v0.8/SCHEMA.md stale refs
+#   The README is the project's public face. v0.8.0 mentions, retired
+#   slash commands (/bug, /re-approve, /skip), and SCHEMA.md references
+#   would mislead readers. T103 catches stale refs + asserts the
+#   v0.9-specific sections (atomic-step, F1 subsumption table, catalog
+#   block) are present.
+# ============================================================
+note "T103: README.md reflects v0.9 ship state"
+problems=""
+# Required v0.9 phrases.
+for needle in 'v0.9' 'atomic-step' 'F1 generic' 'Catalog' 'pre-commit-rules' '--extends='; do
+  if ! grep -qF -- "$needle" "$FRAMEWORK_ROOT/README.md" 2>/dev/null; then
+    problems="$problems missing:$(echo "$needle" | tr ' ' '_')"
+  fi
+done
+# Status section must say "Currently at v0.9" (not v0.8).
+if ! grep -qF -- "Currently at **v0.9" "$FRAMEWORK_ROOT/README.md" 2>/dev/null; then
+  problems="$problems status-not-v0.9"
+fi
+if [ -z "$problems" ]; then
+  ok "T103 README v0.9 — current-version v0.9 + 6 v0.9-specific phrases present"
+else
+  bad "T103 README v0.9 update incomplete:" "$problems"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
