@@ -68,6 +68,7 @@ mkproj_v08() {
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/advance.sh"              "$d/.sdd/scripts/advance.sh"
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/resolve-parameters.sh"   "$d/.sdd/scripts/resolve-parameters.sh"
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/read-events.sh"          "$d/.sdd/scripts/read-events.sh"
+  cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/validate-sdd-path.sh"    "$d/.sdd/scripts/validate-sdd-path.sh"
   cp "$FRAMEWORK_ROOT/templates/.sdd/decisions.md"                    "$d/.sdd/decisions.md"
   cp "$VERIFY_STAGE" "$d/.sdd/scripts/verify-stage.sh" 2>/dev/null || true
   cp "$NEXT_ACTION"  "$d/.sdd/scripts/next-action.sh"  2>/dev/null || true
@@ -3030,6 +3031,59 @@ if [ -z "$orphans" ]; then
   ok "T83b all $decl_count declared events fired (action triggers OR framework allowlist)"
 else
   bad "T83b orphan events with neither action triggers nor framework fire path:" "$orphans"
+fi
+
+# ============================================================
+# T84 — F1 prerequisite: validate-sdd-path.sh path safety helper
+#   Closes audit A1 (path-traversal in events: target strings). The
+#   validator refuses paths that:
+#     - are absolute (Unix `/...` or Windows `C:\...`)
+#     - contain a `..` segment (escape attempt)
+#     - don't start with `.sdd/` (out-of-scope)
+#     - are empty (defensive)
+#   F1 generic enforcer (next commit) calls this helper before honouring
+#   any user-editable path declaration. Standalone test now so the
+#   validator is battle-tested before becoming load-bearing.
+# ============================================================
+note "T84: validate-sdd-path.sh accepts safe paths, rejects unsafe (5 cases)"
+VALIDATE="$FRAMEWORK_ROOT/templates/.sdd/scripts/validate-sdd-path.sh"
+results=""
+declare -a expected=( ".sdd/decisions.md:0" \
+                      ".sdd/features/001-foo/spec.md:0" \
+                      "../../etc/passwd:2" \
+                      "/etc/passwd:2" \
+                      ".sdd/../etc:2" \
+                      "normal/path.md:2" \
+                      ":2" )
+fails=""
+for entry in "${expected[@]}"; do
+  inp="${entry%:*}"
+  want="${entry##*:}"
+  bash "$VALIDATE" "$inp" >/dev/null 2>&1
+  got=$?
+  if [ "$got" != "$want" ]; then
+    fails="$fails [in='$inp' want=$want got=$got]"
+  fi
+done
+if [ -z "$fails" ]; then
+  ok "T84 validate-sdd-path.sh: 7 cases pass (safe paths + 5 unsafe variants)"
+else
+  bad "T84 validator misbehaved on:" "$fails"
+fi
+
+# ============================================================
+# T84b — F1 prerequisite mutation: validator strict-by-default
+#   Mutation: a path with NO `.sdd/` prefix should be REJECTED, not
+#   passed through. Proves the validator isn't a tautology of "anything
+#   without `..` is safe" — the prefix gate is load-bearing.
+# ============================================================
+note "T84b: validator rejects paths outside .sdd/ even with no traversal (mutation)"
+ec=0
+bash "$VALIDATE" "templates/CLAUDE.md" >/dev/null 2>&1 || ec=$?
+if [ "$ec" -eq 2 ]; then
+  ok "T84b path outside .sdd/ rejected (prefix gate is load-bearing)"
+else
+  bad "T84b validator accepted out-of-scope path templates/CLAUDE.md" "exit=$ec"
 fi
 
 # ============================================================
