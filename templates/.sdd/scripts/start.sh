@@ -384,17 +384,23 @@ header_lines = [
     "",
 ]
 
-# Strip any existing **Active:**/**Playbook:**/**Active blocker:** lines from the top.
+# Strip ANY **Active:**/**Playbook:**/**Active blocker:** lines from the
+# entire body. UAT v0.10.1 finding: the original "from the top until first
+# blank" logic broke when INDEX.md template starts with `# Project Index`
+# heading — the first iteration set in_old_header=False and subsequent
+# Active/Playbook lines slipped through, leaving a duplicate
+# `**Active:** _(none)_` boilerplate even after start.sh inserted the
+# canonical pointer. Now: scan whole body, strip every match. The
+# canonical header_lines we're prepending is the only one that should
+# remain.
 new_lines = []
-in_old_header = True
 for line in index_text.split("\n"):
-    if in_old_header and re.match(r"^\*\*(Active|Playbook|Active blocker):\*\*", line):
+    if re.match(r"^\*\*(Active|Playbook|Active blocker):\*\*", line):
         continue
-    if in_old_header and line.strip() == "":
-        in_old_header = False
-        continue
-    in_old_header = False
     new_lines.append(line)
+# Collapse leading blank lines that the strip may have created.
+while new_lines and new_lines[0].strip() == "":
+    new_lines.pop(0)
 
 # Ensure ## In flight and ## Shipped sections exist.
 # v0.10.1: changed from "## Active" to "## In flight" to align with the
