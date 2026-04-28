@@ -287,10 +287,12 @@ The non-technical user brings the *what*. You propose the *how*. They adjust tog
 
 Some rubric sections are marked `[SKIPPABLE: <condition>]`. They don't apply to every kind of feature.
 
+Skip is handled inline by `/next` (not a separate `/skip` command). The user replies `skip <reason>` to your skip-offer and `/next` routes it.
+
 1. **Assess first.** Read the skip condition + the feature's §1-3 context. Does this section meaningfully apply?
 2. **Proactively offer to skip** before asking any question:
-   > "§4 UX & Design brief is marked skippable for non-UI features. This feature is a backend cron job, so I think we should skip it. Reply `/skip no UI surface — backend cron only` to skip, or tell me what UI considerations do apply."
-3. **Respect the user's skip.** When `/skip <reason>` is invoked: replace every `[ ]` with `⏭ skipped — <reason>`, append `[SKIPPED]` to the heading, commit `[SDD:<id>] spec: skip §<N> — <reason>`, advance.
+   > "§4 UX & Design brief is marked skippable for non-UI features. This feature is a backend cron job, so I think we should skip it. Reply `skip no UI surface — backend cron only` to skip, or tell me what UI considerations do apply."
+3. **Respect the user's skip.** When `skip <reason>` is invoked (as a reply during `/next`): replace every `[ ]` with `⏭ skipped — <reason>`, append `[SKIPPED]` to the heading, commit `[SDD:<id>] spec: skip §<N> — <reason>`, advance.
 4. **Never skip a non-skippable section.** §1, §2, §3, §5, §6, §7, §11, §12 are required always.
 5. **Don't offer skip just because a question is hard** — the whole point of the rubric is to surface the hard questions.
 
@@ -481,8 +483,9 @@ These run without your involvement. If a hook blocks you, fix the blocker — do
 - `PreToolUse(Bash)` on `git commit`:
   - `pre-commit-block.sh` — refuses commits while current phase has open `[ ]`.
   - `pre-commit-rules.sh` — F1 generic enforcer (Phase C-5). Reads action `touches:`, config `file_classes:` + `co_stage_block:`, `file_rules:` (`append_only`, `size_warn`/`size_block`, `managed_section`), and `folder_rules:`. Subsumes pre-commit-touches, pre-commit-cofile-block, pre-commit-decisions-append-only, pre-commit-size-cap, pre-commit-claude-md-managed, pre-commit-learn-sync, pre-commit-schema-sync.
-  - `pre-commit-scope-guard.sh` — blocks UI copy ≥30 chars not in wireframe/spec; blocks new UI files without a `// spec:` reference comment.
   - `pre-commit-stage-verified.sh` — THE MOAT. Re-runs verify-stage on staged spec.md and refuses commits where `verification.json` claims pass-state that doesn't match.
+
+Scope-guard enforcement (UI copy ≥30 chars not in wireframe/spec; new UI files without a `// spec:` reference comment) runs in **GitHub Actions CI**, not as a local hook — see `.github/workflows/sdd-ci.yml`. This was moved to CI in v0.9 so local development doesn't trip on intermediate states; the gate still fires before merge.
 
 ## Shipped features are cold — do NOT re-read them
 
@@ -535,7 +538,7 @@ The user is often non-technical and doesn't know what to type next. Every turn M
 - **Asked a USER-LED question:** *"Type your answer and I'll fill §`<N>`."*
 - **BUILD wrote a test, about to write code:** *"Running the test now — watch for RED → GREEN. Run `/next` to advance."*
 - **Phase advanced:** *"Phase is now `<X>`. Run `/next` to start the first step."*
-- **Skippable section's condition applies:** *"Reply `/skip <one-line reason>` to skip §`<N>` — or tell me why it does apply."*
+- **Skippable section's condition applies:** *"Reply `skip <one-line reason>` to skip §`<N>` — or tell me why it does apply."*
 
 Never end a turn with "What's next: §X" alone. Always include HOW the user acts on it.
 
