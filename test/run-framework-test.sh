@@ -3843,6 +3843,38 @@ else
 fi
 
 # ============================================================
+# T101 — C-7: scope-guard retired locally; CI workflow takes over
+#   pre-commit-scope-guard.sh deleted in C-7 (1/N). Its logic
+#   (UI-copy-≥30-chars-not-in-spec block + new-UI-file-without-`// spec:`-
+#   block) lives in .github/workflows/sdd-ci.yml as a `pull_request`-
+#   triggered job. Conservative move per Sam's handoff: only scope-guard
+#   moves to CI; immediate-feedback hooks stay local. T101 catches
+#   anyone re-introducing the local hook OR removing the CI workflow.
+# ============================================================
+note "T101: pre-commit-scope-guard.sh retired locally; CI workflow present"
+problems=""
+if [ -f "$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-scope-guard.sh" ]; then
+  problems="$problems file:scope-guard"
+fi
+if grep -q 'pre-commit-scope-guard\.sh' "$FRAMEWORK_ROOT/templates/.claude/settings.json"; then
+  problems="$problems settings:scope-guard"
+fi
+if [ ! -f "$FRAMEWORK_ROOT/.github/workflows/sdd-ci.yml" ]; then
+  problems="$problems missing:.github/workflows/sdd-ci.yml"
+fi
+# CI workflow must mention the two scope-guard blocks in plain English.
+if [ -f "$FRAMEWORK_ROOT/.github/workflows/sdd-ci.yml" ]; then
+  for needle in 'UI copy' 'spec.md or wireframe.html' '`// spec:` reference'; do
+    grep -qF -- "$needle" "$FRAMEWORK_ROOT/.github/workflows/sdd-ci.yml" || problems="$problems missing-needle:$needle"
+  done
+fi
+if [ -z "$problems" ]; then
+  ok "T101 scope-guard retired locally; CI workflow ships both blocks"
+else
+  bad "T101 scope-guard CI move incomplete:" "$problems"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'

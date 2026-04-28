@@ -1,0 +1,144 @@
+name: SDD CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  framework-tests:
+    name: Framework tests (mutation-verified)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run test/run-framework-test.sh
+        shell: bash
+        run: |
+          bash test/run-framework-test.sh
+
+  scope-guard:
+    name: Scope guard (UI copy + new-file spec refs)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine diff range
+        id: diff
+        shell: bash
+        run: |
+          # PR diff range: from PR base ref to PR head.
+          base="origin/${{ github.event.pull_request.base.ref }}"
+          head="HEAD"
+          echo "base=$base" >> "$GITHUB_OUTPUT"
+          echo "head=$head" >> "$GITHUB_OUTPUT"
+
+      - name: Scope-guard — UI copy ≥30 chars must be in spec.md or wireframe.html
+        shell: bash
+        run: |
+          set -uo pipefail
+          # Phase-C-7 (1/N) replacement of pre-commit-scope-guard.sh's local
+          # hook. Runs against the PR diff rather than the staged set.
+          # Same logic; CI lifecycle = no committer dev-loop interruption,
+          # but PRs still gated.
+
+          base="${{ steps.diff.outputs.base }}"
+          head="${{ steps.diff.outputs.head }}"
+
+          # Only run if there's an active SDD work item AND a wireframe.
+          [ -d .sdd ] || { echo "[scope-guard-ci] no .sdd/ — skipping."; exit 0; }
+          [ -f .sdd/INDEX.md ] || { echo "[scope-guard-ci] no INDEX.md — skipping."; exit 0; }
+
+          active=$(awk '/^\*\*Active:\*\*/{print $2; exit}' .sdd/INDEX.md 2>/dev/null || echo "")
+          echo "$active" | grep -qE '^[a-z][a-z0-9_-]*/[A-Za-z0-9._-]+$' || active=""
+          [ -z "$active" ] && { echo "[scope-guard-ci] no active work item — skipping."; exit 0; }
+
+          spec=".sdd/$active/spec.md"
+          wireframe=".sdd/$active/wireframe.html"
+          [ -f "$spec" ] || { echo "[scope-guard-ci] $spec missing — skipping."; exit 0; }
+          [ -f "$wireframe" ] || { echo "[scope-guard-ci] no wireframe (skippable phase) — skipping."; exit 0; }
+
+          # Phase gate: BUILD or SHIP only.
+          phase=$(grep -m1 -oE '\[PHASE: [A-Z]+\]' "$spec" | grep -oE '[A-Z]+' | tail -1 || echo "")
+          case "$phase" in
+            BUILD|SHIP) ;;
+            *) echo "[scope-guard-ci] phase=$phase — scope-guard only runs BUILD/SHIP. skipping."; exit 0 ;;
+          esac
+
+          # ─── Block 1: UI copy strings ─────────────────────────────────
+          added_strings=$(git diff --unified=0 "$base..$head" -- '*.tsx' '*.jsx' '*.ts' '*.js' 2>/dev/null \
+            | grep -E '^\+' \
+            | grep -oE '"[^"]{30,}"|>[^<>]{30,}<' \
+            | sed -E 's/^[">]|[<"]$//g' \
+            | sort -u || true)
+
+          violations=()
+          if [ -n "$added_strings" ]; then
+            while IFS= read -r str; do
+              [ -z "$str" ] && continue
+              if grep -qF -- "$str" "$wireframe" 2>/dev/null; then continue; fi
+              if grep -qF -- "$str" "$spec" 2>/dev/null; then continue; fi
+              if grep -qiF -- "$str" "$wireframe" 2>/dev/null; then continue; fi
+              if grep -qiF -- "$str" "$spec" 2>/dev/null; then continue; fi
+              violations+=("$str")
+            done <<< "$added_strings"
+          fi
+
+          if [ ${#violations[@]} -gt 0 ]; then
+            {
+              echo "::error::[SDD scope-guard] PR adds copy strings not in spec.md or wireframe.html"
+              echo ""
+              echo "  Active feature: $active"
+              echo "  Phase:          $phase"
+              echo "  Wireframe:      $wireframe"
+              echo ""
+              echo "  Unspec'd strings:"
+              for v in "${violations[@]}"; do
+                preview=$(echo "$v" | head -c 120)
+                echo "    • \"$preview\""
+              done
+              echo ""
+              echo "  Pick one:"
+              echo "  1. Legitimate but missed: add the copy/element to wireframe.html,"
+              echo "     get it re-approved, force-push the branch."
+              echo "  2. Not requested: remove the unspec'd copy, force-push."
+            } >&2
+            exit 1
+          fi
+
+          # ─── Block 2: new UI files must carry a `// spec:` reference ──
+          new_ui_files=$(git diff --name-only --diff-filter=A "$base..$head" 2>/dev/null \
+            | grep -E '^(app|components|pages|src/app|src/components|src/pages)/.*\.(tsx|jsx|ts|js)$' \
+            | grep -vE '\.test\.|\.spec\.|/tests?/' \
+            || true)
+
+          missing_ref=()
+          if [ -n "$new_ui_files" ]; then
+            while IFS= read -r file; do
+              [ -z "$file" ] && continue
+              if ! head -10 "$file" | grep -qE '(//|/\*|\*).*spec:\s*(features/|\.sdd/|\S+\.md)' ; then
+                missing_ref+=("$file")
+              fi
+            done <<< "$new_ui_files"
+          fi
+
+          if [ ${#missing_ref[@]} -gt 0 ]; then
+            {
+              echo "::error::[SDD scope-guard] new UI files missing \`// spec:\` reference"
+              echo ""
+              echo "  Files:"
+              for f in "${missing_ref[@]}"; do
+                echo "    • $f"
+              done
+              echo ""
+              echo "  Add a comment in the first 10 lines, e.g.:"
+              echo "    // spec: $spec §3 US2 — <what this file is for>"
+            } >&2
+            exit 1
+          fi
+
+          echo "[scope-guard-ci] OK — no unspec'd copy or missing-ref UI files."
