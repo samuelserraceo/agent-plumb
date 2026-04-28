@@ -90,7 +90,7 @@ Four actions default to **`requires_user_approval: true`** in their frontmatter:
 
 When the user approves any of these, the framework hashes the section content. On phase-advance, the moat re-extracts the section from the staged spec.md and refuses the commit if the hash diverges. Re-approval (`/re-approve <slug>`) is the legitimate path for intentional edits.
 
-The plain-English `check:` strings in `exit_checks` are documentation. The actual evaluation logic lives in `verify-stage.sh` (per-check-ID bash). Adding a new check ID in B-1 requires editing `verify-stage.sh`.
+The `check:` strings in `exit_checks` ARE the evaluation logic — not documentation that points elsewhere. Each `check:` follows the format `<plain-English description> — <bash command>` (em-dash separator). `verify-stage.sh` parses each line out of the `### Exit checks` block in `spec.md`, sets `$SECTION_FILE` to a temp file containing the active phase's body, and runs the trailing bash command directly. There is no per-check-ID dispatch in `verify-stage.sh` — the script is generic; the playbook owns what gets checked. Adding a new check means adding a new row to `exit_checks:` here in the playbook, with both the description and the bash command after the em-dash. No edits to `verify-stage.sh` are needed.
 
 ---
 

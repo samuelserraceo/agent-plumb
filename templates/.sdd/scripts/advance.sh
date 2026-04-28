@@ -124,6 +124,15 @@ except Exception as e:
     print(f"[advance] playbook frontmatter parse error: {e}", file=sys.stderr)
     sys.exit(1)
 
+# Shape guard: frontmatter must be a YAML mapping (dict). An empty `---\n---`
+# block parses to None; a stray top-level list/string parses to list/str. Any
+# of those would trace back unhandled at .get() below — surface a plain-English
+# error instead.
+if not isinstance(pb_fm, dict):
+    print(f"[advance] playbook frontmatter is not a YAML mapping "
+          f"(got {type(pb_fm).__name__}): {playbook_path}", file=sys.stderr)
+    sys.exit(1)
+
 stages = pb_fm.get("stages", []) or []
 if not stages:
     print(f"[advance] playbook has no stages: {playbook_path}", file=sys.stderr)

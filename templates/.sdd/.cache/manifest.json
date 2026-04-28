@@ -9,7 +9,7 @@
   },
   "scripts": {
     "advance.sh": {
-      "expected_sha256": "849720853a5b988b29d774bd2c0ec13154435760aed87f0328d03ce6f4c5787d",
+      "expected_sha256": "40f8a89e82f048b9e3b71b6aefcf07f26a2349a8bf16a053266f518fb952ca63",
       "path": ".sdd/scripts/advance.sh",
       "trust": "framework"
     },
@@ -24,7 +24,7 @@
       "trust": "framework"
     },
     "reapprove.sh": {
-      "expected_sha256": "bd0a58986113fc0a35935130094964ec3efd2aa70b787eef1a7ba2f5ce7b00b3",
+      "expected_sha256": "b7502ea30c6d135e0ea88c069fbc9e121996c7214068e761ba8a7787d5a5c14d",
       "path": ".sdd/scripts/reapprove.sh",
       "trust": "framework"
     },

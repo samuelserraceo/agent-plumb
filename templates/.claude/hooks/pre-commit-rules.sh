@@ -463,17 +463,33 @@ for path, rule in rules.items():
     if not isinstance(rule, dict): continue
     if path not in staged_lines: continue
 
-    # size_warn / size_block handler — line-count cap on the file at HEAD+staged.
-    # Reads working tree (the file as it stands), not the diff. size_warn writes
-    # a stderr nudge but doesn't block; size_block hard-stops the commit.
+    # size_warn / size_block handler — line-count cap on the STAGED blob.
+    # CodeRabbit fix (5th cycle): read the staged blob via `git show :<path>`,
+    # not the working-tree copy. The user can stage a small file then keep
+    # editing it past the cap; the working-tree count would block them on
+    # uncommitted edits, while the staged blob is what actually goes into
+    # the commit. Falls back to working tree if `git show` fails (e.g., file
+    # is in --intent-to-add state).
     sw = rule.get("size_warn")
     sb = rule.get("size_block")
     if sw or sb:
+        line_count = None
         try:
-            with open(path) as f:
-                line_count = sum(1 for _ in f)
-        except OSError:
-            line_count = None
+            r = subprocess.run(
+                ["git", "show", f":{path}"],
+                capture_output=True, check=False,
+            )
+            if r.returncode == 0:
+                line_count = r.stdout.count(b"\n")
+        except Exception:
+            pass
+        # Fallback to working tree if git show didn't yield a usable count.
+        if line_count is None:
+            try:
+                with open(path, encoding="utf-8") as f:
+                    line_count = sum(1 for _ in f)
+            except OSError:
+                line_count = None
         if line_count is not None:
             if sb is not None and line_count >= int(sb):
                 advice = rule.get("advice") or ""
@@ -574,7 +590,6 @@ for path, rule in rules.items():
             print("BLOCK")
             print(f"PATH: {path}")
             print("REASON: append_only — staged blob does not start with HEAD blob")
-            print(f"RESET_PHRASE: {reset or '(none configured)'}")
             sys.exit(0)
 
 print("ALLOW")

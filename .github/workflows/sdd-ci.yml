@@ -93,7 +93,20 @@ jobs:
           # UI paths only — backend / scripts / tests don't need their copy
           # strings cross-referenced against wireframe/spec. Path-spec mirrors
           # Block 2's new-UI-files filter (app/, components/, pages/, src/*).
-          added_strings=$(git diff --unified=0 "$base..$head" -- \
+          #
+          # Range form: `$base...$head` (three-dot). This is the PR-diff
+          # form — it diffs HEAD against the merge-base of base and HEAD,
+          # so commits that landed on main AFTER this PR branched are not
+          # counted as PR changes. The two-dot form (`$base..$head`) would
+          # let post-branch main commits leak in, producing false-positive
+          # violations on copy this PR never touched.
+          #
+          # Added-line filter: `grep -E '^\+[^+]'` keeps lines that start
+          # with one `+` followed by a non-`+` character. This excludes the
+          # `+++ b/path` file-header line that `--unified=0` still emits;
+          # without the negation, file paths with quote-like chars could
+          # slip into the per-string check.
+          added_strings=$(git diff --unified=0 "$base...$head" -- \
             'app/**/*.tsx' 'app/**/*.jsx' 'app/**/*.ts' 'app/**/*.js' \
             'components/**/*.tsx' 'components/**/*.jsx' 'components/**/*.ts' 'components/**/*.js' \
             'pages/**/*.tsx' 'pages/**/*.jsx' 'pages/**/*.ts' 'pages/**/*.js' \
@@ -101,7 +114,7 @@ jobs:
             'src/components/**/*.tsx' 'src/components/**/*.jsx' 'src/components/**/*.ts' 'src/components/**/*.js' \
             'src/pages/**/*.tsx' 'src/pages/**/*.jsx' 'src/pages/**/*.ts' 'src/pages/**/*.js' \
             2>/dev/null \
-            | grep -E '^\+' \
+            | grep -E '^\+[^+]' \
             | grep -oE '"[^"]{30,}"|>[^<>]{30,}<' \
             | sed -E 's/^[">]|[<"]$//g' \
             | sort -u || true)
@@ -154,7 +167,10 @@ jobs:
           fi
 
           # ─── Block 2: new UI files must carry a `// spec:` reference ──
-          new_ui_files=$(git diff --name-only --diff-filter=A "$base..$head" 2>/dev/null \
+          # Range form: three-dot — same reason as Block 1 above. Files
+          # added on main after the PR branched must not count as files
+          # this PR added.
+          new_ui_files=$(git diff --name-only --diff-filter=A "$base...$head" 2>/dev/null \
             | grep -E '^(app|components|pages|src/app|src/components|src/pages)/.*\.(tsx|jsx|ts|js)$' \
             | grep -vE '\.test\.|\.spec\.|/tests?/' \
             || true)

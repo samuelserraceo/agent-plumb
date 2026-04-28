@@ -132,8 +132,31 @@ if os.path.isfile(ver_path):
     except Exception as e:
         print(f"reapprove: verification.json malformed: {e}", file=sys.stderr)
         sys.exit(1)
+    # Shape gate: must match what the moat (pre-commit-stage-verified.sh)
+    # expects. Reject here BEFORE rewriting — otherwise the user would
+    # "re-approve" against a malformed file that the moat then refuses on
+    # the next commit, leaving the user stuck.
     if not isinstance(d, dict):
-        print(f"reapprove: verification.json is not a JSON object", file=sys.stderr)
+        print(f"reapprove: verification.json is not a JSON object — "
+              f"cannot re-approve. Fix the file shape first or delete it "
+              f"to start fresh.", file=sys.stderr)
+        sys.exit(1)
+    if "phase" not in d or not isinstance(d.get("phase"), str):
+        print(f"reapprove: verification.json missing 'phase' (must be a "
+              f"string) — cannot re-approve. Re-run verify-stage.sh or "
+              f"delete the file to start fresh.", file=sys.stderr)
+        sys.exit(1)
+    if "checks" not in d or not isinstance(d.get("checks"), list) or \
+            not all(isinstance(c, dict) for c in d.get("checks", [])):
+        print(f"reapprove: verification.json 'checks' must be a list of "
+              f"objects — cannot re-approve. Re-run verify-stage.sh or "
+              f"delete the file to start fresh.", file=sys.stderr)
+        sys.exit(1)
+    if "approved_sections" in d and not isinstance(d.get("approved_sections"), dict):
+        print(f"reapprove: verification.json 'approved_sections' must be "
+              f"an object (slug→hash map) — cannot re-approve. Fix the "
+              f"file shape first or delete it to start fresh.",
+              file=sys.stderr)
         sys.exit(1)
 else:
     # Create a minimal verification.json. The user can re-run verify-stage.sh
