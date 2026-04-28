@@ -75,12 +75,12 @@
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
         <div class="border border-slate-200 rounded px-3 py-2">
           <div class="font-medium">Mobile</div>
-          <div class="text-slate-500">≤ 390px (e.g. iPhone-13)</div>
+          <div class="text-slate-500">&lt; 390px (e.g. iPhone-13)</div>
           <div class="mt-1 text-slate-600">Required: <span class="wf-note">yes / no</span></div>
         </div>
         <div class="border border-slate-200 rounded px-3 py-2">
           <div class="font-medium">Tablet</div>
-          <div class="text-slate-500">390–1024px</div>
+          <div class="text-slate-500">390–1023px</div>
           <div class="mt-1 text-slate-600">Required: <span class="wf-note">yes / no</span></div>
         </div>
         <div class="border border-slate-200 rounded px-3 py-2">
@@ -187,9 +187,9 @@
     <div>
       <strong>Approval:</strong>
       <ul class="list-none mt-1 space-y-0.5">
-        <li><label><input type="checkbox" class="mr-2"> Wireframe matches the approved §4 UX brief</label></li>
-        <li><label><input type="checkbox" class="mr-2"> All checklist sections above pass</label></li>
-        <li><label><input type="checkbox" class="mr-2"> Status updated in the header (draft → approved + date)</label></li>
+        <li><input type="checkbox" id="wireframe-matches-brief" class="mr-2"><label for="wireframe-matches-brief">Wireframe matches the approved §4 UX brief</label></li>
+        <li><input type="checkbox" id="checklist-all-pass" class="mr-2"><label for="checklist-all-pass">All checklist sections above pass</label></li>
+        <li><input type="checkbox" id="header-status-updated" class="mr-2"><label for="header-status-updated">Status updated in the header (draft → approved + date)</label></li>
       </ul>
       <p class="mt-3 text-slate-600">When all three boxes are ticked, tell the agent <code class="text-xs bg-slate-100 px-1.5 py-0.5 rounded">wireframe approved</code>.</p>
     </div>
