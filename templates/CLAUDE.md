@@ -316,6 +316,16 @@ Default to `open`. Apply this for spec.md / wireframe.html / dev-server URLs / C
 - Never duplicate a schema definition. Reference by name.
 - If `data-model.md` exceeds 500 lines, convert to `data-model/` directory with one file per entity + `manifest.md`. Announce the migration to the user first.
 
+## Minimum-diff discipline (Karpathy borrow)
+
+When editing existing files, prefer the **smallest diff that does the job**. The diff is what gets reviewed, what gets reverted, what shows up in `git blame` years from now. Three rules:
+
+1. **Don't refactor while you're there.** If you spot a function that should be split, a name that could be clearer, or formatting that's off — leave it. File a follow-up. The current step has one job; mixing in cleanups makes the diff hard to review and harder to revert.
+2. **Don't reformat passively.** Editor auto-format on save can rewrite hundreds of lines of unrelated whitespace and quote-style. If you see a giant diff full of `' '` → `" "` flips, the diff is mostly noise. Re-disable the auto-format or stage selectively.
+3. **Touch the file once, decisively.** If you make a change, then realise you need to undo part of it, restage from a clean state — don't commit a "fix the previous fix" patch. The atomic-step rule (one step = one commit) makes this easier: each commit is the answer to one question.
+
+Exception: if a refactor is genuinely the step's purpose (e.g., a Phase-C rename action), the rename IS the minimum diff. The rule is about *incidental* refactors, not deliberate ones.
+
 ## Wireframes
 
 - Static HTML + Tailwind (CDN in `<head>`). No build step. Viewable in a browser via `open`.

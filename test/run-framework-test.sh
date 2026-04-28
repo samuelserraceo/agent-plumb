@@ -2891,6 +2891,26 @@ else
 fi
 
 # ============================================================
+# T80 — Karpathy borrow #13: minimum-diff discipline in CLAUDE.md
+#   Adds the "smallest diff that does the job" rule + 3 sub-rules
+#   (no incidental refactor / no passive reformat / touch file once).
+#   Pre-Phase-C: no anchor for incidental-refactor scope creep — agents
+#   often "while-I'm-here" cleaned up adjacent code, exploding diffs
+#   and obscuring the actual change.
+#   Post-Phase-C: the rule is named, sourced, and grep-able.
+# ============================================================
+note "T80: CLAUDE.md teaches minimum-diff discipline (Karpathy borrow #13)"
+miss=""
+for needle in 'Minimum-diff' 'smallest diff' "while you're there" 'reformat passively' 'one step = one commit'; do
+  grep -q "$needle" "$CLAUDE_MD" || miss="$miss $needle"
+done
+if [ -z "$miss" ]; then
+  ok "T80 CLAUDE.md teaches minimum-diff discipline (3 sub-rules + Karpathy attribution)"
+else
+  bad "T80 CLAUDE.md missing minimum-diff phrasing:" "missing:$miss"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
