@@ -1,6 +1,6 @@
 ---
 type: config
-sdd_version: 0.9.0
+sdd_version: 0.10.0
 playbooks_available: [feature]
 default_playbook: feature
 extensions: {}

@@ -70,7 +70,15 @@ if not m:
 
 fm_text = m.group(1)
 body = m.group(2)
-fm = yaml.safe_load(fm_text) or {}
+# CodeRabbit cycle 3 (PR #31): wrap yaml.safe_load in try/except so a
+# malformed frontmatter (e.g., duplicate keys, bad indentation) gives
+# a plain-English error instead of a Python traceback.
+try:
+    fm = yaml.safe_load(fm_text) or {}
+except yaml.YAMLError as e:
+    print(f"[settings] config.md frontmatter is malformed YAML: {e}",
+          file=sys.stderr)
+    sys.exit(1)
 if not isinstance(fm, dict):
     print(f"[settings] config.md frontmatter is not a mapping (got {type(fm).__name__})",
           file=sys.stderr)

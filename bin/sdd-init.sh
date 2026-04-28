@@ -51,25 +51,53 @@ if [ -d ".sdd" ] && [ -f ".sdd/config.md" ]; then
   exit 0
 fi
 
-# Validate plugin templates exist.
-if [ ! -d "$PLUGIN_ROOT/templates/.sdd" ]; then
-  echo "[SDD init] templates/.sdd not found at plugin root: $PLUGIN_ROOT" >&2
+# CodeRabbit cycle 3 (PR #31): preflight ALL required template paths
+# before writing anything. Earlier the script wrote .sdd/, then
+# discovered .claude/ was missing and aborted — leaving the project
+# in a half-initialised state (.sdd present, .claude absent, no
+# CLAUDE.md). Validate everything first; write second.
+TEMPLATE_SDD="$PLUGIN_ROOT/templates/.sdd"
+TEMPLATE_CLAUDE="$PLUGIN_ROOT/templates/.claude"
+TEMPLATE_CLAUDE_MD="$PLUGIN_ROOT/templates/CLAUDE.md"
+
+missing=""
+[ -d "$TEMPLATE_SDD" ]      || missing="$missing  - $TEMPLATE_SDD\n"
+[ -d "$TEMPLATE_CLAUDE" ]   || missing="$missing  - $TEMPLATE_CLAUDE\n"
+[ -f "$TEMPLATE_CLAUDE_MD" ] || missing="$missing  - $TEMPLATE_CLAUDE_MD\n"
+if [ -n "$missing" ]; then
+  echo "[SDD init] Required template paths missing at plugin root:" >&2
+  printf "$missing" >&2
   echo "[SDD init] Plugin install may be corrupt — try reinstalling." >&2
+  exit 1
+fi
+
+# CodeRabbit cycle 3: refuse to overwrite an existing .claude/ — the
+# user may have customised it (their own commands/hooks). If
+# .claude/ exists, surface the conflict explicitly. .sdd/ presence
+# was already gated by the idempotency check above (we only get here
+# if .sdd/ does NOT exist), so it's safe to write.
+if [ -d ".claude" ]; then
+  echo "[SDD init] .claude/ already exists in project — refusing to overwrite." >&2
+  echo "[SDD init] Either move it aside (mv .claude .claude.bak) or merge SDD's" >&2
+  echo "[SDD init] templates/.claude/ contents into yours by hand:" >&2
+  echo "[SDD init]   $TEMPLATE_CLAUDE" >&2
   exit 1
 fi
 
 echo "[SDD init] First-time setup of SDD in this project ($PROJECT_DIR)…"
 
-# Copy framework files.
-cp -r "$PLUGIN_ROOT/templates/.sdd" .sdd || {
+# Copy framework files. Order: .sdd first (largest, most likely to
+# fail on disk space), then .claude, then CLAUDE.md. If a later step
+# fails the user already has the bigger piece — easier to recover.
+cp -r "$TEMPLATE_SDD" .sdd || {
   echo "[SDD init] failed to copy .sdd/ into project — check disk space + permissions." >&2
   exit 1
 }
-cp -r "$PLUGIN_ROOT/templates/.claude" .claude || {
+cp -r "$TEMPLATE_CLAUDE" .claude || {
   echo "[SDD init] failed to copy .claude/ into project — check disk space + permissions." >&2
   exit 1
 }
-cp "$PLUGIN_ROOT/templates/CLAUDE.md" CLAUDE.md || {
+cp "$TEMPLATE_CLAUDE_MD" CLAUDE.md || {
   echo "[SDD init] failed to copy CLAUDE.md — check disk space + permissions." >&2
   exit 1
 }

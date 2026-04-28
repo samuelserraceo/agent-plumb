@@ -220,7 +220,7 @@ PY
   # conventions. The "ship:" prefix isn't in the convention list;
   # use "[SDD] index: <id> shipped" (the index-update shape) which
   # matches the mark-shipped action's commit-message contract.
-  git commit -m "[SDD] index: $feature_id shipped (CI green; spec marked cold)"
+  git commit -m "[SDD] index: $feature_id shipped"
   git push
 
   echo ""
