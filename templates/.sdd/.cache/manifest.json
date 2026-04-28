@@ -2,7 +2,7 @@
   "extensions": {},
   "playbooks": {
     "feature": {
-      "expected_sha256": "16ab86b4d8c751ef2d4ac702d283acd885872c1a886544d1445e148ddc2fd5ad",
+      "expected_sha256": "f941542215a7a7bfe67d06c095542cd2d411d215572ae48475ae6742a4c94265",
       "path": ".sdd/playbooks/feature.md",
       "trust": "framework"
     }
@@ -24,7 +24,7 @@
       "trust": "framework"
     },
     "reapprove.sh": {
-      "expected_sha256": "07ee9e9bc262df0450c32735efd047eeb69b03ac90e21bb9597f03a4e888da8a",
+      "expected_sha256": "bd0a58986113fc0a35935130094964ec3efd2aa70b787eef1a7ba2f5ce7b00b3",
       "path": ".sdd/scripts/reapprove.sh",
       "trust": "framework"
     },
@@ -39,7 +39,7 @@
       "trust": "framework"
     },
     "read-events.sh": {
-      "expected_sha256": "c9381a00dd2c74b7a59526433fd97ea113b486cdb21ae0825fe5ee130b434652",
+      "expected_sha256": "4f0b112f2f1b7002f08212f57a86c0439549bb0f11242b157cb8372c5e205eda",
       "path": ".sdd/scripts/read-events.sh",
       "trust": "framework"
     },
@@ -97,7 +97,7 @@
       "trust": "framework"
     },
     "plan-decompose": {
-      "expected_sha256": "90fcdeb2e48c50937387883bf5ebd06c14a3c143694e9c0f0ef48dc6727df9c0",
+      "expected_sha256": "d31d9b8e504760989e2c3da1fe47c3f5f3959fc6526496399779aeba4d721e44",
       "path": ".sdd/actions/plan-decompose.md",
       "trust": "framework"
     },
@@ -112,7 +112,7 @@
       "trust": "framework"
     },
     "push-pr": {
-      "expected_sha256": "14df334ebe4a323aff39e4cdf063a2d62fc013b695121797f3ace5e91902cc1d",
+      "expected_sha256": "e89ca93bd107dfe604b259b99c2eb0c1362841d3656627273aed973c4f76df22",
       "path": ".sdd/actions/push-pr.md",
       "trust": "framework"
     },
@@ -157,7 +157,7 @@
       "trust": "framework"
     },
     "wireframe": {
-      "expected_sha256": "dee9d6e1f41b079a0c0d3d79bb0525a9fd1896b839bef5ae66e986b53ae00a58",
+      "expected_sha256": "a55341a9ae206061076776f8995f1ff49c3cc1779325b78824418e6af89bfcaf",
       "path": ".sdd/actions/wireframe.md",
       "trust": "framework"
     },

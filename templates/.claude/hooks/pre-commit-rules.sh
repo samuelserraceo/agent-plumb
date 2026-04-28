@@ -41,6 +41,12 @@
 set -uo pipefail
 
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(pwd)}"
+# Fail-open on cd failure: if CLAUDE_PROJECT_DIR points somewhere
+# unreachable, this hook can't enforce anything anyway, and blocking
+# every Bash call in that case would be worse than letting the agent
+# proceed (the moat hook applies the same fail-open contract). The
+# tradeoff is conscious: framework-trusted hooks fail-open on env
+# errors; the moat catches actual fabrication regardless.
 cd "$PROJECT_DIR" || exit 0
 
 # Parse stdin (Claude Code PreToolUse Bash payload).
@@ -417,12 +423,16 @@ PYEOF
 # Read config.md `file_rules:` (path → rules map) and apply each rule
 # handler against the matching staged file. Today's handlers:
 #
-#   append_only: true   — staged blob must start with HEAD blob byte-for-byte
-#                          (subsumes pre-commit-decisions-append-only.sh)
-#   reset_phrase: "<s>" — if commit message contains this string, rules are
-#                          bypassed for this commit (escape hatch)
+#   append_only: true       — staged blob must start with HEAD blob byte-for-byte
+#                              (subsumes pre-commit-decisions-append-only.sh)
+#   size_warn / size_block  — line-count cap; warn writes stderr, block exits 2
+#   managed_section         — warn-only; CLAUDE.md MANAGED block edits without
+#                              version bump
 #
-# Future Phase C-5 handlers: size_warn, size_block, managed_section.
+# CodeRabbit fix (2nd review): the legacy `reset_phrase:` escape hatch was
+# REMOVED. An append-only audit log shouldn't have a documented reset
+# escape — it turns the log into rewriteable history. If decisions.md
+# is genuinely corrupt, recovery is a manual operation outside this hook.
 file_rules_result=$(STAGED="$staged" CMD="$cmd" python3 - <<'PYEOF' || echo "ALLOW"
 import os, re, subprocess, sys
 try:
@@ -452,11 +462,6 @@ staged_lines = [ln.strip() for ln in os.environ.get("STAGED","").splitlines() if
 for path, rule in rules.items():
     if not isinstance(rule, dict): continue
     if path not in staged_lines: continue
-
-    # Reset phrase bypass.
-    reset = rule.get("reset_phrase")
-    if reset and reset in cmd:
-        continue  # skip enforcement for this commit
 
     # size_warn / size_block handler — line-count cap on the file at HEAD+staged.
     # Reads working tree (the file as it stands), not the diff. size_warn writes

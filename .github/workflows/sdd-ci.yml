@@ -90,7 +90,17 @@ jobs:
           fi
 
           # ─── Block 1: UI copy strings ─────────────────────────────────
-          added_strings=$(git diff --unified=0 "$base..$head" -- '*.tsx' '*.jsx' '*.ts' '*.js' 2>/dev/null \
+          # UI paths only — backend / scripts / tests don't need their copy
+          # strings cross-referenced against wireframe/spec. Path-spec mirrors
+          # Block 2's new-UI-files filter (app/, components/, pages/, src/*).
+          added_strings=$(git diff --unified=0 "$base..$head" -- \
+            'app/**/*.tsx' 'app/**/*.jsx' 'app/**/*.ts' 'app/**/*.js' \
+            'components/**/*.tsx' 'components/**/*.jsx' 'components/**/*.ts' 'components/**/*.js' \
+            'pages/**/*.tsx' 'pages/**/*.jsx' 'pages/**/*.ts' 'pages/**/*.js' \
+            'src/app/**/*.tsx' 'src/app/**/*.jsx' 'src/app/**/*.ts' 'src/app/**/*.js' \
+            'src/components/**/*.tsx' 'src/components/**/*.jsx' 'src/components/**/*.ts' 'src/components/**/*.js' \
+            'src/pages/**/*.tsx' 'src/pages/**/*.jsx' 'src/pages/**/*.ts' 'src/pages/**/*.js' \
+            2>/dev/null \
             | grep -E '^\+' \
             | grep -oE '"[^"]{30,}"|>[^<>]{30,}<' \
             | sed -E 's/^[">]|[<"]$//g' \

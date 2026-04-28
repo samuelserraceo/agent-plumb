@@ -73,14 +73,14 @@ Every `/next` runs the same 4-step inner loop:
 
 1. **LOCATE** — read `INDEX.md` to find the active work item, find the active action, load that action's prose from `.sdd/actions/<slug>.md`.
 2. **EXECUTE** — ask the user (USER-LED) or draft + iterate (AGENT-LED). Capture the result in `spec.md`.
-3. **SYNC** — `pre-commit-touches.sh` (Theme 4) verifies the right files are staged for this step. Block if missing.
-4. **ADVANCE** — `post-commit-advance.sh` (Theme 4) updates the active blocker pointer in `INDEX.md` to the next action.
+3. **SYNC** — `pre-commit-rules.sh`'s `touches:` enforcement (the F1 generic enforcer that subsumed `pre-commit-touches.sh` in Phase C) verifies the right files are staged for this step. Block if missing.
+4. **ADVANCE** — the agent explicitly invokes `advance.sh` after the commit lands (Phase C subsumed the old `post-commit-advance.sh` hook into this agent-driven invocation). It updates the active blocker pointer in `INDEX.md` to the next action.
 
 LOCATE + EXECUTE are agent-driven prose. SYNC + ADVANCE are structural (real bash hooks). The framework's defenses (manifest hash-pin, section-locking on user approval, trust boundary on injected content, fabrication check on phase advance) all run during commit, between SYNC and ADVANCE.
 
 ## What's locked, what's not
 
-The 23 actions in this playbook's frontmatter are **closed for B-1**. Adding new actions requires Phase C work (touches schema validation + the action library). The order is also fixed — actions inside each stage must be filled in sequence.
+The 22 actions in this playbook's frontmatter are **closed for v0.9**. Adding new actions requires Phase C work (touches schema validation + the action library). The order is also fixed — actions inside each stage must be filled in sequence.
 
 Four actions default to **`requires_user_approval: true`** in their frontmatter:
 - `proposed-approach` — closes Codex's silent-design-softening attack

@@ -42,10 +42,16 @@ SYNTHETIC_STDIN='{"tool_input":{"command":"git commit"}}'
 # Read the PreToolUse(Bash) hooks list from settings.json. Any new
 # hook added there gets picked up automatically — keeps the wiring
 # Lego-shaped (Pillar 2).
-hooks=$(python3 -c "
-import json, sys
+#
+# CodeRabbit fix (2nd review): pass $SETTINGS via env var, not bash
+# string substitution. Earlier shape `with open('$SETTINGS')` would
+# break + injection-vulnerable when the path contains apostrophes
+# (e.g. `/tmp/sam's-project/.../settings.json`). The env-var approach
+# sidesteps both shell + Python escaping concerns.
+hooks=$(SETTINGS_PATH="$SETTINGS" python3 -c "
+import json, os, sys
 try:
-    with open('$SETTINGS') as f:
+    with open(os.environ['SETTINGS_PATH'], encoding='utf-8') as f:
         settings = json.load(f)
     for entry in settings.get('hooks', {}).get('PreToolUse', []) or []:
         if entry.get('matcher') == 'Bash':

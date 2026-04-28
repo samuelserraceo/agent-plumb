@@ -3320,42 +3320,14 @@ else
 fi
 
 # ============================================================
-# T89b — F1 file_rules mutation: reset_phrase escape hatch works
-#   Same setup as T89 but the commit message contains the configured
-#   reset_phrase ("[SDD] decisions: reset"). pre-commit-rules.sh must
-#   ALLOW the commit — that's the documented escape hatch for
-#   legitimate full rebuilds.
+# T89b — RETIRED in CodeRabbit-2nd-review batch.
+#   The reset_phrase escape hatch contradicted the append-only contract
+#   (CodeRabbit flag: an append-only audit log shouldn't have a
+#   documented "rewriteable history" escape). The schema slot +
+#   handler logic + reset_phrase from config.md's file_rules: were
+#   removed; this test no longer applies. T89 still locks the core
+#   block-on-violation contract.
 # ============================================================
-note "T89b: reset_phrase in commit message bypasses append_only (escape hatch)"
-d=$(mkproj_v08)
-cd "$d"
-git init -q
-git config user.email t@t.com && git config user.name T
-cat > .sdd/decisions.md <<'EOF'
-# decisions
-
-## 2026-04-01T10:00:00Z  [001]  feature/problem
-First decision committed.
-EOF
-git add -A
-git commit -q -m scaffold
-
-cat > .sdd/decisions.md <<'EOF'
-# decisions
-(rebuild after corruption)
-EOF
-git add .sdd/decisions.md
-# Reset-phrase commit message.
-hook_stdin='{"tool_input":{"command":"git commit -m \"[SDD] decisions: reset\""}}'
-ec=0
-echo "$hook_stdin" | bash .claude/hooks/pre-commit-rules.sh >/dev/null 2>&1 || ec=$?
-cd - >/dev/null
-rm -rf "$d"
-if [ "$ec" -eq 0 ]; then
-  ok "T89b reset_phrase bypassed append_only (escape hatch works)"
-else
-  bad "T89b reset_phrase did not bypass append_only" "exit=$ec (expected 0)"
-fi
 
 # ============================================================
 # T90 — F1 file_rules: pre-commit-rules.sh blocks at size_block independently

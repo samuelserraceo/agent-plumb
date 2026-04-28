@@ -32,7 +32,6 @@ co_stage_block:
 file_rules:
   ".sdd/decisions.md":
     append_only: true
-    reset_phrase: "[SDD] decisions: reset"
   ".sdd/patterns.md":
     size_warn: 200
     size_block: 400
@@ -116,15 +115,15 @@ Which version of the SDD framework this project was created against. The framewo
 
 ### `playbooks_available: [feature]`
 
-Which workflows you can pick from when you run `/start`. v0.8.0 ships only **feature** — the "build something new" journey. More playbooks (`bug`, `idea`, `question`, `project`) ship in Phase C — they'll appear here automatically when you upgrade and pick "yes, install the new playbook" during migration.
+Which workflows you can pick from when you run `/start`. v0.9 ships only **feature** — the "build something new" journey. More playbooks (`bug`, `idea`, `question`, `project`) ship in a future release; they'll appear here automatically when you upgrade and pick "yes, install the new playbook" during migration.
 
 ### `default_playbook: feature`
 
-If you run `/start "do the thing"` without specifying a playbook, this is the one used. Right now there's only one option, so this is just `feature`. After Phase C, you can change it to whatever you start most often.
+If you run `/start "do the thing"` without specifying a playbook, this is the one used. Right now there's only one option, so this is just `feature`.
 
 ### `extensions: {}`
 
-Empty — v0.8.0 ships zero extensions. **Phase B-2 ships the first extension: `ci-moat-enforcement`** (server-side CI verification of your locally-checked work, so even `--no-verify` git commits get caught at PR time). Other extensions like `obsidian-sync`, `slack-notifications`, etc. are Phase C+ ideas.
+Empty — v0.9 ships zero extensions. The framework's hooks already enforce the moat locally; CI extension (`.github/workflows/sdd-ci.yml`) ships server-side enforcement on PRs out of the box. Marketplace-style extensions (`obsidian-sync`, `slack-notifications`, etc.) are deferred to a future phase.
 
 When extensions become available, this section will look like:
 
@@ -137,7 +136,7 @@ You'll never have to write the YAML by hand — `/start` and the migration scrip
 
 ### `size_thresholds:` (optional, not shown above)
 
-Override the framework's default warn/block thresholds for your memory files. Defaults are in SCHEMA.md §4.2. Most projects don't need to touch this. Add it if your project has a working pattern of, say, an unusually large `data-model.md` that the framework keeps complaining about.
+Override the framework's default warn/block thresholds for your memory files (defaults are baked into the `file_rules:` block below — `size_warn: 200` and `size_block: 400` for `patterns.md`, `INDEX.md`, `data-model.md`). Most projects don't need to touch this. Add it if your project has a working pattern of, say, an unusually large `data-model.md` that the framework keeps complaining about.
 
 ### `file_classes:` + `co_stage_block:` (path-based file classes for cofile-block rule)
 
@@ -156,11 +155,9 @@ To add a new class: add a name + pattern list to `file_classes:`. To add a new c
 
 Per-file rules the framework enforces at commit time. Each key is a path; each value is a map of rules. Currently one rule type ships with the template:
 
-- **`append_only: true`** — staged version of the file must start with HEAD's content byte-for-byte. Modifying or removing prior content blocks the commit. Reason: append-only files are the audit trail (`decisions.md`); rewriting history breaks the trust model.
+- **`append_only: true`** — staged version of the file must start with HEAD's content byte-for-byte. Modifying or removing prior content blocks the commit. Reason: append-only files are the audit trail (`decisions.md`); rewriting history breaks the trust model. **No documented escape hatch:** if the file becomes genuinely corrupt, recovery is a manual operation outside the framework's contract (restore from a known-good commit, don't squash forward).
 
-- **`reset_phrase: "<exact-string>"`** — escape hatch. If the commit message contains this exact string, the file's rules are bypassed for that one commit. Used for legitimate full-rebuilds (e.g., recovering from corruption). The phrase is loud on purpose so it shows up in `git log`.
-
-Defaults shipped in the template: `.sdd/decisions.md` is append-only with reset-phrase `[SDD] decisions: reset`. Future additions (Phase C-5):
+Defaults shipped in the template: `.sdd/decisions.md` is append-only. Other shipped rules:
 
 ```yaml
 file_rules:

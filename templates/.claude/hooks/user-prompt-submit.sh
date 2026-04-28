@@ -112,11 +112,15 @@ if [ "$size" -gt "$SDD_INJECTION_CAP_CHARS" ]; then
   # the original size was, (d) where the full state lives so it can
   # re-read explicitly if needed.
   #
-  # CodeRabbit fix: re-emit the closing trust markers AFTER truncation.
-  # If we cut mid-payload, the agent could see an opened [PROJECT DATA]
-  # without a matching [END PROJECT DATA] / `=== END SDD STATE ===`,
-  # which leaks framework instructions / project data across the
-  # boundary. Always close the trust frame.
+  # CodeRabbit fix (2nd review): re-emit BOTH closing trust markers
+  # after truncation, regardless of where the cap landed. Truncation
+  # can fall inside [FRAMEWORK INSTRUCTIONS] OR [PROJECT DATA] OR
+  # past both — we don't know without parsing. Emitting both closers
+  # unconditionally never leaks an open trust block to the agent.
+  # Duplicate closer text (i.e., `[END PROJECT DATA]` already in the
+  # truncated portion plus our re-emit) is harmless: the agent just
+  # sees two close markers, which still satisfies the trust-frame
+  # contract. Missing closer is the dangerous failure mode.
   truncated="${content:0:$SDD_INJECTION_CAP_CHARS}"
   printf '%s\n' "$truncated"
   printf '\n'
@@ -126,6 +130,7 @@ if [ "$size" -gt "$SDD_INJECTION_CAP_CHARS" ]; then
 'you need detail beyond the truncated context.]\n' \
     "$SDD_INJECTION_CAP_CHARS" "$size" \
     "$((SDD_INJECTION_CAP_CHARS / 4000))" "$((size / 4000))"
+  printf '\n[END FRAMEWORK INSTRUCTIONS]\n'
   printf '\n[END PROJECT DATA]\n'
   printf '\n=== END SDD STATE ===\n'
 else

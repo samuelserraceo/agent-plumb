@@ -44,8 +44,55 @@ fi
 slug="$1"
 work_item_dir="$2"
 
+# --- input validation (security: slug + work_item_dir come from CLI and are
+# concatenated into file paths below; reject path-traversal payloads BEFORE
+# any path construction).
+#
+# slug: closed-enum action shape — lowercase letters, digits, `_`, `-`, must
+# start with a letter. Anything else (path separators, `..`, spaces) is a
+# malformed action name and we refuse it.
+if ! [[ "$slug" =~ ^[a-z][a-z0-9_-]*$ ]]; then
+  echo "reapprove: invalid slug '$slug' — must be lowercase letters, digits, '_' or '-', starting with a letter" >&2
+  exit 1
+fi
+
+# work_item_dir: must NOT contain `..` segments and must live inside `.sdd/`.
+# Reuse validate-sdd-path.sh if available — it's the single source of truth
+# for "is this path safe inside the framework root?".
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(pwd)}"
 cd "$PROJECT_DIR" || exit 1
+
+VALIDATE_PATH="$PROJECT_DIR/.sdd/scripts/validate-sdd-path.sh"
+[ -f "$VALIDATE_PATH" ] || VALIDATE_PATH="$PROJECT_DIR/templates/.sdd/scripts/validate-sdd-path.sh"
+if [ -f "$VALIDATE_PATH" ]; then
+  if ! bash "$VALIDATE_PATH" "$work_item_dir" >/dev/null; then
+    echo "reapprove: invalid work-item-dir '$work_item_dir' — must be inside .sdd/ and contain no '..' segments" >&2
+    exit 1
+  fi
+else
+  # Fallback inline check if validate-sdd-path.sh is missing (defence in depth).
+  case "$work_item_dir" in
+    /*|[A-Za-z]:[/\\]*)
+      echo "reapprove: invalid work-item-dir '$work_item_dir' — absolute paths not allowed" >&2
+      exit 1
+      ;;
+  esac
+  case "$work_item_dir" in
+    .sdd|.sdd/*) ;;
+    *)
+      echo "reapprove: invalid work-item-dir '$work_item_dir' — must be inside .sdd/" >&2
+      exit 1
+      ;;
+  esac
+  normalised="${work_item_dir//\\//}"
+  IFS='/' read -r -a parts <<< "$normalised"
+  for seg in "${parts[@]}"; do
+    if [ "$seg" = ".." ]; then
+      echo "reapprove: invalid work-item-dir '$work_item_dir' — '..' segments not allowed" >&2
+      exit 1
+    fi
+  done
+fi
 
 spec="$work_item_dir/spec.md"
 ver="$work_item_dir/verification.json"

@@ -21,11 +21,13 @@ Push the feature branch to origin and open a PR against `main`.
 
 **Action sequence:**
 1. `git push -u origin <feature-branch>` — push the branch
-2. Auto-generate PR title from §1 Problem (one-line summary)
+2. Auto-generate PR title from §1 Problem (one-line summary). Title must be plain alphanumeric + spaces — strip any backticks, quotes, or shell-meaningful characters
 3. Auto-generate PR body from §1, §2, §3, plan-decompose summary
-4. `gh pr create --title "<title>" --body "<body>"` (or whatever the project's PR-open command is)
-5. Capture the PR URL from gh's output
-6. Tell the user the PR is open + the URL
+4. **Write the body to a tempfile** at `.sdd/features/<id>/pr-body.tmp` — never inline body content into the shell command (spec content is user-controlled, so inlining risks shell-injection / quoting breaks)
+5. `gh pr create --title "<plain-title>" --body-file .sdd/features/<id>/pr-body.tmp` (always `--body-file`, never `--body`)
+6. Capture the PR URL from gh's output
+7. Delete the tempfile: `rm .sdd/features/<id>/pr-body.tmp`
+8. Tell the user the PR is open + the URL
 
 **Required PR body sections:**
 - **Summary** — 1-3 bullets from §1 Problem + §2 Success (what the feature does, why it matters)

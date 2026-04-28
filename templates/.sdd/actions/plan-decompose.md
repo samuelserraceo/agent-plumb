@@ -19,7 +19,14 @@ requires_user_approval: false
 
 Convert `acceptance-criteria` into ordered tasks. Each task = one test file + one commit. This is what BUILD will execute.
 
-**Coverage check FIRST.** Before drafting any tasks, verify every constraint in `ux-brief` (mobile, accessibility, i18n, locale, dark mode, etc.) is reflected in ≥1 AC in §11. If gaps, propose new ACs in this same turn — surface ALL gaps in one go, don't drip them.
+**Coverage check FIRST — and it's a TWO-STEP process when gaps exist.** Before drafting any tasks, verify every constraint in `ux-brief` (mobile, accessibility, i18n, locale, dark mode, etc.) is reflected in ≥1 AC in §11. Surface ALL gaps in one go, don't drip them.
+
+**§11 is section-locked** (`requires_user_approval: true`) — its content is hashed at approval time and the moat refuses any commit that diverges from the hash. So you can't silently add new ACs; that would break section-locking. Split the work into two atomic steps:
+
+1. **(a) If new ACs are needed:** propose them, the user approves them via natural conversation, then re-approve §11 via the inline `/re-approve` flow in `/next.md` (a v0.9 doctrine — the inline re-approval handler appends the new ACs, re-runs `hash-section`, updates the §11 hash in `verification.json`, and lands a re-approval entry in `decisions.md`). Only after §11 is re-approved with the new ACs does the next step start.
+2. **(b) THEN, in a follow-up step:** write the task list against the now-complete §11.
+
+If §11 already covers every §4 constraint, skip step (a) and go straight to step (b).
 
 **Map ACs → tasks 1:1.** T1 → AC1, T2 → AC2, etc. Order matters: dependencies first (e.g., schema migration before form), then features.
 

@@ -19,9 +19,9 @@
 > ```
 >
 > Append entries with `>>` from the agent's command. Never `>` (would
-> overwrite). Never edit manually unless re-creating the whole file
-> from scratch — and that should be a one-time `[SDD] decisions: reset`
-> commit, never a routine operation.
+> overwrite). If decisions.md is genuinely corrupt and needs rebuilding,
+> that's a manual recovery operation outside the framework's contract —
+> restore from a known-good commit, don't squash history forward.
 
 <!-- entries below this line; do not edit existing lines, only append -->
 

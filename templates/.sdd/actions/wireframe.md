@@ -8,7 +8,7 @@ steps:
   - { id: wireframe, action: draft_wireframe_html_with_one_screen_per_user_story, field: "wireframe.html" }
 used_by: [feature]
 references: [user-stories, ux-brief]
-touches: []
+touches: [.sdd/<work-item>/wireframe.html]
 trust: framework
 budget:
   max_minutes: 45
@@ -28,6 +28,8 @@ requires_user_approval: false
 **Continue until user says `looks good` (or equivalent).** Tick the `Approved by user: [ ]` box in spec.md.
 
 **Sync requirement (F1 generic enforcer (`pre-commit-rules.sh`)'s `touches:` enforcement):** the commit that closes SPEC must stage `wireframe.html` alongside `spec.md`.
+
+**v0.9 limitation:** F1 doesn't yet substitute `<work-item>` placeholders in `touches:` paths, so this declaration documents intent but doesn't actively block. The wireframe action's USER-LED iteration will keep the agent in the right place; full enforcement lands in v0.10's path-template feature.
 
 **Output:** the HTML file at `.sdd/features/<id>/wireframe.html` + filled `Approved by user: [x]` in spec.md.
 

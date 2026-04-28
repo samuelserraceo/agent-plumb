@@ -50,6 +50,12 @@ if os.path.isfile(config_path):
             import yaml
             fm = yaml.safe_load(m.group(1)) or {}
             events = fm.get("events") or {}
+            # Shape guard: `events:` must be a mapping (dict). A malformed
+            # frontmatter that gives `events: []` (list) or `events: foo`
+            # (string) would crash on `.items()` / `.get(...)` below; treat
+            # it the same as missing — emit empty events JSON and exit 0.
+            if not isinstance(events, dict):
+                events = {}
     except Exception as e:
         sys.stderr.write(f'{{"error":"config.md frontmatter parse: {e}"}}\n')
         sys.exit(1)
@@ -66,10 +72,21 @@ def resolve_paths(actions, wi):
         out.append(a2)
     return out
 
+def _spec_actions(spec):
+    """Safely pull the `actions:` list out of a per-event spec.
+
+    A well-formed event is a mapping like `{ actions: [...] }`. A malformed
+    one might be a list, a string, or null. `(spec or {}).get(...)` would
+    raise AttributeError on a list/string — so coerce non-dicts to {}.
+    """
+    if not isinstance(spec, dict):
+        return []
+    return spec.get("actions") or []
+
 if not event:
     # List all events.
     out = {
-        name: {"actions": resolve_paths((spec or {}).get("actions") or [], work_item)}
+        name: {"actions": resolve_paths(_spec_actions(spec), work_item)}
         for name, spec in sorted(events.items())
     }
     sys.stdout.write(json.dumps({"events": out}, sort_keys=True, ensure_ascii=False) + "\n")
@@ -81,8 +98,8 @@ if event not in events:
         sort_keys=True, ensure_ascii=False) + "\n")
     sys.exit(0)
 
-spec = events[event] or {}
-actions = resolve_paths(spec.get("actions") or [], work_item)
+spec = events[event]
+actions = resolve_paths(_spec_actions(spec), work_item)
 sys.stdout.write(json.dumps(
     {"event": event, "actions": actions},
     sort_keys=True, ensure_ascii=False) + "\n")

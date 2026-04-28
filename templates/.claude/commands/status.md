@@ -48,7 +48,7 @@ else:
     params = d.get("parameters") or {}
     prov = params.pop("_provenance", {}) if isinstance(params, dict) else {}
     if not params:
-        print("  (no parameters resolved — INDEX.md or resolver may be missing)")
+        print("  (no parameters resolved this turn — common when there's no active step or playbook context yet)")
     else:
         print("  Resolved parameters (cascade source in brackets):")
         def walk(prefix, val):
