@@ -47,13 +47,13 @@ Don't use this when:
 
 **VISION** — capture the project's intent in plain English. Who's it for? What changes when it ships? Who cares?
 
-**BREAKDOWN** — break the vision into 3-12 capabilities. Each capability must be small enough to ship as 1 feature (max ~10-15 tasks in BUILD).
+**BREAKDOWN** — break the vision into 3-12 capabilities. Each capability must be small enough to ship as 1 feature (sized within the S/M/L band: S=1-4 BUILD tasks, M=5-10, L=11-15). Anything that would exceed L must split into 2+ capabilities.
 
 **KICKOFF** — write the roadmap file, queue all capabilities as features in INDEX.md backlog, auto-start the first one.
 
 ## Output
 
-- `.sdd/projects/<NNN>-<slug>/roadmap.md` — the project-level spec
+- `.sdd/projects/<NNN>-<slug>/spec.md` — the project-level spec (uses the standard `spec.md` filename for consistency with the `feature` playbook; the file holds the roadmap content)
 - `.sdd/INDEX.md` `## Backlog` — list of features to build, in priority order
 - `.sdd/INDEX.md` `## In flight` — the first feature, automatically started
 - `.sdd/decisions.md` — **append entry** on each VISION/BREAKDOWN/KICKOFF approval. Use `cat >>`, never `>` (overwrite). The append-only contract is enforced by the F1 rule (`file_rules.append_only` in config.md) — any commit that mutates an existing entry is refused. Each decision append must be staged in the **same commit** as the related spec/state/verification change (same-commit coupling preserves audit integrity).

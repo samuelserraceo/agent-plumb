@@ -19,7 +19,7 @@ requires_user_approval: true
 
 # §4 — Capabilities (what to build, in shippable chunks)
 
-Now you turn the project into shippable features. Each capability becomes ONE feature — small enough to ship in 1-2 weeks, big enough to be useful on its own.
+Now you turn the project into shippable features. Each capability becomes ONE feature — sized within the S/M/L band (S=1-4 BUILD tasks, M=5-10, L=11-15). Anything that would exceed L must split. Don't reach for "1-2 weeks" or other clock-time sizing — per CLAUDE.md doctrine rule 6, the framework sizes work in atomic steps and S/M/L, never in days/weeks (AI is much faster than human-trained estimates).
 
 This is an AGENT-LED step. The agent drafts a list; you approve, adjust, or rewrite.
 

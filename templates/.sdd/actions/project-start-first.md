@@ -8,7 +8,7 @@ steps:
   - { id: start-first, action: do, field: "§7.kickoff" }
 used_by: [project]
 references: [project-queue-features]
-touches: [".sdd/INDEX.md", ".sdd/features/<work-item>/spec.md"]
+touches: [".sdd/INDEX.md"]
 trust: framework
 budget:
   max_minutes: 5
@@ -20,6 +20,12 @@ requires_user_approval: false
 # §7 — Auto-start the first feature
 
 The project's roadmap is written. INDEX.md backlog is queued. Time to start working on the first feature.
+
+## Why touches only includes INDEX.md
+
+The new feature's `spec.md` is created in a SEPARATE commit by `start.sh` (its own atomic commit per the F4 atomic-step rule). This action's job is just the INDEX.md handoff — moving the backlog entry to in-flight and setting `**Active:**`. The feature spec creation is downstream.
+
+If you tried to put `.sdd/features/<work-item>/spec.md` in `touches:`, the placeholder `<work-item>` would resolve to the PROJECT path (`projects/<NNN>-<project-slug>`), not the new feature path — wrong scope. The two-commit separation keeps the placeholder semantics clean.
 
 ## What this action does
 

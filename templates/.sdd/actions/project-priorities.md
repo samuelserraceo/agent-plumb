@@ -44,8 +44,8 @@ The agent walks the §4 capabilities and proposes dependencies. You confirm or c
 
 **Hard rules** (the agent must validate before deriving build order):
 - **No cycles.** A → B → A is invalid. The dependency graph must be a DAG (directed acyclic graph) — if any cycle is detected, refuse to proceed and surface the offending chain so the user can break it.
-- **No self-deps.** A capability cannot depend on itself. Filter out any `email-signup → email-signup`-shaped entries.
-- **Cycle detection runs BEFORE build-order derivation.** The build-order walk for P1/P2 tiers assumes acyclicity; running it on a cyclic graph would either loop or silently drop entries. So the cycle check fails-loud first.
+- **No self-deps.** A capability cannot depend on itself. Same handling as cycles: refuse to proceed and surface the specific offending capability (e.g., `email-signup → email-signup`) so the user can correct it. Don't silently filter — that would hide a real authoring mistake.
+- **Cycle + self-dep detection runs BEFORE build-order derivation.** The build-order walk assumes a clean DAG; running it on a cyclic or self-dep graph would either loop or silently drop entries. So both checks fail-loud first.
 
 This determines build order: a P1 capability that nothing depends on can wait. A P1 that 3 P2s depend on probably needs to ship earlier than its tier suggests.
 

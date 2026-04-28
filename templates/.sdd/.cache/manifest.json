@@ -7,7 +7,7 @@
       "trust": "framework"
     },
     "project": {
-      "expected_sha256": "978bfd184e4227ad54a1d5d8bbef67d58ebe90b23419796b63645163d17bb741",
+      "expected_sha256": "4a1c963e7d683ce34e0419140daea8c54c8d3f230fc7cace201b5761aad54129",
       "path": ".sdd/playbooks/project.md",
       "trust": "framework"
     }
@@ -64,7 +64,7 @@
       "trust": "framework"
     }
   },
-  "sdd_version": "0.10.1",
+  "sdd_version": "0.11.0",
   "actions": {
     "acceptance-criteria": {
       "expected_sha256": "fec1a8ff749a42f99b37cf19d04e9b2ffe3ee21b0c43bd0bf15a524a447c04b6",
@@ -191,12 +191,12 @@
       "trust": "framework"
     },
     "project-capabilities": {
-      "expected_sha256": "d82e01c4746f90cb6f58781bbd0636a0261458e839e0fe5f43d61aac43171f02",
+      "expected_sha256": "eeef8e7d2c452a2ae19112e8287ba109b9a875c57bf55b9aa53d42e0ad6df278",
       "path": ".sdd/actions/project-capabilities.md",
       "trust": "framework"
     },
     "project-priorities": {
-      "expected_sha256": "8d91284b562984d5eb6420de508b94447caa96dccca10a030161315b58e37009",
+      "expected_sha256": "b8de2d792e4b906bef9cf29902b64d38719c00eef0cc6c63b01a8d993fab0a1c",
       "path": ".sdd/actions/project-priorities.md",
       "trust": "framework"
     },
@@ -206,7 +206,7 @@
       "trust": "framework"
     },
     "project-start-first": {
-      "expected_sha256": "06c8e1af1d565703584e84caada384a6c9c60f21b9ac3e0e3f6d404b745edea0",
+      "expected_sha256": "2f4316ef524715efd76154b3249c29bc8577bde9ccb3cde27f15b215a605d50e",
       "path": ".sdd/actions/project-start-first.md",
       "trust": "framework"
     }
