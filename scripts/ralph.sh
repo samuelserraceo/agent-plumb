@@ -19,8 +19,10 @@ set -euo pipefail
 # v0.10: read defaults from .sdd/config.md `parameters.ralph` if present;
 # env vars still override. Cascade: env > config.md > hardcoded fallback.
 read_ralph_config() {
+  # CodeRabbit cycle 1 (PR #31): the unused `fallback` second param
+  # was decorative — bash `${VAR:-fallback}` on the call site provides
+  # the fallback chain. Single key arg is enough.
   local key="$1"
-  local fallback="$2"
   if [ -f .sdd/config.md ] && command -v python3 >/dev/null 2>&1; then
     python3 -c "
 import re, sys
@@ -38,9 +40,9 @@ if v is not None: print(v)
   fi
 }
 
-MAX_ITERS="${MAX_ITERS:-$(read_ralph_config max_iters 50)}"
+MAX_ITERS="${MAX_ITERS:-$(read_ralph_config max_iters)}"
 MAX_ITERS="${MAX_ITERS:-50}"
-TIMEOUT_PER_ITER="${TIMEOUT_PER_ITER:-$(read_ralph_config timeout_per_iter 600)}"
+TIMEOUT_PER_ITER="${TIMEOUT_PER_ITER:-$(read_ralph_config timeout_per_iter)}"
 TIMEOUT_PER_ITER="${TIMEOUT_PER_ITER:-600}"
 
 # ─── Preflight ──────────────────────────────────────────────────────

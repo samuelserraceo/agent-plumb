@@ -22,12 +22,24 @@ set -uo pipefail
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(pwd)}"
 cd "$PROJECT_DIR" || { echo "[moat] failed to cd into $PROJECT_DIR" >&2; exit 0; }
 
+# CodeRabbit cycle 1 finding (PR #31): the moat USED to silently
+# allow any commit when python3 was missing or stdin parsing failed
+# — both branched to "$cmd is empty" → exit 0. The moat exists
+# precisely to refuse commits in unclear states; defense-in-depth
+# means failing CLOSED, not failing OPEN.
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "[moat] python3 is required by the moat (manifest hash + stdin parse). Refusing commit." >&2
+  echo "[moat] Install python3 (most systems already have it) and retry." >&2
+  exit 2
+fi
+
 # Parse stdin from Claude Code.
 input=$(cat 2>/dev/null || true)
 cmd=$(printf '%s' "$input" | python3 -c "import sys,json;print(json.load(sys.stdin).get('tool_input',{}).get('command',''))" 2>/dev/null || echo "")
 
-# Empty-cmd safe default. Prevents the hook from firing on every Bash call
-# when stdin parsing fails.
+# Empty-cmd safe default. Prevents the hook from firing on every Bash
+# call when stdin is genuinely empty (legitimate non-Bash hook
+# invocation). NOT a python3-missing fallback — that's caught above.
 [ -z "$cmd" ] && exit 0
 
 # Not a git commit? Allow.

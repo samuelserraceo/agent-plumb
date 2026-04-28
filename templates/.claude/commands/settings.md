@@ -72,8 +72,8 @@ Means the project default (5 minutes) is being overridden by the proposed-approa
 `/settings` invokes `.sdd/scripts/settings.sh`. The script:
 - Reads `.sdd/config.md`'s YAML frontmatter
 - For `get`/`list`: walks the parameters tree and prints each leaf with provenance
-- For `set`: updates the YAML in-place using a Python yaml-roundtrip (preserves comments)
-- For `reset`: removes the matching override key from frontmatter
+- For `set`: updates the YAML in-place using PyYAML's `safe_dump`. **Note:** YAML comments inside the frontmatter are NOT preserved through `safe_dump` — comments below the frontmatter (in the Markdown body) are untouched, but inline `# comment` lines inside the YAML block get stripped on first `set` call. If you rely on inline YAML comments for documentation, edit `.sdd/config.md` by hand instead.
+- For `reset`: removes the matching override key from frontmatter (same comment caveat)
 
 If you'd rather edit by hand, open `.sdd/config.md` — same result.
 
