@@ -2770,6 +2770,74 @@ else
 fi
 
 # ============================================================
+# T78 — F2 wiring: advance.sh prints phase_transition event flow
+#   When advance.sh crosses a stage boundary (e.g., last action of SPEC
+#   advances into the first action of BUILD), it should call read-events.sh
+#   with `phase_transition` and surface the expected file-action list to
+#   stdout. The agent reads this as a teaching aid — "expects append to
+#   .sdd/decisions.md" etc. Read-only — actual writes are the agent's job
+#   per CLAUDE.md.
+#   RED if advance.sh stays mute on cross-stage transitions.
+# ============================================================
+note "T78: advance.sh fires phase_transition event-flow notice on stage cross"
+d=$(mkproj_v08)
+cd "$d"
+# Set up INDEX.md so the active blocker is the LAST action of SPEC
+# (plan-decompose). advance.sh should see SPEC→BUILD transition.
+cat > .sdd/INDEX.md <<'EOF'
+**Active:** features/001-test
+**Playbook:** feature
+**Active blocker:** § (SPEC action: plan-decompose)
+
+## Active
+
+- features/001-test — phase-transition wiring test
+
+## Shipped
+
+EOF
+out=$(bash .sdd/scripts/advance.sh 2>&1)
+cd - >/dev/null
+rm -rf "$d"
+if echo "$out" | grep -q 'event fired: phase_transition' \
+   && echo "$out" | grep -q 'append → .sdd/decisions.md' \
+   && echo "$out" | grep -q 'rewrite_active_block → .sdd/INDEX.md'; then
+  ok "T78 advance.sh surfaces phase_transition event flow on stage cross"
+else
+  bad "T78 phase_transition notice missing from advance.sh output" "got: $out"
+fi
+
+# ============================================================
+# T78b — F2 mutation: same-stage advance does NOT fire phase_transition
+#   Mutation: advance from problem → success (both inside SPEC). No stage
+#   boundary crossed → no phase_transition notice. Proves the wiring is
+#   only triggered on real transitions, not every advance.
+# ============================================================
+note "T78b: same-stage advance stays silent on phase_transition (mutation)"
+d=$(mkproj_v08)
+cd "$d"
+cat > .sdd/INDEX.md <<'EOF'
+**Active:** features/001-test
+**Playbook:** feature
+**Active blocker:** § (SPEC action: problem)
+
+## Active
+
+- features/001-test — same-stage no-fire test
+
+## Shipped
+
+EOF
+out=$(bash .sdd/scripts/advance.sh 2>&1)
+cd - >/dev/null
+rm -rf "$d"
+if ! echo "$out" | grep -q 'phase_transition'; then
+  ok "T78b same-stage advance is silent on phase_transition (mutation correct)"
+else
+  bad "T78b phase_transition incorrectly fired on same-stage advance" "got: $out"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'

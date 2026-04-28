@@ -208,4 +208,43 @@ if terminal:
 else:
     print(f"[advance] advanced {active_slug} → {next_slug} "
           f"(stage: {next_stage_id})")
+
+# F2 events: when this advance produced a phase transition (the previous
+# active action's stage differs from the next slug's stage), surface the
+# `phase_transition` event flow. The agent reads this on its next turn
+# and knows which files the event expects to be staged. Read-only —
+# the actual append/rewrite work is the agent's job per CLAUDE.md;
+# F1 generic enforcer (Phase C-5) will validate the staged commit
+# against this declaration.
+if not terminal and next_slug is not None:
+    # Detect: did we just cross a stage boundary?
+    prev_stage = None
+    for stage in stages:
+        if active_slug in (stage.get("actions") or []):
+            prev_stage = stage.get("id", "?")
+            break
+    if prev_stage and prev_stage != next_stage_id:
+        events_resolver = os.path.join(proj, ".sdd", "scripts", "read-events.sh")
+        work_item_rel = m_active.group(1).strip()
+        if os.path.isfile(events_resolver):
+            import subprocess
+            try:
+                r = subprocess.run(
+                    ["bash", events_resolver, "phase_transition", work_item_rel],
+                    capture_output=True, timeout=10, cwd=proj,
+                )
+                if r.returncode == 0 and r.stdout:
+                    import json as _json
+                    try:
+                        ev = _json.loads(r.stdout.decode("utf-8"))
+                        actions = ev.get("actions") or []
+                        if actions:
+                            print(f"[advance] event fired: phase_transition "
+                                  f"({prev_stage}→{next_stage_id}) — expects:")
+                            for a in actions:
+                                print(f"  - {a.get('action')} → {a.get('target')}")
+                    except Exception:
+                        pass
+            except Exception:
+                pass
 PYEOF
