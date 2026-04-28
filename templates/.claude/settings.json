@@ -60,10 +60,6 @@
           },
           {
             "type": "command",
-            "command": ".claude/hooks/pre-commit-cofile-block.sh"
-          },
-          {
-            "type": "command",
             "command": ".claude/hooks/pre-commit-stage-verified.sh"
           }
         ]

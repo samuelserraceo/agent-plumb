@@ -12,7 +12,10 @@ NEXT_ACTION="$FRAMEWORK_ROOT/templates/.sdd/scripts/next-action.sh"
 VERIFY_STAGE="$FRAMEWORK_ROOT/templates/.sdd/scripts/verify-stage.sh"
 MOAT_HOOK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-stage-verified.sh"
 LOAD_PLAYBOOK="$FRAMEWORK_ROOT/templates/.sdd/scripts/load-playbook.sh"
-COFILE_BLOCK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-cofile-block.sh"
+# pre-commit-cofile-block.sh retired in C-5 (4b/N) — F1 generic enforcer
+# (pre-commit-rules.sh) reads file_classes + co_stage_block from config.md
+# and enforces the same CLAIM × POLICY block. T31/T32/T33/T35 migrated to
+# $RULES_HOOK + framework-aware fixtures.
 START_SH="$FRAMEWORK_ROOT/templates/.sdd/scripts/start.sh"
 ADVANCE_SH="$FRAMEWORK_ROOT/templates/.sdd/scripts/advance.sh"
 RULES_HOOK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-rules.sh"
@@ -1060,7 +1063,7 @@ EOF
 git add .sdd/scripts/verify-stage.sh .sdd/features/001-test/verification.json
 hook_stdin='{"tool_input":{"command":"git commit -m phase: SPEC -> BUILD"}}'
 ec=0
-echo "$hook_stdin" | bash "$COFILE_BLOCK" >/dev/null 2>&1 || ec=$?
+echo "$hook_stdin" | bash "$RULES_HOOK" >/dev/null 2>&1 || ec=$?
 cd - >/dev/null
 rm -rf "$d"
 if [ "$ec" -eq 2 ]; then
@@ -1086,7 +1089,7 @@ EOF
 git add .claude/hooks/pre-commit-stage-verified.sh .sdd/features/001-test/verification.json
 hook_stdin='{"tool_input":{"command":"git commit -m phase: SPEC -> BUILD"}}'
 ec=0
-echo "$hook_stdin" | bash "$COFILE_BLOCK" >/dev/null 2>&1 || ec=$?
+echo "$hook_stdin" | bash "$RULES_HOOK" >/dev/null 2>&1 || ec=$?
 cd - >/dev/null
 rm -rf "$d"
 if [ "$ec" -eq 2 ]; then
@@ -1111,7 +1114,7 @@ EOF
 git add .sdd/playbooks/feature.md .sdd/features/001-test/verification.json
 hook_stdin='{"tool_input":{"command":"git commit -m phase: SPEC -> BUILD"}}'
 ec=0
-echo "$hook_stdin" | bash "$COFILE_BLOCK" >/dev/null 2>&1 || ec=$?
+echo "$hook_stdin" | bash "$RULES_HOOK" >/dev/null 2>&1 || ec=$?
 cd - >/dev/null
 rm -rf "$d"
 if [ "$ec" -eq 2 ]; then
@@ -1121,17 +1124,20 @@ else
 fi
 
 # ============================================================
-# T35 — settings.json registers pre-commit-cofile-block.sh
-#   RED: cofile-block hook ships but isn't wired into Claude Code's
-#        PreToolUse chain → it never fires on real commits. Same bug
-#        class T25 was added to catch (Phase B reviewer round caught
-#        the moat-unregistered bug; preventing recurrence).
+# T35 — settings.json registers pre-commit-rules.sh (cofile subsumption)
+#   v0.9 C-5 (4b/N): pre-commit-cofile-block.sh retired. The CLAIM × POLICY
+#   co-stage block now lives in pre-commit-rules.sh, driven by config.md
+#   `file_classes:` + `co_stage_block:`. Settings.json must still register
+#   the rules hook (T55 covers the registration; T35 is a duplicate guard
+#   re-purposed as the anti-regression check below).
 # ============================================================
-note "T35: settings.json registers pre-commit-cofile-block.sh"
+note "T35: settings.json no longer references retired pre-commit-cofile-block.sh"
 if grep -q 'pre-commit-cofile-block\.sh' "$FRAMEWORK_ROOT/templates/.claude/settings.json"; then
-  ok "T35 cofile-block hook registered in PreToolUse chain"
+  bad "T35 retired pre-commit-cofile-block.sh still in settings.json" "registration leftover — should be removed in C-5 (4b/N)"
+elif [ -f "$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-cofile-block.sh" ]; then
+  bad "T35 retired pre-commit-cofile-block.sh file still exists" "C-5 (4b/N) should have deleted it"
 else
-  bad "T35 cofile-block hook missing from settings.json" "no pre-commit-cofile-block.sh entry — hook ships unfired"
+  ok "T35 pre-commit-cofile-block.sh retired (file gone + settings clean); subsumed by pre-commit-rules.sh"
 fi
 
 # ============================================================
