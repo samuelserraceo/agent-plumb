@@ -29,7 +29,7 @@
       "trust": "framework"
     },
     "start.sh": {
-      "expected_sha256": "484bc312377497da9d91ab0923aba54b150697797065076500f96de7bdb8e845",
+      "expected_sha256": "21babd7070ec89b61f6e9670fb13dfb0109aabec18a083ba2eee09db083ae9be",
       "path": ".sdd/scripts/start.sh",
       "trust": "framework"
     },

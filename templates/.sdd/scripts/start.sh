@@ -420,18 +420,24 @@ else:
     # being on the same line as the heading. Now: try replace first, fall back
     # to a heading-anchored insert that works regardless of section state.
     new_entry = f"- {work_item_rel} — {title} (PHASE: {first_stage_id})"
-    if "_(none yet)_" in body:
-        body = body.replace("_(none yet)_", new_entry, 1)
-    else:
-        # Insert RIGHT AFTER the `## In flight` heading line (and any
-        # immediately-following HTML comment line). Anchored on the heading
-        # to be robust regardless of subsequent content.
-        body = re.sub(
-            r"(## In flight\b[^\n]*\n)((?:<!--[^>]*-->[^\n]*\n)?)",
-            r"\1\2" + new_entry + "\n",
-            body,
-            count=1,
-        )
+    # CodeRabbit cycle 2 (PR #47): scope the placeholder replacement to
+    # the `## In flight` section only. Earlier `"_(none yet)_" in body`
+    # would match the placeholder in any section if one ever migrated
+    # there. Now: extract the section first, modify it, splice back.
+    section_match = re.search(r"(?ms)^## In flight\b.*?(?=^## |\Z)", body)
+    if section_match:
+        sec_start, sec_end = section_match.span()
+        in_flight_section = section_match.group(0)
+        if "_(none yet)_" in in_flight_section:
+            in_flight_section = in_flight_section.replace("_(none yet)_", new_entry, 1)
+        else:
+            in_flight_section = re.sub(
+                r"(## In flight\b[^\n]*\n)((?:<!--[^>]*-->[^\n]*\n)?)",
+                r"\1\2" + new_entry + "\n",
+                in_flight_section,
+                count=1,
+            )
+        body = body[:sec_start] + in_flight_section + body[sec_end:]
 if "## Shipped" not in body:
     body += "\n## Shipped\n\n"
 
