@@ -2,14 +2,14 @@
   "extensions": {},
   "playbooks": {
     "feature": {
-      "expected_sha256": "f941542215a7a7bfe67d06c095542cd2d411d215572ae48475ae6742a4c94265",
+      "expected_sha256": "22be2621f79a0537dd4835d9008b04087c25ae86b52b3986d8cc3fd6b666e66f",
       "path": ".sdd/playbooks/feature.md",
       "trust": "framework"
     }
   },
   "scripts": {
     "advance.sh": {
-      "expected_sha256": "40f8a89e82f048b9e3b71b6aefcf07f26a2349a8bf16a053266f518fb952ca63",
+      "expected_sha256": "f383e85e1935a2cc36db17402edc48d16406531246b78ceb95b2f9498e843f96",
       "path": ".sdd/scripts/advance.sh",
       "trust": "framework"
     },
@@ -54,7 +54,7 @@
       "trust": "framework"
     }
   },
-  "sdd_version": "0.8.0",
+  "sdd_version": "0.9.0",
   "actions": {
     "acceptance-criteria": {
       "expected_sha256": "3c2415ec6086d956d81cb723fae95b519ef5d7b69a0a5e8fb4ce1b33c46b62f4",
