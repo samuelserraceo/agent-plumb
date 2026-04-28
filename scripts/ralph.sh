@@ -16,8 +16,53 @@
 
 set -euo pipefail
 
+# v0.10: read defaults from .sdd/config.md `parameters.ralph` if present;
+# env vars still override. Cascade: env > config.md > hardcoded fallback.
+read_ralph_config() {
+  # CodeRabbit cycle 1 (PR #31): the unused `fallback` second param
+  # was decorative — bash `${VAR:-fallback}` on the call site provides
+  # the fallback chain. Single key arg is enough.
+  local key="$1"
+  if [ -f .sdd/config.md ] && command -v python3 >/dev/null 2>&1; then
+    python3 -c "
+import re, sys
+try:
+    import yaml
+except ImportError:
+    sys.exit(0)  # PyYAML missing — fall through to fallback
+with open('.sdd/config.md', encoding='utf-8') as f: t = f.read()
+m = re.match(r'^---\n(.*?)\n---', t, re.DOTALL)
+if not m: sys.exit(0)
+fm = yaml.safe_load(m.group(1)) or {}
+v = (fm.get('parameters') or {}).get('ralph', {}).get('$key')
+if v is not None: print(v)
+" 2>/dev/null
+  fi
+}
+
+MAX_ITERS="${MAX_ITERS:-$(read_ralph_config max_iters)}"
 MAX_ITERS="${MAX_ITERS:-50}"
+TIMEOUT_PER_ITER="${TIMEOUT_PER_ITER:-$(read_ralph_config timeout_per_iter)}"
 TIMEOUT_PER_ITER="${TIMEOUT_PER_ITER:-600}"
+
+# CodeRabbit cycle 2 (PR #31): validate the resolved values are
+# positive integers. Without this, a typo like MAX_ITERS=foo would
+# fail confusingly inside the arithmetic `[ "$iter" -lt "$MAX_ITERS" ]`
+# expansion below; better to fail loud here with a clear message.
+case "$MAX_ITERS" in
+  ''|*[!0-9]*)
+    echo "ERROR: MAX_ITERS must be a positive integer (got: '$MAX_ITERS')." >&2
+    echo "       Set via env (MAX_ITERS=20) or .sdd/config.md parameters.ralph.max_iters." >&2
+    exit 1 ;;
+esac
+case "$TIMEOUT_PER_ITER" in
+  ''|*[!0-9]*)
+    echo "ERROR: TIMEOUT_PER_ITER must be a positive integer in seconds (got: '$TIMEOUT_PER_ITER')." >&2
+    echo "       Set via env (TIMEOUT_PER_ITER=300) or .sdd/config.md parameters.ralph.timeout_per_iter." >&2
+    exit 1 ;;
+esac
+[ "$MAX_ITERS" -gt 0 ] || { echo "ERROR: MAX_ITERS must be > 0 (got: $MAX_ITERS)" >&2; exit 1; }
+[ "$TIMEOUT_PER_ITER" -gt 0 ] || { echo "ERROR: TIMEOUT_PER_ITER must be > 0 (got: $TIMEOUT_PER_ITER)" >&2; exit 1; }
 
 # ─── Preflight ──────────────────────────────────────────────────────
 

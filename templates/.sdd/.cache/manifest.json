@@ -52,9 +52,14 @@
       "expected_sha256": "5035174640d824d171c1d551bf51794651069b1b362de910c7b51954256a7ec6",
       "path": ".sdd/scripts/validate-sdd-path.sh",
       "trust": "framework"
+    },
+    "settings.sh": {
+      "expected_sha256": "dc4cce1112b428000be09ac7b97fc74a82eb006a97b9b5c8e93b0b27603f3cae",
+      "path": ".sdd/scripts/settings.sh",
+      "trust": "framework"
     }
   },
-  "sdd_version": "0.9.0",
+  "sdd_version": "0.10.0",
   "actions": {
     "acceptance-criteria": {
       "expected_sha256": "3c2415ec6086d956d81cb723fae95b519ef5d7b69a0a5e8fb4ce1b33c46b62f4",

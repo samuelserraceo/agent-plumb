@@ -1,0 +1,15 @@
+{
+  "name": "sdd",
+  "description": "Spec-Driven Development — opinionated workflow that mechanically refuses commits drifting from approved decisions. Plain-English specs, append-only audit trail, mutation-verified tests.",
+  "version": "0.10.0",
+  "author": {
+    "name": "Samuel Serra",
+    "email": "hello@samserra.com"
+  },
+  "homepage": "https://github.com/samuelserraceo/spec-driven-dev-workflow",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/samuelserraceo/spec-driven-dev-workflow.git"
+  },
+  "license": "MIT"
+}

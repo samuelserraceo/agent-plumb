@@ -215,7 +215,12 @@ PY
   # failures. If the commit fails (hook block, no diff, etc.) the
   # script should fail loud — silent success would push an empty
   # branch state to remote and confuse the user.
-  git commit -m "[SDD:$feature_id] ship: CI green; spec marked cold (.shipped)"
+  #
+  # CodeRabbit PR #31 cycle 1: align commit prefix with CLAUDE.md
+  # conventions. The "ship:" prefix isn't in the convention list;
+  # use "[SDD] index: <id> shipped" (the index-update shape) which
+  # matches the mark-shipped action's commit-message contract.
+  git commit -m "[SDD] index: $feature_id shipped"
   git push
 
   echo ""

@@ -22,12 +22,24 @@ set -uo pipefail
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(pwd)}"
 cd "$PROJECT_DIR" || { echo "[moat] failed to cd into $PROJECT_DIR" >&2; exit 0; }
 
+# CodeRabbit cycle 1 finding (PR #31): the moat USED to silently
+# allow any commit when python3 was missing or stdin parsing failed
+# — both branched to "$cmd is empty" → exit 0. The moat exists
+# precisely to refuse commits in unclear states; defense-in-depth
+# means failing CLOSED, not failing OPEN.
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "[moat] python3 is required by the moat (manifest hash + stdin parse). Refusing commit." >&2
+  echo "[moat] Install python3 (most systems already have it) and retry." >&2
+  exit 2
+fi
+
 # Parse stdin from Claude Code.
 input=$(cat 2>/dev/null || true)
 cmd=$(printf '%s' "$input" | python3 -c "import sys,json;print(json.load(sys.stdin).get('tool_input',{}).get('command',''))" 2>/dev/null || echo "")
 
-# Empty-cmd safe default. Prevents the hook from firing on every Bash call
-# when stdin parsing fails.
+# Empty-cmd safe default. Prevents the hook from firing on every Bash
+# call when stdin is genuinely empty (legitimate non-Bash hook
+# invocation). NOT a python3-missing fallback — that's caught above.
 [ -z "$cmd" ] && exit 0
 
 # Not a git commit? Allow.
@@ -96,14 +108,10 @@ VERIFY_STAGE=$(locate_verify_stage) || {
 # fragile: a CRLF flip would force a re-pin here while the manifest
 # stayed silent. Now both layers use the same normalised algorithm.
 VERIFY_STAGE_EXPECTED_HASH="d51d3e16f31d72f8a78be721711a94f345b33b75bde1077ba2d59159ed9b9c8b"
-if ! command -v python3 >/dev/null 2>&1; then
-  cat >&2 <<EOF
-[moat] python3 is required for the verify-stage hash pin (the
-normalised-SHA-256 algorithm matches the manifest hash-pin below).
-Install python3 (most systems already have it) and retry.
-EOF
-  exit 2
-fi
+# Note: python3 existence already verified at the top of this hook
+# (the moat fails-closed if python3 is missing). CodeRabbit cycle 2
+# (PR #31): removed the duplicated `command -v python3` check that
+# used to live here — single source of truth for the dependency.
 actual_hash=$(VERIFY_STAGE="$VERIFY_STAGE" python3 -c '
 import hashlib, os, sys
 path = os.environ["VERIFY_STAGE"]
