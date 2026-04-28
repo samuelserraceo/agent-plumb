@@ -3577,6 +3577,28 @@ else
 fi
 
 # ============================================================
+# T93 — Catalog: mark-shipped action prose teaches richer INDEX.md format
+#   Closes the iteration-workflow gap from Sam's Q&A round (the map of
+#   all that was built). mark-shipped's prose now teaches:
+#     - Read spec.md frontmatter `extends:` and write Extends: line
+#     - Read §6 data-contract for entity contributions; write Data-model: line
+#     - Reference §learn lesson title; write Lesson: line linking patterns.md
+#     - One blank line between entries; archive at size_warn
+#   Anti-pattern: the legacy single-line format must be replaced.
+# ============================================================
+note "T93: mark-shipped action prose teaches v0.9 richer INDEX.md catalog format"
+ms_path="$FRAMEWORK_ROOT/templates/.sdd/actions/mark-shipped.md"
+miss=""
+for needle in 'richer catalog' '- Shipped:' '- Extends:' '- Data-model:' '- Lesson:' 'Memory-at-scale' '`extends:`'; do
+  grep -qF -- "$needle" "$ms_path" || miss="$miss $needle"
+done
+if [ -z "$miss" ]; then
+  ok "T93 mark-shipped prose teaches v0.9 catalog format (5 cross-ref fields + memory pillar)"
+else
+  bad "T93 mark-shipped prose missing v0.9 phrasing:" "missing:$miss"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'

@@ -82,7 +82,7 @@
       "trust": "framework"
     },
     "mark-shipped": {
-      "expected_sha256": "572615747c2459e8895195f54b34d11a9897a922ed4cf5a7b810294b514121fc",
+      "expected_sha256": "2299bcbe0aff908b229a4438e44c5d784ae5e113b97e20ab719cad2812d95dfb",
       "path": ".sdd/actions/mark-shipped.md",
       "trust": "framework"
     },
