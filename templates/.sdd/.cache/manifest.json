@@ -9,7 +9,7 @@
   },
   "scripts": {
     "advance.sh": {
-      "expected_sha256": "f383e85e1935a2cc36db17402edc48d16406531246b78ceb95b2f9498e843f96",
+      "expected_sha256": "f67c31ba54c39664be6317f8bf84d14a145e9ebfb7bc9c8f8a5a83813fef5da8",
       "path": ".sdd/scripts/advance.sh",
       "trust": "framework"
     },
@@ -72,7 +72,7 @@
       "trust": "framework"
     },
     "dependencies": {
-      "expected_sha256": "e26ac457abce77b922ff039348670c8ce60be506f79c587deee6326d561fa005",
+      "expected_sha256": "e49ba60fc0ec954c7285bfee85594dbe34967570189bb137d19cca4bcf221d4b",
       "path": ".sdd/actions/dependencies.md",
       "trust": "framework"
     },
@@ -87,7 +87,7 @@
       "trust": "framework"
     },
     "non-functional": {
-      "expected_sha256": "16d8c37d9f8542ea0ead600c4fab399e8bad75ea684627a75427d9f2a41a680b",
+      "expected_sha256": "5c67addbf500e2d6bd5ba8ddcfb3514807bc3e471876f0014e1327d083439082",
       "path": ".sdd/actions/non-functional.md",
       "trust": "framework"
     },
@@ -137,7 +137,7 @@
       "trust": "framework"
     },
     "ux-brief": {
-      "expected_sha256": "da926ab54644279624e93c91f948b5f6d5ba7851e6b74968ae7a79858ead7411",
+      "expected_sha256": "c89f0ba76f83496c35d23301d1b33521b13db996ce1fca844b800fb554a1c430",
       "path": ".sdd/actions/ux-brief.md",
       "trust": "framework"
     },
@@ -157,7 +157,7 @@
       "trust": "framework"
     },
     "wireframe": {
-      "expected_sha256": "a55341a9ae206061076776f8995f1ff49c3cc1779325b78824418e6af89bfcaf",
+      "expected_sha256": "0aa8ac8867b2110e4bc14793abed5ba8768c0e6768a316eb9f06939e629be509",
       "path": ".sdd/actions/wireframe.md",
       "trust": "framework"
     },
