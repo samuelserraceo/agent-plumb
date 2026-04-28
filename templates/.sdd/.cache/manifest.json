@@ -49,7 +49,7 @@
       "trust": "framework"
     },
     "validate-sdd-path.sh": {
-      "expected_sha256": "c2ae85c19b90e7a3d979931ddc6b47255c4637adbf38142bc15a832cf4110b0d",
+      "expected_sha256": "5035174640d824d171c1d551bf51794651069b1b362de910c7b51954256a7ec6",
       "path": ".sdd/scripts/validate-sdd-path.sh",
       "trust": "framework"
     }
