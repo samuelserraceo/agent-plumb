@@ -2838,6 +2838,59 @@ else
 fi
 
 # ============================================================
+# T79 — F2 consistency: every `triggers:` value in any action.md is
+#   declared in config.md `events:`. Catches typos in trigger names
+#   (e.g., `triggers: [section_aproved]`) before they silently no-op
+#   at runtime. Plain-English error: "action X step Y triggers
+#   <event> but events: doesn't declare it."
+#   This is a build-time check, not a runtime hook — F1 enforcer (later)
+#   may add runtime version too.
+# ============================================================
+note "T79: every triggers: value in actions/*.md is declared in config.md events:"
+declared=$(python3 - "$FRAMEWORK_ROOT/templates/.sdd/config.md" <<'PYEOF'
+import re, sys, yaml
+text = open(sys.argv[1]).read()
+m = re.match(r'^---\n(.*?)\n---', text, re.DOTALL)
+if not m:
+    print("MALFORMED")
+    sys.exit(1)
+fm = yaml.safe_load(m.group(1)) or {}
+events = fm.get("events") or {}
+print(" ".join(sorted(events.keys())))
+PYEOF
+)
+referenced=$(python3 - "$FRAMEWORK_ROOT/templates/.sdd/actions" <<'PYEOF'
+import os, re, sys, yaml
+acts_dir = sys.argv[1]
+seen = set()
+for fn in sorted(os.listdir(acts_dir)):
+    if not fn.endswith(".md"): continue
+    text = open(os.path.join(acts_dir, fn)).read()
+    m = re.match(r'^---\n(.*?)\n---', text, re.DOTALL)
+    if not m: continue
+    fm = yaml.safe_load(m.group(1)) or {}
+    for s in (fm.get("steps") or []):
+        for t in (s.get("triggers") or []):
+            seen.add((fn, s.get("id") or "?", t))
+for fn, sid, t in sorted(seen):
+    print(f"{fn}\t{sid}\t{t}")
+PYEOF
+)
+miss=""
+while IFS=$'\t' read -r fn sid trig; do
+  [ -z "$trig" ] && continue
+  if ! echo " $declared " | grep -q " $trig "; then
+    miss="$miss $fn:$sid->$trig"
+  fi
+done <<< "$referenced"
+if [ -z "$miss" ]; then
+  count=$(echo "$referenced" | grep -c .)
+  ok "T79 every triggers: ($count refs in actions/*.md) matches a config.md events: key"
+else
+  bad "T79 triggers: with no matching events: declaration:" "$miss"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
