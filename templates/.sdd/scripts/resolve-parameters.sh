@@ -13,8 +13,14 @@
 #      `budget:` aliased to `parameters.budget:`)        (action)
 #   5. step row's `overrides:` field (if any)            (step)
 #
-# Usage:
+# Usage (full form):
 #   resolve-parameters.sh <spec.md> <playbook-slug> <stage-id> <action-slug> <step-id>
+#
+# Usage (3-arg ergonomic shortcut, v0.10.2):
+#   resolve-parameters.sh <spec.md> <action-slug> <step-id>
+#   ↳ playbook + stage are auto-inferred:
+#     - playbook from INDEX.md `**Playbook:**` line (fallback: `feature`)
+#     - stage from spec.md's current `## PHASE: <X>` heading
 #
 # Output (stdout):
 #   JSON object with merged parameter keys + a `_provenance` map naming
@@ -27,12 +33,28 @@
 
 set -uo pipefail
 
-if [ $# -lt 5 ]; then
-  echo '{"error":"usage: resolve-parameters.sh <spec> <playbook> <stage> <action> <step>"}' >&2
+# Argument handling: support both 5-arg full form and 3-arg shortcut.
+# UAT v0.10.1 (#51): the original 5-arg signature was hard to remember
+# and the UAT plan called it with 3 args. Keep both — the framework HAS
+# the spec, so playbook + stage can be inferred at zero cost.
+if [ $# -eq 5 ]; then
+  SPEC="$1" PB="$2" STAGE="$3" ACTION="$4" STEP="$5"
+elif [ $# -eq 3 ]; then
+  SPEC="$1" ACTION="$2" STEP="$3"
+  # Infer playbook from INDEX.md (fallback: feature)
+  PROJECT_DIR_TMP="${CLAUDE_PROJECT_DIR:-$(pwd)}"
+  PB=$(awk '/^\*\*Playbook:\*\*/{print $2; exit}' "$PROJECT_DIR_TMP/.sdd/INDEX.md" 2>/dev/null || echo "")
+  [ -z "$PB" ] && PB="feature"
+  # Infer stage from spec.md's last `## PHASE: <X>` heading
+  STAGE=$(grep -m1 -oE '\[PHASE: [A-Z]+\]' "$SPEC" 2>/dev/null | grep -oE '[A-Z]+' | tail -1 || echo "")
+  [ -z "$STAGE" ] && STAGE="SPEC"
+else
+  cat >&2 <<EOF
+{"error":"usage: resolve-parameters.sh <spec> <action> <step> (3-arg shortcut)\n              OR resolve-parameters.sh <spec> <playbook> <stage> <action> <step> (full)"}
+EOF
   exit 1
 fi
 
-SPEC="$1" PB="$2" STAGE="$3" ACTION="$4" STEP="$5"
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(pwd)}"
 
 SPEC="$SPEC" PB="$PB" STAGE_ID="$STAGE" ACTION_SLUG="$ACTION" STEP_ID="$STEP" \
