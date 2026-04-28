@@ -27,17 +27,22 @@ The new feature's `spec.md` is created in a SEPARATE commit by `start.sh` (its o
 
 If you tried to put `.sdd/features/<work-item>/spec.md` in `touches:`, the placeholder `<work-item>` would resolve to the PROJECT path (`projects/<NNN>-<project-slug>`), not the new feature path — wrong scope. The two-commit separation keeps the placeholder semantics clean.
 
-## What this action does
+## What this action does (one commit, INDEX.md only)
+
+This action's `max_commits: 1` budget covers the INDEX.md handoff. `start.sh` is a separate, downstream concern — it gets its own atomic commit (see "After this action's commit" below).
 
 1. Read INDEX.md `## Backlog` — find the first entry (highest priority, no unfulfilled dependencies)
 2. Remove that entry from `## Backlog`; **append** it to the existing `## In flight` section (don't replace — `## In flight` is a list and may already contain other parallel work items)
-3. Run `start.sh` for that feature — same as the user typing `/start "<headline>"` (a normal new-feature start, NOT `/start --extends=...` which is for extending shipped features)
-4. Set `**Active:**` to the new feature (this line points to the user's CURRENT focus; when they switch git branches to work on a different in-flight feature, they update this line manually — see CLAUDE.md "Multi-feature parallel work")
-5. The feature's spec.md gets scaffolded with all the standard `feature` playbook actions
+3. Set `**Active:**` to the new feature (this line points to the user's CURRENT focus; when they switch git branches to work on a different in-flight feature, they update this line manually — see CLAUDE.md "Multi-feature parallel work")
+4. Commit. Footprint: `.sdd/INDEX.md` only.
 
 **Note:** `## In flight` can hold multiple parallel work items at once (one per branch is the typical pattern). `**Active:**` is just the current focus marker; `## In flight` is the canonical list of work-in-progress.
 
-After this commit, the user is in normal `feature` playbook mode for the first capability. The project playbook is "done" — it produced the roadmap and got the first feature started.
+## After this action's commit (separate, downstream)
+
+`start.sh` runs for the new feature — same flow as the user typing `/start "<headline>"` (a normal new-feature start, NOT `/start --extends=...` which is for extending shipped features). This is a SEPARATE atomic commit by `start.sh` itself, scaffolding the feature's `spec.md` and the standard `feature` playbook actions. It does not count against this action's budget.
+
+After both commits land, the user is in normal `feature` playbook mode for the first capability. The project playbook is "done" — it produced the roadmap and got the first feature started.
 
 ## What carries forward from the project to the feature
 

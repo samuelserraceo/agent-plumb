@@ -206,7 +206,7 @@
       "trust": "framework"
     },
     "project-start-first": {
-      "expected_sha256": "a40def1c0ea9f02485f0e48f41295d171730d8fc385a7e360a388211f28f961b",
+      "expected_sha256": "5a0873b63b426bdb538c39bcb7219232d5f6d0d9caa8f33b13785d34e11ec4ac",
       "path": ".sdd/actions/project-start-first.md",
       "trust": "framework"
     }
