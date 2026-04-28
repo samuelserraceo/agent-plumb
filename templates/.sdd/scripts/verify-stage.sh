@@ -26,6 +26,17 @@ fi
 spec="$1"
 target_phase="$2"
 
+# SECURITY (CodeRabbit cycle 10): validate target_phase against the
+# closed-enum stage-id shape from config.md (uppercase letters, max 16
+# chars, no digits/underscores). target_phase is embedded verbatim in
+# verification.json — any `"` or control character would break the
+# JSON output, and worse, could let a caller-controlled phase string
+# inject spurious fields the moat hook then parses.
+if ! printf '%s' "$target_phase" | LC_ALL=C grep -qE '^[A-Z]{1,16}$'; then
+  echo '{"error":"target_phase must be uppercase letters only, max 16 chars (closed enum from config.md)"}' >&2
+  exit 1
+fi
+
 if [ ! -f "$spec" ]; then
   echo '{"error":"spec not found"}' >&2
   exit 1
@@ -126,6 +137,19 @@ out_path="$out_dir/verification.json"
     i=0
     while IFS=$'\t' read -r id result; do
       i=$((i+1))
+
+      # SECURITY (CodeRabbit cycle 10): validate id is a safe slug
+      # before embedding in JSON. Check IDs come from spec.md (project
+      # data, not hash-pinned) — an adversarial spec.md could
+      # otherwise inject `"` characters that break verification.json
+      # parsing. Convention from playbook: alphanumeric + `-`/`_`,
+      # starting with a letter. result is the script's own "pass" or
+      # "fail" — already safe.
+      if ! printf '%s' "$id" | LC_ALL=C grep -qE '^[A-Za-z][A-Za-z0-9_-]*$'; then
+        echo "[verify-stage] check id rejected: '$id' must be a slug (alphanumeric, dash, underscore)." >&2
+        exit 2
+      fi
+
       if [ "$i" -eq "$n_lines" ]; then
         printf '    {"id": "%s", "result": "%s"}\n' "$id" "$result"
       else
