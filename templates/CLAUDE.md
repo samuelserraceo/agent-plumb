@@ -123,6 +123,61 @@ Once the feature is identified, hand off to the right slash command:
 
 ---
 
+## Where things live (canonical folder map)
+
+**The framework's discipline depends on every artifact living in a known place.** When in doubt about where to write something — read this map. Don't invent new folders. Don't drop scratch files at the project root.
+
+```
+<project-root>/
+├── CLAUDE.md                         ← agent discipline (this file)
+├── README.md                         ← user-facing project README
+├── .sdd/                             ← FRAMEWORK HOME — everything SDD lives here
+│   ├── INDEX.md                      ← work-item catalog (Active + Shipped sections)
+│   ├── config.md                     ← project config (parameters, events, file_classes, file_rules)
+│   ├── decisions.md                  ← APPEND-ONLY audit trail (every approval, every phase advance)
+│   ├── data-model.md                 ← shared entities/fields across features (single source of truth)
+│   ├── patterns.md                   ← cross-feature lessons (one block per feature; auto-appended by `learn` action)
+│   ├── playbooks/<slug>.md           ← workflow templates (`feature.md` ships v0.9; `bug.md` etc. arrive later)
+│   ├── actions/<slug>.md             ← 22 action files (problem, success, proposed-approach, etc.)
+│   ├── extensions/<slug>.md          ← optional add-ons (none ship in v0.9)
+│   ├── scripts/<name>.sh             ← framework scripts (start, next-action, advance, resolve-parameters, …)
+│   ├── ideas/                        ← `/idea` captures (loose markdown notes — no commitment)
+│   ├── topics/                       ← (Phase C+) cross-cutting topic pages — DEFERRED, do not create today
+│   ├── archive/                      ← (Phase C+) compressed/aged content — DEFERRED, do not create today
+│   ├── features/<NNN>-<slug>/        ← per-work-item folder (one per /start)
+│   │   ├── spec.md                   ← the running spec
+│   │   ├── verification.json         ← machine-checked claim about phase exit checks
+│   │   ├── wireframe.html            ← if §4 UX brief produced one
+│   │   ├── tests/                    ← BUILD task tests
+│   │   └── .shipped                  ← marker = folder is now COLD (don't read)
+│   ├── bugs/                         ← (Phase C+) per-bug folders — DEFERRED, do not create today
+│   └── .cache/manifest.json          ← framework hash pin (do not edit by hand)
+└── .claude/                          ← Claude Code harness config
+    ├── settings.json                 ← hook registration
+    ├── hooks/<name>.sh               ← framework hooks (block, rules, stage-verified, …)
+    └── commands/<name>.md            ← slash command bodies (/start, /next, /status, …)
+```
+
+**Rules for choosing a path** (these are convention today; folder-rule enforcement is Phase C-Option-B, deferred):
+
+1. **Per-work-item artifact** (anything that exists because of one specific feature/bug) → goes in `.sdd/<work_item_folder>/<NNN>-<slug>/`. Examples: spec.md, verification.json, wireframe.html, tests, screenshots, architecture diagrams scoped to this feature.
+
+2. **Cross-feature artifact** (anything multiple features benefit from knowing) → goes in one of these top-level files: `.sdd/data-model.md` (entities/fields), `.sdd/patterns.md` (lessons), `.sdd/INDEX.md` (catalog), `.sdd/decisions.md` (timeline). Don't invent a new top-level file.
+
+3. **Framework-shipped artifact** (a playbook, an action prose, a script, a hook) → goes in its declared folder under `.sdd/` or `.claude/`. Don't put a new playbook at `.sdd/my-playbook.md` — it goes in `.sdd/playbooks/`.
+
+4. **One-off thoughts** that aren't yet a feature → `.sdd/ideas/<short-name>.md` via `/idea`. Don't drop notes at the project root.
+
+5. **Documentation about the framework itself** (auto-generated walkthroughs, planning docs) → keep out of `.sdd/`. The `.sdd/` tree is sacred to the discipline; planning artifacts go in `~/.claude/plans/` or a separate `docs/` directory if the project has one.
+
+**Hard rule (read this twice):** `.sdd/topics/`, `.sdd/archive/`, and `.sdd/bugs/` are listed above as **DEFERRED**. They have shapes designed but no Phase-C work yet. **Do not create files in them today.** If a need surfaces (e.g., the user asks for a topic page), pause and ask them whether to defer or to upgrade the framework first.
+
+**Stale paths to watch for:** if a turn is about to write a path NOT in this map (e.g., `.sdd/notes/`, `.sdd/scratch/`, `MY_NOTES.md` at root, `<feature-folder>/extra/`), **halt and ask the user.** Almost always the right move is one of (a) put it in `.sdd/ideas/`, (b) put it in the feature folder, (c) put it in `data-model.md` / `patterns.md`. Inventing a new folder = a sign the framework needs an extension, not a workaround.
+
+**Why this matters (Memory-at-scale + Simplicity pillars):** the agent reads INDEX.md every turn, plus the active spec.md and patterns.md. If artifacts scatter across unmapped paths, the agent loses signal — every `/next` becomes a search instead of a read. Keeping the layout small and known is what makes scale tractable.
+
+---
+
 ## Core loop (never deviate)
 
 Every turn:

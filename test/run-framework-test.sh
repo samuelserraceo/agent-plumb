@@ -3599,6 +3599,26 @@ else
 fi
 
 # ============================================================
+# T94 — Doctrine: CLAUDE.md gives a canonical folder map (Option A)
+#   Closes Sam's "too many docs in too many places" question. Until
+#   today, folder structure was scattered across ~25 mentions in
+#   CLAUDE.md but never as a unified map. Phase C adds a "Where
+#   things live (canonical folder map)" section listing every framework
+#   folder with what's allowed in it + 5 path-choosing rules.
+#   Enforcement (Option B = folder_rules:) is deferred to a follow-up.
+# ============================================================
+note "T94: CLAUDE.md states canonical folder map (Where things live, Option A)"
+miss=""
+for needle in 'Where things live' 'canonical folder map' 'FRAMEWORK HOME' 'DEFERRED' 'Stale paths to watch for' 'Memory-at-scale + Simplicity'; do
+  grep -qF -- "$needle" "$CLAUDE_MD" || miss="$miss $needle"
+done
+if [ -z "$miss" ]; then
+  ok "T94 CLAUDE.md gives canonical folder map (Option A — doctrine without enforcement yet)"
+else
+  bad "T94 CLAUDE.md missing folder-map phrasing:" "missing:$miss"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
