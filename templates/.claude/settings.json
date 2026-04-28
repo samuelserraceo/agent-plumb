@@ -56,10 +56,6 @@
           },
           {
             "type": "command",
-            "command": ".claude/hooks/pre-commit-decisions-append-only.sh"
-          },
-          {
-            "type": "command",
             "command": ".claude/hooks/pre-commit-stage-verified.sh"
           }
         ]

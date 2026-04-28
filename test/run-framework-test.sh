@@ -19,7 +19,9 @@ LOAD_PLAYBOOK="$FRAMEWORK_ROOT/templates/.sdd/scripts/load-playbook.sh"
 START_SH="$FRAMEWORK_ROOT/templates/.sdd/scripts/start.sh"
 ADVANCE_SH="$FRAMEWORK_ROOT/templates/.sdd/scripts/advance.sh"
 RULES_HOOK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-rules.sh"
-DECISIONS_HOOK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-decisions-append-only.sh"
+# pre-commit-decisions-append-only.sh retired in C-5 (5b/N) — F1 generic
+# enforcer reads `file_rules:` from config.md and applies append_only +
+# reset_phrase. T62 migrated to $RULES_HOOK with the same fixture.
 FIXTURES_V08="$FRAMEWORK_ROOT/test/fixtures/v08-schema"
 
 PASS=0
@@ -1935,12 +1937,14 @@ fi
 # now exercised indirectly via T46/T47 + load-playbook --validate.
 
 # ============================================================
-# T62 — pre-commit-decisions-append-only blocks deletions/modifications
-#   to existing entries in .sdd/decisions.md (Theme 7 — audit trail).
+# T62 — pre-commit-rules.sh blocks deletions/modifications to existing
+#   entries in .sdd/decisions.md (Theme 7 — audit trail).
+#   v0.9 C-5 (5b/N): migrated from pre-commit-decisions-append-only.sh.
+#   The append_only rule lives in config.md `file_rules:` now.
 #   RED: hook lets the commit through, prior approvals can be retroactively
 #        edited or removed without trace.
 # ============================================================
-note "T62: pre-commit-decisions-append-only blocks edits to prior entries"
+note "T62: pre-commit-rules blocks edits to prior decisions.md entries (file_rules append_only)"
 d=$(mkproj_v08)
 cd "$d"
 # Append a "real" entry to decisions.md and commit (so HEAD has it)
@@ -1963,11 +1967,11 @@ with open('.sdd/decisions.md', 'w') as f: f.write(c)
 git add .sdd/decisions.md
 hook_stdin='{"tool_input":{"command":"git commit -m soften decisions"}}'
 ec=0
-err=$(echo "$hook_stdin" | bash "$DECISIONS_HOOK" 2>&1 1>/dev/null) || ec=$?
+err=$(echo "$hook_stdin" | bash "$RULES_HOOK" 2>&1 1>/dev/null) || ec=$?
 cd - >/dev/null
 rm -rf "$d"
-if [ "$ec" -eq 2 ] && echo "$err" | grep -qiE 'append-only|removes|modifies'; then
-  ok "T62 modification of prior entry BLOCKED (append-only enforced)"
+if [ "$ec" -eq 2 ] && echo "$err" | grep -qiE 'append_only|append-only|file_rules'; then
+  ok "T62 modification of prior entry BLOCKED (file_rules append_only enforced)"
 else
   bad "T62 prior-entry modification slipped through" "exit=$ec; err='$err'"
 fi
