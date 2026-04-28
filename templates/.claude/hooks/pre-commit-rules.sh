@@ -122,6 +122,119 @@ print("ALLOW")
 PYEOF
 )
 
+# === FILE_RULES enforcement (per-file append_only / size cap / etc.) ===
+# Read config.md `file_rules:` (path → rules map) and apply each rule
+# handler against the matching staged file. Today's handlers:
+#
+#   append_only: true   — staged blob must start with HEAD blob byte-for-byte
+#                          (subsumes pre-commit-decisions-append-only.sh)
+#   reset_phrase: "<s>" — if commit message contains this string, rules are
+#                          bypassed for this commit (escape hatch)
+#
+# Future Phase C-5 handlers: size_warn, size_block, managed_section.
+file_rules_result=$(STAGED="$staged" CMD="$cmd" python3 - <<'PYEOF' 2>/dev/null || echo "ALLOW"
+import os, re, subprocess, sys
+try:
+    import yaml
+except Exception:
+    print("ALLOW"); sys.exit(0)
+
+try:
+    text = open(".sdd/config.md").read()
+except OSError:
+    print("ALLOW"); sys.exit(0)
+m = re.match(r"^---\n(.*?)\n---", text, re.DOTALL)
+if not m:
+    print("ALLOW"); sys.exit(0)
+try:
+    fm = yaml.safe_load(m.group(1)) or {}
+except Exception:
+    print("ALLOW"); sys.exit(0)
+
+rules = fm.get("file_rules") or {}
+if not rules:
+    print("ALLOW"); sys.exit(0)
+
+cmd = os.environ.get("CMD", "")
+staged_lines = [ln.strip() for ln in os.environ.get("STAGED","").splitlines() if ln.strip()]
+
+for path, rule in rules.items():
+    if not isinstance(rule, dict): continue
+    if path not in staged_lines: continue
+
+    # Reset phrase bypass.
+    reset = rule.get("reset_phrase")
+    if reset and reset in cmd:
+        continue  # skip enforcement for this commit
+
+    # append_only handler.
+    if rule.get("append_only"):
+        try:
+            head = subprocess.run(
+                ["git", "show", f"HEAD:{path}"],
+                capture_output=True, check=False,
+            )
+        except Exception:
+            continue
+        if head.returncode != 0:
+            # Not in HEAD — first creation, allow.
+            continue
+        try:
+            staged_blob = subprocess.run(
+                ["git", "show", f":{path}"],
+                capture_output=True, check=False,
+            )
+        except Exception:
+            continue
+        if staged_blob.returncode != 0:
+            print("BLOCK")
+            print(f"PATH: {path}")
+            print("REASON: could not read staged blob")
+            sys.exit(0)
+        if b"\x00" in staged_blob.stdout or b"\x00" in head.stdout:
+            print("BLOCK")
+            print(f"PATH: {path}")
+            print("REASON: NUL bytes in file content")
+            sys.exit(0)
+        if not staged_blob.stdout.startswith(head.stdout):
+            print("BLOCK")
+            print(f"PATH: {path}")
+            print("REASON: append_only — staged blob does not start with HEAD blob")
+            print(f"RESET_PHRASE: {reset or '(none configured)'}")
+            sys.exit(0)
+
+print("ALLOW")
+PYEOF
+)
+
+case "$file_rules_result" in
+  ALLOW*) ;;
+  BLOCK*)
+    cat >&2 <<EOF
+
+[SDD rules / file_rules] A per-file rule blocked this commit.
+
+$(printf '%s\n' "$file_rules_result" | sed -n '2,$p')
+
+The framework's audit trail relies on append_only files staying
+immutable — modifying or removing prior content breaks the trust
+model. To fix: revert your edits to existing entries and APPEND your
+new entry instead:
+
+    git restore --staged <path>
+    git checkout <path>
+    # then append the new entry, re-stage, re-commit
+
+If you genuinely need to rebuild the whole file (e.g., recovering
+from corruption), use the configured reset phrase in your commit
+message — that's the documented escape hatch.
+
+The file_rules definitions live in .sdd/config.md \`file_rules:\`.
+EOF
+    exit 2
+    ;;
+esac
+
 case "$class_block_result" in
   ALLOW*) ;;
   BLOCK*)

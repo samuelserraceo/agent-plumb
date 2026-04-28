@@ -3309,6 +3309,90 @@ else
 fi
 
 # ============================================================
+# T89 — F1 file_rules: pre-commit-rules.sh enforces append_only via config
+#   Third F1 capability: pre-commit-rules.sh now reads config.md
+#   `file_rules:` and applies an append_only handler to staged files
+#   declared so. Subsumes pre-commit-decisions-append-only.sh.
+#   Mutation: neuter the legacy hook; assert pre-commit-rules.sh
+#   independently blocks a commit that REMOVES content from
+#   .sdd/decisions.md (the only append_only target shipped today).
+# ============================================================
+note "T89: pre-commit-rules.sh blocks append_only violation independently"
+d=$(mkproj_v08)
+cd "$d"
+git init -q
+git config user.email t@t.com && git config user.name T
+# Set up an initial decisions.md with one entry, commit it.
+cat > .sdd/decisions.md <<'EOF'
+# decisions
+
+## 2026-04-01T10:00:00Z  [001]  feature/problem
+First decision committed.
+EOF
+git add -A
+git commit -q -m scaffold
+
+# Mutation: NEUTER pre-commit-decisions-append-only.sh.
+echo '#!/usr/bin/env bash
+exit 0' > .claude/hooks/pre-commit-decisions-append-only.sh
+chmod +x .claude/hooks/pre-commit-decisions-append-only.sh
+
+# Stage a violation: remove the prior entry's content.
+cat > .sdd/decisions.md <<'EOF'
+# decisions
+(rewritten — should be blocked)
+EOF
+git add .sdd/decisions.md
+hook_stdin='{"tool_input":{"command":"git commit -m chore: rewrite decisions"}}'
+ec=0
+echo "$hook_stdin" | bash .claude/hooks/pre-commit-rules.sh >/dev/null 2>&1 || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 2 ]; then
+  ok "T89 pre-commit-rules.sh blocked append_only violation (legacy hook neutered)"
+else
+  bad "T89 rules.sh let append_only violation through" "exit=$ec (expected 2)"
+fi
+
+# ============================================================
+# T89b — F1 file_rules mutation: reset_phrase escape hatch works
+#   Same setup as T89 but the commit message contains the configured
+#   reset_phrase ("[SDD] decisions: reset"). pre-commit-rules.sh must
+#   ALLOW the commit — that's the documented escape hatch for
+#   legitimate full rebuilds.
+# ============================================================
+note "T89b: reset_phrase in commit message bypasses append_only (escape hatch)"
+d=$(mkproj_v08)
+cd "$d"
+git init -q
+git config user.email t@t.com && git config user.name T
+cat > .sdd/decisions.md <<'EOF'
+# decisions
+
+## 2026-04-01T10:00:00Z  [001]  feature/problem
+First decision committed.
+EOF
+git add -A
+git commit -q -m scaffold
+
+cat > .sdd/decisions.md <<'EOF'
+# decisions
+(rebuild after corruption)
+EOF
+git add .sdd/decisions.md
+# Reset-phrase commit message.
+hook_stdin='{"tool_input":{"command":"git commit -m \"[SDD] decisions: reset\""}}'
+ec=0
+echo "$hook_stdin" | bash .claude/hooks/pre-commit-rules.sh >/dev/null 2>&1 || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 0 ]; then
+  ok "T89b reset_phrase bypassed append_only (escape hatch works)"
+else
+  bad "T89b reset_phrase did not bypass append_only" "exit=$ec (expected 0)"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'

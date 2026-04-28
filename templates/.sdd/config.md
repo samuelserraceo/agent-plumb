@@ -29,6 +29,10 @@ file_classes:
     - '^CLAUDE\.md$'
 co_stage_block:
   - [CLAIM, POLICY]
+file_rules:
+  ".sdd/decisions.md":
+    append_only: true
+    reset_phrase: "[SDD] decisions: reset"
 events:
   section_approved:
     actions:
@@ -94,6 +98,25 @@ Two named classes ship in the template:
 `co_stage_block:` is a list of `[ClassA, ClassB]` pairs. Each pair declares "any commit that stages files from BOTH classes is refused." The framework ships with `[CLAIM, POLICY]` — forcing any policy edit and any claim edit into separate auditable commits.
 
 To add a new class: add a name + pattern list to `file_classes:`. To add a new co-stage rule: add a new pair to `co_stage_block:`. Both are read by F1 generic enforcer (Phase C-5); no hook code changes.
+
+### `file_rules:` (per-file content rules)
+
+Per-file rules the framework enforces at commit time. Each key is a path; each value is a map of rules. Currently one rule type ships with the template:
+
+- **`append_only: true`** — staged version of the file must start with HEAD's content byte-for-byte. Modifying or removing prior content blocks the commit. Reason: append-only files are the audit trail (`decisions.md`); rewriting history breaks the trust model.
+
+- **`reset_phrase: "<exact-string>"`** — escape hatch. If the commit message contains this exact string, the file's rules are bypassed for that one commit. Used for legitimate full-rebuilds (e.g., recovering from corruption). The phrase is loud on purpose so it shows up in `git log`.
+
+Defaults shipped in the template: `.sdd/decisions.md` is append-only with reset-phrase `[SDD] decisions: reset`. Future additions (Phase C-5):
+
+```yaml
+file_rules:
+  ".sdd/patterns.md":   { size_warn: 200, size_block: 400 }
+  ".sdd/INDEX.md":      { size_warn: 200, size_block: 400 }
+  "CLAUDE.md":          { managed_section: { open: "<!-- SDD-MANAGED-START", close: "<!-- SDD-MANAGED-END -->", on_edit: warn } }
+```
+
+Adding a new file-rule = a new key in this map + a new rule-handler in `pre-commit-rules.sh`. The handler is the only code change; the schema is declarative.
 
 ### `events:` (event → file-action map, F2 slimmed)
 
