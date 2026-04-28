@@ -3508,6 +3508,75 @@ else
 fi
 
 # ============================================================
+# T92 — Catalog: /start --extends=<id> records prior feature in spec.md
+#   Closes the iteration-workflow gap from Sam's Q&A round: when the
+#   user is extending a shipped feature, /start records `extends:` in
+#   the new spec.md frontmatter so mark-shipped (and INDEX.md's rich
+#   block, future) can name the chain. Resolves the extends arg
+#   leniently (NNN, slug substring, full folder path) — fails plain-
+#   English on ambiguity or no-match.
+# ============================================================
+note "T92: /start --extends=<id> records resolved extends: in spec.md frontmatter"
+d=$(mkproj_v08)
+rm -rf "$d/.sdd/features"
+cd "$d"
+bash "$START_SH" "build a waitlist" >/dev/null 2>&1
+bash "$START_SH" --extends=001 "add referral codes" >/dev/null 2>&1
+spec="$d/.sdd/features/002-add-referral-codes/spec.md"
+cd - >/dev/null
+if [ -f "$spec" ] \
+   && head -5 "$spec" | grep -q "^extends:" \
+   && head -5 "$spec" | grep -qF "features/001-build-a-waitlist" \
+   && grep -q "^\*\*Extends:\*\* " "$spec"; then
+  ok "T92 --extends=001 resolved + recorded in spec.md frontmatter + Extends: line"
+else
+  bad "T92 --extends= not properly recorded" "head: $(head -8 "$spec" 2>/dev/null | tr '\n' '|')"
+fi
+rm -rf "$d"
+
+# ============================================================
+# T92b — Catalog mutation: --extends=<bogus> rejects with plain English
+#   Mutation: --extends=999 (no such feature). /start must refuse the
+#   scaffold (exit non-zero) and print a plain-English error pointing
+#   the user at /status. Proves the resolver isn't permissive.
+# ============================================================
+note "T92b: --extends=<bogus-id> rejects with plain-English error"
+d=$(mkproj_v08)
+rm -rf "$d/.sdd/features"
+cd "$d"
+bash "$START_SH" "first" >/dev/null 2>&1
+ec=0
+out=$(bash "$START_SH" --extends=999 "should fail" 2>&1) || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -ne 0 ] && echo "$out" | grep -qiE 'extends|matching|/status'; then
+  ok "T92b --extends=<bogus> rejected with plain-English message"
+else
+  bad "T92b --extends=<bogus> not rejected or no plain-English error" "ec=$ec; out=$out"
+fi
+
+# ============================================================
+# T92c — Catalog mutation: ambiguous --extends=<substring> rejects
+#   Two features match the substring. /start must refuse and tell user
+#   to disambiguate with the NNN or full slug.
+# ============================================================
+note "T92c: ambiguous --extends=<substring> rejects with disambiguation hint"
+d=$(mkproj_v08)
+rm -rf "$d/.sdd/features"
+cd "$d"
+bash "$START_SH" "waitlist phase one" >/dev/null 2>&1
+bash "$START_SH" "waitlist phase two" >/dev/null 2>&1
+ec=0
+out=$(bash "$START_SH" --extends=waitlist "ambiguous extension" 2>&1) || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -ne 0 ] && echo "$out" | grep -qiE 'multiple|disambig|exact'; then
+  ok "T92c ambiguous --extends rejected with disambiguation hint"
+else
+  bad "T92c ambiguous --extends not rejected" "ec=$ec; out=$out"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'

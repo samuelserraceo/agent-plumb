@@ -41,6 +41,7 @@ EOF
 
 # Parse args.
 PLAYBOOK_OVERRIDE=""
+EXTENDS=""
 TITLE=""
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -50,6 +51,14 @@ while [ $# -gt 0 ]; do
       ;;
     --playbook)
       PLAYBOOK_OVERRIDE="$2"
+      shift 2
+      ;;
+    --extends=*)
+      EXTENDS="${1#--extends=}"
+      shift
+      ;;
+    --extends)
+      EXTENDS="$2"
       shift 2
       ;;
     *)
@@ -134,12 +143,13 @@ fi
 # Read config + figure out which playbook to use.
 # Validate playbook exists. Compute next NNN. Derive slug from title.
 # Scaffold spec.md + update INDEX.md. All in one python3 block for safety.
-TITLE_INPUT="$TITLE" PLAYBOOK_OVERRIDE="$PLAYBOOK_OVERRIDE" PROJ="$PROJECT_DIR" python3 <<'PYEOF'
+TITLE_INPUT="$TITLE" PLAYBOOK_OVERRIDE="$PLAYBOOK_OVERRIDE" EXTENDS="$EXTENDS" PROJ="$PROJECT_DIR" python3 <<'PYEOF'
 import json, os, re, sys
 
 proj = os.environ["PROJ"]
 title = os.environ["TITLE_INPUT"].strip()
 playbook_override = os.environ["PLAYBOOK_OVERRIDE"].strip()
+extends_raw = os.environ.get("EXTENDS", "").strip()
 
 # --- Read config.md frontmatter ---
 config_path = os.path.join(proj, ".sdd", "config.md")
@@ -231,6 +241,41 @@ if os.path.exists(item_dir):
     sys.exit(1)
 os.makedirs(item_dir)
 
+# --- Resolve --extends if provided ---
+# extends_raw can be: "001", "001-waitlist", "features/001-waitlist", a substring
+# match against folder slug. Refuse if it doesn't resolve to exactly one folder.
+extends_resolved = None
+if extends_raw:
+    candidates = []
+    # Strip leading "features/" if present.
+    needle = extends_raw
+    if needle.startswith(work_item_folder.rstrip("/") + "/"):
+        needle = needle[len(work_item_folder):]
+    # Walk the work-item folder; match by exact name OR NNN prefix OR slug substring.
+    for entry in sorted(os.listdir(work_dir)):
+        if not os.path.isdir(os.path.join(work_dir, entry)):
+            continue
+        if entry == needle:
+            candidates = [entry]; break
+        if needle.isdigit() and entry.startswith(f"{int(needle):03d}-"):
+            candidates.append(entry)
+        elif needle in entry:
+            candidates.append(entry)
+    if len(candidates) == 0:
+        print(f"[/start] --extends={extends_raw!r}: no matching work item under "
+              f"{work_item_folder}. Run /status to see what's shipped.",
+              file=sys.stderr)
+        sys.exit(1)
+    if len(candidates) > 1:
+        print(f"[/start] --extends={extends_raw!r}: matches multiple work items:",
+              file=sys.stderr)
+        for c in candidates:
+            print(f"    - {c}", file=sys.stderr)
+        print(f"  Use the exact NNN or full folder name to disambiguate.",
+              file=sys.stderr)
+        sys.exit(1)
+    extends_resolved = f"{work_item_folder.rstrip('/')}/{candidates[0]}"
+
 # --- Generate spec.md skeleton ---
 # Use the FIRST stage (typically SPEC) as the active phase.
 # For each action, include `### action: <slug>` with one [ ] row per step
@@ -257,16 +302,31 @@ def load_action_steps(action_slug):
         return []
     return meta.get("steps", []) or []
 
-spec_lines = [
+# Spec.md frontmatter — only emitted when there's structured data to record
+# (extends:). Keeps the no-extends case free of empty YAML noise.
+frontmatter_lines = []
+if extends_resolved:
+    frontmatter_lines = [
+        "---",
+        f"extends:",
+        f"  - {extends_resolved}",
+        "---",
+        "",
+    ]
+
+spec_lines = list(frontmatter_lines) + [
     f"# {title}",
     "",
     f"[PHASE: {first_stage_id}]",
     "",
     f"**Active blocker:** §1 (first action: {sub_slugs[0] if sub_slugs else 'n/a'})",
     "",
-    f"## PHASE: {first_stage_id}",
-    "",
 ]
+if extends_resolved:
+    spec_lines.append(f"**Extends:** `{extends_resolved}` (read INDEX.md's Shipped block for the prior feature's distilled context — do NOT cold-read its spec.md)")
+    spec_lines.append("")
+spec_lines.append(f"## PHASE: {first_stage_id}")
+spec_lines.append("")
 for i, sa_slug in enumerate(sub_slugs, start=1):
     spec_lines.append(f"### action: {sa_slug}")
     spec_lines.append("")
