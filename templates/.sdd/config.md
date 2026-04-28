@@ -33,6 +33,24 @@ file_rules:
   ".sdd/decisions.md":
     append_only: true
     reset_phrase: "[SDD] decisions: reset"
+  ".sdd/patterns.md":
+    size_warn: 200
+    size_block: 400
+    advice: "Run /compress patterns to consolidate duplicates and snapshot old entries to .sdd/archive/."
+  ".sdd/INDEX.md":
+    size_warn: 200
+    size_block: 400
+    advice: "Old shipped entries should move to .sdd/archive/. /ship will offer this once a quarter."
+  ".sdd/data-model.md":
+    size_warn: 200
+    size_block: 400
+    advice: "Consider splitting into a data-model/ directory (one file per entity)."
+  "CLAUDE.md":
+    managed_section:
+      open: "SDD-MANAGED-START"
+      close: "SDD-MANAGED-END"
+      bump_marker: ".sdd/CLAUDE.version"
+      on_edit: warn
 events:
   section_approved:
     actions:

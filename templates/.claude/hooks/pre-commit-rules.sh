@@ -132,7 +132,7 @@ PYEOF
 #                          bypassed for this commit (escape hatch)
 #
 # Future Phase C-5 handlers: size_warn, size_block, managed_section.
-file_rules_result=$(STAGED="$staged" CMD="$cmd" python3 - <<'PYEOF' 2>/dev/null || echo "ALLOW"
+file_rules_result=$(STAGED="$staged" CMD="$cmd" python3 - <<'PYEOF' || echo "ALLOW"
 import os, re, subprocess, sys
 try:
     import yaml
@@ -166,6 +166,84 @@ for path, rule in rules.items():
     reset = rule.get("reset_phrase")
     if reset and reset in cmd:
         continue  # skip enforcement for this commit
+
+    # size_warn / size_block handler — line-count cap on the file at HEAD+staged.
+    # Reads working tree (the file as it stands), not the diff. size_warn writes
+    # a stderr nudge but doesn't block; size_block hard-stops the commit.
+    sw = rule.get("size_warn")
+    sb = rule.get("size_block")
+    if sw or sb:
+        try:
+            with open(path) as f:
+                line_count = sum(1 for _ in f)
+        except OSError:
+            line_count = None
+        if line_count is not None:
+            if sb is not None and line_count >= int(sb):
+                advice = rule.get("advice") or ""
+                print("BLOCK")
+                print(f"PATH: {path}")
+                print(f"REASON: size_block — {line_count} lines (cap: {sb})")
+                if advice:
+                    print(f"ADVICE: {advice}")
+                sys.exit(0)
+            if sw is not None and line_count >= int(sw):
+                advice = rule.get("advice") or ""
+                # Soft warn — write to stderr, don't block.
+                sys.stderr.write(
+                    f"\n  ⚠  SDD size-cap (warn) — {path} is {line_count} lines "
+                    f"(warn: {sw}, block: {sb if sb is not None else '-'})\n"
+                )
+                if advice:
+                    sys.stderr.write(f"     {advice}\n")
+                sys.stderr.write("\n")
+
+    # managed_section handler — warn-only when CLAUDE.md's MANAGED block is
+    # touched without a bump_marker file co-staged. (See claude-md-managed.sh
+    # legacy hook for the original logic.)
+    ms = rule.get("managed_section")
+    if isinstance(ms, dict):
+        # Only fires if THIS path is staged; check via subprocess.
+        try:
+            staged_diff = subprocess.run(
+                ["git", "diff", "--cached", "--", path],
+                capture_output=True, check=False, text=True,
+            )
+        except Exception:
+            staged_diff = None
+        if staged_diff and staged_diff.returncode == 0 and staged_diff.stdout:
+            open_mark = ms.get("open") or ""
+            close_mark = ms.get("close") or ""
+            bump_marker = ms.get("bump_marker")
+            on_edit = (ms.get("on_edit") or "warn").lower()
+            # Walk the diff hunks; count +/- lines INSIDE the managed block.
+            in_managed = False
+            changes = 0
+            for ln in staged_diff.stdout.splitlines():
+                if ln.startswith("@@"):
+                    in_managed = False
+                    continue
+                if open_mark and open_mark in ln:
+                    in_managed = True
+                    continue
+                if close_mark and close_mark in ln:
+                    in_managed = False
+                    continue
+                if in_managed and ln and ln[0] in "+-" and (len(ln) == 1 or ln[1] not in "+-"):
+                    changes += 1
+            if changes > 0:
+                # Was bump_marker also staged? Allow silently.
+                if bump_marker and bump_marker in staged_lines:
+                    pass
+                else:
+                    sys.stderr.write(
+                        f"\n  ⚠  SDD warning — you're editing {path}'s MANAGED section\n"
+                        f"\n  Edits inside {open_mark!r} / {close_mark!r} will be overwritten\n"
+                        f"  next time the framework updates. To signal deliberate customisation:\n"
+                        f"    1. bump {bump_marker}\n"
+                        f"    2. stage it alongside this commit\n"
+                        f"\n  Commit proceeding — this is a warning, not a block ({on_edit}).\n\n"
+                    )
 
     # append_only handler.
     if rule.get("append_only"):

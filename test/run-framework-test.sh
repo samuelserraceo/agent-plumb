@@ -3397,6 +3397,111 @@ else
 fi
 
 # ============================================================
+# T90 — F1 file_rules: pre-commit-rules.sh blocks at size_block independently
+#   Mutation: neuter pre-commit-size-cap.sh; assert pre-commit-rules.sh
+#   blocks a commit when patterns.md crosses the configured size_block
+#   threshold. Subsumes pre-commit-size-cap.sh's hard-cap behaviour.
+# ============================================================
+note "T90: pre-commit-rules.sh blocks at size_block (file_rules) independently"
+d=$(mkproj_v08)
+cd "$d"
+git init -q
+git config user.email t@t.com && git config user.name T
+# Neuter the legacy hook.
+echo '#!/usr/bin/env bash
+exit 0' > .claude/hooks/pre-commit-size-cap.sh
+chmod +x .claude/hooks/pre-commit-size-cap.sh
+# Create patterns.md at 450 lines (crosses size_block: 400).
+python3 -c "open('.sdd/patterns.md', 'w').write('# patterns\n' + ('line\n' * 449))"
+git add .sdd/patterns.md
+hook_stdin='{"tool_input":{"command":"git commit -m chore: bloat patterns"}}'
+ec=0
+echo "$hook_stdin" | bash .claude/hooks/pre-commit-rules.sh >/dev/null 2>&1 || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 2 ]; then
+  ok "T90 pre-commit-rules.sh blocked at size_block (legacy hook neutered)"
+else
+  bad "T90 rules.sh let oversized file through" "exit=$ec (expected 2)"
+fi
+
+# ============================================================
+# T90b — F1 file_rules size mutation: warn-only at size_warn (no block)
+#   Inverse: at 250 lines (crosses size_warn: 200 but NOT size_block: 400),
+#   pre-commit-rules.sh must ALLOW the commit (just write a warning to
+#   stderr). Proves the soft/hard split is real.
+# ============================================================
+note "T90b: pre-commit-rules.sh warns but does NOT block at size_warn"
+d=$(mkproj_v08)
+cd "$d"
+git init -q
+git config user.email t@t.com && git config user.name T
+echo '#!/usr/bin/env bash
+exit 0' > .claude/hooks/pre-commit-size-cap.sh
+chmod +x .claude/hooks/pre-commit-size-cap.sh
+python3 -c "open('.sdd/patterns.md', 'w').write('# patterns\n' + ('line\n' * 249))"
+git add .sdd/patterns.md
+hook_stdin='{"tool_input":{"command":"git commit -m chore: warn-only growth"}}'
+ec=0
+err=$(echo "$hook_stdin" | bash .claude/hooks/pre-commit-rules.sh 2>&1 1>/dev/null) || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 0 ] && echo "$err" | grep -qiE 'warn|size'; then
+  ok "T90b pre-commit-rules.sh warned (allowed) at size_warn"
+else
+  bad "T90b rules.sh did not warn-and-allow at size_warn" "exit=$ec; err=$err"
+fi
+
+# ============================================================
+# T91 — F1 file_rules: managed_section warns when CLAUDE.md MANAGED edited
+#   The managed_section handler is a WARN (not block) — touches inside
+#   SDD-MANAGED-START/END markers are flagged unless bump_marker
+#   (.sdd/CLAUDE.version) is co-staged. This test asserts the warning
+#   fires; commit still proceeds (exit 0).
+# ============================================================
+note "T91: pre-commit-rules.sh warns on CLAUDE.md MANAGED edits without version bump"
+d=$(mkproj_v08)
+cd "$d"
+git init -q
+git config user.email t@t.com && git config user.name T
+# Neuter legacy claude-md-managed hook.
+echo '#!/usr/bin/env bash
+exit 0' > .claude/hooks/pre-commit-claude-md-managed.sh
+chmod +x .claude/hooks/pre-commit-claude-md-managed.sh
+# Set up CLAUDE.md with managed markers + version file.
+cat > CLAUDE.md <<'EOF'
+# CLAUDE.md
+prose
+<!-- SDD-MANAGED-START version: 0.8.0 -->
+managed body line 1
+<!-- SDD-MANAGED-END -->
+EOF
+echo "0.8.0" > .sdd/CLAUDE.version
+git add CLAUDE.md .sdd/CLAUDE.version
+git commit -q -m scaffold
+
+# Edit inside the managed block WITHOUT bumping CLAUDE.version.
+cat > CLAUDE.md <<'EOF'
+# CLAUDE.md
+prose
+<!-- SDD-MANAGED-START version: 0.8.0 -->
+managed body line 1
+ADDED LINE INSIDE MANAGED
+<!-- SDD-MANAGED-END -->
+EOF
+git add CLAUDE.md
+hook_stdin='{"tool_input":{"command":"git commit -m chore: edit CLAUDE.md"}}'
+ec=0
+err=$(echo "$hook_stdin" | bash .claude/hooks/pre-commit-rules.sh 2>&1 1>/dev/null) || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 0 ] && echo "$err" | grep -qiE 'MANAGED|managed_section|warning'; then
+  ok "T91 pre-commit-rules.sh warned on MANAGED edit without version bump (allowed)"
+else
+  bad "T91 managed_section warn missing" "exit=$ec; err=$err"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
