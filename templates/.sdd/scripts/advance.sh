@@ -26,13 +26,18 @@
 #   0 — INDEX.md updated (or no-op if no active work item)
 #   1 — error (file not found, malformed, no next action found)
 #
-# Idempotency guard: if HEAD's INDEX.md `**Active blocker:**` line is
-# identical to the working-tree's, no commit has bumped INDEX.md since
-# the last advance — skip with a message rather than re-advancing past
-# the action that should come next. The check uses `git show HEAD:` so
-# uncommitted dirty edits to INDEX.md don't disguise a missing commit
-# as "progress made." If HEAD has no INDEX.md (first run on a fresh
-# repo), the guard is a no-op.
+# Idempotency caveat (KNOWN, NOT YET FIXED — deferred to v0.10):
+# Running advance.sh twice without an intervening commit re-reads the
+# already-advanced INDEX.md and re-advances, skipping an action.
+#
+# Earlier C-10 attempts at "compare HEAD's `**Active blocker:**` line
+# to working-tree's" produced a false-positive after every normal step
+# commit (HEAD == working tree post-commit by definition), blocking
+# all legitimate advances. That approach is rejected. The proper fix
+# requires tracking "last advance happened at commit X" via a stamp
+# in INDEX.md and refusing to advance when working-tree stamp ==
+# HEAD stamp without an intervening commit. That's v0.10 state-
+# tracking work — not band-aided here.
 
 set -uo pipefail
 
@@ -48,19 +53,6 @@ command -v python3 >/dev/null 2>&1 || {
   echo "[advance] python3 required but not on PATH" >&2
   exit 1
 }
-
-# Idempotency guard: skip if HEAD's INDEX.md `**Active blocker:**` line
-# matches the working tree's — no commit has bumped it since the last
-# advance, so re-running would skip past the next action.
-if git rev-parse --git-dir >/dev/null 2>&1; then
-  head_blocker=$(git show "HEAD:.sdd/INDEX.md" 2>/dev/null \
-    | grep -m1 -E '^\*\*Active blocker:\*\*' || true)
-  wt_blocker=$(grep -m1 -E '^\*\*Active blocker:\*\*' .sdd/INDEX.md || true)
-  if [ -n "$head_blocker" ] && [ "$head_blocker" = "$wt_blocker" ]; then
-    echo "[advance] INDEX.md unchanged since last advance — idempotency skip."
-    exit 0
-  fi
-fi
 
 PROJ="$PROJECT_DIR" python3 <<'PYEOF'
 import os, re, sys, yaml

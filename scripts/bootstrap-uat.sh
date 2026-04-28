@@ -33,16 +33,45 @@ fi
 TARGET="${1:-/tmp/sdd-uat-$(date +%s)}"
 
 # Create and enter target directory
+#
+# Safety: if TARGET already exists, refuse to clean unless we left a
+# sentinel (.sdd-uat-bootstrap) from a previous run OR the user opts
+# in via SDD_FORCE_CLEAN=1. Without this guard, a mistyped TARGET
+# (e.g., the user's actual repo path) would lose .git, .sdd,
+# .claude, CLAUDE.md before this script even checks. See CodeRabbit
+# PR #29 review for the original report.
 if [ -d "$TARGET" ]; then
-  echo "Target directory exists: $TARGET"
-  echo "Cleaning and re-initializing..."
-  rm -rf "$TARGET/.git" "$TARGET/.sdd" "$TARGET/.claude" "$TARGET/CLAUDE.md"
+  if [ -f "$TARGET/.sdd-uat-bootstrap" ] || [ "${SDD_FORCE_CLEAN:-0}" = "1" ]; then
+    echo "Target directory exists (bootstrap sentinel present, or SDD_FORCE_CLEAN=1)."
+    echo "Cleaning and re-initializing..."
+    rm -rf "$TARGET/.git" "$TARGET/.sdd" "$TARGET/.claude" "$TARGET/CLAUDE.md"
+  else
+    {
+      echo "ERROR: Target directory exists but carries no .sdd-uat-bootstrap"
+      echo "       sentinel from a prior bootstrap run:"
+      echo "       $TARGET"
+      echo ""
+      echo "Refusing to delete .git, .sdd, .claude, CLAUDE.md from a directory"
+      echo "this script didn't create. If it IS a discardable UAT scratch dir,"
+      echo "either:"
+      echo "  - opt in via env:  SDD_FORCE_CLEAN=1 bootstrap-uat.sh '$TARGET'"
+      echo "  - or pick a fresh path (the default /tmp/sdd-uat-<timestamp>"
+      echo "    is always safe)."
+    } >&2
+    exit 1
+  fi
 else
   mkdir -p "$TARGET"
   echo "Created: $TARGET"
 fi
 
 cd "$TARGET" || { echo "ERROR: failed to cd into $TARGET" >&2; exit 1; }
+
+# Drop a sentinel so future bootstrap-uat.sh invocations on this same
+# TARGET know it's a discardable UAT scratch dir (the existence-check
+# at the top of this script reads it). Created BEFORE git init so
+# even if git init fails, the marker is in place.
+touch .sdd-uat-bootstrap
 
 # Initialize git repo
 if [ ! -d .git ]; then
