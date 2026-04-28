@@ -78,7 +78,9 @@ mkproj_v08() {
   mkdir -p "$d/.sdd/playbooks" "$d/.sdd/actions" "$d/.sdd/scripts" \
            "$d/.sdd/.cache" "$d/.sdd/features/001-test"
   cp "$FRAMEWORK_ROOT/templates/.sdd/config.md"          "$d/.sdd/config.md"
-  cp "$FRAMEWORK_ROOT/templates/.sdd/playbooks/feature.md" "$d/.sdd/playbooks/feature.md"
+  # Copy ALL playbooks (v0.11: feature + project; future: bug, idea, etc.)
+  # so the manifest hash-pin is satisfied. Glob mirrors the actions copy below.
+  cp "$FRAMEWORK_ROOT"/templates/.sdd/playbooks/*.md "$d/.sdd/playbooks/"
   # Copy ALL actions from the framework so manifest hash-pin is satisfied.
   # (Theme 3 extracted 20 more, bringing total to 23.)
   cp "$FRAMEWORK_ROOT"/templates/.sdd/actions/*.md "$d/.sdd/actions/"

@@ -5,6 +5,11 @@
       "expected_sha256": "22be2621f79a0537dd4835d9008b04087c25ae86b52b3986d8cc3fd6b666e66f",
       "path": ".sdd/playbooks/feature.md",
       "trust": "framework"
+    },
+    "project": {
+      "expected_sha256": "4c6ce120e9000dfe522a38626398cc612fcc330ee05b8a8cdd448eed3b69f29a",
+      "path": ".sdd/playbooks/project.md",
+      "trust": "framework"
     }
   },
   "scripts": {
@@ -59,7 +64,7 @@
       "trust": "framework"
     }
   },
-  "sdd_version": "0.10.1",
+  "sdd_version": "0.11.0",
   "actions": {
     "acceptance-criteria": {
       "expected_sha256": "fec1a8ff749a42f99b37cf19d04e9b2ffe3ee21b0c43bd0bf15a524a447c04b6",
@@ -169,6 +174,41 @@
     "learn": {
       "path": ".sdd/actions/learn.md",
       "expected_sha256": "5018602e347bfe650c8970b1f100a20baab376cd96b2cd7e680c1845a8572e9a"
+    },
+    "project-problem": {
+      "expected_sha256": "2000da0943888285e3581de5a45b294d9dc43d93582d3560105bbcb03dc66e3c",
+      "path": ".sdd/actions/project-problem.md",
+      "trust": "framework"
+    },
+    "project-success": {
+      "expected_sha256": "e0eb536dd557ea6496b85b4f1a3e291eaee6781c72250a4f11a9b05ea410389f",
+      "path": ".sdd/actions/project-success.md",
+      "trust": "framework"
+    },
+    "project-stakeholders": {
+      "expected_sha256": "93d813334e7007763c7c06d602669054a0bfee9d4fea08bba423c70b5cca159d",
+      "path": ".sdd/actions/project-stakeholders.md",
+      "trust": "framework"
+    },
+    "project-capabilities": {
+      "expected_sha256": "f9d31c8025a99beacd6e8d8ff44fc61b04857f497fc886fd4a39ca73be8aa6b5",
+      "path": ".sdd/actions/project-capabilities.md",
+      "trust": "framework"
+    },
+    "project-priorities": {
+      "expected_sha256": "27c16201141e1306ff72051f5c389edf1eec142fa093f596b75a6f28b3a94352",
+      "path": ".sdd/actions/project-priorities.md",
+      "trust": "framework"
+    },
+    "project-queue-features": {
+      "expected_sha256": "15a151b8d255991736f0c6998e2fe081cd19f6c9f6a43a7e095c0cd3e2de248e",
+      "path": ".sdd/actions/project-queue-features.md",
+      "trust": "framework"
+    },
+    "project-start-first": {
+      "expected_sha256": "5a0873b63b426bdb538c39bcb7219232d5f6d0d9caa8f33b13785d34e11ec4ac",
+      "path": ".sdd/actions/project-start-first.md",
+      "trust": "framework"
     }
   }
 }
