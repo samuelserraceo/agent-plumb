@@ -4,7 +4,8 @@
 # Usage:
 #   bootstrap-uat.sh [target-dir]
 #
-#   target-dir — optional, defaults to /tmp/sdd-uat-<timestamp>
+#   target-dir — optional; defaults to a fresh `mktemp -d` path
+#                (`sdd-uat-XXXXXXXX` under the system temp dir)
 #
 # What it does:
 #   1. Creates target directory
@@ -29,8 +30,25 @@ if [ ! -d "$PROJECT_ROOT/templates/.sdd" ]; then
   exit 1
 fi
 
-# Target directory: arg 1, or default to /tmp/sdd-uat-<timestamp>
-TARGET="${1:-/tmp/sdd-uat-$(date +%s)}"
+# Target directory: arg 1, or a collision-safe mktemp default.
+# Earlier default `/tmp/sdd-uat-$(date +%s)` collided when two
+# bootstrap runs landed in the same second (rare but real on fast
+# CI). mktemp -d guarantees a fresh path; the existing-dir branch
+# below still handles user-supplied $1.
+if [ -n "${1:-}" ]; then
+  TARGET="$1"
+else
+  # Portable mktemp -d form (template as positional arg works on both
+  # macOS and GNU mktemp; -t flag has divergent semantics between the
+  # two so it's avoided).
+  TARGET=$(mktemp -d "${TMPDIR:-/tmp}/sdd-uat-XXXXXXXXXX") || {
+    echo "ERROR: mktemp -d failed — cannot create UAT scratch dir." >&2
+    exit 1
+  }
+  # mktemp -d already created TARGET, so the `mkdir -p` branch below
+  # would be wrong; jump past the existence check by pre-flagging.
+  MKTEMP_CREATED=1
+fi
 
 # Create and enter target directory
 #
@@ -40,11 +58,19 @@ TARGET="${1:-/tmp/sdd-uat-$(date +%s)}"
 # (e.g., the user's actual repo path) would lose .git, .sdd,
 # .claude, CLAUDE.md before this script even checks. See CodeRabbit
 # PR #29 review for the original report.
-if [ -d "$TARGET" ]; then
+if [ "${MKTEMP_CREATED:-0}" = "1" ]; then
+  # We just created TARGET with mktemp -d — it's empty and ours.
+  # Skip the sentinel/SDD_FORCE_CLEAN guard (no prior content to
+  # protect) and fall through to the framework copy.
+  :
+elif [ -d "$TARGET" ]; then
   if [ -f "$TARGET/.sdd-uat-bootstrap" ] || [ "${SDD_FORCE_CLEAN:-0}" = "1" ]; then
     echo "Target directory exists (bootstrap sentinel present, or SDD_FORCE_CLEAN=1)."
     echo "Cleaning and re-initializing..."
-    rm -rf "$TARGET/.git" "$TARGET/.sdd" "$TARGET/.claude" "$TARGET/CLAUDE.md"
+    rm -rf "$TARGET/.git" "$TARGET/.sdd" "$TARGET/.claude" "$TARGET/CLAUDE.md" || {
+      echo "ERROR: failed to clean $TARGET — aborting before scaffold." >&2
+      exit 1
+    }
   else
     {
       echo "ERROR: Target directory exists but carries no .sdd-uat-bootstrap"
@@ -55,8 +81,8 @@ if [ -d "$TARGET" ]; then
       echo "this script didn't create. If it IS a discardable UAT scratch dir,"
       echo "either:"
       echo "  - opt in via env:  SDD_FORCE_CLEAN=1 bootstrap-uat.sh '$TARGET'"
-      echo "  - or pick a fresh path (the default /tmp/sdd-uat-<timestamp>"
-      echo "    is always safe)."
+      echo "  - or run with no arg (uses a fresh mktemp dir,"
+      echo "    always safe)."
     } >&2
     exit 1
   fi
