@@ -2701,6 +2701,27 @@ else
 fi
 
 # ============================================================
+# T76 — F5 user-facing: /status surfaces resolved parameters with provenance
+#   /status (the slash command body) must show the active step's resolved
+#   F5 cascade. /status reads next-action.sh's JSON, walks the
+#   `parameters` object, and prints each leaf with its source bracketed
+#   ("budget.max_minutes = 30 [action:proposed-approach]"). Pre-Phase-C
+#   /status only printed INDEX.md + open blockers.
+#   RED if /status.md drops parameters / cascade / next-action.sh refs.
+# ============================================================
+note "T76: /status.md surfaces F5 resolved parameters with provenance"
+STATUS_MD="$FRAMEWORK_ROOT/templates/.claude/commands/status.md"
+miss=""
+for needle in 'next-action.sh' 'parameters' '_provenance' 'cascade' 'F5'; do
+  grep -q "$needle" "$STATUS_MD" || miss="$miss $needle"
+done
+if [ -z "$miss" ]; then
+  ok "T76 /status.md teaches F5 cascade output (parameters + provenance + next-action.sh)"
+else
+  bad "T76 /status.md missing F5 references:" "missing:$miss"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
