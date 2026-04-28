@@ -69,40 +69,22 @@ VERIFY_STAGE=$(locate_verify_stage) || {
   exit 0
 }
 
-# === VERIFY-STAGE TRUST GUARD ===
-# The moat re-runs verify-stage.sh on the staged spec to compare claimed
-# vs. fresh verification. If the verifier itself can be replaced or
-# modified in the same commit window, an adversary can ship a shim that
-# emits whatever the fabricated verification.json claims, defeating the
-# moat's central guarantee. Two layers of defense:
+# === VERIFY-STAGE TRUST GUARD (slimmed in C-6) ===
+# The moat re-runs verify-stage.sh on the staged spec. If the verifier
+# itself can be replaced, an adversary ships a shim that emits whatever
+# the fabricated verification.json claims.
+#
+# Two layers of defense, post-Phase-C-6:
 #
 #   1. Co-stage block: verify-stage.sh and verification.json cannot be in
-#      the same commit. Forces any verifier change to be its own commit.
+#      the same commit. **Now subsumed by F1 generic enforcer's CLAIM ×
+#      POLICY rule** (config.md `file_classes:` + `co_stage_block:`).
+#      pre-commit-rules.sh blocks the same scenario; the per-file
+#      block previously here is removed.
 #   2. Hash pin: the verifier's content hash is embedded below. Hook
 #      refuses to run if the on-disk verifier doesn't match. Legitimate
-#      updates must also update VERIFY_STAGE_EXPECTED_HASH.
-#
-# Multi-commit attacks (commit N replaces verifier, commit N+1 stages
-# verification.json against the shim) are still possible — the agent
-# would need TWO commits, the verifier-change commit is auditable in
-# git log, and the hash pin makes legitimate vs. malicious verifier
-# changes equally visible. Phase B may add a non-staged canonical copy.
-
-# Co-stage block: refuse if verify-stage.sh AND verification.json are
-# both in the staged set.
-if printf '%s\n' "$staged_files" | grep -Eq '(^|/)\.sdd/scripts/verify-stage\.sh$'; then
-  cat >&2 <<EOF
-[moat] verify-stage.sh and verification.json cannot be staged in the same
-commit. The verifier is the moat's referee — staging it alongside the
-verification it produces breaks the trust assumption. Split the commits:
-
-  1. Commit verify-stage.sh changes alone (with an updated expected hash
-     in pre-commit-stage-verified.sh).
-  2. Then re-run verify-stage and stage spec.md + verification.json
-     separately.
-EOF
-  exit 2
-fi
+#      updates must also update VERIFY_STAGE_EXPECTED_HASH. Stays in the
+#      moat — it's the trust anchor for the verifier itself.
 
 # Hash pin: refuse if the verifier on disk doesn't match the expected hash.
 VERIFY_STAGE_EXPECTED_HASH="ff4b4d0480be3575970d1d7523cfcf6d3737cbbb7cc6080ef7bda7b243c27813"
@@ -142,26 +124,13 @@ EOF
   exit 2
 fi
 
-# === HOOK SELF-TAMPERING GUARD ===
-# An adversary could stage a no-op replacement of THIS hook alongside a
-# fabricated verification.json. The (modified) hook fires, allows. Block
-# co-staging of pre-commit-stage-verified.sh + verification.json. This is
-# a partial defense — the agent could also modify the hook in a separate
-# commit, then commit fabrications later. Phase B's `core.hooksPath`
-# proposal (move hooks out of the working tree) is the structural fix.
-if printf '%s\n' "$staged_files" | grep -Eq '(^|/)\.claude/hooks/pre-commit-stage-verified\.sh$'; then
-  cat >&2 <<EOF
-[moat] pre-commit-stage-verified.sh and verification.json cannot be
-staged in the same commit. The hook is the moat itself; staging a
-modification of it alongside the verification it gates breaks the
-trust assumption. Split the commits:
-
-  1. Commit hook changes alone.
-  2. Then re-run verify-stage and stage spec.md + verification.json
-     separately.
-EOF
-  exit 2
-fi
+# === HOOK SELF-TAMPERING GUARD (slimmed in C-6 — subsumed by F1) ===
+# Previous version had a per-file block here refusing co-stage of
+# pre-commit-stage-verified.sh + verification.json. **Now subsumed by F1
+# generic enforcer's CLAIM × POLICY rule** (the hook lives at
+# .claude/hooks/[^/]+\.sh which is in POLICY; verification.json is CLAIM).
+# pre-commit-rules.sh blocks the same scenario. The per-file block is
+# removed; the F1 rule is the single source.
 
 # === MANIFEST HASH-PIN CHECK ===
 # When verification.json is staged, every framework file claimed by

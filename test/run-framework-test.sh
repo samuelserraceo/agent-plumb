@@ -765,43 +765,13 @@ else
 fi
 
 # ============================================================
-# T20 — Moat refuses to co-stage verify-stage.sh and verification.json
-#   RED: hook only checks JSON content, not which files are staged. An
-#        adversary stages BOTH a verify-stage shim and a fabricated
-#        verification.json in one commit; the hook runs the shim,
-#        verification matches, commit allowed. The co-stage block
-#        forces verify-stage changes into their own auditable commit.
+# T20 — RETIRED in C-6 (slim the moat). The verify-stage co-stage block
+#   is now subsumed by F1's CLAIM × POLICY rule (config.md
+#   `file_classes:` + `co_stage_block:`); pre-commit-rules.sh blocks
+#   the same scenario. T31 (cofile-block refuses verify-stage.sh +
+#   verification.json same commit) is the canonical test. Anti-regression
+#   for the moat's slimming lives in T100.
 # ============================================================
-note "T20: moat refuses co-stage of verify-stage.sh + verification.json"
-d=$(mkproj)
-cd "$d"
-echo '**Active:** features/001-test' > .sdd/INDEX.md
-cat > .sdd/features/001-test/spec.md <<'SPEC'
-[PHASE: BUILD]
-
-## PHASE: BUILD
-
-### Exit checks
-- [ ] C1: trivially true — true
-SPEC
-# A "harmless" edit to verify-stage.sh: just bump a comment. Even harmless
-# co-staging is refused because allowing it opens the door to malicious shims.
-echo "# touched-for-test" >> .sdd/scripts/verify-stage.sh
-bash .sdd/scripts/verify-stage.sh .sdd/features/001-test/spec.md BUILD >/dev/null 2>&1 || true
-git add -A
-out=$(echo '{"tool_input":{"command":"git commit -m \"[SDD:001] phase: BUILD->SHIP\""}}' \
-        | CLAUDE_PROJECT_DIR="$d" bash "$MOAT_HOOK" 2>&1) || true
-e=$(echo '{"tool_input":{"command":"git commit -m \"[SDD:001] phase: BUILD->SHIP\""}}' \
-      | CLAUDE_PROJECT_DIR="$d" bash "$MOAT_HOOK" >/dev/null 2>&1; echo $?)
-cd - >/dev/null
-rm -rf "$d"
-co_block_seen=0
-echo "$out" | grep -q 'cannot be staged in the same' && co_block_seen=1
-if [ "$e" -eq 2 ] && [ "$co_block_seen" -eq 1 ]; then
-  ok "T20 co-stage of verify-stage.sh + verification.json blocked"
-else
-  bad "T20 co-stage allowed" "exit=$e, co_block_seen=$co_block_seen, output: $out"
-fi
 
 # ============================================================
 # T21 — pre-commit-block reads INDEX.md and spec.md from STAGED blobs
@@ -838,45 +808,13 @@ else
 fi
 
 # ============================================================
-# T22 — moat blocks co-stage of pre-commit-stage-verified.sh + verification.json
-#   RED: hook only blocks co-stage of verify-stage.sh; agent stages a
-#        no-op replacement of the moat hook itself + fabrication.
+# T22 — RETIRED in C-6 (slim the moat). The hook self-tampering
+#   co-stage block is now subsumed by F1's CLAIM × POLICY rule.
+#   T32 (cofile-block refuses pre-commit-stage-verified.sh +
+#   verification.json same commit) is the canonical test. T100
+#   covers the anti-regression that the moat no longer redundantly
+#   enforces this.
 # ============================================================
-note "T22: moat blocks co-stage of itself + verification.json"
-d=$(mkproj)
-cd "$d"
-mkdir -p .claude/hooks
-# Set up: scaffold commit has the hook in HEAD, then we modify it and stage
-# alongside a verification.json. Both must be in the staged set.
-cp "$MOAT_HOOK" .claude/hooks/pre-commit-stage-verified.sh
-chmod +x .claude/hooks/pre-commit-stage-verified.sh
-echo '**Active:** features/001-test' > .sdd/INDEX.md
-cat > .sdd/features/001-test/spec.md <<'SPEC'
-[PHASE: BUILD]
-
-## PHASE: BUILD
-
-### Exit checks
-- [ ] C1: trivially true — true
-SPEC
-git add -A && git commit -q -m "scaffold"
-# Now modify the hook AND create a fresh verification.json (both staged)
-echo "# touched-for-test" >> .claude/hooks/pre-commit-stage-verified.sh
-bash "$VERIFY_STAGE" .sdd/features/001-test/spec.md BUILD >/dev/null 2>&1 || true
-git add -A
-out=$(echo '{"tool_input":{"command":"git commit -m \"[SDD:001] phase: BUILD->SHIP\""}}' \
-        | CLAUDE_PROJECT_DIR="$d" bash "$MOAT_HOOK" 2>&1) || true
-e=$(echo '{"tool_input":{"command":"git commit -m \"[SDD:001] phase: BUILD->SHIP\""}}' \
-      | CLAUDE_PROJECT_DIR="$d" bash "$MOAT_HOOK" >/dev/null 2>&1; echo $?)
-cd - >/dev/null
-rm -rf "$d"
-hook_co_block_seen=0
-echo "$out" | grep -q 'pre-commit-stage-verified.sh and verification.json' && hook_co_block_seen=1
-if [ "$e" -eq 2 ] && [ "$hook_co_block_seen" -eq 1 ]; then
-  ok "T22 hook co-stage with verification.json blocked"
-else
-  bad "T22 hook co-stage allowed" "exit=$e, msg_seen=$hook_co_block_seen, output: $out"
-fi
 
 # ============================================================
 # T23 — pre-commit-block detects NUL via the staged-file path (round 4)
@@ -3871,6 +3809,37 @@ if [ -z "$problems" ]; then
   ok "T99 pre-commit-block.sh retired (file gone + settings clean); subsumed by F1 state_rules"
 else
   bad "T99 retired pre-commit-block.sh re-appeared:" "$problems"
+fi
+
+# ============================================================
+# T100 — Slim moat anti-regression: per-file co-stage blocks moved out
+#   C-6 (1/N) deleted moat blocks 1+2 (verify-stage co-stage, hook
+#   self-tampering co-stage) because F1's CLAIM × POLICY rule already
+#   subsumes them. T100 catches anyone re-adding those per-file blocks
+#   to the moat hook (which would create double-enforcement / drift).
+#   The CONTRACT (no co-staging of these pairs) is preserved by T31 +
+#   T32; this test only checks the moat doesn't redundantly enforce.
+# ============================================================
+note "T100: moat hook no longer per-file blocks verify-stage / itself co-stage (F1 owns it)"
+moat="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-stage-verified.sh"
+problems=""
+# Anti-pattern: explicit per-file regex for verify-stage in the moat.
+if grep -E 'grep -Eq.*verify-stage\\\.sh' "$moat" >/dev/null 2>&1; then
+  problems="$problems verify-stage-regex"
+fi
+# Anti-pattern: explicit per-file regex for the moat hook itself.
+if grep -E 'grep -Eq.*pre-commit-stage-verified\\\.sh' "$moat" >/dev/null 2>&1; then
+  problems="$problems hook-self-regex"
+fi
+# Positive: moat must MENTION the slim — comment block referring to
+# F1 / CLAIM × POLICY so future readers know where the protection went.
+if ! grep -q "subsumed by F1" "$moat"; then
+  problems="$problems missing-slim-comment"
+fi
+if [ -z "$problems" ]; then
+  ok "T100 moat slim landed (per-file co-stage blocks gone; F1 reference present)"
+else
+  bad "T100 moat slim incomplete:" "$problems"
 fi
 
 # ============================================================
