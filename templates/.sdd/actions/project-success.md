@@ -49,10 +49,10 @@ Pick one or two — not five. Less is more.
 
 Every project has a force-function. What is it for this one?
 
-Examples (prefer absolute dates over relative time so the spec doesn't decay as it ages):
+Examples (use absolute YYYY-MM-DD dates — relative phrases like "end of Q2" or "mid-March" age poorly as the spec is re-read months later):
 - *"Demo to investors by 2026-06-15"*
-- *"Beta launch by end of Q2"*
-- *"Replace the existing tool by mid-March because the contract expires"*
+- *"Beta launch by 2026-06-30"*
+- *"Replace the existing tool by 2026-03-15 because the contract expires"*
 - *"No fixed deadline — but I want to ship one S-sized capability first to validate"*
 
 If there's no deadline, set a "first-capability" target using framework-native sizing (one S-sized capability shipped first beats a perfect plan that ships nothing). Per CLAUDE.md doctrine rule 6, the framework sizes work in S/M/L and atomic-step counts, not in clock time.
