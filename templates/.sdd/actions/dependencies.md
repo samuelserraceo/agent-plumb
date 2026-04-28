@@ -17,7 +17,7 @@ budget:
 requires_user_approval: false
 ---
 
-**Skippable** if the feature uses no paid or external services. Proactively offer: *"§8 Dependencies covers external services (paid APIs, third-party tools). This feature [does/doesn't] seem to use any. Skip? Reply `/skip no external dependencies` or tell me what services you're using."*
+**Skippable** if the feature uses no paid or external services. Proactively offer: *"§8 Dependencies covers external services (paid APIs, third-party tools). This feature [does/doesn't] seem to use any. Skip? Reply `skip no external dependencies` (handled inline by `/next`) or tell me what services you're using."*
 
 **If continuing:** for each external service (`proposed-approach` usually names them — Resend, Stripe, OpenAI, Cloudflare, etc.), produce one sub-section:
 

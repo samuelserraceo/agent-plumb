@@ -17,7 +17,7 @@ budget:
 requires_user_approval: false
 ---
 
-**Skippable** for non-UI features OR if `ux-brief` (§4) was skipped. Proactively offer: *"Wireframe is for UI-facing features. This one [is/isn't]. Skip? Reply `/skip non-UI feature`."*
+**Skippable** for non-UI features OR if `ux-brief` (§4) was skipped. Proactively offer: *"Wireframe is for UI-facing features. This one [is/isn't]. Skip? Reply `skip non-UI feature` (handled inline by `/next`)."*
 
 **If continuing:** build ONE static HTML file at `.sdd/features/<id>/wireframe.html`. Tailwind CDN in `<head>` — no build step, viewable in any browser via `open <path>`.
 
