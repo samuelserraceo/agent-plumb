@@ -87,7 +87,7 @@ VERIFY_STAGE=$(locate_verify_stage) || {
 #      moat — it's the trust anchor for the verifier itself.
 
 # Hash pin: refuse if the verifier on disk doesn't match the expected hash.
-VERIFY_STAGE_EXPECTED_HASH="ff4b4d0480be3575970d1d7523cfcf6d3737cbbb7cc6080ef7bda7b243c27813"
+VERIFY_STAGE_EXPECTED_HASH="61d135116211e4f9c7f9979d8557426400360d5794793fd34fd9cae972574fba"
 # Compute hash. Try shasum (macOS default), sha256sum (most Linux), then
 # python3 hashlib as a guaranteed fallback (python3 is already required for
 # JSON parsing below — if it's missing the hook can't function anyway).

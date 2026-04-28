@@ -86,6 +86,24 @@ trap 'rm -f "$section_file" "$results_file"' EXIT
 if [ -n "$checks" ]; then
   while IFS=$'\t' read -r id cmd; do
     [ -z "$id" ] && continue
+
+    # SECURITY (CodeRabbit cycle 9): the `cmd` strings come from
+    # spec.md's `### Exit checks` block, and spec.md is project data
+    # — NOT hash-pinned by the manifest. An adversarial spec.md could
+    # otherwise inject arbitrary bash commands here. Reject obvious
+    # shell metacharacters that allow command chaining, substitution,
+    # or process substitution. `$VAR` and `${VAR}` expansion remain
+    # allowed (legitimate use for `$SECTION_FILE` etc.). `<`/`>` are
+    # allowed standalone since they appear inside grep regex patterns
+    # (e.g., `grep -E '<[a-z]+>'`).
+    case "$cmd" in
+      *$'\n'*|*\`*|*\;*|*\|*|*\&*|*'$('*|*'<('*|*'>('*)
+        printf '[verify-stage] check %s refused: command contains unsafe shell metacharacter.\n' "$id" >&2
+        printf '[verify-stage] command was: %s\n' "$cmd" >&2
+        exit 2
+        ;;
+    esac
+
     if SECTION_FILE="$section_file" bash -c "$cmd" >/dev/null 2>&1; then
       result="pass"
     else
