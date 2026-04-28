@@ -5,7 +5,7 @@ tag: AGENT-LED
 title: "mark-shipped"
 short_label: "Shipped"
 steps:
-  - { id: mark, action: write_shipped_marker_update_INDEX_shipped_block, field: ".shipped" }
+  - { id: mark, action: write_shipped_marker_update_INDEX_shipped_block, field: ".shipped", triggers: [ship_complete] }
 used_by: [feature]
 references: [push-pr, verify-ci-green]
 touches: [.sdd/INDEX.md]

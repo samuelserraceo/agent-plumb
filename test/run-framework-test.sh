@@ -2954,6 +2954,85 @@ else
 fi
 
 # ============================================================
+# T83 — F2 closure: mark-shipped wires the ship_complete event
+#   The mid-session audit (C4) flagged that config.md declared the
+#   `ship_complete` event but no action's step row triggered it. With
+#   only `section_approved` and `phase_transition` actually wired, the
+#   `ship_complete` event was dead code in the schema.
+#   Post-fix: mark-shipped (the final SHIP action) declares
+#   `triggers: [ship_complete]` on its `mark` step. The events: schema
+#   is now self-consistent — every declared event has at least one
+#   action firing it.
+# ============================================================
+note "T83: mark-shipped triggers ship_complete (closes F2 self-consistency gap)"
+ms_path="$FRAMEWORK_ROOT/templates/.sdd/actions/mark-shipped.md"
+if grep -q 'triggers:[[:space:]]*\[ship_complete\]' "$ms_path"; then
+  ok "T83 mark-shipped step row declares triggers: [ship_complete]"
+else
+  bad "T83 mark-shipped doesn't trigger ship_complete" \
+      "step row in $ms_path missing triggers: [ship_complete]"
+fi
+
+# ============================================================
+# T83b — F2 inverse: every declared event has at least one trigger
+#   Mutation/inverse of T79: T79 catches typos in `triggers:` (wrong
+#   event name). T83b catches the OTHER direction: events declared in
+#   config.md that no action ever fires AND the framework itself doesn't
+#   fire structurally.
+#
+#   FRAMEWORK_FIRED_EVENTS allowlist: events the framework fires
+#   structurally (not via an action's `triggers:` declaration). Only
+#   `phase_transition` qualifies today — advance.sh detects stage-cross
+#   and surfaces the event flow. If a future event is added to this
+#   list, document WHERE it gets fired (script + line range) so the
+#   maintenance trail is clear.
+# ============================================================
+note "T83b: every events: key is fired by an action OR framework allowlist"
+FRAMEWORK_FIRED_EVENTS="phase_transition"  # fired by advance.sh on stage cross
+declared=$(python3 - "$FRAMEWORK_ROOT/templates/.sdd/config.md" <<'PYEOF'
+import re, sys, yaml
+text = open(sys.argv[1]).read()
+m = re.match(r'^---\n(.*?)\n---', text, re.DOTALL)
+fm = yaml.safe_load(m.group(1)) or {} if m else {}
+print("\n".join(sorted((fm.get("events") or {}).keys())))
+PYEOF
+)
+referenced=$(python3 - "$FRAMEWORK_ROOT/templates/.sdd/actions" <<'PYEOF'
+import os, re, sys, yaml
+seen = set()
+for fn in sorted(os.listdir(sys.argv[1])):
+    if not fn.endswith(".md"): continue
+    text = open(os.path.join(sys.argv[1], fn)).read()
+    m = re.match(r'^---\n(.*?)\n---', text, re.DOTALL)
+    if not m: continue
+    fm = yaml.safe_load(m.group(1)) or {}
+    for s in (fm.get("steps") or []):
+        for t in (s.get("triggers") or []):
+            seen.add(t)
+print("\n".join(sorted(seen)))
+PYEOF
+)
+orphans=""
+referenced_flat=$(printf '%s' "$referenced" | tr '\n' ' ')
+allowlist_flat=" $FRAMEWORK_FIRED_EVENTS "
+while IFS= read -r ev; do
+  [ -z "$ev" ] && continue
+  if printf ' %s ' "$referenced_flat" | grep -qF " $ev "; then
+    continue  # action triggers it
+  fi
+  if echo "$allowlist_flat" | grep -qF " $ev "; then
+    continue  # framework fires it structurally
+  fi
+  orphans="$orphans $ev"
+done <<< "$declared"
+if [ -z "$orphans" ]; then
+  decl_count=$(echo "$declared" | grep -c .)
+  ok "T83b all $decl_count declared events fired (action triggers OR framework allowlist)"
+else
+  bad "T83b orphan events with neither action triggers nor framework fire path:" "$orphans"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
