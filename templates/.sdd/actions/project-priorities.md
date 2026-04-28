@@ -1,0 +1,66 @@
+---
+type: action
+slug: project-priorities
+tag: AGENT-LED
+title: "Project priorities"
+short_label: "§5 Priorities"
+steps:
+  - { id: priority-tiers, action: draft_with_alternatives, field: "§5.priorities" }
+  - { id: dependency-graph, action: draft, field: "§5.dependencies" }
+used_by: [project]
+references: [project-capabilities, project-queue-features]
+touches: [".sdd/projects/<work-item>/spec.md"]
+trust: framework
+budget:
+  max_minutes: 20
+  max_tokens: 6000
+  max_commits: 2
+requires_user_approval: true
+---
+
+# §5 — Priorities (in what order, why)
+
+Capabilities aren't equal. Decide which to build first, second, third. Two steps.
+
+## Step 1 — Tier each capability
+
+Three tiers:
+- **P0 — Must ship for the project to make sense.** Without these, the project doesn't deliver on §2 Success. Often 3-5 capabilities.
+- **P1 — Should ship to be competitive.** The project works without them, but feels incomplete. Often 3-6 capabilities.
+- **P2 — Nice to have, can wait.** Real value, but not blocking anything. Often 2-5 capabilities.
+
+The agent drafts a P0/P1/P2 split based on §1 Problem and §2 Success. You override.
+
+**Rule:** P0 should be ≤6 capabilities. If P0 > 6, the project is overscoped — promote some to P1.
+
+## Step 2 — Dependency graph
+
+Some capabilities can't ship until others do. List the chains:
+- *email-signup → profile-setup* (can't profile without an account)
+- *contacts-list → contact-detail* (need a list before a detail page)
+- *contacts-list → bulk-import* (import depends on the contacts model existing)
+
+The agent walks the §4 capabilities and proposes dependencies. You confirm or correct.
+
+This determines build order: a P1 capability that nothing depends on can wait. A P1 that 3 P2s depend on probably needs to ship earlier than its tier suggests.
+
+## Build order (output)
+
+The combination of priority tiers + dependencies gives you a build order — a numbered list that becomes INDEX.md's `## Backlog`. Example:
+
+```
+1. email-signup        [P0, no deps]
+2. profile-setup       [P0, depends on 1]
+3. add-first-contact   [P0, depends on 2]
+4. contacts-list       [P0, depends on 3]
+5. contact-detail      [P1, depends on 4]
+6. bulk-import         [P1, depends on 4]
+7. dashboard           [P0, depends on 4]
+8. team-invites        [P2, depends on 2]
+```
+
+The first capability is what you start working on. The rest sit in INDEX.md backlog and get pulled in as you ship each one.
+
+---
+
+**End the turn with:** `Reply approve when the priority + build order look right.`

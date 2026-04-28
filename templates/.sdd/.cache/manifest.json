@@ -5,6 +5,11 @@
       "expected_sha256": "22be2621f79a0537dd4835d9008b04087c25ae86b52b3986d8cc3fd6b666e66f",
       "path": ".sdd/playbooks/feature.md",
       "trust": "framework"
+    },
+    "project": {
+      "expected_sha256": "dc2cb31cacb08d6960254a1ec04d0b16594ea2c588025ecff236a7383c6934a1",
+      "path": ".sdd/playbooks/project.md",
+      "trust": "framework"
     }
   },
   "scripts": {
@@ -169,6 +174,41 @@
     "learn": {
       "path": ".sdd/actions/learn.md",
       "expected_sha256": "5018602e347bfe650c8970b1f100a20baab376cd96b2cd7e680c1845a8572e9a"
+    },
+    "project-problem": {
+      "expected_sha256": "03da2c2b2630d4d1ddadf751f65bf67263dfb22286a10b05db69c1524277bddd",
+      "path": ".sdd/actions/project-problem.md",
+      "trust": "framework"
+    },
+    "project-success": {
+      "expected_sha256": "e8837a5e6cbdc27a837c16ae900bcedfa8cd6c5270df6cef36277162ed6f9ce2",
+      "path": ".sdd/actions/project-success.md",
+      "trust": "framework"
+    },
+    "project-stakeholders": {
+      "expected_sha256": "73d3479464f664a88d8c51b6c744a715ce596744444086d47028b90c1df0c3d8",
+      "path": ".sdd/actions/project-stakeholders.md",
+      "trust": "framework"
+    },
+    "project-capabilities": {
+      "expected_sha256": "f29e25393ca0810bd21bc9debfa5860177b42049246e557936a17246736ae9f6",
+      "path": ".sdd/actions/project-capabilities.md",
+      "trust": "framework"
+    },
+    "project-priorities": {
+      "expected_sha256": "f75eae6a5ae1179f8186f30a8bc41a408b60fbb12fe5c8bd735f60c2e262a633",
+      "path": ".sdd/actions/project-priorities.md",
+      "trust": "framework"
+    },
+    "project-queue-features": {
+      "expected_sha256": "1200f31e6958971c7dbc3a8e78d381e2abdaf2151ea4a3154e0d7aeae11849c2",
+      "path": ".sdd/actions/project-queue-features.md",
+      "trust": "framework"
+    },
+    "project-start-first": {
+      "expected_sha256": "e9f1a751b84dd0c5b13245fde922298a83c007f297a5add9043936ee888bbffd",
+      "path": ".sdd/actions/project-start-first.md",
+      "trust": "framework"
     }
   }
 }
