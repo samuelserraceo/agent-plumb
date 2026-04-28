@@ -55,7 +55,13 @@ command -v python3 >/dev/null 2>&1 || {
 }
 
 PROJ="$PROJECT_DIR" python3 <<'PYEOF'
-import os, re, sys, yaml
+import os, re, sys
+try:
+    import yaml
+except ImportError:
+    print("[advance] PyYAML is required (install with: pip install pyyaml).",
+          file=sys.stderr)
+    sys.exit(1)
 
 proj = os.environ["PROJ"]
 index_path = os.path.join(proj, ".sdd", "INDEX.md")
@@ -92,7 +98,11 @@ blocker_text = m_blocker.group(1).strip()
 sa_match = re.search(r"action:\s*([a-z][a-z0-9-]*)", blocker_text)
 if sa_match:
     active_slug = sa_match.group(1)
-elif "complete" in blocker_text.lower():
+elif re.search(r"\bwork item complete\b", blocker_text, re.IGNORECASE):
+    # Anchored to the canonical terminal phrase emitted below
+    # (`(work item complete — run /next ...)`). Earlier `"complete"
+    # in blocker_text.lower()` was too loose — a slug like
+    # `complete-onboarding` would have been misclassified.
     print(f"[advance] work item already at terminal state: {blocker_text}")
     sys.exit(0)
 else:
