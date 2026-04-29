@@ -1808,13 +1808,18 @@ fi
 #   RED: advance.sh stays within stage, fails to find next stage's first
 #        action, or stops at end of stage instead of transitioning.
 # ============================================================
-note "T57: advance.sh transitions across stages (plan-decompose → run-mode-chosen)"
+note "T57: advance.sh transitions across stages (edge-case-sweep → run-mode-chosen)"
 d=$(mkproj_v08)
 cd "$d"
+# Updated fixture for v0.13.0+ — edge-case-sweep is now the last SPEC action
+# (after plan-decompose). The transition test runs from the last SPEC action
+# to the first BUILD action (run-mode-chosen), regardless of which action is
+# last; if a future v0.14+ adds another action after edge-case-sweep, this
+# fixture needs to be updated to use that new last-of-SPEC slug.
 cat > .sdd/INDEX.md <<'EOF'
 **Active:** features/001-test
 **Playbook:** feature
-**Active blocker:** §14 (action: plan-decompose)
+**Active blocker:** §11.5 (action: edge-case-sweep)
 
 ## Active
 
@@ -1827,7 +1832,7 @@ out=$(grep '^\*\*Active blocker:\*\*' .sdd/INDEX.md)
 cd - >/dev/null
 rm -rf "$d"
 if echo "$out" | grep -q 'BUILD action: run-mode-chosen'; then
-  ok "T57 advanced plan-decompose (SPEC) → run-mode-chosen (BUILD) — stage transition"
+  ok "T57 advanced edge-case-sweep (SPEC) → run-mode-chosen (BUILD) — stage transition"
 else
   bad "T57 stage transition failed" "active blocker line: $out"
 fi
@@ -2776,12 +2781,13 @@ fi
 note "T78: advance.sh fires phase_transition event-flow notice on stage cross"
 d=$(mkproj_v08)
 cd "$d"
-# Set up INDEX.md so the active blocker is the LAST action of SPEC
-# (plan-decompose). advance.sh should see SPEC→BUILD transition.
+# Set up INDEX.md so the active blocker is the LAST action of SPEC.
+# Updated v0.13.0+: last-of-SPEC is now edge-case-sweep (was plan-decompose).
+# advance.sh should see SPEC→BUILD transition.
 cat > .sdd/INDEX.md <<'EOF'
 **Active:** features/001-test
 **Playbook:** feature
-**Active blocker:** § (SPEC action: plan-decompose)
+**Active blocker:** § (SPEC action: edge-case-sweep)
 
 ## Active
 

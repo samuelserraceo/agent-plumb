@@ -23,6 +23,7 @@ stages:
       - signoff-steps
       - wireframe
       - plan-decompose
+      - edge-case-sweep
     exit_checks:
       - { id: C-spec-acs,   check: "≥1 acceptance criterion exists in §11" }
       - { id: C-spec-tasks, check: "≥1 task in plan-decompose section" }
@@ -36,6 +37,7 @@ stages:
     actions:
       - verify-test-run
       - verify-prod-only-acs
+      - adversarial-review
       - learn
       - push-pr
       - verify-ci-green

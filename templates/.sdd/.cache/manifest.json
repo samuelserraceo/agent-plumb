@@ -2,7 +2,7 @@
   "extensions": {},
   "playbooks": {
     "feature": {
-      "expected_sha256": "55ca4fd9d44fac8b8bbf4947b2a25490d400a3b9677fcdad55edc07685ba4f97",
+      "expected_sha256": "f266f2c8d89e11a56ae1fd6effd782162cc1d56f55cb79b46b4e597fc70d6df4",
       "path": ".sdd/playbooks/feature.md",
       "trust": "framework"
     },
@@ -71,6 +71,11 @@
       "path": ".sdd/actions/acceptance-criteria.md",
       "trust": "framework"
     },
+    "adversarial-review": {
+      "expected_sha256": "e7c902db6e429673d370cbd9d7093ce2ea712b9f7db102831a8ea8cb76e842f9",
+      "path": ".sdd/actions/adversarial-review.md",
+      "trust": "framework"
+    },
     "build-task": {
       "expected_sha256": "65783b74c3e83bb061199761a5d24699c027aa108cc3abac707a4bb97b2ef29e",
       "path": ".sdd/actions/build-task.md",
@@ -109,6 +114,11 @@
     "plan-decompose": {
       "expected_sha256": "49c3518624efd8b0aadcbef3ed5edbb586696f138cb28b65815abcf026ab18a7",
       "path": ".sdd/actions/plan-decompose.md",
+      "trust": "framework"
+    },
+    "edge-case-sweep": {
+      "expected_sha256": "de80a447ea92896c34cc59c5ee0d6cf1e96bcec68d0f1285877154f63a374f9d",
+      "path": ".sdd/actions/edge-case-sweep.md",
       "trust": "framework"
     },
     "problem": {
