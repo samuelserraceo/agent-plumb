@@ -62,6 +62,11 @@
       "expected_sha256": "ade3871a2719c0f68bb606adf95188bc7c8257e10731049f914f788a90be33c5",
       "path": ".sdd/scripts/settings.sh",
       "trust": "framework"
+    },
+    "revert-phase.sh": {
+      "expected_sha256": "829038bd2de8c85c63fe98d4b2e4bb6962f39541777dfc9558eca355400535fa",
+      "path": ".sdd/scripts/revert-phase.sh",
+      "trust": "framework"
     }
   },
   "sdd_version": "0.11.0",
@@ -72,7 +77,7 @@
       "trust": "framework"
     },
     "adversarial-review": {
-      "expected_sha256": "11ebf9d1b19d38285ed7a8f950b64895cac14898478e918d65dd7b1f27d9bfda",
+      "expected_sha256": "6f27754cb3a30b4100a204510f024de521109b228bad0e38781700322dcfd17c",
       "path": ".sdd/actions/adversarial-review.md",
       "trust": "framework"
     },

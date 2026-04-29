@@ -61,7 +61,13 @@ The user walks through each finding in order; for each one, the agent proposes t
 
 ### `fix now` (the default)
 
-This matters — add it to BUILD as a new task. The agent appends a `[BUG]` task to plan-decompose with a verbatim quote of the finding, and the spec phase moves back to BUILD with that one task open. Tests + code follow the normal BUILD cycle (test-first, RED→GREEN→commit, moat re-runs verify-stage).
+This matters — add it to BUILD as a new task. The agent does three things in order:
+
+1. Appends a `[BUG]` task to plan-decompose with a verbatim quote of the finding.
+2. Runs `bash .sdd/scripts/revert-phase.sh <spec-path> SHIP BUILD` — this flips `[PHASE: SHIP]` to `[PHASE: BUILD]` AND un-ticks all step rows under `## PHASE: SHIP` (closes #65). Without un-ticking, the second BUILD→SHIP transition would walk a fully-ticked SHIP body and skip straight through to SHIPPED — adversarial-review would never re-fire on the new code.
+3. Commits the revert (BUG task + phase flip + un-ticked SHIP rows in one commit).
+
+After the commit, normal BUILD discipline kicks in: test-first, RED→GREEN→commit, moat re-runs verify-stage. Once the BUG task is GREEN, the framework transitions BUILD→SHIP again — and because step 2 un-ticked the SHIP rows, the entire SHIP phase (including a SECOND adversarial-review pass) re-fires on the NEW code. The hostile-reviewer hat catches whether the fix introduced new attack surface, regressed something else, or did the wrong thing.
 
 For **simplification findings** specifically: the new task is `[REFACTOR]`-tagged, not `[BUG]`. Same lifecycle, different intent.
 
