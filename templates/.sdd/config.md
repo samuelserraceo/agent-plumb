@@ -23,6 +23,14 @@ parameters:
     max_polls: 5
     nudge_command: ""    # e.g. "@coderabbitai full review" — comment posted if no review after max_polls
     manual: false        # true = wait for human review only; agent doesn't poll for bots
+  mcp:
+    enabled: false       # populated by /sdd-setup brick 007 — true if user wants the SDD MCP server (40-60% across-session token saving)
+    semantic_search:     # opt-in semantic search over .sdd/ (deferred — see queries/search.py for the schema and provider opt-in path)
+      enabled: false
+      provider: ""       # "openai" | "anthropic" | "ollama" | "local-gemma" | etc.
+      endpoint: ""       # https://... or http://localhost:port
+      model: ""          # embedding model name
+      top_k: 5
 file_classes:
   CLAIM:
     - '(^|/)verification\.json$'
