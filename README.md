@@ -320,13 +320,21 @@ If you want to customize the workflow rules themselves, you can — but bump `CL
 
 ## Status
 
-Currently at **v0.9.0** (Phase C ship). Hardened through:
+Currently at **v0.13.2** (cleanup pack post v0.13 release run). Hardened through:
 
 - **Phase A (v0.7.5)** — proved the SPEC + BUILD + ship loop on real Next.js + Vercel projects. 26 mutation-verified tests catching catastrophic bug classes.
 - **Phase B-1 (v0.8.0)** — section-locking moat, multi-playbook engine bones, trust-boundary teaching against prompt injection from repo prose, hash-pinned manifest, slim memory layer, append-only audit log. Three rounds of adversarial reviewer council found and closed gaps. 69 tests, all mutation-verified.
-- **Phase C (v0.9.0)** — F1 generic enforcer (7 hooks subsumed → 1), F2 events schema, F4 atomic-step granularity, F5 cascading parameters, Catalog work (rich INDEX.md with cross-references), SCHEMA.md retired (783 lines deleted), scope-guard moved to GitHub Actions CI, "Where things live" canonical folder map, "Triage on first message" doctrine. **120 tests passing**, all mutation-verified.
+- **Phase C (v0.9.0)** — F1 generic enforcer (7 hooks subsumed → 1), F2 events schema, F4 atomic-step granularity, F5 cascading parameters, Catalog work (rich INDEX.md with cross-references), SCHEMA.md retired (783 lines deleted), scope-guard moved to GitHub Actions CI, "Where things live" canonical folder map, "Triage on first message" doctrine.
+- **v0.10.x** — plugin packaging (one-line install via Claude Code plugin manifest), code-quality doctrine (8 always-on rules), multi-feature parallel scaffold, UAT findings closed, two rounds of security hardening.
+- **v0.11.x** — project-level scoping playbook (multi-feature initiatives that aren't a single feature), plugin metadata hotfixes, foundation-3 design philosophy codified in CLAUDE.md.
+- **v0.12.0** — DRY fixes (next-action.sh reads stages from playbook frontmatter; run-mode prose deduplicated), mechanical triage hook for project-shaped one-liners.
+- **v0.13.0** — five Lego bricks landed together: adversarial review action, edge-case sweep action, `/sdd-setup` wizard, opt-in Playwright extension, SDD MCP server (40-60% across-session token saving).
+- **v0.13.1** — moat security hardening: manifest baseline trust (path-keyed walker, segment-scoped marker parse, fail-closed on malformed HEAD with in-band repair) and advance.sh lock PID liveness.
+- **v0.13.2** — chore cleanup pack (6 small fixes across `/start`, `/settings`, config.md, regression tests).
 
-Next on the roadmap (Phase D): `bug` + `idea` playbooks, `stack:` config block (test runner / VCS / PR tool / wireframe runtime), retrofit-existing-project install mode, plugin packaging (so SDD lives globally as a Claude Code plugin instead of being copied into each project).
+**130 tests passing**, all mutation-verified. **28 MCP server unit tests** + 4 self-verify checks. 11 cycles of CodeRabbit review converged across the v0.13 release run.
+
+Next likely: per-branch worktree-aware INDEX.md (#42), `/settings get` provenance lookup (#34), CI moat extension (#26), scope-guard configurability (#16). All substantial enough for SDD ceremony rather than chore commits.
 
 ---
 

@@ -6,7 +6,7 @@
      SDD ships an update. Your edits inside this block will be lost.
      Your project-specific rules go BELOW the END marker.
      ════════════════════════════════════════════════════════════════════ -->
-<!-- SDD-MANAGED-START version: 0.11.2 -->
+<!-- SDD-MANAGED-START version: 0.13.2 -->
 
 # CLAUDE.md
 
@@ -91,19 +91,25 @@ For Pipelogic-style projects with 3-5 features in flight at once, this scaffold 
 
 | Command | Purpose | Branch | Phases |
 |---|---|---|---|
+| `/sdd-setup` | First-session setup wizard — 6 plain-English questions that fill `stack.md` + `config.md`. Run **once** when bootstrapping a fresh SDD project, before your first `/start`. | n/a | n/a |
+| `/sdd-config` | Re-answer or edit a single `/sdd-setup` question without re-walking the whole wizard. Use when stack changes (new service, new reviewer, new hosting target). | n/a | n/a |
 | `/start` | Scaffold a new work item — pass `--extends=<id>` for evolution of an existing feature | feature branch (auto-created on first `/next`) | SPEC → BUILD → SHIP → SHIPPED |
 | `/next` | Advance the active work item by one step. Also handles inline skip / re-approve / bug-routing — see /next's prose. | active branch | SPEC → BUILD → SHIP → SHIPPED |
 | `/idea` | Capture an idea to backlog cheaply — single file in `.sdd/ideas/`, no commitment | current branch | none |
 | `/status` | Print current workflow state + resolved F5 parameters with provenance | n/a | n/a |
+| `/settings` | View or change a single framework parameter (budget, voice, pace, ralph) without editing `config.md` by hand. `list` / `get <key>` / `set <key> <value>` / `reset <key>`. | n/a | n/a |
 | `/ship` | Push branch, open PR, watch CI, mark shipped or capture bug | active branch | SHIP complete |
 | `/compress` | Consolidate `patterns.md` or `data-model.md` when they grow noisy | n/a | n/a |
 
 **Picking the right entry point:**
+- **Fresh SDD project, never run before** → `/sdd-setup` (one-time, before `/start`)
+- Stack changed (new service, new reviewer, new hosting target) → `/sdd-config <question-id>`
 - User wants to build new functionality → `/start <one-line title>`
 - User wants to extend or evolve a shipped feature → `/start --extends=<id> <one-line title>` (lighter SPEC; references the prior feature's distilled context)
 - User reports something broken → `/start [BUG] <title>` (the standard playbook handles bugs; skip sections that don't apply via inline-skip in `/next`)
 - User has a half-formed thought worth remembering but not building → `/idea`
 - An active work item already exists, advance it one step → `/next`
+- User wants to tune one parameter (budget, halt-attempts, ralph cap) → `/settings`
 - Skipping a `[SKIPPABLE]` step OR re-approving a previously-approved section after intentional edits — handled inline by `/next` (see /next's prose).
 
 If a "bug" mid-SPEC turns out to require significant new design, escalate by telling the user "this looks like a feature, not a bug — want to switch?".

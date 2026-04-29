@@ -3946,29 +3946,35 @@ else
 fi
 
 # ============================================================
-# T103 — C-10: README updated for v0.9; no v0.8/SCHEMA.md stale refs
-#   The README is the project's public face. v0.8.0 mentions, retired
-#   slash commands (/bug, /re-approve, /skip), and SCHEMA.md references
-#   would mislead readers. T103 catches stale refs + asserts the
-#   v0.9-specific sections (atomic-step, F1 subsumption table, catalog
-#   block) are present.
+# T103 — README reflects current ship state (no v0.8 / SCHEMA.md /
+#        stale-version stale refs). The README is the project's public
+#        face. Asserts the v0.9 architecture phrases are still present
+#        (atomic-step, F1 generic, Catalog, etc. — those concepts are
+#        still load-bearing) AND the "Currently at" line tracks the
+#        actual current ship version.
 # ============================================================
-note "T103: README.md reflects v0.9 ship state"
+note "T103: README.md reflects current ship state"
 problems=""
-# Required v0.9 phrases.
+# Required architecture phrases (v0.9 concepts still load-bearing today).
 for needle in 'v0.9' 'atomic-step' 'F1 generic' 'Catalog' 'pre-commit-rules' '--extends='; do
   if ! grep -qF -- "$needle" "$FRAMEWORK_ROOT/README.md" 2>/dev/null; then
     problems="$problems missing:$(echo "$needle" | tr ' ' '_')"
   fi
 done
-# Status section must say "Currently at v0.9" (not v0.8).
-if ! grep -qF -- "Currently at **v0.9" "$FRAMEWORK_ROOT/README.md" 2>/dev/null; then
-  problems="$problems status-not-v0.9"
+# Status section must say "Currently at" with the CURRENT version, not
+# a stale one. Match the version from CLAUDE.version (single source of
+# truth for the framework's "what we're on now"). RED if README's
+# version drifts from the version file.
+current_version=$(tr -d ' \n' < "$FRAMEWORK_ROOT/templates/.sdd/CLAUDE.version" 2>/dev/null || echo "")
+if [ -n "$current_version" ]; then
+  if ! grep -qF -- "Currently at **v$current_version" "$FRAMEWORK_ROOT/README.md" 2>/dev/null; then
+    problems="$problems status-not-v$current_version"
+  fi
 fi
 if [ -z "$problems" ]; then
-  ok "T103 README v0.9 — current-version v0.9 + 6 v0.9-specific phrases present"
+  ok "T103 README reflects v$current_version — architecture phrases + current-version line present"
 else
-  bad "T103 README v0.9 update incomplete:" "$problems"
+  bad "T103 README update incomplete:" "$problems"
 fi
 
 # ============================================================
