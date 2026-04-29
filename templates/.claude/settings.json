@@ -18,6 +18,10 @@
           {
             "type": "command",
             "command": ".claude/hooks/user-prompt-submit.sh"
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/triage-on-first-message.sh"
           }
         ]
       }
