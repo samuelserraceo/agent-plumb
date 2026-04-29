@@ -79,20 +79,88 @@ EOF
   fi
 fi
 
-# Detect whether Playwright is already a devDependency. The "next steps"
-# message branches on this so re-runs (where Playwright IS installed)
-# don't tell the user to install it again.
+# Detect whether Playwright is already a devDependency.
 PLAYWRIGHT_INSTALLED=0
 if [ -f "package.json" ] && grep -q '"@playwright/test"' package.json 2>/dev/null; then
   PLAYWRIGHT_INSTALLED=1
 fi
 
+# Detect package manager from lockfile presence (closes #70). Default to
+# npm if no lockfile is found — most projects start there.
+# Bun: v1.2+ defaults to text-based bun.lock; older versions used the
+# binary bun.lockb. Detect either so both Bun generations resolve to bun.
+detect_pkg_manager() {
+  if [ -f "pnpm-lock.yaml" ]; then echo "pnpm"
+  elif [ -f "yarn.lock" ]; then echo "yarn"
+  elif [ -f "bun.lock" ] || [ -f "bun.lockb" ]; then echo "bun"
+  else echo "npm"
+  fi
+}
+
+# Run the install with the right package manager + run `playwright install`
+# to pull the browser binaries. Returns 0 on success, non-zero on failure
+# (caller falls back to manual instructions).
+run_install() {
+  local mgr="$1"
+  echo "[playwright-ext] running install with $mgr (this may take a minute)..."
+  case "$mgr" in
+    npm)  npm install --save-dev @playwright/test || return $? ;;
+    yarn) yarn add --dev @playwright/test || return $? ;;
+    pnpm) pnpm add --save-dev @playwright/test || return $? ;;
+    bun)  bun add --dev @playwright/test || return $? ;;
+    *)    echo "[playwright-ext] unknown package manager: $mgr" >&2; return 1 ;;
+  esac
+  echo "[playwright-ext] downloading browser binaries..."
+  # Use bunx for bun environments, npx for everyone else (npm/yarn/pnpm).
+  local exec_cmd="npx"
+  [ "$mgr" = "bun" ] && exec_cmd="bunx"
+  "$exec_cmd" playwright install --with-deps || return $?
+  return 0
+}
+
 if [ "$PLAYWRIGHT_INSTALLED" -eq 0 ] && [ -f "package.json" ]; then
   echo ""
-  echo "[playwright-ext] @playwright/test not in package.json devDependencies."
-  echo "[playwright-ext] Run yourself when ready:"
-  echo "[playwright-ext]   npm install --save-dev @playwright/test"
-  echo "[playwright-ext]   npx playwright install --with-deps"
+  echo "[playwright-ext] @playwright/test is not yet installed."
+  PKG_MGR=$(detect_pkg_manager)
+  echo "[playwright-ext] Detected package manager: $PKG_MGR"
+  # In non-interactive runs (CI / no TTY on stdin), `read` would hit EOF
+  # and — under `set -e` — exit the whole script before the manual-
+  # instructions fallback ever runs. Default to "n" in that case so
+  # the script skips the install attempt and falls through to printing
+  # the manual-install instructions, which is the safer behaviour for
+  # automated/CI runs.
+  install_answer="n"
+  if [ -t 0 ]; then
+    printf "[playwright-ext] Install Playwright now? [Y/n]: "
+    read -r install_answer
+  else
+    echo "[playwright-ext] non-interactive run (no TTY on stdin); skipping the install prompt — manual instructions follow."
+  fi
+  if [ "$install_answer" = "" ] || [ "$install_answer" = "y" ] || [ "$install_answer" = "Y" ]; then
+    if run_install "$PKG_MGR"; then
+      PLAYWRIGHT_INSTALLED=1
+      echo "[playwright-ext] install succeeded."
+    else
+      echo ""
+      echo "[playwright-ext] install failed. Run manually when ready:"
+      case "$PKG_MGR" in
+        npm)  echo "[playwright-ext]   npm install --save-dev @playwright/test" ;;
+        yarn) echo "[playwright-ext]   yarn add --dev @playwright/test" ;;
+        pnpm) echo "[playwright-ext]   pnpm add --save-dev @playwright/test" ;;
+        bun)  echo "[playwright-ext]   bun add --dev @playwright/test" ;;
+      esac
+      echo "[playwright-ext]   npx playwright install --with-deps"
+    fi
+  else
+    echo "[playwright-ext] skipping install. Run manually when ready:"
+    case "$PKG_MGR" in
+      npm)  echo "[playwright-ext]   npm install --save-dev @playwright/test" ;;
+      yarn) echo "[playwright-ext]   yarn add --dev @playwright/test" ;;
+      pnpm) echo "[playwright-ext]   pnpm add --save-dev @playwright/test" ;;
+      bun)  echo "[playwright-ext]   bun add --dev @playwright/test" ;;
+    esac
+    echo "[playwright-ext]   npx playwright install --with-deps"
+  fi
 fi
 
 echo ""
@@ -100,27 +168,16 @@ echo "[playwright-ext] enabled."
 echo ""
 echo "Next steps:"
 if [ "$PLAYWRIGHT_INSTALLED" -eq 0 ]; then
-  echo "  1. Install the dependency (the script did NOT run this for you):"
-  echo "       npm install --save-dev @playwright/test"
-  echo "       npx playwright install --with-deps"
-  echo ""
-  echo "  2. Run the example test to verify:"
-  echo "       npx playwright test"
-  echo ""
+  echo "  1. Install Playwright (commands shown above)."
+  echo "  2. Run the example test to verify: npx playwright test"
   echo "  3. Read tests/example.spec.ts to see the SDD-shaped test pattern."
-  echo ""
   echo "  4. Read docs/sdd-playwright.md for the full pattern guide."
-  echo ""
   echo "  5. Start your first feature — the agent will scaffold task-<NN>.spec.ts"
   echo "     files at .sdd/features/<id>/tests/ following the same pattern."
 else
-  echo "  1. Run the example test to verify (Playwright already installed):"
-  echo "       npx playwright test"
-  echo ""
+  echo "  1. Run the example test to verify: npx playwright test"
   echo "  2. Read tests/example.spec.ts to see the SDD-shaped test pattern."
-  echo ""
   echo "  3. Read docs/sdd-playwright.md for the full pattern guide."
-  echo ""
   echo "  4. Start your first feature — the agent will scaffold task-<NN>.spec.ts"
   echo "     files at .sdd/features/<id>/tests/ following the same pattern."
 fi

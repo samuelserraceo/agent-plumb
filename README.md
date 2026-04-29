@@ -325,7 +325,7 @@ If you want to customize the workflow rules themselves, you can — but bump `CL
 
 ## Status
 
-Currently at **v0.13.3** (setup wizard scaffolding hotfix). Hardened through:
+Currently at **v0.13.4** (chore bundle — plain-English rewording, npm install auto-run, doctrine drift cleanup). Hardened through:
 
 - **Phase A (v0.7.5)** — proved the SPEC + BUILD + ship loop on real Next.js + Vercel projects. 26 mutation-verified tests catching catastrophic bug classes.
 - **Phase B-1 (v0.8.0)** — section-locking moat, multi-playbook engine bones, trust-boundary teaching against prompt injection from repo prose, hash-pinned manifest, slim memory layer, append-only audit log. Three rounds of adversarial reviewer council found and closed gaps. 69 tests, all mutation-verified.
@@ -337,6 +337,7 @@ Currently at **v0.13.3** (setup wizard scaffolding hotfix). Hardened through:
 - **v0.13.1** — moat security hardening: manifest baseline trust (path-keyed walker, segment-scoped marker parse, fail-closed on malformed HEAD with in-band repair) and advance.sh lock PID liveness.
 - **v0.13.2** — chore cleanup pack (6 small fixes across `/start`, `/settings`, config.md, regression tests).
 - **v0.13.3** — setup wizard scaffolding hotfix: bricks 001/002/003/004 had `records_at` heading/key references that didn't exist in `stack.md` and `config.md` scaffolds, so 4 of 6 wizard questions would fail on first run. Added the missing scaffolds (`## Project shape`, `## Data store`, `## Testing` to `stack.md`; `parameters.review` block to `config.md`). T111 regression test locks in "every brick's `records_at` exists in its target."
+- **v0.13.4** — chore bundle: brick 006 restructured into 5 separate yes/no questions one at a time (#66); Playwright `enable.sh` now offers to install the dependency for you with a `Y/n` prompt detected from your lockfile (#70); doctrine drift cleanup — DEPRECATED.list catches up with 10 retired files from v0.9 phase-c, wireframe.md `<work-item>` substitution claim updated to point at the actually-still-open #42, action prose gets a stack-agnostic note in CLAUDE.md (#73).
 
 **130 tests passing**, all mutation-verified. **28 MCP server unit tests** + 4 self-verify checks. 11 cycles of CodeRabbit review converged across the v0.13 release run.
 

@@ -39,7 +39,7 @@ Reply with the number, or describe your own.
 
 | You said | Agent writes to stack.md `## Testing` |
 |---|---|
-| "Yes — full browser tests" | `Test runner: Playwright` + `Viewports: Desktop (Chromium) + iPhone-13 mobile` + `Test file pattern: .sdd/features/<id>/tests/task-*.spec.ts`. Recommends running `bash extensions/playwright/enable.sh` to install the Lego brick. |
+| "Yes — full browser tests" | `Test runner: Playwright` + `Viewports: Desktop (Chromium) + iPhone-13 mobile` + `Test file pattern: .sdd/features/<id>/tests/task-*.spec.ts`. Offers to run `bash extensions/playwright/enable.sh`, which attempts to install the Playwright extension and the browser binaries (you can decline, and if any step fails the script falls back to manual instructions). |
 | "Yes — lightweight" | Picks runner from project-type answer (TS → Vitest, Python → pytest, Go → built-in `testing`, etc.). Records test file pattern accordingly. |
 | "No UI to test" | Same as lightweight — picks runner from language. |
 | "Not deciding yet" | Skip; question can be re-answered via `/sdd-config`. |
