@@ -254,7 +254,14 @@ def _infer_active_context(proj):
     Reads `**Active:** <path>` from .sdd/INDEX.md, then invokes
     next-action.sh on that spec to get the active action + step.
     Used by `get` to walk the F5 cascade and report provenance for
-    the value the agent would currently see (closes #34)."""
+    the value the agent would currently see (closes #34).
+
+    Path resolution rules — `**Active:**` is written by start.sh as a
+    work-item path RELATIVE TO `.sdd/`, e.g. `features/001-foo` or
+    `bugs/003-confirm-link-typo`. The actual spec lives at
+    `<proj>/.sdd/<work-item-rel>/spec.md`. Older / hand-edited indexes
+    sometimes also use the full path (`.sdd/features/.../spec.md`) or
+    just the directory name; tolerate all three shapes."""
     index_path = os.path.join(proj, ".sdd", "INDEX.md")
     if not os.path.isfile(index_path):
         return None, None, None
@@ -266,9 +273,19 @@ def _infer_active_context(proj):
     m = re.search(r'^\*\*Active:\*\*\s+(\S+)', idx_text, re.MULTILINE)
     if not m:
         return None, None, None
-    spec_rel = m.group(1).strip()
-    spec_path = spec_rel if os.path.isabs(spec_rel) else os.path.join(proj, spec_rel)
-    if not os.path.isfile(spec_path):
+    raw = m.group(1).strip()
+    # Try the four canonical shapes in priority order. First one that
+    # resolves to an existing spec.md wins.
+    if os.path.isabs(raw):
+        candidates = [raw if raw.endswith("spec.md") else os.path.join(raw, "spec.md")]
+    else:
+        candidates = [
+            os.path.join(proj, ".sdd", raw, "spec.md"),     # work-item-rel (canonical)
+            os.path.join(proj, raw),                         # already-relative-to-proj (legacy)
+            os.path.join(proj, raw, "spec.md"),              # bare folder under proj
+        ]
+    spec_path = next((p for p in candidates if os.path.isfile(p)), None)
+    if not spec_path:
         return None, None, None
     next_action_sh = os.path.join(proj, ".sdd", "scripts", "next-action.sh")
     if not os.path.isfile(next_action_sh):

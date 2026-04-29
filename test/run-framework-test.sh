@@ -4663,9 +4663,9 @@ fi
 note "T115: settings.sh get prints [project] when no active feature"
 d=$(mktemp -d) || exit 1
 cp -r "$FRAMEWORK_ROOT/templates/.sdd" "$d/"
-cd "$d"
+cd "$d" || { bad "T115 cd failed" "d=$d"; rm -rf "$d"; exit 1; }
 out=$(bash .sdd/scripts/settings.sh get budget.max_minutes 2>&1)
-cd - >/dev/null
+cd - >/dev/null || true
 rm -rf "$d"
 # Must contain the value AND a [project] provenance label.
 if echo "$out" | grep -q 'budget.max_minutes = 5' && echo "$out" | grep -q '\[project\]'; then
@@ -4686,13 +4686,16 @@ fi
 note "T115b: settings.sh get reports [work-item] when spec.md overrides a value"
 d=$(mktemp -d) || exit 1
 cp -r "$FRAMEWORK_ROOT/templates/.sdd" "$d/"
-cd "$d"
+cd "$d" || { bad "T115b cd failed" "d=$d"; rm -rf "$d"; exit 1; }
 mkdir -p ".sdd/features/001-prov-test"
+# Use the framework's actual **Active:** format — work-item path
+# RELATIVE TO `.sdd/`, no leading `.sdd/`, no trailing `spec.md`.
+# That's what `start.sh` writes (work_item_rel = features/<NNN>-<slug>).
 cat > ".sdd/INDEX.md" <<'IDX'
 # Project INDEX
 
 **Playbook:** feature
-**Active:** .sdd/features/001-prov-test/spec.md
+**Active:** features/001-prov-test
 
 ## In flight
 - [ ] 001-prov-test: provenance smoke test
@@ -4720,7 +4723,7 @@ overrides:
 - [ ] what-breaks: what concretely is broken?
 SPEC
 out=$(bash .sdd/scripts/settings.sh get voice.plain_english 2>&1)
-cd - >/dev/null
+cd - >/dev/null || true
 rm -rf "$d"
 # Must show the overridden value (False, not True) AND a [work-item:...]
 # label (resolve-parameters stamps the work-item id onto the source).
