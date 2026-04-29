@@ -72,7 +72,7 @@
       "trust": "framework"
     },
     "adversarial-review": {
-      "expected_sha256": "772f8a7f52e5f4cc1e1feb16a5929a486f72e02492c9a6676738a91ea88e2cae",
+      "expected_sha256": "1ad56d25747335982547d7a64f89c03b09ec46207b7ac1adecb87783045e0a64",
       "path": ".sdd/actions/adversarial-review.md",
       "trust": "framework"
     },
