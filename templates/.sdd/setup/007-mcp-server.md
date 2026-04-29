@@ -49,6 +49,8 @@ The saving GROWS over time: a 1-month-old project sees small savings; a 6-month 
 
 The MCP server is local Python code; no external service, no extra subscription. It runs as a sub-process whenever Claude Code is talking to your project.
 
+**Read more:** the full server design, query reference, and how to enable optional semantic search live in the [MCP server README](../../../extensions/sdd-mcp-server/README.md).
+
 ## What gets recorded
 
 ```yaml
