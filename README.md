@@ -251,7 +251,7 @@ See [`templates/.sdd/playbooks/feature.md`](templates/.sdd/playbooks/feature.md)
 
 Actions live as separate prose files in [`templates/.sdd/actions/`](templates/.sdd/actions/) — the framework loads them on demand. Forking the framework means forking individual actions, not the whole playbook.
 
-The `feature` playbook is the only one shipped in v0.9. Phase D will add a dedicated `bug` playbook (skipping plan-decompose) and `idea` playbook (single-file capture).
+As of v0.13.2, two playbooks ship: `feature` (single-feature work) and `project` (multi-feature initiatives like "build a CRM" or "launch a waitlist + admin dashboard + analytics"). Future releases may add a dedicated `bug` playbook (skipping plan-decompose) and `idea` playbook (single-file capture); the multi-playbook engine itself is shipped, so adding new playbooks is just dropping a `*.md` into `templates/.sdd/playbooks/`.
 
 ---
 
@@ -304,16 +304,18 @@ If you want to customize the workflow rules themselves, you can — but bump `CL
 
 ---
 
-## Honest caveats (v0.9.0)
+## Honest caveats (current as of v0.13.2)
 
 - **The playbook is 80% of the product.** If a question is weak, the system is weak. Fork and iterate — it's just markdown.
 - **"Non-technical" has limits.** The agent proposes technical options; you decide what feels right. If you don't know what you *want the feature to do*, no workflow saves you.
 - **Hooks have escape hatches.** Each one tells you in plain English how to proceed when blocked legitimately. Read the message — don't try to bypass.
-- **v0.9 ships ONE playbook (`feature`).** The multi-playbook engine is in place; future phases add `bug`, `idea`, etc. without code changes.
-- **Action prose still carries some JS-stack assumptions** (mentions of `tests/task-NNN.mjs`, Playwright, Tailwind, `gh pr create`). A future phase ships a `stack:` config block so non-JS adopters can override per-project. Until then, fork the affected actions for your stack.
-- **Hook error messages improved but still imperfect.** The F1 enforcer's plain-English block messages are better than v0.8's stderr; the moat hook's manifest-pin output is still engineer-leaning.
+- **Two playbooks shipped (`feature`, `project`).** The multi-playbook engine carries the rest; adding `bug`, `idea`, `question`, etc. is just dropping a new file in `templates/.sdd/playbooks/` (no code changes).
+- **Action prose still carries some JS-stack assumptions** (mentions of `tests/task-NNN.mjs`, Tailwind, `gh pr create`). The Playwright extension (`extensions/playwright/`) shows the Lego pattern for runner-specific scaffolding; non-JS adopters can fork the affected actions or write a sibling extension following the same shape.
+- **Hook error messages keep improving cycle by cycle.** v0.13.x rewrote the moat's "manifest repin refused" output for plain-English readability and added an in-band repair path; older hooks still vary in tone.
+- **Multi-feature parallelism is partial.** `INDEX.md`'s `## In flight` block holds multiple work items (one per branch is the typical pattern), so Pipelogic-style 3-5-features-at-once works today. **Full per-branch active-state lookup is open as #42** — until that lands, switching branches needs a manual `**Active:**` line update.
 - **This scales to roughly 50 in-flight features / 500 total.** Beyond that, you want real tooling. The cold-tier + size caps + auto-archival keep working memory bounded forever, but at some scale you'll outgrow plain markdown.
-- **Retrofitting onto an existing project may need v0.10.** The `init.sh` install assumes a clean repo. Retrofit on a project with its own conventions (Husky / Drizzle migrations / existing PRDs) may need an "absorb existing" install mode that's deferred to v0.10.
+- **Retrofitting onto an existing project still rough.** `scripts/init.sh` assumes a clean repo. The plugin install (v0.10) makes it easier, but a project with its own conventions (Husky / Drizzle migrations / existing PRDs) needs an "absorb existing" install mode that's still future work.
+- **MCP server semantic-search opt-in is stubbed.** The schema is shipped (`parameters.mcp.semantic_search` in config.md) but the network call is deferred — turning it on returns a "deferred — wire your provider here" config-shape response. Sam's self-hosted Gemma fits as a declared provider when wired up.
 - **Not a silver bullet.** It makes drift expensive and deep questioning cheap. It doesn't turn a bad idea into a good one.
 
 ---
