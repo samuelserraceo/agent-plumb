@@ -6,7 +6,7 @@
      SDD ships an update. Your edits inside this block will be lost.
      Your project-specific rules go BELOW the END marker.
      ════════════════════════════════════════════════════════════════════ -->
-<!-- SDD-MANAGED-START version: 0.11.0 -->
+<!-- SDD-MANAGED-START version: 0.11.2 -->
 
 # CLAUDE.md
 
@@ -24,9 +24,21 @@ SDD is opinionated. It optimises for some things and gives up others. Knowing th
 - **Explicit over clever.** Each step declares its tag, its touches, its triggers. No magic. No discovery. The agent reads the rule to advance — no rule, no work.
 - **Predictability over flexibility.** Same 4-step inner loop every iteration. Same commit shape. Same hook chain. Customisation is by adding rows in the standard format, not by changing the format.
 
+## Design philosophy (foundation 3 — load-bearing)
+
+The framework is the philosophy made mechanical. Drop any of the three foundations below and the whole thing rots — a complex SDD wouldn't be auditable, a non-Lego SDD couldn't grow without rewrites, and an assuming SDD is just another lying agent in a trench coat. The 8 code-quality rules in the next section are **practical consequences** of these three; if you ever wonder why a rule exists, it's because the foundation it serves would otherwise rot.
+
+1. **Simplicity over capability.** Files you can `cat`. Bash, markdown, YAML. No build step, no SaaS, no database, no `node_modules`. Framework deps: `bash` + `python3` + `PyYAML` + `git` + `gh`. The check: can a non-coder open the file in any text editor and roughly follow what it does? If no, simplify. If a feature seems to need a custom server, a new service, or a clever abstraction — the design is wrong, not that the framework needs to grow.
+
+2. **Composable Lego bricks over monoliths.** Everything composes. Notebooks (`INDEX.md`, `decisions.md`, `patterns.md`, `data-model.md`, `stack.md`) are separate bricks, not one mega-doc. Actions (`proposed-approach.md`, `verification.md`, …) are atoms slot-able into any playbook. Playbooks (`feature.md`, `project.md`) are compositions of actions; new playbooks just rearrange existing bricks. Each work-item is its own brick in the `INDEX.md` queue — they don't bleed into each other. SDD itself is a Lego brick for Claude Code via the plugin manifest. **Test:** if a new feature can't be expressed as a brick that snaps onto an existing one, the design is wrong.
+
+3. **Never assume — always check.** The engine behind most of the mechanics. The manifest hash never assumes a file is unchanged — it checks. The moat hook never assumes the spec was verified — it re-runs verification on staged content. The AGENT-LED pattern never assumes user intent — it drafts 2-3 options, the user picks. `stack.md` never assumes Postgres + Railway — it asks the first time, then writes it down so it never has to ask again. The 3-arg shortcut in `resolve-parameters.sh` never assumes the playbook — it reads `INDEX.md`. "No time estimates" is just never-assume applied to durations. **Every place the framework slips into assumption is a place CodeRabbit eventually catches it** — that's literally what the multi-cycle review backlog has been correcting.
+
+   **Corollary — external dependencies must be explicit customisation blocks.** Any LLM, hosted service, or third-party API the framework reaches for must be declared in `config.md` with explicit attributes (`enabled`, `provider`, `endpoint`, `model`), never baked-in defaults. The framework asks the first time (same pattern as `stack.md`), writes the answer down, then reads it. There is no implicit Anthropic / OpenAI / hosted-anything assumption in the framework's code.
+
 ## Code-quality doctrine (always-on, applies to every action)
 
-These eight rules apply across SPEC, BUILD, and SHIP. They are not configurable — they are how SDD agents work.
+These eight rules apply across SPEC, BUILD, and SHIP. They are not configurable — they are how SDD agents work. **They are practical consequences of the three foundations above** (rules 1, 6 are foundation 3 applied to user intent / durations; rules 2, 3, 7 serve foundation 1 — simplicity / no over-engineering / minimum diff; rule 4 serves foundation 2 — reuse external bricks instead of writing your own; rule 5 serves foundation 2 — wireframe is the user-visible brick of the spec; rule 8 serves foundations 1+3 — plain English keeps the surface simple AND prevents the agent from assuming the user knows the jargon).
 
 1. **Never assume — always ask.** If you don't know what the user means or what they want, halt and ask. Filling a `[ ]` from assumption defeats the framework's whole point. When in doubt, ask. (Karpathy's first borrow: "the agent must always ask, never assume.")
 
