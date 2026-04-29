@@ -124,14 +124,48 @@ jobs:
           # characters within the string. Same pattern for single
           # quotes and backticks. JSX text `>...<` doesn't have escape
           # semantics so it's unchanged.
-          copy_re='"([^"\\]|\\.){30,}"|'"'"'([^'"'"'\\]|\\.){30,}'"'"'|`([^`\\]|\\.){30,}`|>[^<>]{30,}<'
-          added_strings=$(git diff --unified=0 "$base...$head" -- \
-            'app/**/*.tsx' 'app/**/*.jsx' 'app/**/*.ts' 'app/**/*.js' \
-            'components/**/*.tsx' 'components/**/*.jsx' 'components/**/*.ts' 'components/**/*.js' \
-            'pages/**/*.tsx' 'pages/**/*.jsx' 'pages/**/*.ts' 'pages/**/*.js' \
-            'src/app/**/*.tsx' 'src/app/**/*.jsx' 'src/app/**/*.ts' 'src/app/**/*.js' \
-            'src/components/**/*.tsx' 'src/components/**/*.jsx' 'src/components/**/*.ts' 'src/components/**/*.js' \
-            'src/pages/**/*.tsx' 'src/pages/**/*.jsx' 'src/pages/**/*.ts' 'src/pages/**/*.js' \
+          # Read scope_guard config from the consumer project's
+          # .sdd/config.md (closes #16). Defaults match the previously-
+          # hardcoded Next.js shape, so existing projects keep their
+          # behaviour without any config change.
+          SG_HELPER=".sdd/scripts/scope-guard-config.sh"
+          if [ -x "$SG_HELPER" ]; then
+            mapfile -t globs < <(bash "$SG_HELPER" --globs)
+            min_chars=$(bash "$SG_HELPER" --min-chars)
+          else
+            # Helper missing (e.g. older project that hasn't picked up
+            # v1.x yet) — fall back to the v0.13.x hardcoded shape so
+            # the workflow doesn't error on missing helper.
+            mapfile -t globs <<'GLOBS'
+app/**/*.tsx
+app/**/*.jsx
+app/**/*.ts
+app/**/*.js
+components/**/*.tsx
+components/**/*.jsx
+components/**/*.ts
+components/**/*.js
+pages/**/*.tsx
+pages/**/*.jsx
+pages/**/*.ts
+pages/**/*.js
+src/app/**/*.tsx
+src/app/**/*.jsx
+src/app/**/*.ts
+src/app/**/*.js
+src/components/**/*.tsx
+src/components/**/*.jsx
+src/components/**/*.ts
+src/components/**/*.js
+src/pages/**/*.tsx
+src/pages/**/*.jsx
+src/pages/**/*.ts
+src/pages/**/*.js
+GLOBS
+            min_chars=30
+          fi
+          copy_re='"([^"\\]|\\.){'"$min_chars"',}"|'"'"'([^'"'"'\\]|\\.){'"$min_chars"',}'"'"'|`([^`\\]|\\.){'"$min_chars"',}`|>[^<>]{'"$min_chars"',}<'
+          added_strings=$(git diff --unified=0 "$base...$head" -- "${globs[@]}" \
             2>/dev/null \
             | grep -E '^\+[^+]' \
             | grep -oE "$copy_re" \
@@ -189,8 +223,16 @@ jobs:
           # Range form: three-dot — same reason as Block 1 above. Files
           # added on main after the PR branched must not count as files
           # this PR added.
+          # Path-prefix regex from the same scope_guard config (closes #16).
+          # Defaults match the v0.13.x hardcoded shape if the helper is
+          # missing.
+          if [ -x "$SG_HELPER" ]; then
+            ui_path_re=$(bash "$SG_HELPER" --regex)
+          else
+            ui_path_re='^(app|components|pages|src/app|src/components|src/pages)/.*\.(tsx|jsx|ts|js)$'
+          fi
           new_ui_files=$(git diff --name-only --diff-filter=A "$base...$head" 2>/dev/null \
-            | grep -E '^(app|components|pages|src/app|src/components|src/pages)/.*\.(tsx|jsx|ts|js)$' \
+            | grep -E "$ui_path_re" \
             | grep -vE '\.test\.|\.spec\.|/tests?/' \
             || true)
 

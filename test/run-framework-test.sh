@@ -97,6 +97,8 @@ mkproj_v08() {
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/revert-phase.sh"         "$d/.sdd/scripts/revert-phase.sh" 2>/dev/null || true
   chmod +x "$d/.sdd/scripts/revert-phase.sh" 2>/dev/null || true
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/check-setup-answer.sh"   "$d/.sdd/scripts/check-setup-answer.sh" 2>/dev/null || true
+  cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/scope-guard-config.sh"   "$d/.sdd/scripts/scope-guard-config.sh" 2>/dev/null || true
+  chmod +x "$d/.sdd/scripts/scope-guard-config.sh" 2>/dev/null || true
   chmod +x "$d/.sdd/scripts/check-setup-answer.sh" 2>/dev/null || true
   cp "$FRAMEWORK_ROOT/templates/.sdd/decisions.md"                    "$d/.sdd/decisions.md"
   cp "$VERIFY_STAGE" "$d/.sdd/scripts/verify-stage.sh" 2>/dev/null || true
@@ -4654,6 +4656,94 @@ if [ "$ec" -eq 0 ]; then
   ok "T114c hook allowed prose deferral 'deferred to next iteration'"
 else
   bad "T114c hook false-blocked legitimate prose deferral" "ec=$ec"
+fi
+
+# ============================================================
+# T116 — scope-guard-config.sh emits the v0.13.x defaults when no
+#        config.md exists (closes #16: scope-guard configurability).
+# ============================================================
+note "T116: scope-guard-config.sh defaults match the v0.13.x Next.js shape"
+d=$(mktemp -d) || exit 1
+helper="$FRAMEWORK_ROOT/templates/.sdd/scripts/scope-guard-config.sh"
+chmod +x "$helper" 2>/dev/null || true
+globs_out=$(CLAUDE_PROJECT_DIR="$d" bash "$helper" --globs 2>&1)
+regex_out=$(CLAUDE_PROJECT_DIR="$d" bash "$helper" --regex 2>&1)
+mc_out=$(CLAUDE_PROJECT_DIR="$d" bash "$helper" --min-chars 2>&1)
+rm -rf "$d"
+ok_count=0
+# 6 dirs × 4 exts = 24 globs expected
+[ "$(printf '%s\n' "$globs_out" | wc -l)" -eq 24 ] && ok_count=$((ok_count + 1))
+echo "$globs_out" | grep -q '^app/\*\*/\*\.tsx$' && ok_count=$((ok_count + 1))
+echo "$globs_out" | grep -q '^src/pages/\*\*/\*\.js$' && ok_count=$((ok_count + 1))
+echo "$regex_out" | grep -qE 'app\|components\|pages' && ok_count=$((ok_count + 1))
+echo "$regex_out" | grep -qE 'tsx\|jsx\|ts\|js' && ok_count=$((ok_count + 1))
+[ "$mc_out" = "30" ] && ok_count=$((ok_count + 1))
+if [ "$ok_count" -eq 6 ]; then
+  ok "T116 scope-guard-config.sh defaults present (6/6 assertions)"
+else
+  bad "T116 scope-guard-config.sh defaults broken" "ok_count=$ok_count globs='$globs_out' regex='$regex_out' min_chars='$mc_out'"
+fi
+
+# ============================================================
+# T116b — scope-guard-config.sh respects scope_guard.file_extensions
+#         + ui_dirs override in config.md (closes #16).
+# ============================================================
+note "T116b: scope-guard-config.sh respects per-project file_extensions + ui_dirs"
+d=$(mktemp -d) || exit 1
+mkdir -p "$d/.sdd"
+cat > "$d/.sdd/config.md" <<'CFG'
+---
+type: config
+scope_guard:
+  file_extensions: [py]
+  ui_dirs: [src, app]
+  copy_min_chars: 50
+---
+CFG
+globs_out=$(CLAUDE_PROJECT_DIR="$d" bash "$helper" --globs 2>&1)
+regex_out=$(CLAUDE_PROJECT_DIR="$d" bash "$helper" --regex 2>&1)
+mc_out=$(CLAUDE_PROJECT_DIR="$d" bash "$helper" --min-chars 2>&1)
+rm -rf "$d"
+ok_count=0
+# 2 dirs × 1 ext = 2 globs expected
+[ "$(printf '%s\n' "$globs_out" | wc -l)" -eq 2 ] && ok_count=$((ok_count + 1))
+echo "$globs_out" | grep -q '^src/\*\*/\*\.py$' && ok_count=$((ok_count + 1))
+echo "$globs_out" | grep -q '^app/\*\*/\*\.py$' && ok_count=$((ok_count + 1))
+[ "$regex_out" = '^(src|app)/.*\.(py)$' ] && ok_count=$((ok_count + 1))
+[ "$mc_out" = "50" ] && ok_count=$((ok_count + 1))
+if [ "$ok_count" -eq 5 ]; then
+  ok "T116b scope-guard-config.sh respects custom config (5/5 assertions)"
+else
+  bad "T116b scope-guard-config.sh ignored config override" "ok_count=$ok_count globs='$globs_out' regex='$regex_out' min_chars='$mc_out'"
+fi
+
+# ============================================================
+# T116c — scope-guard-config.sh falls back to defaults for any
+#         missing key (partial scope_guard block) — closes #16.
+# ============================================================
+note "T116c: scope-guard-config.sh falls back to defaults per-key when config is partial"
+d=$(mktemp -d) || exit 1
+mkdir -p "$d/.sdd"
+cat > "$d/.sdd/config.md" <<'CFG'
+---
+type: config
+scope_guard:
+  copy_min_chars: 100
+---
+CFG
+globs_out=$(CLAUDE_PROJECT_DIR="$d" bash "$helper" --globs 2>&1)
+mc_out=$(CLAUDE_PROJECT_DIR="$d" bash "$helper" --min-chars 2>&1)
+rm -rf "$d"
+ok_count=0
+# Partial config: only copy_min_chars set; file_extensions + ui_dirs
+# fall back to v0.13.x defaults (24 globs).
+[ "$(printf '%s\n' "$globs_out" | wc -l)" -eq 24 ] && ok_count=$((ok_count + 1))
+echo "$globs_out" | grep -q '^app/\*\*/\*\.tsx$' && ok_count=$((ok_count + 1))
+[ "$mc_out" = "100" ] && ok_count=$((ok_count + 1))
+if [ "$ok_count" -eq 3 ]; then
+  ok "T116c scope-guard-config.sh handles partial config (3/3 assertions)"
+else
+  bad "T116c scope-guard-config.sh broke on partial config" "ok_count=$ok_count globs_count=$(printf '%s\n' "$globs_out" | wc -l) min_chars='$mc_out'"
 fi
 
 # ============================================================

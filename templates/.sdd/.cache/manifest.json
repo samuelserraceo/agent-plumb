@@ -72,6 +72,11 @@
       "expected_sha256": "c8623321af81017f51fc06655aceb135df0b893b74417858eb81fb28265da839",
       "path": ".sdd/scripts/check-setup-answer.sh",
       "trust": "framework"
+    },
+    "scope-guard-config.sh": {
+      "expected_sha256": "af6ab91bb11ed797ab148097ceba4bc8b0bf6bef114b9bf53e312fc730588768",
+      "path": ".sdd/scripts/scope-guard-config.sh",
+      "trust": "framework"
     }
   },
   "sdd_version": "0.11.0",
