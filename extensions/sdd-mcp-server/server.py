@@ -167,7 +167,12 @@ def _handle_tools_call(req: Dict[str, Any]) -> Dict[str, Any]:
     name = params.get("name")
     args = params.get("arguments") or {}
     result = _dispatch(name, args)
-    is_error = isinstance(result, dict) and "error" in result and "feature_path" not in result
+    # Presence of an `error` key is the source of truth for failures.
+    # Some queries (e.g. get_active_step) return contextual errors that
+    # also include success-shaped fields like `feature_path` or `phase` —
+    # those previously slipped through as `isError: false`. Don't downgrade
+    # any handler error: if the result has an `error` key, it's an error.
+    is_error = isinstance(result, dict) and "error" in result
     # Per MCP convention: tool results carry a `content` array of typed parts.
     return {
         "jsonrpc": "2.0",

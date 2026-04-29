@@ -37,9 +37,27 @@ fi
 chmod +x "$SERVER_PATH"
 
 # Decide where to write. Default: per-project (committable).
+# For project target, anchor on git root or CLAUDE_PROJECT_DIR rather than
+# pwd, so running enable.sh from a subdirectory doesn't drop .mcp.json
+# in the wrong place.
+resolve_project_root() {
+  if [ -n "${CLAUDE_PROJECT_DIR:-}" ] && [ -d "$CLAUDE_PROJECT_DIR" ]; then
+    echo "$CLAUDE_PROJECT_DIR"
+    return
+  fi
+  if git_root="$(git rev-parse --show-toplevel 2>/dev/null)"; then
+    echo "$git_root"
+    return
+  fi
+  # Last resort: pwd, but warn loudly.
+  echo "warning: not inside a git repo and CLAUDE_PROJECT_DIR not set;" \
+       "writing .mcp.json to current directory: $(pwd)" >&2
+  pwd
+}
+
 TARGET="${SDD_MCP_TARGET:-project}"
 case "$TARGET" in
-  project) CONFIG_PATH="$(pwd)/.mcp.json" ;;
+  project) CONFIG_PATH="$(resolve_project_root)/.mcp.json" ;;
   user)    CONFIG_PATH="$HOME/.claude.json" ;;
   *)
     echo "error: SDD_MCP_TARGET must be 'project' or 'user' (got '$TARGET')" >&2
@@ -69,17 +87,26 @@ fi
 # File exists — try to merge with jq if available.
 if command -v jq >/dev/null 2>&1; then
   TMP="$(mktemp)"
-  jq --arg path "$SERVER_PATH" '
+  if jq --arg path "$SERVER_PATH" '
     .mcpServers = (.mcpServers // {}) |
     .mcpServers.sdd = {
       "type": "stdio",
       "command": "python3",
       "args": [$path]
     }
-  ' "$CONFIG_PATH" > "$TMP" && mv "$TMP" "$CONFIG_PATH"
-  echo "SDD MCP server registered in $CONFIG_PATH."
-  echo "Restart Claude Code to activate."
-  exit 0
+  ' "$CONFIG_PATH" > "$TMP" 2>/dev/null; then
+    mv "$TMP" "$CONFIG_PATH"
+    echo "SDD MCP server registered in $CONFIG_PATH."
+    echo "Restart Claude Code to activate."
+    exit 0
+  else
+    rm -f "$TMP"
+    echo "error: $CONFIG_PATH is not valid JSON; jq merge failed." >&2
+    echo "" >&2
+    echo "Either fix the JSON manually, or delete $CONFIG_PATH and re-run" >&2
+    echo "this script (a fresh file with just SDD will be written)." >&2
+    exit 1
+  fi
 fi
 
 # No jq — print manual-edit instructions.

@@ -1,8 +1,11 @@
-// spec: §11.AC1   task: T01
-// What this asserts (plain English): a brand-new visitor lands on /,
-// types an email, hits Submit, and sees the success state.
+// spec: §11.AC<N>   task: T<NN>
+// What this asserts (plain English): <one-line description>
 //
-// This is the SDD-shaped Playwright test pattern. Every test file:
+// THIS IS A TEMPLATE STARTER — it is intentionally a no-op so the file
+// runs cleanly on a fresh `enable.sh` install. Replace the body with
+// the actual assertions for your feature once you start writing tests.
+//
+// The shape below is the SDD-shaped Playwright pattern. Every test file:
 // - Starts with a one-line spec/task comment (above) so the test ties
 //   back to the AC it proves.
 // - One `test(...)` call per acceptance criterion. The string is the
@@ -14,29 +17,21 @@
 
 import { test, expect } from "@playwright/test";
 
-test("visitor signs up via email and sees the success state", async ({ page }) => {
-  // Arrange — load the screen
-  await page.goto("/");
+test.describe("SDD example (replace with your real test)", () => {
+  // Replace this happy-path with the actual user behaviour you're asserting.
+  // Keep the test name in plain English, written so a non-technical
+  // reviewer can read the intent in 5 seconds.
+  test("placeholder — passes by default; replace with a real assertion", async () => {
+    // Arrange — set up state for the user behaviour
+    // Act — what the user does
+    // Assert — what the user sees
+    expect(true).toBe(true);
+  });
 
-  // Act — what the user does
-  await page.fill("input[name=email]", "test@example.com");
-  await page.click("button[type=submit]");
-
-  // Assert — what the user sees
-  await expect(page.getByText("Thanks for signing up")).toBeVisible();
-});
-
-// Edge cases — one test per edge case from §11 ACs or edge-case-sweep output.
-
-test("submitting an empty email shows the validation error", async ({ page }) => {
-  await page.goto("/");
-  await page.click("button[type=submit]");
-  await expect(page.getByText(/email.*required/i)).toBeVisible();
-});
-
-test("submitting a malformed email shows the format error", async ({ page }) => {
-  await page.goto("/");
-  await page.fill("input[name=email]", "not-an-email");
-  await page.click("button[type=submit]");
-  await expect(page.getByText(/valid email/i)).toBeVisible();
+  // Edge cases — one test per edge case from the §11 ACs or the
+  // edge-case-sweep action's output. Examples (replace or delete):
+  //
+  //   test("submitting an empty <field> shows the validation error", ...);
+  //   test("submitting a malformed <field> shows the format error", ...);
+  //   test("loading state appears while data is fetching", ...);
 });

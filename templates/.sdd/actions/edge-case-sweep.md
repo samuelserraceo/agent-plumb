@@ -53,7 +53,7 @@ Aim for 4-10 candidates. Fewer = the sweep was too shallow; more = stop drowning
 
 The user reviews each candidate and replies one of three words per number:
 
-- **`take`** — add this AC to §11. The agent appends it via the inline `/re-approve` flow (same two-step pattern as `plan-decompose`: re-approve §11 with the new ACs, then add a matching task to `plan-decompose`).
+- **`take`** — add this AC to §11. The agent appends the new AC and treats §11 as edited; on the next `/next` advance the agent walks the user through inline re-approval per CLAUDE.md's "Skippable sections — proactively offer, don't force" pattern (the user replies `re-approve §11` to confirm the new content). Then the agent adds a matching task to `plan-decompose`. (The earlier `/re-approve <slug>` slash command is deprecated — re-approval is now handled inline through `/next`.)
 - **`skip`** — not worth covering. The candidate is dropped; nothing lands in spec.md.
 - **`defer`** — real concern, but not for this iteration. The agent records it in §11.5 of spec.md under a `### Deferred edge cases` heading so the next feature or follow-up can pick it up.
 

@@ -78,6 +78,16 @@ def get_active_step(project_root: str, args: Dict[str, Any]) -> Dict[str, Any]:
     else:
         rel_path = feature_path
 
+    # Reject paths that escape .sdd/ (path traversal defence). INDEX.md is
+    # user-edited input; an `**Active:**` value with `..` segments or an
+    # absolute path could resolve outside the project and read an unrelated
+    # spec.md. Validate after normalisation by realpath-checking the result
+    # is still under <project_root>/.sdd/.
+    sdd_root = os.path.realpath(os.path.join(project_root, ".sdd"))
+    spec_path_abs = os.path.realpath(os.path.join(project_root, rel_path, "spec.md"))
+    if not (spec_path_abs == sdd_root or spec_path_abs.startswith(sdd_root + os.sep)):
+        return {"error": f"active path escapes .sdd/: refusing to read {rel_path}"}
+
     spec_path = os.path.join(project_root, rel_path, "spec.md")
     if not os.path.isfile(spec_path):
         return {"error": f"spec.md not found at {rel_path}/spec.md"}

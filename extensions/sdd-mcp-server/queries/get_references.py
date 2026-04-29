@@ -46,11 +46,19 @@ def _classify(line: str, slug: str) -> str | None:
         # YAML list inline (`references: [a, b]`) or list-leader.
         if slug in s:
             return "frontmatter:references"
-    if re.match(r"^-\s+" + re.escape(slug) + r"\s*$", s):
+    # Frontmatter list item — accept both bare slug AND slug-with-context-suffix.
+    # `- email-signup` AND `- email-signup (depends on contacts)` both qualify.
+    if re.match(r"^-\s+" + re.escape(slug) + r"(?:\s|$)", s):
         return "frontmatter:references-item"
     if re.match(r"^extends\s*:", s, re.IGNORECASE) and slug in s:
         return "extends"
-    if re.match(r"^(?:source|from feature|where it came from)\s*[:=]", s, re.IGNORECASE) and slug in s:
+    # Source / cross-reference lines. Accept both colon/equals separators
+    # AND bare-prefix shape ("From feature 001-waitlist") which is common
+    # in SDD prose.
+    if re.match(
+        r"^(?:source|from feature|where it came from)\s*[:=]?\s+",
+        s, re.IGNORECASE,
+    ) and slug in s:
         return "source-line"
     return None
 

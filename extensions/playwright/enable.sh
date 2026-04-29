@@ -53,7 +53,7 @@ if [ -f ".sdd/stack.md" ]; then
 ## Testing
 
 - **Test runner:** Playwright
-- **Test file pattern:** `tests/task-<NN>.spec.ts` (per BUILD task) + `tests/<feature>.spec.ts` (cross-task suites)
+- **Test file pattern:** `.sdd/features/<id>/tests/task-*.spec.ts` (per BUILD task — matches the scaffolded Playwright config's testMatch) + `tests/<feature>.spec.ts` (optional cross-task suites at project root)
 - **Viewports:** Desktop (Chromium) + iPhone-13 mobile
 - **Why:** full-browser end-to-end tests with cross-browser + mobile coverage out of the box
 - **Run:** `npx playwright test`

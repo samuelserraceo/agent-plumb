@@ -72,7 +72,7 @@
       "trust": "framework"
     },
     "adversarial-review": {
-      "expected_sha256": "e7c902db6e429673d370cbd9d7093ce2ea712b9f7db102831a8ea8cb76e842f9",
+      "expected_sha256": "772f8a7f52e5f4cc1e1feb16a5929a486f72e02492c9a6676738a91ea88e2cae",
       "path": ".sdd/actions/adversarial-review.md",
       "trust": "framework"
     },
@@ -117,7 +117,7 @@
       "trust": "framework"
     },
     "edge-case-sweep": {
-      "expected_sha256": "de80a447ea92896c34cc59c5ee0d6cf1e96bcec68d0f1285877154f63a374f9d",
+      "expected_sha256": "304df2fb120dc08eb036a06c14e4779265afef1b50accc9e256f910864c48c59",
       "path": ".sdd/actions/edge-case-sweep.md",
       "trust": "framework"
     },

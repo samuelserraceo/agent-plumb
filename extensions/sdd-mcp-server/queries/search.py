@@ -49,7 +49,11 @@ def _read_config_yaml(project_root: str) -> Dict[str, Any]:
             text = fh.read()
     except OSError:
         return {}
-    fm = re.match(r"^---\s*\n(.*?)\n---", text, re.DOTALL)
+    # Match frontmatter on both LF (Unix) and CRLF (Windows) checkouts.
+    # A Windows checkout of config.md uses \r\n line endings; the original
+    # LF-only regex silently failed and made the query report "semantic
+    # search disabled" even when the YAML was correctly configured.
+    fm = re.match(r"^---\s*\r?\n(.*?)\r?\n---", text, re.DOTALL)
     if not fm:
         return {}
     try:

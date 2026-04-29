@@ -44,9 +44,22 @@ def _walk_headings(lines: List[str]):
 
     body_start/end are line indices; body is everything between this heading
     and the next heading at the same or shallower level.
+
+    Tracks fenced code-block state so that ``` ## inside example markdown
+    blocks isn't treated as a real heading (otherwise patterns containing
+    fenced examples with their own headings would be split incorrectly and
+    example headings would leak into the `available` list).
     """
     headings = []
+    in_fence = False
     for idx, line in enumerate(lines):
+        # Toggle fence state on lines that start a code block (with optional
+        # language tag). Match: ```, ```text, ```python, etc.
+        if re.match(r"^\s*```", line):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
         m = re.match(r"^(#{2,3})\s+(.+?)\s*$", line)
         if m:
             headings.append((len(m.group(1)), m.group(2).strip(), idx))

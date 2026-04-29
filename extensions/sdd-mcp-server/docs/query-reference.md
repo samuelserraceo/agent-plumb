@@ -121,16 +121,17 @@ Walks `.sdd/patterns.md` for a level-2 or level-3 heading whose slug matches. Sl
 
 ```json
 {
-  "result": {
-    "error": "pattern not found",
-    "available": [
-      {"slug": "architecture-decisions", "heading": "Architecture decisions", "level": 2},
-      {"slug": "auth-retry-logic", "heading": "Auth retry logic", "level": 3},
-      ...
-    ]
-  }
+  "error": "pattern not found",
+  "available": [
+    {"slug": "architecture-decisions", "heading": "Architecture decisions", "level": 2},
+    {"slug": "auth-retry-logic", "heading": "Auth retry logic", "level": 3}
+  ]
 }
 ```
+
+Errors are returned at the top level (not nested under `"result"`) per the
+query contract — see `server.py`'s `tools/call` handler which sets
+`isError: true` whenever the query result contains an `"error"` key.
 
 ---
 

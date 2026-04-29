@@ -62,7 +62,9 @@ For each finding, the user replies with one of:
 - **`file for later`** — real, but not blocking this ship. The agent appends a one-paragraph stub to `.sdd/<work-item>/follow-ups.md` (creating the file if needed) — title, severity, finding text, and the date. The user can pick it up as a future feature or bug.
 - **`decided risk`** — the user is consciously accepting the risk. The agent appends a one-line entry to `.sdd/decisions.md` with the reason the user gives (e.g. *"AC10 race condition: traffic <100/day, retry on conflict is cheap, accepting"*).
 
-**Discipline:** every finding must get a triage call — no silent skips. If the user is unsure, propose a default ("I'd file this for later — sound right?") and let them confirm or override.
+**Hard gate on `critical` findings.** Findings the agent flagged as severity `critical` (or any finding tagged `BLOCK` by an automated review tool) **cannot be `file for later`**. The agent must refuse: *"This is a critical finding. The only valid triages are `fix now` or `decided risk` with an explicit reason. Which do you pick?"* If the user picks `decided risk`, the reason must be more than one word — the agent rejects single-word reasons (`"ok"`, `"fine"`, `"yes"`) and asks again. The decisions.md entry records the full reason verbatim.
+
+**Discipline:** every finding must get a triage call — no silent skips. For non-critical findings, if the user is unsure, propose a default ("I'd file this for later — sound right?") and let them confirm or override. Critical findings never get a default — the agent waits for an explicit `fix now` or a non-trivial `decided risk` reason.
 
 **Output:** fill `spec.md` under `### adversarial-review / triage` with one line per finding: `<n>. <severity>: <one-line decision>`. Reflect any new BUILD tasks in plan-decompose; reflect any deferred items in `follow-ups.md`; reflect any accepted risks in `decisions.md`.
 

@@ -19,7 +19,7 @@ If you skip the wizard, the agent will ask each question piecemeal during your f
 
 ## Usage
 
-```
+```text
 /sdd-setup
 ```
 
@@ -179,7 +179,7 @@ If user picks `2` or `3`, agent skips the polling defaults (they're CodeRabbit-s
 
 The agent prints a summary box:
 
-```
+```text
 ✅ Setup complete.
 
   Stack:    <language + framework>
@@ -213,7 +213,7 @@ Every option above translates jargon on first use. "Vercel" gets a one-line desc
 
 ## What this command does NOT do
 
-- It does NOT install dependencies (`npm install`, `pip install`, etc.). The agent suggests the install command at the end of the wizard but does not run it — you're in control of when/where dependencies install.
+- It does NOT install dependencies (`npm install`, `pip install`, etc.). The agent suggests the install command at the end of the wizard but does not run it — you control when and where dependencies install.
 - It does NOT create a git repo or push anywhere. The bootstrap script (`sdd-init.sh`) handled the repo setup; this wizard is purely about preferences.
 - It does NOT scaffold the first feature. After the wizard, you type `/start "<title>"` to begin actual work.
 - It does NOT touch the manifest. Nothing in `templates/.sdd/` is modified — the wizard writes to project-level files (`.sdd/stack.md`, `.sdd/config.md`) which are the user's, not framework-shipped.

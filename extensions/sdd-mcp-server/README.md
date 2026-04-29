@@ -114,7 +114,7 @@ python3 -m unittest discover
 
 ## Layout
 
-```
+```text
 extensions/sdd-mcp-server/
 ├── README.md            ← this file
 ├── enable.sh            ← one-shot registration

@@ -265,6 +265,45 @@ class ProtocolShimTests(_FixtureBase):
         self.assertIn("error", resp)
         self.assertEqual(resp["error"]["code"], -32601)
 
+    def test_mcp_tools_call_contextual_error_sets_isError(self):
+        """Regression: any handler-returned `error` key must set isError=True,
+        even when the result also carries success-shaped context fields like
+        `feature_path` or `phase`. The earlier shim used `"feature_path" not in result`
+        to gate isError, which silently downgraded contextual errors to successful
+        results. Now the shim only checks for the `error` key. This test guards
+        against regressing back to the old behaviour.
+        """
+        import os, json
+        from tests.conftest import make_temp_project
+        # Build a fixture, then delete spec.md so get_active_step returns
+        # a contextual error: {"error": "spec.md not found at ...", + active context}.
+        # This is the exact shape that exercised the bug.
+        proj, cleanup = make_temp_project()
+        try:
+            spec_path = os.path.join(proj, ".sdd", "features", "001-waitlist", "spec.md")
+            os.remove(spec_path)
+            os.environ["CLAUDE_PROJECT_DIR"] = proj
+            try:
+                resp = handle_message({
+                    "jsonrpc": "2.0",
+                    "id": 99,
+                    "method": "tools/call",
+                    "params": {"name": "get_active_step", "arguments": {}},
+                })
+            finally:
+                os.environ.pop("CLAUDE_PROJECT_DIR", None)
+            # The shim must mark this as an error, even though the inner result
+            # might carry feature_path or phase context.
+            self.assertTrue(
+                resp["result"]["isError"],
+                "tools/call must set isError=True when result has 'error' key — "
+                "even if result also contains success-shaped fields"
+            )
+            decoded = json.loads(resp["result"]["content"][0]["text"])
+            self.assertIn("error", decoded)
+        finally:
+            cleanup()
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -53,11 +53,27 @@ def _normalise_iso(s: str) -> str:
     return s  # let caller see odd input verbatim; comparison will still try
 
 
+_VALID_ISO_RE = re.compile(
+    r"^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?)?$"
+)
+
+
 def get_decisions_since(project_root: str, args: Dict[str, Any]) -> Dict[str, Any]:
     since_raw = (args or {}).get("since")
     if not since_raw:
         return {"error": "missing arg 'since' — e.g. '2026-04-28T00:00:00Z' or '2026-04-28'"}
-    since = _normalise_iso(str(since_raw))
+    since_raw_str = str(since_raw)
+    # Validate ISO 8601 shape BEFORE normalising/comparing. Lexicographic
+    # comparison on a malformed string can silently include or exclude
+    # entries (e.g. "yesterday" sorts after every real timestamp).
+    if not _VALID_ISO_RE.match(since_raw_str):
+        return {
+            "error": (
+                f"invalid 'since' value: {since_raw_str!r}. Expected ISO 8601 — "
+                "either 'YYYY-MM-DD' or 'YYYY-MM-DDTHH:MM:SS[Z|±HH:MM]'"
+            )
+        }
+    since = _normalise_iso(since_raw_str)
 
     dec_path = os.path.join(project_root, ".sdd", "decisions.md")
     if not os.path.isfile(dec_path):

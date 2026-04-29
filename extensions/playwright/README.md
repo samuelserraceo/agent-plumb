@@ -25,11 +25,16 @@ loaded by default; you pick what fits your project.
 ## When to enable
 
 - ✅ Web app with a UI (forms, buttons, navigation, anything user-clicks)
-- ✅ You want cross-browser testing (Chromium / Firefox / WebKit)
-- ✅ You want mobile-viewport testing (iPhone-13, iPad, etc.)
+- ✅ You want desktop + mobile-viewport testing out of the box (Chromium + iPhone-13)
 - ✅ You want visual regression catching (screenshot diffs)
 - ❌ Backend-only project with no UI (use pytest, Vitest, or Go's testing)
 - ❌ Static site / marketing page (overkill — a small visual-test setup suffices)
+
+The default scaffold ships **Chromium + iPhone-13** projects (matches what
+the SDD wireframe template's viewport-targets row asks about: desktop + mobile).
+If you want Firefox / WebKit / additional devices, add them to the
+`projects` array in your project's `playwright.config.ts` after enable.sh
+runs — Playwright supports them natively.
 
 ## How to enable
 
@@ -60,7 +65,7 @@ The script is idempotent — running it twice on the same project says "already 
 ```
 
 The framework's discipline does the rest:
-- Each BUILD task scaffolds a test file at `features/<id>/tests/task-NNN.spec.ts`
+- Each BUILD task scaffolds a test file at `.sdd/features/<id>/tests/task-*.spec.ts` (the path the Playwright config's `testMatch` glob covers)
 - The agent writes the test FIRST (it must be RED before the code)
 - The code follows; test goes GREEN; commit
 - The moat hook re-runs the test on the staged spec to catch fakes
