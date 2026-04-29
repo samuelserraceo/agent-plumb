@@ -4563,6 +4563,92 @@ else
 fi
 
 # ============================================================
+# T114 — pre-commit-no-assumed-markers refuses (assumed) / (TBD) / (?) tokens
+#        in staged spec.md (closes #72: mechanical never-assume).
+# ============================================================
+note "T114: pre-commit-no-assumed-markers refuses (assumed) placeholder"
+d=$(mkproj_v08)
+cd "$d"
+mkdir -p .claude/hooks .sdd/features/001-test
+cp "$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-no-assumed-markers.sh" .claude/hooks/pre-commit-no-assumed-markers.sh
+chmod +x .claude/hooks/pre-commit-no-assumed-markers.sh
+cat > .sdd/features/001-test/spec.md <<'SPEC'
+# 001-test
+[PHASE: SPEC]
+## PHASE: SPEC
+### action: problem
+- [x] who: small business owners (assumed)
+SPEC
+git add .sdd/features/001-test/spec.md
+hook_stdin='{"tool_input":{"command":"git commit -m m1"}}'
+ec=0
+err=$(echo "$hook_stdin" | bash .claude/hooks/pre-commit-no-assumed-markers.sh 2>&1 1>/dev/null) || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 2 ] && echo "$err" | grep -qiE 'placeholder|never assume|assumed'; then
+  ok "T114 hook refused (assumed) placeholder in staged spec.md"
+else
+  bad "T114 hook accepted (assumed) placeholder" "ec=$ec; err='$err'"
+fi
+
+# ============================================================
+# T114b — hook ALLOWS clean spec.md (no placeholders).
+# ============================================================
+note "T114b: pre-commit-no-assumed-markers allows clean spec.md"
+d=$(mkproj_v08)
+cd "$d"
+mkdir -p .claude/hooks .sdd/features/001-test
+cp "$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-no-assumed-markers.sh" .claude/hooks/pre-commit-no-assumed-markers.sh
+chmod +x .claude/hooks/pre-commit-no-assumed-markers.sh
+cat > .sdd/features/001-test/spec.md <<'SPEC'
+# 001-test
+[PHASE: SPEC]
+## PHASE: SPEC
+### action: problem
+- [x] who: small business owners running an Etsy store
+SPEC
+git add .sdd/features/001-test/spec.md
+hook_stdin='{"tool_input":{"command":"git commit -m clean"}}'
+ec=0
+echo "$hook_stdin" | bash .claude/hooks/pre-commit-no-assumed-markers.sh >/dev/null 2>&1 || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 0 ]; then
+  ok "T114b hook accepted clean spec.md (no placeholders)"
+else
+  bad "T114b hook false-blocked clean spec.md" "ec=$ec"
+fi
+
+# ============================================================
+# T114c — hook ALLOWS prose-style deferrals ("deferred to next iteration").
+#         Deliberate deferral should pass the gate.
+# ============================================================
+note "T114c: pre-commit-no-assumed-markers allows prose deferrals"
+d=$(mkproj_v08)
+cd "$d"
+mkdir -p .claude/hooks .sdd/features/001-test
+cp "$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-no-assumed-markers.sh" .claude/hooks/pre-commit-no-assumed-markers.sh
+chmod +x .claude/hooks/pre-commit-no-assumed-markers.sh
+cat > .sdd/features/001-test/spec.md <<'SPEC'
+# 001-test
+[PHASE: SPEC]
+## PHASE: SPEC
+### action: out-of-scope
+- [x] mobile-app: deferred to next iteration; see issue #42
+SPEC
+git add .sdd/features/001-test/spec.md
+hook_stdin='{"tool_input":{"command":"git commit -m prose"}}'
+ec=0
+echo "$hook_stdin" | bash .claude/hooks/pre-commit-no-assumed-markers.sh >/dev/null 2>&1 || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 0 ]; then
+  ok "T114c hook allowed prose deferral 'deferred to next iteration'"
+else
+  bad "T114c hook false-blocked legitimate prose deferral" "ec=$ec"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
