@@ -40,8 +40,9 @@
 
 set -euo pipefail
 
-if [ $# -lt 3 ]; then
+if [ $# -ne 3 ]; then
   echo "revert-phase.sh: usage: revert-phase.sh <spec-path> <from-phase> <to-phase>" >&2
+  echo "revert-phase.sh: got $# argument(s); expected exactly 3." >&2
   exit 1
 fi
 
@@ -182,14 +183,24 @@ text = re.sub(
 )
 
 # 4. Walk lines, un-tick every `- [x]` under `## PHASE: <P>` for P in to_untick.
-# Track which `## PHASE:` section we're in. Stop tracking when we hit the
-# next `## PHASE:` heading.
+# Track which `## PHASE:` section we're in. Stop tracking when we hit either
+# the next `## PHASE:` heading OR any other top-level `## ` heading (so an
+# unrelated section like `## Notes` between two phase blocks doesn't extend
+# the previous phase's scope into it).
 out_lines = []
 current_phase_section = None
 for line in text.split("\n"):
-    m_heading = re.match(r"^##\s+PHASE:\s*([A-Z]+)\s*$", line)
-    if m_heading:
-        current_phase_section = m_heading.group(1).strip().upper()
+    m_phase_heading = re.match(r"^##\s+PHASE:\s*([A-Z]+)\s*$", line)
+    m_other_heading = re.match(r"^##\s+(?!PHASE:)", line)
+    if m_phase_heading:
+        current_phase_section = m_phase_heading.group(1).strip().upper()
+        out_lines.append(line)
+        continue
+    if m_other_heading:
+        # Any non-PHASE `## ` heading ends the previous phase section.
+        # Sub-headings (`### ...`) do NOT reset — they're per-action
+        # sub-sections inside the phase.
+        current_phase_section = None
         out_lines.append(line)
         continue
     if current_phase_section in to_untick:

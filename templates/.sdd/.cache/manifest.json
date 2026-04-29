@@ -64,7 +64,7 @@
       "trust": "framework"
     },
     "revert-phase.sh": {
-      "expected_sha256": "9381f5a7e7f142e5f1c57eef0103df65379d32542210d6221d44eb69c5a2916f",
+      "expected_sha256": "829038bd2de8c85c63fe98d4b2e4bb6962f39541777dfc9558eca355400535fa",
       "path": ".sdd/scripts/revert-phase.sh",
       "trust": "framework"
     }
