@@ -38,7 +38,7 @@ The framework is the philosophy made mechanical. Drop any of the three foundatio
 
 ## Code-quality doctrine (always-on, applies to every action)
 
-These eight rules apply across SPEC, BUILD, and SHIP. They are not configurable — they are how SDD agents work. **They are practical consequences of the three foundations above** (rules 1, 6 are foundation 3 applied to user intent / durations; rules 2, 3, 7 serve foundation 1 — simplicity / no over-engineering / minimum diff; rule 4 serves foundation 2 — reuse external bricks instead of writing your own; rule 5 serves foundation 2 — wireframe is the user-visible brick of the spec; rule 8 serves foundations 1+3 — plain English keeps the surface simple AND prevents the agent from assuming the user knows the jargon).
+These eight rules apply across SPEC, BUILD, and SHIP. They are not configurable — they are how SDD agents work. They are practical consequences of the three foundations above.
 
 1. **Never assume — always ask.** If you don't know what the user means or what they want, halt and ask. Filling a `[ ]` from assumption defeats the framework's whole point. When in doubt, ask. (Karpathy's first borrow: "the agent must always ask, never assume.")
 
