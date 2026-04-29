@@ -59,7 +59,7 @@
       "trust": "framework"
     },
     "settings.sh": {
-      "expected_sha256": "d8e1a5fe31d36ee7c30160440d3227e4c69759d5c3a47bef712babd1d8e34283",
+      "expected_sha256": "9b22cdcac0fc522c56eab5c18e3d62e4546fc5a60b13a5c6524607b0d0491c99",
       "path": ".sdd/scripts/settings.sh",
       "trust": "framework"
     }

@@ -221,6 +221,22 @@ def del_at(d, dotted):
         return True
     return False
 
+def _atomic_write_config(text):
+    """Atomic write helper: tempfile + rename so a crash mid-write
+    doesn't leave the user with a half-written config.md. Closes #36
+    by deduplicating the set/reset pair."""
+    import tempfile
+    tmp_dir = os.path.dirname(config_path) or "."
+    fd, tmp_path = tempfile.mkstemp(prefix=".config.tmp.", dir=tmp_dir)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(text)
+        os.replace(tmp_path, config_path)
+    except Exception:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+        raise
+
 if cmd == "list":
     # Print the full inventory grouped by top-level block.
     print("SDD settings (.sdd/config.md):")
@@ -254,19 +270,7 @@ elif cmd == "set":
     set_at(fm, key, val)
     new_fm_text = yaml.safe_dump(fm, sort_keys=False, default_flow_style=False).rstrip()
     new_text = f"---\n{new_fm_text}\n---\n{body}"
-    # Atomic write: tempfile + rename so a crash mid-write doesn't
-    # leave the user with a half-written config.md.
-    import tempfile
-    tmp_dir = os.path.dirname(config_path) or "."
-    fd, tmp_path = tempfile.mkstemp(prefix=".config.tmp.", dir=tmp_dir)
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            f.write(new_text)
-        os.replace(tmp_path, config_path)
-    except Exception:
-        if os.path.exists(tmp_path):
-            os.unlink(tmp_path)
-        raise
+    _atomic_write_config(new_text)
     print(f"{key} = {get_at(fm, key)!r}  (saved)")
     sys.exit(0)
 
@@ -287,17 +291,7 @@ elif cmd == "reset":
         sys.exit(2)
     new_fm_text = yaml.safe_dump(fm, sort_keys=False, default_flow_style=False).rstrip()
     new_text = f"---\n{new_fm_text}\n---\n{body}"
-    import tempfile
-    tmp_dir = os.path.dirname(config_path) or "."
-    fd, tmp_path = tempfile.mkstemp(prefix=".config.tmp.", dir=tmp_dir)
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            f.write(new_text)
-        os.replace(tmp_path, config_path)
-    except Exception:
-        if os.path.exists(tmp_path):
-            os.unlink(tmp_path)
-        raise
+    _atomic_write_config(new_text)
     print(f"{key} removed (override deleted; project default applies)")
     sys.exit(0)
 
