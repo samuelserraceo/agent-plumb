@@ -136,32 +136,17 @@ jobs:
             # Helper missing (e.g. older project that hasn't picked up
             # v1.x yet) — fall back to the v0.13.x hardcoded shape so
             # the workflow doesn't error on missing helper.
-            mapfile -t globs <<'GLOBS'
-app/**/*.tsx
-app/**/*.jsx
-app/**/*.ts
-app/**/*.js
-components/**/*.tsx
-components/**/*.jsx
-components/**/*.ts
-components/**/*.js
-pages/**/*.tsx
-pages/**/*.jsx
-pages/**/*.ts
-pages/**/*.js
-src/app/**/*.tsx
-src/app/**/*.jsx
-src/app/**/*.ts
-src/app/**/*.js
-src/components/**/*.tsx
-src/components/**/*.jsx
-src/components/**/*.ts
-src/components/**/*.js
-src/pages/**/*.tsx
-src/pages/**/*.jsx
-src/pages/**/*.ts
-src/pages/**/*.js
-GLOBS
+            # Use a bash array literal (NOT a heredoc) — heredoc bodies
+            # at column 0 break out of the YAML `run: |` block scalar
+            # and leave the workflow invalid YAML. CR cycle-1 critical.
+            globs=(
+              'app/**/*.tsx' 'app/**/*.jsx' 'app/**/*.ts' 'app/**/*.js'
+              'components/**/*.tsx' 'components/**/*.jsx' 'components/**/*.ts' 'components/**/*.js'
+              'pages/**/*.tsx' 'pages/**/*.jsx' 'pages/**/*.ts' 'pages/**/*.js'
+              'src/app/**/*.tsx' 'src/app/**/*.jsx' 'src/app/**/*.ts' 'src/app/**/*.js'
+              'src/components/**/*.tsx' 'src/components/**/*.jsx' 'src/components/**/*.ts' 'src/components/**/*.js'
+              'src/pages/**/*.tsx' 'src/pages/**/*.jsx' 'src/pages/**/*.ts' 'src/pages/**/*.js'
+            )
             min_chars=30
           fi
           copy_re='"([^"\\]|\\.){'"$min_chars"',}"|'"'"'([^'"'"'\\]|\\.){'"$min_chars"',}'"'"'|`([^`\\]|\\.){'"$min_chars"',}`|>[^<>]{'"$min_chars"',}<'

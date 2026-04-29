@@ -74,7 +74,7 @@
       "trust": "framework"
     },
     "scope-guard-config.sh": {
-      "expected_sha256": "af6ab91bb11ed797ab148097ceba4bc8b0bf6bef114b9bf53e312fc730588768",
+      "expected_sha256": "8b0fdee7fb50aad457113d5ede8249fa4c16590a06fc4c8dfa5083bcf33f116a",
       "path": ".sdd/scripts/scope-guard-config.sh",
       "trust": "framework"
     }

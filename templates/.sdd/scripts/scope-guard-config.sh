@@ -67,6 +67,11 @@ try:
         text = f.read()
 except OSError:
     sys.exit(0)
+# Normalise line endings so a CRLF-committed config.md (common on
+# Windows) still matches the frontmatter delimiter regex. Without
+# this, the parser silently treated CRLF files as "no frontmatter"
+# and every per-project override fell back to the Next.js defaults.
+text = text.replace("\r\n", "\n").replace("\r", "\n")
 m = re.match(r"^---\n(.*?)\n---", text, re.DOTALL)
 if not m:
     sys.exit(0)
