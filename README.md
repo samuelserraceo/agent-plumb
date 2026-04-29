@@ -132,10 +132,13 @@ Pushes the branch, opens a PR, watches CI. On pass: marks shipped, distills the 
 
 | Command | What it does |
 |---|---|
+| `/sdd-setup` | First-session setup wizard. Walks plain-English questions and fills `stack.md` + `config.md`. Run **once** when bootstrapping a fresh SDD project, before your first `/start`. |
+| `/sdd-config [<question-id>]` | Re-answer a single setup question without re-running the full wizard. Use when stack changes (new service, new reviewer, new hosting target). |
 | `/start <title>` | Scaffold a new work item. Pass `--extends=<id>` for evolution of an existing feature. |
 | `/next` | Advance the active work item by one step. Also handles inline skip / re-approve / bug-routing — see /next.md. |
 | `/idea` | Capture an idea cheaply — no phase, no branch, just a small file in `.sdd/ideas/`. |
 | `/status` | Print the current workflow state + resolved F5 parameters with provenance source. |
+| `/settings` | List/get/set/reset framework settings without editing `config.md` by hand. Bare `/settings` lists everything; `get <key>` / `set <key> <value>` / `reset <key>` for targeted edits. |
 | `/ship` | Push branch, open PR, watch CI, mark shipped or capture bug. |
 | `/compress` | Consolidate `patterns.md` or `data-model.md` when they grow noisy. |
 

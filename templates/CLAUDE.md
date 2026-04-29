@@ -91,13 +91,13 @@ For Pipelogic-style projects with 3-5 features in flight at once, this scaffold 
 
 | Command | Purpose | Branch | Phases |
 |---|---|---|---|
-| `/sdd-setup` | First-session setup wizard — 6 plain-English questions that fill `stack.md` + `config.md`. Run **once** when bootstrapping a fresh SDD project, before your first `/start`. | n/a | n/a |
+| `/sdd-setup` | First-session setup wizard — walks the plain-English questions in `.sdd/setup/` (file-driven, count grows as new bricks are added) and fills `stack.md` + `config.md`. Run **once** when bootstrapping a fresh SDD project, before your first `/start`. | n/a | n/a |
 | `/sdd-config` | Re-answer or edit a single `/sdd-setup` question without re-walking the whole wizard. Use when stack changes (new service, new reviewer, new hosting target). | n/a | n/a |
 | `/start` | Scaffold a new work item — pass `--extends=<id>` for evolution of an existing feature | feature branch (auto-created on first `/next`) | SPEC → BUILD → SHIP → SHIPPED |
 | `/next` | Advance the active work item by one step. Also handles inline skip / re-approve / bug-routing — see /next's prose. | active branch | SPEC → BUILD → SHIP → SHIPPED |
 | `/idea` | Capture an idea to backlog cheaply — single file in `.sdd/ideas/`, no commitment | current branch | none |
 | `/status` | Print current workflow state + resolved F5 parameters with provenance | n/a | n/a |
-| `/settings` | View or change a single framework parameter (budget, voice, pace, ralph) without editing `config.md` by hand. `list` / `get <key>` / `set <key> <value>` / `reset <key>`. | n/a | n/a |
+| `/settings` | View or change a single framework parameter (budget, voice, pace, ralph) without editing `config.md` by hand. Bare `/settings` lists everything; `get <key>` / `set <key> <value>` / `reset <key>` for targeted edits. | n/a | n/a |
 | `/ship` | Push branch, open PR, watch CI, mark shipped or capture bug | active branch | SHIP complete |
 | `/compress` | Consolidate `patterns.md` or `data-model.md` when they grow noisy | n/a | n/a |
 

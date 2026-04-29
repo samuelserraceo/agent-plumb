@@ -3971,7 +3971,9 @@ if [ -z "$current_version" ]; then
   # silently skipping would let a corrupt CLAUDE.version slip past the
   # version-drift gate (CR cycle-1 finding on PR #63).
   problems="$problems missing-or-empty-CLAUDE.version"
-elif ! grep -qF -- "Currently at **v$current_version" "$FRAMEWORK_ROOT/README.md" 2>/dev/null; then
+elif ! grep -qF -- "Currently at **v${current_version}**" "$FRAMEWORK_ROOT/README.md" 2>/dev/null; then
+  # Anchor on the closing `**` so v0.13.2 doesn't false-match v0.13.20
+  # in a future ship (CR cycle-3 finding on PR #63).
   problems="$problems status-not-v$current_version"
 fi
 if [ -z "$problems" ]; then
