@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# sdd-init.sh — Plugin SessionStart hook (v0.10).
+# sdd-init.sh — Plugin SessionStart hook (v0.11).
 #
 # When the SDD plugin is installed and a session starts in a project,
 # this script auto-bootstraps the project if .sdd/ doesn't exist yet.
