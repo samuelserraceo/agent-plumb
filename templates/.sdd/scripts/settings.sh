@@ -46,8 +46,8 @@ command -v python3 >/dev/null 2>&1 || {
   exit 1
 }
 
-CONFIG="$CONFIG" CMD="$CMD" KEY="$KEY" VAL="$VAL" python3 <<'PYEOF'
-import os, re, sys
+CONFIG="$CONFIG" CMD="$CMD" KEY="$KEY" VAL="$VAL" PROJECT_DIR="$PROJECT_DIR" python3 <<'PYEOF'
+import json, os, re, subprocess, sys
 try:
     import yaml
 except ImportError:
@@ -56,6 +56,7 @@ except ImportError:
     sys.exit(1)
 
 config_path = os.environ["CONFIG"]
+project_dir = os.environ["PROJECT_DIR"]
 cmd = os.environ["CMD"]
 key = os.environ["KEY"]
 val = os.environ["VAL"]
@@ -246,6 +247,91 @@ def del_at(d, dotted):
         return True
     return False
 
+def _infer_active_context(proj):
+    """Return (spec_path, action_slug, step_id) for the active step,
+    or (None, None, None) if no in-flight feature is resolvable.
+
+    Reads `**Active:** <path>` from .sdd/INDEX.md, then invokes
+    next-action.sh on that spec to get the active action + step.
+    Used by `get` to walk the F5 cascade and report provenance for
+    the value the agent would currently see (closes #34)."""
+    index_path = os.path.join(proj, ".sdd", "INDEX.md")
+    if not os.path.isfile(index_path):
+        return None, None, None
+    try:
+        with open(index_path, encoding="utf-8") as f:
+            idx_text = f.read()
+    except OSError:
+        return None, None, None
+    m = re.search(r'^\*\*Active:\*\*\s+(\S+)', idx_text, re.MULTILINE)
+    if not m:
+        return None, None, None
+    spec_rel = m.group(1).strip()
+    spec_path = spec_rel if os.path.isabs(spec_rel) else os.path.join(proj, spec_rel)
+    if not os.path.isfile(spec_path):
+        return None, None, None
+    next_action_sh = os.path.join(proj, ".sdd", "scripts", "next-action.sh")
+    if not os.path.isfile(next_action_sh):
+        return None, None, None
+    try:
+        result = subprocess.run(
+            ["bash", next_action_sh, spec_path],
+            capture_output=True, text=True, timeout=5
+        )
+    except (subprocess.TimeoutExpired, OSError):
+        return None, None, None
+    if result.returncode != 0 or not result.stdout.strip():
+        return None, None, None
+    try:
+        na = json.loads(result.stdout)
+    except json.JSONDecodeError:
+        return None, None, None
+    action = (na.get("action") or "").strip()
+    step = (na.get("step") or "").strip()
+    if not action or not step:
+        return None, None, None
+    return spec_path, action, step
+
+def _resolve_with_provenance(proj, lookup_key, project_value):
+    """If `lookup_key` is in the parameters.* cascade AND there's an
+    active in-flight feature, run resolve-parameters.sh and return
+    (effective_value, source_label) per the F5 cascade. Otherwise
+    return (project_value, "project").
+
+    `source_label` is one of: `project`, `work-item`, `stage:<id>`,
+    `action:<slug>`, `step:<id>` — the label resolve-parameters.sh
+    stamps onto the leaf in its `_provenance` map."""
+    if not lookup_key.startswith("parameters."):
+        return project_value, "project"
+    spec_path, action_slug, step_id = _infer_active_context(proj)
+    if not (spec_path and action_slug and step_id):
+        return project_value, "project"
+    resolver = os.path.join(proj, ".sdd", "scripts", "resolve-parameters.sh")
+    if not os.path.isfile(resolver):
+        return project_value, "project"
+    try:
+        result = subprocess.run(
+            ["bash", resolver, spec_path, action_slug, step_id],
+            capture_output=True, text=True, timeout=5
+        )
+    except (subprocess.TimeoutExpired, OSError):
+        return project_value, "project"
+    if result.returncode != 0 or not result.stdout.strip():
+        return project_value, "project"
+    try:
+        resolved = json.loads(result.stdout)
+    except json.JSONDecodeError:
+        return project_value, "project"
+    provenance = resolved.get("_provenance", {})
+    cascade_key_short = lookup_key[len("parameters."):]
+    cur = resolved
+    for part in _split_dotted(cascade_key_short):
+        if isinstance(cur, dict) and part in cur:
+            cur = cur[part]
+        else:
+            return project_value, "project"
+    return cur, provenance.get(cascade_key_short, "project")
+
 def _atomic_write_config(text):
     """Atomic write helper: tempfile + rename so a crash mid-write
     doesn't leave the user with a half-written config.md. Closes #36
@@ -279,13 +365,31 @@ elif cmd == "get":
     if not key:
         print("[settings] usage: settings.sh get <key>", file=sys.stderr)
         sys.exit(1)
+    # Project-default lookup first — also confirms the key is real.
+    # get_at already accepts the relative form (e.g. `budget.max_minutes`)
+    # by falling back to `parameters.<dotted>`; reproduce that
+    # normalisation here so cascade resolution sees the canonical key.
     try:
-        v = get_at(fm, key)
-        print(f"{key} = {v!r}")
+        project_value = get_at(fm, key)
     except KeyError:
         print(f"[settings] key not found: {key}", file=sys.stderr)
         print(f"[settings] run `settings.sh list` to see all keys.", file=sys.stderr)
         sys.exit(2)
+    # Determine the canonical lookup key (for cascade walking).
+    lookup_key = key
+    config_block_prefixes = (
+        "parameters.", "events.", "file_rules.", "state_rules.",
+        "folder_rules.", "file_classes.", "co_stage_block.",
+    )
+    if not lookup_key.startswith(config_block_prefixes):
+        lookup_key = "parameters." + lookup_key
+    # Walk the F5 cascade if the key lives under parameters.* AND an
+    # active feature exists; otherwise fall back to project-only.
+    # Closes #34 — provenance label was doc-claimed but missing in code.
+    effective_value, source = _resolve_with_provenance(
+        project_dir, lookup_key, project_value
+    )
+    print(f"{key} = {effective_value!r} [{source}]")
     sys.exit(0)
 
 elif cmd == "set":
