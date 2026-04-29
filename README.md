@@ -290,7 +290,7 @@ Your data is never touched: `INDEX.md`, `data-model.md`, `patterns.md`, `decisio
 `CLAUDE.md` at your project root has two clearly-marked sections:
 
 ```
-<!-- SDD-MANAGED-START version: 0.9.0 -->
+<!-- SDD-MANAGED-START version: 0.13.2 -->
    (workflow rules — overwritten by update.sh)
 <!-- SDD-MANAGED-END -->
 
