@@ -132,10 +132,13 @@ Pushes the branch, opens a PR, watches CI. On pass: marks shipped, distills the 
 
 | Command | What it does |
 |---|---|
+| `/sdd-setup` | First-session setup wizard. Walks plain-English questions and fills `stack.md` + `config.md`. Run **once** when bootstrapping a fresh SDD project, before your first `/start`. |
+| `/sdd-config [<question-id>]` | Re-answer a single setup question without re-running the full wizard. Use when stack changes (new service, new reviewer, new hosting target). |
 | `/start <title>` | Scaffold a new work item. Pass `--extends=<id>` for evolution of an existing feature. |
 | `/next` | Advance the active work item by one step. Also handles inline skip / re-approve / bug-routing — see /next.md. |
 | `/idea` | Capture an idea cheaply — no phase, no branch, just a small file in `.sdd/ideas/`. |
 | `/status` | Print the current workflow state + resolved F5 parameters with provenance source. |
+| `/settings` | List/get/set/reset framework settings without editing `config.md` by hand. Bare `/settings` lists everything; `get <key>` / `set <key> <value>` / `reset <key>` for targeted edits. |
 | `/ship` | Push branch, open PR, watch CI, mark shipped or capture bug. |
 | `/compress` | Consolidate `patterns.md` or `data-model.md` when they grow noisy. |
 
@@ -251,7 +254,7 @@ See [`templates/.sdd/playbooks/feature.md`](templates/.sdd/playbooks/feature.md)
 
 Actions live as separate prose files in [`templates/.sdd/actions/`](templates/.sdd/actions/) — the framework loads them on demand. Forking the framework means forking individual actions, not the whole playbook.
 
-The `feature` playbook is the only one shipped in v0.9. Phase D will add a dedicated `bug` playbook (skipping plan-decompose) and `idea` playbook (single-file capture).
+As of v0.13.2, two playbooks ship: `feature` (single-feature work) and `project` (multi-feature initiatives like "build a CRM" or "launch a waitlist + admin dashboard + analytics"). Future releases may add a dedicated `bug` playbook (skipping plan-decompose) and `idea` playbook (single-file capture); the multi-playbook engine itself is shipped, so adding new playbooks is just dropping a `*.md` into `templates/.sdd/playbooks/`.
 
 ---
 
@@ -290,7 +293,7 @@ Your data is never touched: `INDEX.md`, `data-model.md`, `patterns.md`, `decisio
 `CLAUDE.md` at your project root has two clearly-marked sections:
 
 ```
-<!-- SDD-MANAGED-START version: 0.9.0 -->
+<!-- SDD-MANAGED-START version: 0.13.2 -->
    (workflow rules — overwritten by update.sh)
 <!-- SDD-MANAGED-END -->
 
@@ -304,29 +307,39 @@ If you want to customize the workflow rules themselves, you can — but bump `CL
 
 ---
 
-## Honest caveats (v0.9.0)
+## Honest caveats (current as of v0.13.2)
 
 - **The playbook is 80% of the product.** If a question is weak, the system is weak. Fork and iterate — it's just markdown.
 - **"Non-technical" has limits.** The agent proposes technical options; you decide what feels right. If you don't know what you *want the feature to do*, no workflow saves you.
 - **Hooks have escape hatches.** Each one tells you in plain English how to proceed when blocked legitimately. Read the message — don't try to bypass.
-- **v0.9 ships ONE playbook (`feature`).** The multi-playbook engine is in place; future phases add `bug`, `idea`, etc. without code changes.
-- **Action prose still carries some JS-stack assumptions** (mentions of `tests/task-NNN.mjs`, Playwright, Tailwind, `gh pr create`). A future phase ships a `stack:` config block so non-JS adopters can override per-project. Until then, fork the affected actions for your stack.
-- **Hook error messages improved but still imperfect.** The F1 enforcer's plain-English block messages are better than v0.8's stderr; the moat hook's manifest-pin output is still engineer-leaning.
+- **Two playbooks shipped (`feature`, `project`).** The multi-playbook engine carries the rest; adding `bug`, `idea`, `question`, etc. is just dropping a new file in `templates/.sdd/playbooks/` (no code changes).
+- **Action prose still carries some JS-stack assumptions** (mentions of `tests/task-NNN.mjs`, Tailwind, `gh pr create`). The Playwright extension (`extensions/playwright/`) shows the Lego pattern for runner-specific scaffolding; non-JS adopters can fork the affected actions or write a sibling extension following the same shape.
+- **Hook error messages keep improving cycle by cycle.** v0.13.x rewrote the moat's "manifest repin refused" output for plain-English readability and added an in-band repair path; older hooks still vary in tone.
+- **Multi-feature parallelism is partial.** `INDEX.md`'s `## In flight` block holds multiple work items (one per branch is the typical pattern), so Pipelogic-style 3-5-features-at-once works today. **Full per-branch active-state lookup is open as #42** — until that lands, switching branches needs a manual `**Active:**` line update.
 - **This scales to roughly 50 in-flight features / 500 total.** Beyond that, you want real tooling. The cold-tier + size caps + auto-archival keep working memory bounded forever, but at some scale you'll outgrow plain markdown.
-- **Retrofitting onto an existing project may need v0.10.** The `init.sh` install assumes a clean repo. Retrofit on a project with its own conventions (Husky / Drizzle migrations / existing PRDs) may need an "absorb existing" install mode that's deferred to v0.10.
+- **Retrofitting onto an existing project still rough.** `scripts/init.sh` assumes a clean repo. The plugin install (v0.10) makes it easier, but a project with its own conventions (Husky / Drizzle migrations / existing PRDs) needs an "absorb existing" install mode that's still future work.
+- **MCP server semantic-search opt-in is stubbed.** The schema is shipped (`parameters.mcp.semantic_search` in config.md) but the network call is deferred — turning it on returns a "deferred — wire your provider here" config-shape response. Sam's self-hosted Gemma fits as a declared provider when wired up.
 - **Not a silver bullet.** It makes drift expensive and deep questioning cheap. It doesn't turn a bad idea into a good one.
 
 ---
 
 ## Status
 
-Currently at **v0.9.0** (Phase C ship). Hardened through:
+Currently at **v0.13.2** (cleanup pack post v0.13 release run). Hardened through:
 
 - **Phase A (v0.7.5)** — proved the SPEC + BUILD + ship loop on real Next.js + Vercel projects. 26 mutation-verified tests catching catastrophic bug classes.
 - **Phase B-1 (v0.8.0)** — section-locking moat, multi-playbook engine bones, trust-boundary teaching against prompt injection from repo prose, hash-pinned manifest, slim memory layer, append-only audit log. Three rounds of adversarial reviewer council found and closed gaps. 69 tests, all mutation-verified.
-- **Phase C (v0.9.0)** — F1 generic enforcer (7 hooks subsumed → 1), F2 events schema, F4 atomic-step granularity, F5 cascading parameters, Catalog work (rich INDEX.md with cross-references), SCHEMA.md retired (783 lines deleted), scope-guard moved to GitHub Actions CI, "Where things live" canonical folder map, "Triage on first message" doctrine. **120 tests passing**, all mutation-verified.
+- **Phase C (v0.9.0)** — F1 generic enforcer (7 hooks subsumed → 1), F2 events schema, F4 atomic-step granularity, F5 cascading parameters, Catalog work (rich INDEX.md with cross-references), SCHEMA.md retired (783 lines deleted), scope-guard moved to GitHub Actions CI, "Where things live" canonical folder map, "Triage on first message" doctrine.
+- **v0.10.x** — plugin packaging (one-line install via Claude Code plugin manifest), code-quality doctrine (8 always-on rules), multi-feature parallel scaffold, UAT findings closed, two rounds of security hardening.
+- **v0.11.x** — project-level scoping playbook (multi-feature initiatives that aren't a single feature), plugin metadata hotfixes, foundation-3 design philosophy codified in CLAUDE.md.
+- **v0.12.0** — DRY fixes (next-action.sh reads stages from playbook frontmatter; run-mode prose deduplicated), mechanical triage hook for project-shaped one-liners.
+- **v0.13.0** — five Lego bricks landed together: adversarial review action, edge-case sweep action, `/sdd-setup` wizard, opt-in Playwright extension, SDD MCP server (40-60% across-session token saving).
+- **v0.13.1** — moat security hardening: manifest baseline trust (path-keyed walker, segment-scoped marker parse, fail-closed on malformed HEAD with in-band repair) and advance.sh lock PID liveness.
+- **v0.13.2** — chore cleanup pack (6 small fixes across `/start`, `/settings`, config.md, regression tests).
 
-Next on the roadmap (Phase D): `bug` + `idea` playbooks, `stack:` config block (test runner / VCS / PR tool / wireframe runtime), retrofit-existing-project install mode, plugin packaging (so SDD lives globally as a Claude Code plugin instead of being copied into each project).
+**130 tests passing**, all mutation-verified. **28 MCP server unit tests** + 4 self-verify checks. 11 cycles of CodeRabbit review converged across the v0.13 release run.
+
+Next likely: per-branch worktree-aware INDEX.md (#42), `/settings get` provenance lookup (#34), CI moat extension (#26), scope-guard configurability (#16). All substantial enough for SDD ceremony rather than chore commits.
 
 ---
 
