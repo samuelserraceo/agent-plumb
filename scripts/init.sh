@@ -47,6 +47,14 @@ copy_if_absent() {
 copy_if_absent "$TEMPLATES/.sdd" "$TARGET/.sdd"
 copy_if_absent "$TEMPLATES/.claude" "$TARGET/.claude"
 
+# Optional Obsidian Tier-1 vault config (closes #83). Drops a minimal
+# .obsidian/ directory so opening the project root in Obsidian renders
+# the .sdd/ tree as a connected graph (features → decisions → patterns
+# → data-model). Skipped if the user already has their own .obsidian/.
+if [ -d "$TEMPLATES/.obsidian" ]; then
+  copy_if_absent "$TEMPLATES/.obsidian" "$TARGET/.obsidian"
+fi
+
 # CLAUDE.md at project root — has SDD-managed section + your project rules section
 copy_if_absent "$TEMPLATES/CLAUDE.md" "$TARGET/CLAUDE.md"
 

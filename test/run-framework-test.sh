@@ -4657,6 +4657,51 @@ else
 fi
 
 # ============================================================
+# T117 — Obsidian Tier 1 vault config: every JSON file in
+#        templates/.obsidian/ parses as valid JSON (closes #83).
+# ============================================================
+note "T117: templates/.obsidian/*.json all parse as valid JSON"
+obsidian_dir="$FRAMEWORK_ROOT/templates/.obsidian"
+ok_count=0
+total=0
+for f in "$obsidian_dir"/*.json; do
+  [ -f "$f" ] || continue
+  total=$((total + 1))
+  if python3 -c "import json,sys;json.load(open(sys.argv[1]))" "$f" 2>/dev/null; then
+    ok_count=$((ok_count + 1))
+  fi
+done
+if [ "$total" -ge 3 ] && [ "$ok_count" -eq "$total" ]; then
+  ok "T117 all $total Obsidian config files parse as valid JSON"
+else
+  bad "T117 Obsidian config files invalid" "$ok_count/$total parsed (need at least 3)"
+fi
+
+# ============================================================
+# T117b — Obsidian graph.json declares colour groups for the
+#         four canonical SDD knowledge surfaces (closes #83).
+# ============================================================
+note "T117b: graph.json colour groups cover features / decisions / patterns / data-model"
+graph_json="$FRAMEWORK_ROOT/templates/.obsidian/graph.json"
+if [ -f "$graph_json" ]; then
+  out=$(python3 -c "
+import json, sys
+with open(sys.argv[1]) as f: g = json.load(f)
+queries = [c.get('query','') for c in (g.get('colorGroups') or [])]
+needed = ['features', 'decisions', 'patterns', 'data-model']
+print('|'.join(['HIT' if any(n in q for q in queries) else 'MISS' for n in needed]))
+" "$graph_json" 2>/dev/null)
+  hit_count=$(echo "$out" | tr '|' '\n' | grep -c HIT)
+  if [ "$hit_count" -eq 4 ]; then
+    ok "T117b graph.json colour groups cover all 4 knowledge surfaces"
+  else
+    bad "T117b graph.json colour groups incomplete" "hit_count=$hit_count out='$out'"
+  fi
+else
+  bad "T117b graph.json missing" "expected at $graph_json"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
