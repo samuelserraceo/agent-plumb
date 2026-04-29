@@ -71,22 +71,56 @@ Detailed shapes, sample requests, and sample responses live in [`docs/query-refe
 
 ## Opt-in: semantic search
 
-The `search` query is a stub by default — it returns a friendly message explaining what to add to your config. To turn it on, add a block to `.sdd/config.md`'s YAML frontmatter:
+The `search` query is **off by default**. When enabled, it embeds your `.sdd/` notebooks (decisions, patterns, data-model, stack, every shipped feature spec) once into a local cache, then ranks the chunks closest to your query by cosine similarity. The agent uses this so it doesn't have to scan-grep the whole repo every turn.
+
+To turn it on, add a block to `.sdd/config.md`'s YAML frontmatter:
 
 ```yaml
 parameters:
   mcp:
     semantic_search:
       enabled: true
-      provider: ollama          # or anthropic / openai / local-gemma / ...
+      provider: openai             # or "ollama-native"
       endpoint: http://localhost:11434
       model: nomic-embed-text
       top_k: 5
+      max_chunks_per_run: 1000     # cost ceiling — refuses to embed more in one call
 ```
 
-The framework deliberately doesn't bake in a default provider — per the SDD doctrine in `CLAUDE.md`, every external dependency must be an explicit choice.
+### Picking the right `provider`
 
-The actual embedding call is deferred to a follow-up commit. Today, even with `enabled: true`, the query returns a "configured but not implemented" message that echoes back your provider settings so you can verify the shape.
+- **`openai`** (default) — the OpenAI-compatible HTTP shape. Hits `<endpoint>/v1/embeddings` with body `{model, input}`. Works with: OpenAI itself, Ollama in OpenAI-compatible mode (the default for `ollama serve`), vLLM, most cloud providers, LiteLLM, etc.
+- **`ollama-native`** — older Ollama versions (or anyone who wants the native shape). Hits `<endpoint>/api/embeddings` with body `{model, prompt}`.
+
+If you're running Ollama locally with `ollama serve`, `openai` is what you want — it accepts both shapes but the OpenAI one is the canonical default in current Ollama releases.
+
+### What goes in `endpoint`
+
+The base URL of the embedding service. The path (`/v1/embeddings` or `/api/embeddings`) is appended automatically based on provider. Both of these work:
+
+- `http://localhost:11434` → resolves to `http://localhost:11434/v1/embeddings` for `openai`
+- `http://localhost:11434/v1/embeddings` → used as-is
+
+If your endpoint sits behind an auth gate, add `auth_header: "Bearer <token>"` to the block — it goes onto each request as the `Authorization` header.
+
+### What it does the first time you run it
+
+- Walks `.sdd/` and chunks every searchable file (~500-character paragraph-aware blocks).
+- POSTs each chunk to your configured endpoint.
+- Caches every (chunk, vector) pair at `.sdd/.cache/embeddings.json`, keyed by content SHA so unchanged chunks skip re-embedding next run.
+- Re-embeds automatically if you swap models, providers, or endpoints (different models produce incomparable vectors).
+
+### What it does on every subsequent run
+
+- Embeds only the changed chunks.
+- Reads everything else from the cache.
+- Returns the top-k results plus a `stats` block telling you how many chunks were re-embedded vs read from cache. The agent doesn't have to scan-grep your repo to remember what you decided three weeks ago.
+
+### When the endpoint is unreachable
+
+The query never raises a Python exception at the user. It returns a plain-English `error` field with a `fallback: "agent should read files directly"` hint. The agent reads that, falls back to per-file reads, and tells you what's wrong — typically your endpoint URL, your tunnel state, or an auth problem.
+
+The framework deliberately doesn't bake in a default provider — per the SDD doctrine in `CLAUDE.md`, every external dependency must be an explicit choice.
 
 ## Protocol
 
@@ -103,7 +137,7 @@ Both share the same query layer. See `docs/query-reference.md` for examples of b
 python3 -m unittest discover
 ```
 
-27 tests, all stdlib (no PyPI deps beyond PyYAML, which the framework already uses).
+29 tests, all stdlib (no PyPI deps beyond PyYAML, which the framework already uses). The semantic-search tests verify error paths against an unreachable endpoint (`127.0.0.1:1`) — full mock-server tests that exercise the cache and embedding code paths are tracked separately.
 
 ## What's NOT in this server
 

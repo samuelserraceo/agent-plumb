@@ -191,15 +191,39 @@ class SearchDisabledTests(_FixtureBase):
 class SearchEnabledTests(_FixtureBase):
     with_semantic_search = True
 
-    def test_enabled_returns_deferred_message_with_provider(self):
+    def test_unreachable_endpoint_returns_plain_english_error(self):
+        # Fixture points at http://127.0.0.1:1 — port 1 is reserved, so
+        # the connection fails fast and predictably without needing a
+        # mock server. Verifies the embedding-failure fallback path.
         result = search(self.root, {"query": "auth retry"})
         self.assertIn("error", result)
-        self.assertIn("deferred", result["error"])
-        self.assertEqual(result["configured"]["provider"], "ollama")
+        # The error must be human-readable and not a Python traceback.
+        # The agent reads this and knows what to do next.
+        self.assertNotIn("Traceback", result["error"])
+        # Fallback hint tells the agent what to do when search is broken.
+        self.assertIn("fallback", result)
+        # Query is echoed so the caller can correlate.
+        self.assertEqual(result["query"], "auth retry")
 
     def test_missing_query_arg(self):
         result = search(self.root, {})
         self.assertIn("error", result)
+        self.assertIn("query", result["error"])
+
+    def test_disabled_provider_rejected_with_config_shape(self):
+        # Swap to an unsupported provider mid-test; search must reject
+        # cleanly with a plain-English error and the canonical config_shape.
+        cfg = os.path.join(self.root, ".sdd", "config.md")
+        with open(cfg, "r", encoding="utf-8") as fh:
+            text = fh.read()
+        text = text.replace("provider: openai", "provider: unsupported-provider")
+        with open(cfg, "w", encoding="utf-8") as fh:
+            fh.write(text)
+        result = search(self.root, {"query": "auth retry"})
+        self.assertIn("error", result)
+        # Error names which providers ARE supported.
+        self.assertIn("openai", result["error"])
+        self.assertIn("ollama-native", result["error"])
 
 
 # -- protocol shim (server.handle_message) ------------------------------------

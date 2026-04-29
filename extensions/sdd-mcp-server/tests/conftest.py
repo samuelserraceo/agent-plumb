@@ -151,10 +151,11 @@ parameters:
   mcp:
     semantic_search:
       enabled: true
-      provider: ollama
-      endpoint: http://localhost:11434
+      provider: openai
+      endpoint: http://127.0.0.1:1
       model: nomic-embed-text
       top_k: 5
+      max_chunks_per_run: 1000
 ---
 
 # SDD project configuration
