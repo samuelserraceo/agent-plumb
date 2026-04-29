@@ -5,6 +5,7 @@ title: "Build a new feature end-to-end"
 when_to_use: "new functionality the user wants — not a bug, not an idea"
 work_item_folder: features/
 work_item_id_pattern: "{NNN}-{slug}"
+terminal_state: SHIPPED
 stages:
   - id: SPEC
     actions:
