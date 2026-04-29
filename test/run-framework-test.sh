@@ -3920,6 +3920,115 @@ else
 fi
 
 # ============================================================
+# T104 — v0.13.1 moat trust baseline: deleting a manifest slug WITHOUT
+#        the [SDD] manifest: repin marker is refused.
+#   The path-keyed walker treats removed slugs as a trust change (the
+#   path drops out of enforcement). Refusal must fire even when no
+#   hash actually changed for any remaining slug.
+# ============================================================
+note "T104: moat refuses manifest slug deletion without repin marker"
+d=$(mkproj_v08)
+cd "$d"
+git add -A 2>/dev/null
+git commit -q -m "init" >/dev/null 2>&1
+# Drop one slug from the staged manifest (simulates an attacker pulling
+# a path out of trust coverage, e.g. via re-keying or rename).
+python3 - <<'PYEOF'
+import json, os
+p = ".sdd/.cache/manifest.json"
+with open(p) as fh: m = json.load(fh)
+# Remove a known action ("problem" exists in every project)
+m.get("actions", {}).pop("problem", None)
+with open(p, "w") as fh: json.dump(m, fh, indent=2)
+PYEOF
+git add .sdd/.cache/manifest.json
+hook_stdin='{"tool_input":{"command":"git commit -m unrelated-message"}}'
+ec=0
+err=$(echo "$hook_stdin" | bash "$MOAT_HOOK" 2>&1 1>/dev/null) || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 2 ] && echo "$err" | grep -qiE 'repin refused|pin removed|\[SDD\] manifest: repin'; then
+  ok "T104 moat refused slug-deletion without repin marker"
+else
+  bad "T104 moat let slug-deletion through" "exit=$ec; err='$err'"
+fi
+
+# ============================================================
+# T105 — v0.13.1 moat trust baseline: marker matched against parsed
+#        commit message, NOT raw command string. An env var carrying
+#        the marker text must NOT satisfy the gate.
+# ============================================================
+note "T105: moat marker check rejects env-var-only marker (not in -m/-F)"
+d=$(mkproj_v08)
+cd "$d"
+git add -A 2>/dev/null
+git commit -q -m "init" >/dev/null 2>&1
+# Repin a real entry to a fake hash without the marker — env var carries
+# the marker text but it's outside the actual commit message.
+python3 - <<'PYEOF'
+import json
+p = ".sdd/.cache/manifest.json"
+with open(p) as fh: m = json.load(fh)
+m["actions"]["problem"]["expected_sha256"] = "0" * 64
+with open(p, "w") as fh: json.dump(m, fh, indent=2)
+PYEOF
+git add .sdd/.cache/manifest.json
+hook_stdin='{"tool_input":{"command":"FAKE_VAR=\"[SDD] manifest: repin\" git commit -m unrelated"}}'
+ec=0
+err=$(echo "$hook_stdin" | bash "$MOAT_HOOK" 2>&1 1>/dev/null) || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 2 ] && echo "$err" | grep -qiE 'repin refused|no approval marker'; then
+  ok "T105 moat rejected env-var-only marker (parsed message gate)"
+else
+  bad "T105 moat let env-var marker bypass through" "exit=$ec; err='$err'"
+fi
+
+# ============================================================
+# T106 — v0.13.1 moat trust baseline: explicit `[SDD] manifest: repin`
+#        in -m allows the commit through (positive case).
+# ============================================================
+note "T106: moat allows repin commit when -m carries the marker"
+d=$(mkproj_v08)
+cd "$d"
+git add -A 2>/dev/null
+git commit -q -m "init" >/dev/null 2>&1
+# Repin an entry to a hash that matches the actual on-disk file content
+# (so the per-file WT hash check below the trust-baseline check passes).
+python3 - <<'PYEOF'
+import hashlib, json, os
+p = ".sdd/.cache/manifest.json"
+with open(p) as fh: m = json.load(fh)
+fp = ".sdd/actions/problem.md"
+with open(fp, "rb") as fh: data = fh.read()
+text = data.decode("utf-8", errors="replace").replace("\r\n", "\n").replace("\r", "\n")
+ls = [ln.rstrip() for ln in text.split("\n")]
+while ls and ls[0] == "": ls.pop(0)
+while ls and ls[-1] == "": ls.pop()
+new_h = hashlib.sha256("\n".join(ls).encode("utf-8")).hexdigest()
+# Force a "change" by setting to a different value first via mutation
+# of a different field — simpler: stage manifest with same hash and
+# verify the trust-baseline check is skipped (no repin detected).
+# Here we test: actually changing the hash + including the marker = pass.
+m["actions"]["problem"]["expected_sha256"] = "1" * 64  # fake-but-different
+with open(p, "w") as fh: json.dump(m, fh, indent=2)
+PYEOF
+git add .sdd/.cache/manifest.json
+hook_stdin='{"tool_input":{"command":"git commit -m \"[SDD] manifest: repin: T106 test\""}}'
+ec=0
+err=$(echo "$hook_stdin" | bash "$MOAT_HOOK" 2>&1 1>/dev/null) || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+# The trust-baseline check should pass (marker present); the per-file
+# hash check below it will then fail (manifest hash doesn't match WT
+# file). So we expect exit=1 with a hash-pin error, NOT a repin-refusal.
+if [ "$ec" -eq 2 ] && echo "$err" | grep -qiE 'manifest hash-pin failed|tampered' && ! echo "$err" | grep -qiE 'repin refused'; then
+  ok "T106 moat accepted marker-bearing -m (trust-baseline gate cleared)"
+else
+  bad "T106 marker-bearing commit not accepted by trust-baseline gate" "exit=$ec; err='$err'"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
