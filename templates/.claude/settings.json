@@ -37,6 +37,10 @@
           {
             "type": "command",
             "command": ".claude/hooks/pre-commit-stage-verified.sh"
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/pre-commit-no-assumed-markers.sh"
           }
         ]
       }
