@@ -15,6 +15,7 @@ Every Playwright test file written under SDD has these properties:
    ```
 
 2. **First line is a spec-traceability comment.** Format:
+
    ```typescript
    // spec: §11.AC<N>   task: T<NN>
    // What this asserts (plain English): <one-line description>

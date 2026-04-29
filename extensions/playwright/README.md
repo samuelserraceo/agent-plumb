@@ -72,9 +72,12 @@ The framework's discipline does the rest:
 
 ## SDD-shaped Playwright test pattern
 
-Every test file follows this shape (see `tests/example.spec.ts` for an
-**illustrative** version — the file the extension scaffolds is a no-op
-placeholder you adapt to your app):
+> **Important:** the snippet below is **illustrative pseudocode** showing the
+> pattern shape. It is NOT what the extension scaffolds. The actual file the
+> extension drops at `tests/example.spec.ts` is a **no-op placeholder that
+> always passes** — you replace its body when you write your first real test.
+
+Every SDD-shaped Playwright test follows this pattern:
 
 ```typescript
 // spec: §11.AC<N>  task: T<NN>
@@ -86,7 +89,7 @@ test("<one-line behaviour the user can read>", async ({ page }) => {
   // Arrange — load the screen, set up state
   await page.goto("/");
 
-  // Act — what the user does
+  // Act — what the user does (selectors here will differ per project)
   await page.fill("input[name=email]", "test@example.com");
   await page.click("button[type=submit]");
 
@@ -94,11 +97,6 @@ test("<one-line behaviour the user can read>", async ({ page }) => {
   await expect(page.getByText("Thanks for signing up")).toBeVisible();
 });
 ```
-
-The snippet above is **illustrative only** (it uses signup-form selectors a
-random project may not have). The file the extension actually scaffolds at
-`tests/example.spec.ts` is a no-op placeholder that always passes — you
-replace its body when you start writing real tests.
 
 The first line is a comment that ties the test to the spec section + task. That's
 the "spec-traceability" rule from CLAUDE.md doctrine — every test file declares
@@ -128,8 +126,10 @@ npx playwright test
 
 ## What this extension does NOT do
 
-- Doesn't install Playwright globally — the script just adds the dependency to
-  your project's `package.json`. You run `npm install` yourself.
+- Doesn't install Playwright. It does not edit `package.json` and does not run
+  `npm install`. It checks whether `@playwright/test` is already in your
+  `package.json`; if missing, it prints the two install commands you run yourself
+  (`npm install --save-dev @playwright/test` + `npx playwright install --with-deps`).
 - Doesn't write your tests — the agent does that as part of BUILD per task.
 - Doesn't run on CI — you wire that in via `.github/workflows/` or your CI of
   choice. The extension's `playwright.config.ts` is CI-friendly out of the box

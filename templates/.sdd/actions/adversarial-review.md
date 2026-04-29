@@ -102,7 +102,7 @@ The decisions.md append-only contract preserves this for audit. If the risk late
 
 ### Hard gate on `critical` findings
 
-Findings the agent flagged as `critical` severity (or anything tagged `BLOCK` by an automated review tool) have a stricter rule:
+Findings the agent flagged as `critical` severity (or anything tagged `BLOCK` by an automated review tool — e.g., CodeRabbit, Sourcery, or a custom CI check) have a stricter rule:
 
 - **`fix now` is allowed** as the default.
 - **`defer to follow-up` is REFUSED.** The agent says: *"This is a critical finding. Critical findings can't be deferred to follow-up. The only valid triages are `fix now` or `accepted risk` with an explicit non-trivial reason. Which do you pick?"*

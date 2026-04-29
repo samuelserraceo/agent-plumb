@@ -257,7 +257,6 @@ class ProtocolShimTests(_FixtureBase):
         content = resp["result"]["content"]
         self.assertEqual(content[0]["type"], "text")
         # The text part is JSON — decoding it should give the same shape.
-        import json
         decoded = json.loads(content[0]["text"])
         self.assertEqual(decoded["step_id"], "task-003")
 
