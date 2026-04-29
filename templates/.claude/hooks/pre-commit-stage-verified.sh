@@ -269,75 +269,141 @@ if staged_manifest_path:
     # nothing to compare against — skip the trust-baseline check. The
     # per-file hash check below still runs.
     if head_manifest is not None:
-        repinned_slugs = []
-        for section in ("playbooks", "actions", "extensions", "scripts"):
-            head_section = head_manifest.get(section) or {}
-            staged_section = manifest.get(section) or {}
-            for slug, entry in staged_section.items():
-                head_entry = head_section.get(slug)
-                if head_entry is None:
-                    # New entry — addition is allowed without the marker
-                    # (the per-file hash check still verifies on-disk
-                    # matches the new claim).
-                    continue
-                staged_hash = entry.get("expected_sha256", "")
-                head_hash = head_entry.get("expected_sha256", "")
-                if staged_hash and head_hash and staged_hash != head_hash:
-                    repinned_slugs.append((section, slug, head_hash, staged_hash))
+        # Path-keyed detection (PR #61 cycle-1 fix): we compare paths, not
+        # slugs. This catches three bypass shapes that slug-keyed walking
+        # missed:
+        #   (a) hash change under same slug
+        #   (b) slug removed (path silently drops out of trust coverage)
+        #   (c) same path re-keyed under a fresh slug with a new hash
+        def _collect_paths(m):
+            out = {}
+            for sec in ("playbooks", "actions", "extensions", "scripts"):
+                for _slug, entry in (m.get(sec) or {}).items():
+                    p = entry.get("path", "")
+                    h = entry.get("expected_sha256", "")
+                    if p:
+                        out[p] = (sec, h)
+            return out
 
-        if repinned_slugs:
-            # The manifest changes existing pins — this is a repin commit.
-            # Require the marker in the commit message.
+        head_paths = _collect_paths(head_manifest)
+        staged_paths = _collect_paths(manifest)
+
+        repins = []  # list of (path, head_hash, staged_hash_or_REMOVED)
+        for path, (head_sec, head_hash) in head_paths.items():
+            staged = staged_paths.get(path)
+            if staged is None:
+                # Path removed entirely from the manifest. This drops trust
+                # coverage of an existing framework file — gate it.
+                repins.append((path, head_hash, "<removed>"))
+                continue
+            staged_sec, staged_hash = staged
+            if head_hash and staged_hash and head_hash != staged_hash:
+                repins.append((path, head_hash, staged_hash))
+        # Additions (paths in staged but not HEAD) are allowed; the
+        # per-file WT hash check below still verifies them.
+
+        if repins:
+            # Repin detected — require the [SDD] manifest: repin marker
+            # in the actual commit message. PR #61 cycle-1 fix: parse the
+            # commit message from -m/-F args in git_commit_cmd rather
+            # than substring-matching the raw command string.
             #
-            # Extract message from `git commit -m "..."` shape. For other
-            # commit shapes (interactive editor) we can't see the message
-            # at PreToolUse time; fall back to a relaxed rule: allow the
-            # repin only if `update.sh` is the running script (detected
-            # via the cmd containing `update.sh`) OR the marker is in -m.
-            marker_re = re.compile(r"\[SDD\]\s+manifest:\s+repin", re.IGNORECASE)
-            update_sh_re = re.compile(r"\bupdate\.sh\b")
-            marker_present = bool(marker_re.search(git_commit_cmd))
-            update_sh_present = bool(update_sh_re.search(git_commit_cmd))
+            # The previous implementation accepted ANY occurrence of the
+            # marker substring inside the command line — env vars,
+            # unrelated paths, even a stray "update.sh" anywhere — and
+            # rejected legitimate `git commit -F` flows. Now we extract
+            # only the actual message text and match the marker against
+            # that.
+            import shlex
+            try:
+                cmd_argv = shlex.split(git_commit_cmd) if git_commit_cmd else []
+            except ValueError:
+                cmd_argv = []
 
-            if not (marker_present or update_sh_present):
+            commit_message_parts = []
+            i = 0
+            while i < len(cmd_argv):
+                a = cmd_argv[i]
+                if a in ("-m", "--message") and i + 1 < len(cmd_argv):
+                    commit_message_parts.append(cmd_argv[i + 1])
+                    i += 2
+                    continue
+                if a.startswith("--message="):
+                    commit_message_parts.append(a[len("--message="):])
+                elif a.startswith("-m="):
+                    commit_message_parts.append(a[len("-m="):])
+                elif a in ("-F", "--file") and i + 1 < len(cmd_argv):
+                    f = cmd_argv[i + 1]
+                    full_f = f if os.path.isabs(f) else os.path.join(proj, f)
+                    try:
+                        with open(full_f, encoding="utf-8") as fh:
+                            commit_message_parts.append(fh.read())
+                    except (OSError, UnicodeDecodeError):
+                        pass
+                    i += 2
+                    continue
+                elif a.startswith("--file="):
+                    f = a[len("--file="):]
+                    full_f = f if os.path.isabs(f) else os.path.join(proj, f)
+                    try:
+                        with open(full_f, encoding="utf-8") as fh:
+                            commit_message_parts.append(fh.read())
+                    except (OSError, UnicodeDecodeError):
+                        pass
+                i += 1
+
+            commit_message = "\n".join(commit_message_parts)
+            marker_re = re.compile(r"\[SDD\]\s+manifest:\s+repin", re.IGNORECASE)
+            marker_present = bool(marker_re.search(commit_message))
+
+            if not marker_present:
                 print("[moat] manifest repin refused — no approval marker.",
                       file=sys.stderr)
                 print("", file=sys.stderr)
-                print("This commit changes existing manifest pins (HEAD baseline)",
+                print("This commit changes the manifest's trust coverage for the",
                       file=sys.stderr)
-                print("for the following slugs:", file=sys.stderr)
-                for section, slug, head_hash, staged_hash in repinned_slugs:
-                    print(f"  {section}/{slug}: {head_hash[:12]}... → {staged_hash[:12]}...",
-                          file=sys.stderr)
+                print("following framework files (HEAD baseline → staged):",
+                      file=sys.stderr)
+                for path, head_hash, staged_hash in repins:
+                    if staged_hash == "<removed>":
+                        print(f"  {path}: pin removed (no longer enforced)",
+                              file=sys.stderr)
+                    else:
+                        print(f"  {path}: {head_hash[:12]}... → {staged_hash[:12]}...",
+                              file=sys.stderr)
                 print("", file=sys.stderr)
-                print("Repinning the manifest changes the trust baseline. To prevent",
+                print("Repinning or removing entries changes the trust baseline.",
                       file=sys.stderr)
-                print("a tampered framework file from being silently legitimised by",
+                print("To prevent a tampered file being silently legitimised by",
                       file=sys.stderr)
-                print("a co-staged manifest update, the moat refuses the commit",
+                print("a co-staged manifest edit, the moat refuses the commit",
                       file=sys.stderr)
-                print("unless one of these is true:", file=sys.stderr)
-                print("", file=sys.stderr)
-                print("  1. The commit message contains the marker:", file=sys.stderr)
-                print('       [SDD] manifest: repin', file=sys.stderr)
-                print("     (case-insensitive). Use this for legitimate repins —",
-                      file=sys.stderr)
-                print("     e.g. when you intentionally edit a framework file and",
-                      file=sys.stderr)
-                print("     accept the new hash as authoritative.", file=sys.stderr)
-                print("", file=sys.stderr)
-                print("  2. The commit is being made by `scripts/update.sh` (the",
-                      file=sys.stderr)
-                print("     framework's official update path). The script invokes",
-                      file=sys.stderr)
-                print("     git commit with its own message; the moat detects it.",
+                print("unless the commit message contains the marker:",
                       file=sys.stderr)
                 print("", file=sys.stderr)
-                print("If you didn't expect this commit to repin the manifest,",
+                print("    [SDD] manifest: repin", file=sys.stderr)
+                print("", file=sys.stderr)
+                print("(case-insensitive, parsed from -m / --message= / -F /",
                       file=sys.stderr)
-                print("inspect the staged changes with `git diff --cached` —",
+                print("--file= only — not from env vars or argv text).",
                       file=sys.stderr)
-                print("a tampered framework file may be hiding behind the repin.",
+                print("", file=sys.stderr)
+                print("If this is a legitimate repin (e.g. you ran scripts/update.sh",
+                      file=sys.stderr)
+                print("or you intentionally edited a framework file), commit with:",
+                      file=sys.stderr)
+                print("", file=sys.stderr)
+                print("    git commit -m '[SDD] manifest: repin — <reason>'",
+                      file=sys.stderr)
+                print("", file=sys.stderr)
+                print("Editor commits (no -m/-F) are not yet supported for repins;",
+                      file=sys.stderr)
+                print("use -m or -F so the moat can read the message ahead of time.",
+                      file=sys.stderr)
+                print("", file=sys.stderr)
+                print("If you didn't expect this commit to repin, inspect with",
+                      file=sys.stderr)
+                print("`git diff --cached` — a tampered file may be hiding here.",
                       file=sys.stderr)
                 sys.exit(1)
 

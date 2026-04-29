@@ -123,9 +123,13 @@ except OSError:
             stale_pid=$(cat "$LOCK_DIR/pid" 2>/dev/null || echo "")
             if [ -n "$stale_pid" ] && kill -0 "$stale_pid" 2>/dev/null; then
               # Process still alive → not stale; caller keeps waiting.
-              # Print a one-liner so the user knows why we're not clobbering.
+              # Print a one-liner on the first attempt so the user knows
+              # why we're not clobbering; suppress the generic
+              # "another advance.sh is running" line in the outer loop
+              # via wait_notice_emitted so we don't double-log.
               if [ "$attempts" -eq 1 ]; then
                 echo "[advance] lock held by pid $stale_pid (alive, age ${age}s); waiting." >&2
+                wait_notice_emitted=1
               fi
               return 1
             fi
@@ -139,13 +143,15 @@ except OSError:
         return 1  # not stale — caller should keep waiting
       }
       attempts=0
+      wait_notice_emitted=0
       while ! mkdir "$LOCK_DIR" 2>/dev/null; do
         attempts=$((attempts + 1))
         if stale_check_and_retry; then
           continue  # try mkdir again
         fi
-        if [ "$attempts" -eq 1 ]; then
+        if [ "$attempts" -eq 1 ] && [ "$wait_notice_emitted" -eq 0 ]; then
           echo "[advance] another advance.sh is running — waiting..." >&2
+          wait_notice_emitted=1
         fi
         sleep 1
         if [ "$attempts" -gt 600 ]; then  # 10 min max wait
