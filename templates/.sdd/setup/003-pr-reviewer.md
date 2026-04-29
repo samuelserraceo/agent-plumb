@@ -35,11 +35,13 @@ Reply with the number, or describe your own.
 
 | You said | Agent writes to config.md `parameters.review` |
 |---|---|
-| "Yes — CodeRabbit" | `bot: coderabbit`, `poll_interval: 180`, `max_polls: 5` (15 min total wait — matches the project's review-discipline pattern of polling every 3 min and nudging via `@coderabbitai full review` after ~5 min if quiet). Agent reminds the user to install the CodeRabbit GitHub app. |
-| "Yes — Copilot review" | `bot: copilot`. Polling defaults left at `poll_interval: 60`, `max_polls: 5` (Copilot review is faster; if it hasn't fired in ~5 min, something's wrong). |
-| "Yes — something else" | `bot: <user's choice>` recorded verbatim; polling defaults left blank for the user to set. |
+| "Yes — CodeRabbit" | `bot: coderabbit`, `poll_interval: 180`, `max_polls: 5` (15 min total wait — matches the project's review-discipline pattern of polling every 3 min and nudging via `@coderabbitai full review` after ~5 min if quiet). Then agent walks the user through the **CodeRabbit install walkthrough** at `.sdd/setup/walkthroughs/coderabbit.md` — opens browser to `coderabbit.ai/integrations/github`, walks the install steps in plain English, verifies via `gh api`, and optionally seeds `.coderabbit.yaml` config. (Closes #67.) |
+| "Yes — Copilot review" | `bot: copilot`. Polling defaults left at `poll_interval: 60`, `max_polls: 5` (Copilot review is faster; if it hasn't fired in ~5 min, something's wrong). Walkthrough TBD — for now agent prints manual install instructions. |
+| "Yes — something else" | `bot: <user's choice>` recorded verbatim; polling defaults left blank for the user to set. Agent looks for a matching walkthrough at `.sdd/setup/walkthroughs/<choice>.md` and runs it if present; otherwise prints generic "install the bot yourself, then continue" instructions. |
 | "No" | `bot: none`, `manual: true`. Framework doesn't try to poll any bot. |
 | "Not deciding yet" | Skip this question; nothing written. |
+
+**Skip-walkthrough escape:** every walkthrough invocation starts with a yes/no prompt. The user can say `skip walkthrough` and the wizard moves on — the bot choice is still recorded in config.md, but with `pending_install: true` so the framework re-prompts at the first `/ship` or `/sdd-config pr-reviewer`.
 
 ## What gets recorded
 
