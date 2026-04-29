@@ -47,19 +47,19 @@ The script:
 1. Creates `playwright.config.ts` at your project root (or asks before overwriting if one exists).
 2. Creates `tests/example.spec.ts` showing the SDD task-NNN.spec.ts shape.
 3. Creates `docs/sdd-playwright.md` explaining the test pattern.
-4. Adds Playwright to `package.json` devDependencies (asks first; doesn't run `npm install`).
-5. Adds a `## Testing` section to your project's `.sdd/stack.md` recording the choice.
+4. Adds a `## Testing` section to your project's `.sdd/stack.md` recording the choice (only if the section doesn't already exist).
+5. **Reminds you to install Playwright as a devDependency yourself** — the script does NOT modify `package.json` or run `npm install`. You run those.
 6. Prints next steps.
 
-The script is idempotent — running it twice on the same project says "already enabled" and exits cleanly.
+The script is **idempotent on a per-file basis**: re-running it walks each scaffolded file and asks before overwriting anything that already exists. Files you've edited are never silently replaced.
 
 ## What gets created in your project
 
-```
+```text
 <your-project>/
-├── playwright.config.ts            ← default config: Chromium + Firefox + iPhone-13 mobile viewport
+├── playwright.config.ts            ← default config: Chromium + iPhone-13 mobile viewport
 ├── tests/
-│   └── example.spec.ts             ← sample test in the SDD shape
+│   └── example.spec.ts             ← placeholder test in the SDD shape
 └── docs/
     └── sdd-playwright.md           ← how to write SDD-shaped Playwright tests
 ```
@@ -72,7 +72,9 @@ The framework's discipline does the rest:
 
 ## SDD-shaped Playwright test pattern
 
-Every test file follows this shape (see `tests/example.spec.ts` for a real example):
+Every test file follows this shape (see `tests/example.spec.ts` for an
+**illustrative** version — the file the extension scaffolds is a no-op
+placeholder you adapt to your app):
 
 ```typescript
 // spec: §11.AC<N>  task: T<NN>
@@ -92,6 +94,11 @@ test("<one-line behaviour the user can read>", async ({ page }) => {
   await expect(page.getByText("Thanks for signing up")).toBeVisible();
 });
 ```
+
+The snippet above is **illustrative only** (it uses signup-form selectors a
+random project may not have). The file the extension actually scaffolds at
+`tests/example.spec.ts` is a no-op placeholder that always passes — you
+replace its body when you start writing real tests.
 
 The first line is a comment that ties the test to the spec section + task. That's
 the "spec-traceability" rule from CLAUDE.md doctrine — every test file declares

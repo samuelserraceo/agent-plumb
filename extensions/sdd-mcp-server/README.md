@@ -103,7 +103,7 @@ Both share the same query layer. See `docs/query-reference.md` for examples of b
 python3 -m unittest discover
 ```
 
-26 tests, all stdlib (no PyPI deps beyond PyYAML, which the framework already uses).
+27 tests, all stdlib (no PyPI deps beyond PyYAML, which the framework already uses).
 
 ## What's NOT in this server
 

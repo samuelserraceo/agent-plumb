@@ -26,4 +26,4 @@ REGISTRY = {
     "search": search,
 }
 
-__all__ = ["REGISTRY"] + list(REGISTRY.keys())
+__all__ = ["REGISTRY", *REGISTRY.keys()]

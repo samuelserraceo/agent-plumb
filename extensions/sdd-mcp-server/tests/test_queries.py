@@ -10,6 +10,7 @@ the question) and an edge case (missing file, bad arg, empty section).
 
 from __future__ import annotations
 
+import json
 import os
 import sys
 import unittest
@@ -273,8 +274,6 @@ class ProtocolShimTests(_FixtureBase):
         results. Now the shim only checks for the `error` key. This test guards
         against regressing back to the old behaviour.
         """
-        import os, json
-        from tests.conftest import make_temp_project
         # Build a fixture, then delete spec.md so get_active_step returns
         # a contextual error: {"error": "spec.md not found at ...", + active context}.
         # This is the exact shape that exercised the bug.
@@ -301,6 +300,34 @@ class ProtocolShimTests(_FixtureBase):
             )
             decoded = json.loads(resp["result"]["content"][0]["text"])
             self.assertIn("error", decoded)
+        finally:
+            cleanup()
+
+    def test_simplified_protocol_contextual_error_returns_top_level_error(self):
+        """Parallel regression test for the simplified `{"query": ..., "args": ...}`
+        protocol path. The MCP `tools/call` path was fixed to honour the `error`
+        key as the source of truth; this test guards that the simplified path
+        does the same — a contextual error from get_active_step must appear at
+        the TOP LEVEL of the response (not nested under "result"), so callers
+        of the simplified path can detect failures the same way.
+        """
+        proj, cleanup = make_temp_project()
+        try:
+            spec_path = os.path.join(proj, ".sdd", "features", "001-waitlist", "spec.md")
+            os.remove(spec_path)
+            os.environ["CLAUDE_PROJECT_DIR"] = proj
+            try:
+                resp = handle_message({
+                    "query": "get_active_step",
+                    "args": {},
+                })
+            finally:
+                os.environ.pop("CLAUDE_PROJECT_DIR", None)
+            # Simplified path returns the result dict at the top level.
+            # The `error` key signals failure — callers must be able to see it.
+            self.assertIn("error", resp,
+                          "simplified protocol must surface 'error' at the top level "
+                          "for contextual errors, not nest it under 'result'")
         finally:
             cleanup()
 

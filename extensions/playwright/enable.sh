@@ -10,7 +10,24 @@ EXT_DIR="$(cd "$(dirname "$0")" && pwd)"
 TEMPLATES="$EXT_DIR/templates"
 DOCS_SRC="$EXT_DIR/docs"
 
-PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(pwd)}"
+# Resolve the project root deterministically. CLAUDE_PROJECT_DIR is the
+# canonical signal; fall back to the git toplevel; warn loudly if neither
+# is available rather than silently scaffolding into a subdirectory.
+resolve_project_root() {
+  if [ -n "${CLAUDE_PROJECT_DIR:-}" ] && [ -d "$CLAUDE_PROJECT_DIR" ]; then
+    echo "$CLAUDE_PROJECT_DIR"
+    return
+  fi
+  if git_root="$(git rev-parse --show-toplevel 2>/dev/null)"; then
+    echo "$git_root"
+    return
+  fi
+  echo "warning: not inside a git repo and CLAUDE_PROJECT_DIR not set;" \
+       "scaffolding into current directory: $(pwd)" >&2
+  pwd
+}
+
+PROJECT_DIR="$(resolve_project_root)"
 cd "$PROJECT_DIR" || {
   echo "[playwright-ext] cannot cd into $PROJECT_DIR" >&2
   exit 1

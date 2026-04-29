@@ -94,7 +94,7 @@ If the user can't articulate a non-trivial reason or a trigger condition, the ag
 The user is consciously deciding NOT to fix and NOT to defer — the risk is real but the cost / benefit doesn't justify the work. Same discipline as `defer to follow-up`: the agent requires a non-trivial reason. The agent appends a one-line entry to `.sdd/decisions.md`:
 
 ```markdown
-## <YYYY-MM-DD-T-HH-MM-SS-Z>  [<feature-id>]  feature/adversarial-review
+## <YYYY-MM-DDTHH:MM:SSZ>  [<feature-id>]  feature/adversarial-review
 Accepted risk: <severity> — <finding title>. Reason: <full reason>.
 ```
 
@@ -113,9 +113,9 @@ Findings the agent flagged as `critical` severity (or anything tagged `BLOCK` by
 If the user's reply is ambiguous (e.g. they say "let me think about it" or "skip"), the agent does NOT silently skip — that breaks foundation 3 (never assume). Instead, it asks in plain English:
 
 > "Sorry, I want to make sure I'm recording the right thing. Three options:
->   1. **`fix now`** — add it to BUILD; we deal with it before ship.
->   2. **`defer to follow-up`** — real, but not for this ship; you'll tell me why and what triggers a revisit.
->   3. **`accepted risk`** — known risk you're choosing to accept; I'll record the reason in decisions.md.
+> 1. **`fix now`** — add it to BUILD; we deal with it before ship.
+> 2. **`defer to follow-up`** — real, but not for this ship; you'll tell me why and what triggers a revisit.
+> 3. **`accepted risk`** — known risk you're choosing to accept; I'll record the reason in decisions.md.
 >
 > Which one?"
 
@@ -125,7 +125,7 @@ The agent waits for an explicit pick. No silent defaults beyond the `fix now` in
 
 Fill `spec.md` under `### adversarial-review / triage` with one line per finding:
 
-```
+```text
 <n>. <severity>: <fix now / defer / accepted> — <one-line decision summary>
 ```
 

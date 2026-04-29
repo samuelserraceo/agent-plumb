@@ -50,10 +50,12 @@ non-technical-user-lens doctrine:
 2. Waits for the user's reply (number + optional adjustment, OR free-form).
 3. Translates the answer into a structured record using the `agent_infers`
    list.
-4. Writes the record to the file/section declared in `records_in` /
-   `records_at`.
-5. Confirms the diff with the user before saving (per the AGENT-LED
-   draft+approve pattern).
+4. **Drafts the record and shows the user the proposed diff** (per the
+   AGENT-LED draft+approve pattern).
+5. **Awaits user approval.** The wizard does NOT write the record to disk
+   until the user confirms.
+6. On approval, writes the record to the file/section declared in
+   `records_in` / `records_at`.
 
 ## Re-running questions later
 

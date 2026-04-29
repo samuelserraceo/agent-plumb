@@ -356,7 +356,7 @@ Skip is handled inline by `/next` (not a separate `/skip` command). The user rep
 
 ## Plan-decompose coverage check (constraints → ACs)
 
-When the active action is `plan-decompose` (the last action of SPEC, where ACs become tasks), before drafting any tasks: verify that EVERY constraint declared in §4 UX & Design brief is reflected in at least one §11 Acceptance Criterion.
+When the active action is `plan-decompose` (the action where ACs become tasks; the actual last action of SPEC is `edge-case-sweep` which runs immediately after), before drafting any tasks: verify that EVERY constraint declared in §4 UX & Design brief is reflected in at least one §11 Acceptance Criterion.
 
 Scan §4 for keywords: `mobile`, `desktop`, `tablet`, `mobile-first`, `accessibility`, `WCAG`, `i18n`, `locale`, `currency`, `low-bandwidth`, `dark mode`, `print`, `offline`, `keyboard-only`, etc. For each found, ensure §11 has a matching AC.
 
@@ -451,7 +451,7 @@ Stop and ask the user before continuing if ANY of these fire:
 
 ### BUILD phase entry protocol
 
-When a feature transitions SPEC → BUILD **for the first time** (after the last SPEC action `plan-decompose` lands its task list), do NOT start executing tasks. First, ask the user how they want to run BUILD.
+When a feature transitions SPEC → BUILD **for the first time** (after the last SPEC action `edge-case-sweep` completes — it follows `plan-decompose` and surfaces edge-case ACs the user can pick up before BUILD begins), do NOT start executing tasks. First, ask the user how they want to run BUILD.
 
 **The exact prompt and the 4 mode descriptions live in `.sdd/actions/run-mode-chosen.md`** — that action is the single source of truth for the wording. Read it at runtime; do not paraphrase or copy the wording into CLAUDE.md (foundation 2 — Lego: each prompt has one home).
 

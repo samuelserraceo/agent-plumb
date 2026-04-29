@@ -10,7 +10,6 @@ from __future__ import annotations
 import os
 import shutil
 import tempfile
-from typing import Tuple
 
 
 INDEX_MD = """# Project Index
@@ -192,7 +191,7 @@ def build_fixture_tree(root: str, *, with_semantic_search: bool = False) -> None
         fh.write(FEATURE_001_README)
 
 
-def make_temp_project(*, with_semantic_search: bool = False) -> Tuple[str, callable]:
+def make_temp_project(*, with_semantic_search: bool = False) -> "tuple[str, callable]":
     """Build a fresh tempdir-backed project. Returns (root, cleanup_fn)."""
     root = tempfile.mkdtemp(prefix="sdd-mcp-test-")
     build_fixture_tree(root, with_semantic_search=with_semantic_search)

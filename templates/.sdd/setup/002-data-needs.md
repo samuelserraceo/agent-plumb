@@ -34,17 +34,21 @@ Reply with the number, or describe your own.
 
 ## What the agent does with your answer
 
-| You said | Agent writes to stack.md |
-|---|---|
-| "Nothing to remember" | `Data store: none — fully static / stateless` |
-| "A small amount, just me/team" | SQLite (file-based, zero setup, fine for under ~10k rows). |
-| "Accounts + content from many users" | Postgres (Neon for dev, Supabase or Railway for prod). The agent also adds the relevant schema headings to `.sdd/data-model.md` as a starting point. |
-| "Files / images / documents" | A blob store recommendation (S3 / R2 / Supabase Storage). |
-| "Real-time data" | Adds a real-time provider note (Supabase Realtime, Pusher, etc.). |
+For every answer the agent writes the same shape (`Type / Provider / Schema source / Why`) so the wizard's output is always parseable. The mapping table below shows the values the agent picks for each common answer:
 
-Per foundation 3 (never assume), the agent ALWAYS shows the proposed data store
-+ provider before writing. If the user has a strong preference (e.g. "I want
-Postgres specifically"), they can override at draft time.
+| You said | Type | Provider | Why (short) |
+|---|---|---|---|
+| "Nothing to remember" | `none` | — | static / stateless app |
+| "A small amount, just me/team" | `SQLite` | local file | zero setup; fine for under ~10k rows |
+| "Accounts + content from many users" | `Postgres` | Neon (dev), Supabase or Railway (prod) | relational, scales, supports real apps |
+| "Files / images / documents" | `Blob store` | S3 / R2 / Supabase Storage | object storage shape |
+| "Real-time data" | `Real-time` | Supabase Realtime / Pusher | live cursor / chat / presence |
+
+For the `Postgres` answer specifically, the agent ALSO seeds starter headings in `.sdd/data-model.md` so feature 1 has a place to land its first entities.
+
+Per foundation 3 (never assume), the agent ALWAYS shows the proposed record
+before writing. If the user has a strong preference (e.g. "I want Postgres
+specifically"), they can override at draft time.
 
 ## What gets recorded
 

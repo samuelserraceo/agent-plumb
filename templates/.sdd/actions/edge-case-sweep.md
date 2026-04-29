@@ -39,15 +39,23 @@ If a category surfaces nothing real for this feature, drop it. Don't pad the lis
 
 ## What it produces
 
-A numbered list of candidates, each one line. Format:
+A numbered list of candidates. Each line follows the same template; concrete examples follow separately so the agent doesn't accidentally treat the example numbering as literal output.
+
+**Template (one entry per line, for each candidate):**
 
 ```text
-1. **<short name>** [<category>] — <what could happen> — proposed AC: `AC<n>: <test wording>`
-2. **Empty contact list** [empty] — first-time user lands on /dashboard with 0 contacts and sees a blank page — proposed AC: `AC9: Dashboard with 0 contacts shows an empty-state card with "Import your first contact" CTA`
-3. **30s API timeout** [network] — Resend slow, signup form hangs and user double-clicks — proposed AC: `AC10: Submit button disables for the duration of the request; second click is a no-op`
+<n>. **<short name>** [<category>] — <what could happen> — proposed AC: `AC<m>: <test wording>`
 ```
 
-Aim for 4-10 candidates. Fewer = the sweep was too shallow; more = stop drowning the user, fold near-duplicates.
+**Example output for a hypothetical signup-with-dashboard feature:**
+
+```text
+1. **Empty contact list** [empty] — first-time user lands on /dashboard with 0 contacts and sees a blank page — proposed AC: `AC9: Dashboard with 0 contacts shows an empty-state card with "Import your first contact" CTA`
+2. **30s API timeout** [network] — Resend slow, signup form hangs and user double-clicks — proposed AC: `AC10: Submit button disables for the duration of the request; second click is a no-op`
+3. **Password reset on expired link** [auth] — user clicks an expired reset link 48h after request — proposed AC: `AC11: expired reset links show "this link has expired — request a new one" with the request CTA`
+```
+
+Aim for **up to 10** candidates. **Fewer is fine when the feature is small and there's nothing else real to surface** — don't fabricate hypotheticals to hit a quota. The earlier "no padding" rule (above) overrides any volume target. If the feature genuinely has only 2 edge cases, write 2.
 
 ## The triage
 
@@ -61,9 +69,9 @@ User can reply per-number (`1: take, 2: skip, 3: defer`) or in bulk (`take 1,2,5
 
 ## Why it matters (non-technical reviewer language)
 
-A spec that only tests the happy path is a spec that lies — it claims the feature works when it only works for the easy case. Real users paste 200-character emails, click submit twice, lose their connection mid-form, and log in from a phone on the train. The sweep is 10 minutes of *"what could break?"* that saves hours of *"why is it broken?"* later.
+A spec that only tests the happy path is a spec that lies — it claims the feature works when it only works for the easy case. Real users paste 200-character emails, click submit twice, lose their connection mid-form, and log in from a phone on the train. The sweep is a quick *"what could break?"* pass that saves hours of *"why is it broken?"* later.
 
-This is also the audit-trail moment for the non-technical user: every candidate the user reviews shows up in `decisions.md` with their pick. Future-you reading the audit trail in three months can see *"we considered the 30s timeout case and chose to skip it because of X"* — that's a real decision, not a forgotten gap.
+The candidates and the user's picks are all recorded in `spec.md` under §11.5 (the section the action's `touches` field declares). The user's `take` / `skip` / `defer` calls become part of the section's content — written into spec.md alongside the AC list — so future readers can see what was considered and what was deliberately set aside. The action does NOT separately append to `decisions.md`; that file's entries come from the standard section-approval flow when §11 itself is re-approved (see CLAUDE.md "Audit log" doctrine).
 
 **End the turn with:** *"Reply with which to take/skip/defer (e.g. `take 1,2,5; skip 3,4; defer 6`). Each `take` becomes a new AC + task. Each `skip` is dropped. Each `defer` is recorded for next iteration."*
 

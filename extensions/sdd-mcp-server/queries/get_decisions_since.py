@@ -53,8 +53,12 @@ def _normalise_iso(s: str) -> str:
     return s  # let caller see odd input verbatim; comparison will still try
 
 
+# Lexicographic comparison only works for date-only or Z-suffixed timestamps.
+# Offset-bearing strings (e.g. `+05:00`) represent the same instant as a
+# different UTC string but sort lexicographically wrong. The simplest correct
+# behaviour is to refuse offsets and tell the user to convert to UTC first.
 _VALID_ISO_RE = re.compile(
-    r"^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?)?$"
+    r"^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z?)?$"
 )
 
 
@@ -65,12 +69,16 @@ def get_decisions_since(project_root: str, args: Dict[str, Any]) -> Dict[str, An
     since_raw_str = str(since_raw)
     # Validate ISO 8601 shape BEFORE normalising/comparing. Lexicographic
     # comparison on a malformed string can silently include or exclude
-    # entries (e.g. "yesterday" sorts after every real timestamp).
+    # entries (e.g. "yesterday" sorts after every real timestamp). Also
+    # reject offset-bearing strings like `+05:00` — they sort wrong against
+    # Z-suffixed strings even though they represent the same instant.
+    # Convert to UTC (Z) at the call site if your input has an offset.
     if not _VALID_ISO_RE.match(since_raw_str):
         return {
             "error": (
-                f"invalid 'since' value: {since_raw_str!r}. Expected ISO 8601 — "
-                "either 'YYYY-MM-DD' or 'YYYY-MM-DDTHH:MM:SS[Z|±HH:MM]'"
+                f"invalid 'since' value: {since_raw_str!r}. Expected ISO 8601 in UTC — "
+                "either 'YYYY-MM-DD' or 'YYYY-MM-DDTHH:MM:SSZ'. Convert "
+                "timezone offsets (+05:00 etc.) to UTC before passing in."
             )
         }
     since = _normalise_iso(since_raw_str)

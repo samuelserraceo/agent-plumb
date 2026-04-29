@@ -9,8 +9,9 @@
 Every Playwright test file written under SDD has these properties:
 
 1. **One file per BUILD task.** The task line in `spec.md` names the test file:
-   ```
-   - [ ] T03: form submission produces success state → tests/task-003.spec.ts
+
+   ```text
+   - [ ] T03: form submission produces success state → .sdd/features/<id>/tests/task-003.spec.ts
    ```
 
 2. **First line is a spec-traceability comment.** Format:

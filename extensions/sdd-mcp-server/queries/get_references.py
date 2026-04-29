@@ -40,17 +40,27 @@ def _walk_sdd(root: str):
 
 
 def _classify(line: str, slug: str) -> str | None:
-    """Return a category label if the line is a known reference shape; else None."""
+    """Return a category label if the line is a known reference shape; else None.
+
+    Uses word-boundary matching for slug identity so a query for `auth` doesn't
+    falsely match `authentication`, `auth-retry`, etc. The slug must appear as
+    a whole token surrounded by non-slug characters (start/end of line, or
+    whitespace, brackets, comma, quote, etc.).
+    """
     s = line.strip()
+    # Slug-as-whole-token regex. Slug characters per SDD convention:
+    # lowercase, digits, hyphens. Boundary = anything outside [a-z0-9-].
+    slug_token = r"(?<![a-z0-9-])" + re.escape(slug) + r"(?![a-z0-9-])"
+
     if re.match(r"^references\s*:", s, re.IGNORECASE):
         # YAML list inline (`references: [a, b]`) or list-leader.
-        if slug in s:
+        if re.search(slug_token, s):
             return "frontmatter:references"
     # Frontmatter list item — accept both bare slug AND slug-with-context-suffix.
     # `- email-signup` AND `- email-signup (depends on contacts)` both qualify.
     if re.match(r"^-\s+" + re.escape(slug) + r"(?:\s|$)", s):
         return "frontmatter:references-item"
-    if re.match(r"^extends\s*:", s, re.IGNORECASE) and slug in s:
+    if re.match(r"^extends\s*:", s, re.IGNORECASE) and re.search(slug_token, s):
         return "extends"
     # Source / cross-reference lines. Accept both colon/equals separators
     # AND bare-prefix shape ("From feature 001-waitlist") which is common
@@ -58,7 +68,7 @@ def _classify(line: str, slug: str) -> str | None:
     if re.match(
         r"^(?:source|from feature|where it came from)\s*[:=]?\s+",
         s, re.IGNORECASE,
-    ) and slug in s:
+    ) and re.search(slug_token, s):
         return "source-line"
     return None
 
@@ -99,8 +109,9 @@ def get_references(project_root: str, args: Dict[str, Any]) -> Dict[str, Any]:
                         "kind": cat,
                     })
                 continue
-            # Fallback: any verbatim mention not already caught above.
-            if slug in line:
+            # Fallback: any verbatim slug mention not already caught above.
+            # Word-boundary check prevents `auth` matching `authentication`.
+            if re.search(r"(?<![a-z0-9-])" + re.escape(slug) + r"(?![a-z0-9-])", line):
                 key = (rel, ln_no)
                 if key not in seen:
                     seen.add(key)
