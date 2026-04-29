@@ -102,6 +102,14 @@ folder_rules:
     - "tests"
     - "templates"
     - ".github"
+scope_guard:
+  # Per-project scope-guard configuration (closes #16). The CI's scope-guard
+  # job checks that newly-added UI copy strings (≥ copy_min_chars) appear in
+  # spec.md or wireframe.html, and that new UI files have a `// spec:` comment.
+  # Defaults below match the v0.13.x Next.js shape; override per project.
+  file_extensions: [tsx, jsx, ts, js]
+  ui_dirs: [app, components, pages, src/app, src/components, src/pages]
+  copy_min_chars: 30
 events:
   section_approved:
     actions:
