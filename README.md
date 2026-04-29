@@ -126,6 +126,15 @@ When SPEC is fully filled, the agent transitions you to BUILD. At BUILD entry th
 
 Pushes the branch, opens a PR, watches CI. On pass: marks shipped, distills the feature to a rich one-liner block in INDEX with cross-references, marks the feature folder cold. On fail: captures the CI error as a bug task, flips back to BUILD.
 
+### Dogfood — the framework runs SDD on itself
+
+From v1.0, the framework's own work-items walk SDD's SPEC → BUILD → SHIP loop. This repo has **two `.sdd/` paths**:
+
+- **`templates/.sdd/`** — the framework SOURCE that gets shipped to consumer projects. Editing here changes what every consumer gets on their next `scripts/init.sh` run.
+- **`.sdd/` at repo root** — the framework's OWN consumer state. `INDEX.md`, `decisions.md`, `data-model.md`, `patterns.md`, `stack.md`, plus a copy of the framework files (`playbooks/`, `actions/`, `scripts/`) so `/start` and `/next` work on the framework's own work-items.
+
+When you edit a framework file in `templates/.sdd/`, the in-sync test (T118 in `test/run-framework-test.sh`) reminds you to update the matching file in `.sdd/` too. The framework eats its own dog food: a fix that hurts to ship through SDD on this repo would hurt the same way for any consumer, and we feel it first.
+
 ---
 
 ## Slash commands at a glance
