@@ -451,18 +451,11 @@ Stop and ask the user before continuing if ANY of these fire:
 
 ### BUILD phase entry protocol
 
-When a feature transitions SPEC → BUILD **for the first time** (after the last SPEC action `plan-decompose` lands its task list), do NOT start executing tasks. First, ask the user how they want to run BUILD:
+When a feature transitions SPEC → BUILD **for the first time** (after the last SPEC action `plan-decompose` lands its task list), do NOT start executing tasks. First, ask the user how they want to run BUILD.
 
-> Before we start BUILD, how do you want to run it? (Universal halting rules always apply — these options just control pace.)
->
-> 1. **Step-by-step (conversation mode)** — I pause after every task GREEN, you reply `/next`. Best for learning or high-risk tasks.
-> 2. **Checkpoint every 5 (recommended)** — I auto-loop, pause every 5 tasks for review. You reply `go`.
-> 3. **Full autonomous (conversation)** — I only stop on universal halting rules. Best for 30-60 min unattended.
-> 4. **Shell Ralph (headless)** — you run `./scripts/ralph.sh` in a terminal. Each task is a fresh Claude invocation, no token bloat. Best for 2+ hours unattended.
->
-> Reply `1`, `2`, `3`, `4`, or adjust.
+**The exact prompt and the 4 mode descriptions live in `.sdd/actions/run-mode-chosen.md`** — that action is the single source of truth for the wording. Read it at runtime; do not paraphrase or copy the wording into CLAUDE.md (foundation 2 — Lego: each prompt has one home).
 
-If user picks `4`: tell them to run `cd <project-root> && ./scripts/ralph.sh`, then end your turn — do not execute tasks yourself. Record the chosen mode into `spec.md` as a `**Run mode:**` line in `## PHASE: BUILD`.
+If user picks the headless mode (`Shell Ralph` in `run-mode-chosen.md`): tell them to run `cd <project-root> && ./scripts/ralph.sh`, then end your turn — do not execute tasks yourself. Record the chosen mode into `spec.md` as a `**Run mode:**` line in `## PHASE: BUILD`.
 
 ### Progress reporting during auto-loop
 
