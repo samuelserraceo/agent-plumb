@@ -39,11 +39,20 @@ GitHub asks for read access to the repo (PRs, commits, comments) and write acces
 
 ### Step 3: agent verifies the install
 
-After you reply `done`, the agent runs `gh api /repos/<owner>/<repo>/installations --jq '.installations[] | select(.app_slug == "coderabbit-ai")'` to confirm the install actually landed. Three outcomes:
+After you reply `done`, the agent runs a two-step check against the GitHub API to confirm the install actually landed:
 
-- **Installed** — CodeRabbit appears in the installation list. Agent records `parameters.review.bot: coderabbit` in `.sdd/config.md`. Walkthrough completes.
-- **Not installed** — agent says: *"GitHub doesn't show CodeRabbit installed yet. Common reason: you didn't pick this specific repo, or you cancelled before clicking Authorize. Want me to re-open the install page? (yes / no)"*. Yes loops back to step 1; no records `parameters.review.bot: coderabbit` with a `pending_install: true` flag and a follow-up reminder at first `/ship`.
-- **Wrong repo** — agent says: *"CodeRabbit is installed on your account but not on THIS repo. Open the install page and tick this repo specifically: github.com/settings/installations"*. Loop until installed or skip.
+1. List the GitHub apps installed under the authenticated user's account:
+   `gh api /user/installations --jq '.installations[] | select(.app_slug == "coderabbit-ai") | .id'`
+2. If that returns an installation ID, list the repos that installation has access to and check the target repo is in there:
+   `gh api "/user/installations/<id>/repositories" --jq '.repositories[].full_name'`
+
+(For installs that live on an organisation rather than the user's own account, the agent falls back to `gh api /orgs/<org>/installations` with the same `app_slug == "coderabbit-ai"` filter.)
+
+Three outcomes:
+
+- **Installed** — CodeRabbit's installation ID came back AND the target `<owner>/<repo>` appears in that installation's repository list. Agent records `parameters.review.bot: coderabbit` in `.sdd/config.md`. Walkthrough completes.
+- **Not installed** — `/user/installations` returns no entry with `app_slug == "coderabbit-ai"`. Agent says: *"GitHub doesn't show CodeRabbit installed yet. Common reason: you didn't pick this specific repo, or you cancelled before clicking Authorize. Want me to re-open the install page? (yes / no)"*. Yes loops back to step 1; no records `parameters.review.bot: coderabbit` with a `pending_install: true` flag and a follow-up reminder at first `/ship`.
+- **Wrong repo** — CodeRabbit IS installed under the user/org, but the target repo isn't in its accessible repository list. Agent says: *"CodeRabbit is installed on your account but not on THIS repo. Open the install page and tick this repo specifically: github.com/settings/installations"*. Loop until installed or skip.
 
 ### Step 4: optional — seed `.coderabbit.yaml` config
 
