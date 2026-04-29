@@ -92,16 +92,22 @@ If yes, the agent makes the trivial change, pushes, and polls the PR for CodeRab
 
 ## What gets recorded after the walkthrough
 
+The frontmatter's `records_at: "parameters.review.bot"` resolves into the
+`parameters:` block of `.sdd/config.md` — so the example below is shown
+*nested under `parameters:`*, not at the top level:
+
 ```yaml
-# .sdd/config.md — parameters.review.bot already recorded by brick 003
-review:
-  bot: coderabbit
-  installed_via_walkthrough: true   # set after step 3 verification
-  installed_at: "<ISO-Z timestamp>"
-  poll_interval: 180
-  max_polls: 5
-  nudge_command: "@coderabbitai full review"
-  manual: false
+# .sdd/config.md frontmatter — parameters.review.bot already
+# recorded by brick 003; the walkthrough fills in the rest.
+parameters:
+  review:
+    bot: coderabbit
+    installed_via_walkthrough: true   # set after step 3 verification
+    installed_at: "<ISO-Z timestamp>"
+    poll_interval: 180
+    max_polls: 5
+    nudge_command: "@coderabbitai full review"
+    manual: false
 ```
 
 Plus optionally `.coderabbit.yaml` at the repo root from step 4.
