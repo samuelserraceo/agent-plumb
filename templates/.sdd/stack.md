@@ -8,6 +8,29 @@
 
 ---
 
+## Project shape
+
+_(empty — populated by `/sdd-setup` step 1 with the project type, language, and framework you picked)_
+
+<!-- Example shape:
+- **Type:** web app (frontend + backend)
+- **Language:** TypeScript
+- **Framework:** Next.js (App Router)
+- **Why:** familiar stack; ships fast; Vercel-friendly
+-->
+
+## Data store
+
+_(empty — populated by `/sdd-setup` step 2 if the app needs to remember things between visits)_
+
+<!-- Example shape:
+- **Type:** Postgres
+- **Provider:** Neon (via Railway addon) / Supabase / RDS / etc.
+- **Schema source:** Drizzle migrations / Prisma / hand-written SQL
+- **Why:** relational data + real users; familiar SQL story
+- **Connection:** `DATABASE_URL` env var
+-->
+
 ## Running services
 
 _(empty — fill in as you add infrastructure)_
@@ -55,6 +78,18 @@ _(empty — fill in as you make architectural commitments)_
 - Email auth uses **Clerk magic links** (NOT JWT tokens)
 - File uploads stream through **Vercel Blob** (NOT S3)
 - Cache layer is **Redis on Railway** (NOT in-memory)
+-->
+
+## Testing
+
+_(empty — populated by `/sdd-setup` step 4 with the test runner + viewport choice)_
+
+<!-- Example shape:
+- **Test runner:** Playwright (via `extensions/playwright/`)
+- **Test file pattern:** `.sdd/features/<id>/tests/task-*.spec.ts`
+- **Viewports:** Desktop (Chromium) + iPhone-13 mobile
+- **Why:** full-browser end-to-end tests with cross-browser + mobile coverage out of the box
+- **Run:** `npx playwright test`
 -->
 
 ## Extras

@@ -1,6 +1,6 @@
 ---
 type: config
-sdd_version: 0.11.2
+sdd_version: 0.13.3
 playbooks_available: [feature, project]
 default_playbook: feature
 extensions: {}
@@ -17,6 +17,12 @@ parameters:
   ralph:
     max_iters: 50
     timeout_per_iter: 600
+  review:
+    bot: ""              # "coderabbit" | "sourcery" | "" (none)
+    poll_interval: 180   # seconds; 180s × 5 polls = 15 min default for CodeRabbit
+    max_polls: 5
+    nudge_command: ""    # e.g. "@coderabbitai full review" — comment posted if no review after max_polls
+    manual: false        # true = wait for human review only; agent doesn't poll for bots
 file_classes:
   CLAIM:
     - '(^|/)verification\.json$'
@@ -237,6 +243,7 @@ Each level only needs to declare the keys it changes — unspecified keys inheri
 - `voice:` — `plain_english: true` (no jargon without translation), `translate_jargon_on_first_use: true`. The agent reads these every turn and adjusts its phrasing.
 - `pace:` — `halt_on_red_after_attempts: 3`. The agent stops trying to fix a failing test after this many attempts and asks the user.
 - `ralph:` — `max_iters: 50` (cap on total BUILD-task iterations the auto-loop runner can chew through before halting), `timeout_per_iter: 600` (seconds — the loop kills any single iteration that hangs past this). Read by `scripts/ralph.sh` (the headless BUILD run mode). Lower these if you want a tighter leash on autonomous runs; raise them if you've signed off on a long-running iteration shape and don't want the loop to stop early.
+- `review:` — populated by `/sdd-setup` step 3 (PR-reviewer choice). `bot` is the chosen reviewer (`"coderabbit"` / `"sourcery"` / empty for none). `poll_interval` (seconds) × `max_polls` is how long the agent waits for the bot's review on a PR before nudging or moving on (default 180 × 5 = 15 min for CodeRabbit). `nudge_command` is the exact comment the agent posts if no review has arrived (e.g., `"@coderabbitai full review"`). `manual: true` disables bot polling entirely — the agent waits for a human reviewer.
 
 Add new sub-blocks as your project's needs grow — the resolver passes any keys through unmodified, so your action overrides can introduce custom keys (e.g., `approval_threshold: stricter` for high-stakes work items).
 
