@@ -109,7 +109,10 @@ run_install() {
     *)    echo "[playwright-ext] unknown package manager: $mgr" >&2; return 1 ;;
   esac
   echo "[playwright-ext] downloading browser binaries..."
-  npx playwright install --with-deps || return $?
+  # Use bunx for bun environments, npx for everyone else (npm/yarn/pnpm).
+  local exec_cmd="npx"
+  [ "$mgr" = "bun" ] && exec_cmd="bunx"
+  "$exec_cmd" playwright install --with-deps || return $?
   return 0
 }
 

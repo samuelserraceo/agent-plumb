@@ -95,6 +95,6 @@ For each question, records the answer + chosen provider (or "none yet" / "tbd") 
 
 ## Why this is in the setup wizard at all
 
-You could leave each of these for `/sdd-config` to ask later — and that's fine. The reason it's a start-of-project question is that the shape of your app changes depending on these choices: if you know you're using Stripe, the agent plans the database to track Users, Subscriptions, and Charges from feature 1. If you discover Stripe at feature 5, the database structure might need bigger restructuring (more work to change later than to plan correctly now).
+You could leave each of these for `/sdd-config` to ask later — and that's fine. The reason it's a start-of-project question is that the shape of your app changes depending on these choices: if you know you're using Stripe, the agent plans the database to track Users, Subscriptions, and Charges from feature 1. If you discover Stripe at feature 5, the database might need bigger changes (reorganising how data is stored is more work later than planning it correctly now).
 
 If you said "tbd" to any question, the agent will re-ask at the first feature whose problem touches that area — e.g. the first feature that mentions "send confirmation email" will re-prompt question 2.
