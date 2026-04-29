@@ -178,11 +178,25 @@ default_playbook = config_fm.get("default_playbook", "")
 if playbook_override:
     if playbook_override not in playbooks_available:
         print(f"[/start] '{playbook_override}' is not an available playbook in this project.", file=sys.stderr)
-        if playbook_override in ("bug", "idea", "question", "project"):
-            print(f"[/start] {playbook_override.title()} playbook is coming in Phase C. For now, use 'feature' "
+        if playbook_override in ("bug", "idea", "question"):
+            # Pre-shipped playbook names with a known successor message.
+            print(f"[/start] {playbook_override.title()} playbook is coming in a future release. For now, use 'feature' "
                   "— it's the same process, just with extra steps you can leave blank.", file=sys.stderr)
         else:
-            print(f"[/start] available playbooks: {', '.join(playbooks_available) or '(none)'}", file=sys.stderr)
+            # Generic case — show available list AND a "did you mean?" hint
+            # for closer-than-arbitrary substring matches. Closes #6.
+            available_str = ", ".join(playbooks_available) or "(none)"
+            print(f"[/start] available playbooks: {available_str}", file=sys.stderr)
+            if playbooks_available:
+                if len(playbooks_available) == 1:
+                    print(f"[/start] Did you mean to use '{playbooks_available[0]}'?", file=sys.stderr)
+                else:
+                    # Surface near-matches first (substring on the typed name);
+                    # fall back to listing all if no near-match.
+                    typed = playbook_override.lower()
+                    near = [p for p in playbooks_available if typed in p.lower() or p.lower() in typed]
+                    suggestion_set = near or playbooks_available
+                    print(f"[/start] Did you mean one of: {', '.join(suggestion_set)}?", file=sys.stderr)
         sys.exit(1)
     chosen = playbook_override
 else:

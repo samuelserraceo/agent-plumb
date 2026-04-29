@@ -236,6 +236,7 @@ Each level only needs to declare the keys it changes — unspecified keys inheri
 - `budget:` — `max_minutes`, `max_tokens`, `max_commits`. Ceiling on per-step effort. The framework warns at the limit; doesn't block. Override at action level for actions that genuinely need more (e.g., `proposed-approach: max_minutes: 30` because drafting + iterating takes longer than answering a yes/no).
 - `voice:` — `plain_english: true` (no jargon without translation), `translate_jargon_on_first_use: true`. The agent reads these every turn and adjusts its phrasing.
 - `pace:` — `halt_on_red_after_attempts: 3`. The agent stops trying to fix a failing test after this many attempts and asks the user.
+- `ralph:` — `max_iters: 50` (cap on total BUILD-task iterations the auto-loop runner can chew through before halting), `timeout_per_iter: 600` (seconds — the loop kills any single iteration that hangs past this). Read by `scripts/ralph.sh` (the headless BUILD run mode). Lower these if you want a tighter leash on autonomous runs; raise them if you've signed off on a long-running iteration shape and don't want the loop to stop early.
 
 Add new sub-blocks as your project's needs grow — the resolver passes any keys through unmodified, so your action overrides can introduce custom keys (e.g., `approval_threshold: stricter` for high-stakes work items).
 

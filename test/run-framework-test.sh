@@ -2335,6 +2335,32 @@ else
 fi
 
 # ============================================================
+# T67c — Coverage gap (closes #19 case 1): hooksPath ALREADY set to
+#        `.claude/hooks` is silent on re-run. Re-running /start on an
+#        already-configured project must NOT halt as a conflict (T67b's
+#        logic accidentally firing on a re-run is the regression vector).
+# ============================================================
+note "T67c: /start with hooksPath already set to .claude/hooks is silent on re-run (Cut 11 case 1)"
+d=$(mkproj_v08)
+cd "$d"
+git init -q
+git config user.email t@t.com && git config user.name T
+# Pre-set core.hooksPath to the SDD value — simulates a re-run.
+git config core.hooksPath .claude/hooks
+ec=0
+out=$(bash .sdd/scripts/start.sh "rerun test feature" 2>&1) || ec=$?
+post_hookspath=$(git config --get core.hooksPath 2>/dev/null || echo "")
+cd - >/dev/null
+rm -rf "$d"
+# Must succeed (ec=0), preserve the existing value, and NOT mention conflict.
+if [ "$ec" -eq 0 ] && [ "$post_hookspath" = ".claude/hooks" ] \
+   && ! echo "$out" | grep -qiE 'hook.*conflict|already.*hooks.*conflict|halt'; then
+  ok "T67c /start re-run on already-configured project is silent (no false-halt)"
+else
+  bad "T67c /start halted on re-run despite already-configured hooksPath" "ec=$ec; post=$post_hookspath; out: $(echo "$out" | head -3 | tr '\n' '|')"
+fi
+
+# ============================================================
 # T68 — F4 atomic-step scaffold: /start writes per-step [ ] rows
 #   v0.9 atomic-step granularity. Each action's frontmatter declares
 #   one or more `steps:`; spec.md must scaffold one `- [ ] <step-id>`
@@ -3083,6 +3109,32 @@ if [ "$ec" -eq 2 ]; then
   ok "T84b path outside .sdd/ rejected (prefix gate is load-bearing)"
 else
   bad "T84b validator accepted out-of-scope path templates/CLAUDE.md" "exit=$ec"
+fi
+
+# ============================================================
+# T84c — v0.9.1 canonical-output regression (closes #39)
+#   The validator emits the CANONICAL (forward-slash-normalised) path
+#   on stdout, not the raw input. A Windows-style separator must come
+#   back as forward-slash so callers chain on a single convention.
+#   RED: if a future edit removes the canonicalisation, callers would
+#   silently get mixed-separator paths and downstream string compares
+#   would diverge.
+# ============================================================
+note "T84c: validator emits canonical (forward-slash) path on stdout"
+out=$(bash "$VALIDATE" '.sdd\foo\bar' 2>/dev/null)
+ec=$?
+if [ "$ec" -eq 0 ] && [ "$out" = ".sdd/foo/bar" ]; then
+  ok "T84c canonical output: .sdd\\foo\\bar → .sdd/foo/bar"
+else
+  bad "T84c validator did NOT canonicalise backslashes to forward-slashes" "exit=$ec; out='$out'"
+fi
+# Also verify forward-slash input round-trips unchanged.
+out2=$(bash "$VALIDATE" '.sdd/decisions.md' 2>/dev/null)
+ec2=$?
+if [ "$ec2" -eq 0 ] && [ "$out2" = ".sdd/decisions.md" ]; then
+  ok "T84c forward-slash input round-trips unchanged"
+else
+  bad "T84c forward-slash input check failed" "exit=$ec2; out='$out2'"
 fi
 
 # ============================================================
@@ -4115,6 +4167,34 @@ if [ "$ec" -eq 2 ] && echo "$err" | grep -qiE 'repin refused|no approval marker'
   ok "T109 moat refused shell-segment-smuggled marker"
 else
   bad "T109 moat let shell-segment-smuggled marker bypass through" "exit=$ec; err='$err'"
+fi
+
+# ============================================================
+# T110 — settings.sh quoted-key support (closes #35)
+#   The dotted-key parser must respect double-quoted segments so paths
+#   embedded in keys (e.g., `file_rules."a.b.md".append_only`) work
+#   as a single segment. RED: a naive `dotted.split(".")` would split
+#   the path itself and look up `file_rules → a → b → md → append_only`
+#   instead of `file_rules → a.b.md → append_only`.
+# ============================================================
+note "T110: settings.sh handles double-quoted segments with dots inside"
+d=$(mktemp -d) || exit 1
+cp -r "$FRAMEWORK_ROOT/templates/.sdd" "$d/" 2>/dev/null
+cd "$d"
+key='file_rules."some.path.md".append_only'
+out_set=$(bash .sdd/scripts/settings.sh set "$key" true 2>&1)
+out_get=$(bash .sdd/scripts/settings.sh get "$key" 2>&1)
+out_reset=$(bash .sdd/scripts/settings.sh reset "$key" 2>&1)
+cd - >/dev/null
+rm -rf "$d"
+ok_count=0
+echo "$out_set"   | grep -q 'append_only = True'  && ok_count=$((ok_count + 1))
+echo "$out_get"   | grep -q 'append_only = True'  && ok_count=$((ok_count + 1))
+echo "$out_reset" | grep -qiE 'removed|override deleted' && ok_count=$((ok_count + 1))
+if [ "$ok_count" -eq 3 ]; then
+  ok "T110 settings.sh quoted-key set/get/reset cycle works (3/3 assertions)"
+else
+  bad "T110 settings.sh quoted-key handling broken" "set='$out_set' get='$out_get' reset='$out_reset'"
 fi
 
 # ============================================================

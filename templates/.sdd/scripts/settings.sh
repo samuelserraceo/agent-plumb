@@ -93,13 +93,38 @@ def walk(d, prefix=""):
         else:
             yield path, v
 
+def _split_dotted(s):
+    """Split a dotted key on `.` but respect double-quoted segments
+    so paths embedded in keys (e.g. `file_rules."a.b.md".append_only`)
+    work as a single segment. Closes #35.
+
+    Examples:
+      'a.b.c'                  -> ['a', 'b', 'c']
+      'file_rules."a.b.c".x'   -> ['file_rules', 'a.b.c', 'x']
+      'a."b.c"'                -> ['a', 'b.c']
+    """
+    parts = []
+    cur = []
+    in_quote = False
+    for ch in s:
+        if ch == '"':
+            in_quote = not in_quote
+            continue
+        if ch == '.' and not in_quote:
+            parts.append(''.join(cur))
+            cur = []
+            continue
+        cur.append(ch)
+    parts.append(''.join(cur))
+    return parts
+
 def get_at(d, dotted):
     """Walk dotted path; return value or raise KeyError.
     UAT v0.10.1 (#52): also accept the relative form (without
     `parameters.` prefix) for top-level parameter keys, so users
     reaching for the displayed key from `/settings list` find it.
     Lookup order: full path first, then `parameters.<dotted>`."""
-    parts = dotted.split(".")
+    parts = _split_dotted(dotted)
     try:
         cur = d
         for p in parts:
@@ -200,7 +225,7 @@ def set_at(d, dotted, value):
                 except ValueError:
                     coerced = value
 
-    parts = dotted.split(".")
+    parts = _split_dotted(dotted)
     cur = d
     for p in parts[:-1]:
         if p not in cur or not isinstance(cur[p], dict):
@@ -210,7 +235,7 @@ def set_at(d, dotted, value):
 
 def del_at(d, dotted):
     """Walk dotted path; delete leaf. Returns True if removed."""
-    parts = dotted.split(".")
+    parts = _split_dotted(dotted)
     cur = d
     for p in parts[:-1]:
         if not isinstance(cur, dict) or p not in cur:
@@ -220,6 +245,22 @@ def del_at(d, dotted):
         del cur[parts[-1]]
         return True
     return False
+
+def _atomic_write_config(text):
+    """Atomic write helper: tempfile + rename so a crash mid-write
+    doesn't leave the user with a half-written config.md. Closes #36
+    by deduplicating the set/reset pair."""
+    import tempfile
+    tmp_dir = os.path.dirname(config_path) or "."
+    fd, tmp_path = tempfile.mkstemp(prefix=".config.tmp.", dir=tmp_dir)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(text)
+        os.replace(tmp_path, config_path)
+    except Exception:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+        raise
 
 if cmd == "list":
     # Print the full inventory grouped by top-level block.
@@ -254,19 +295,7 @@ elif cmd == "set":
     set_at(fm, key, val)
     new_fm_text = yaml.safe_dump(fm, sort_keys=False, default_flow_style=False).rstrip()
     new_text = f"---\n{new_fm_text}\n---\n{body}"
-    # Atomic write: tempfile + rename so a crash mid-write doesn't
-    # leave the user with a half-written config.md.
-    import tempfile
-    tmp_dir = os.path.dirname(config_path) or "."
-    fd, tmp_path = tempfile.mkstemp(prefix=".config.tmp.", dir=tmp_dir)
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            f.write(new_text)
-        os.replace(tmp_path, config_path)
-    except Exception:
-        if os.path.exists(tmp_path):
-            os.unlink(tmp_path)
-        raise
+    _atomic_write_config(new_text)
     print(f"{key} = {get_at(fm, key)!r}  (saved)")
     sys.exit(0)
 
@@ -287,17 +316,7 @@ elif cmd == "reset":
         sys.exit(2)
     new_fm_text = yaml.safe_dump(fm, sort_keys=False, default_flow_style=False).rstrip()
     new_text = f"---\n{new_fm_text}\n---\n{body}"
-    import tempfile
-    tmp_dir = os.path.dirname(config_path) or "."
-    fd, tmp_path = tempfile.mkstemp(prefix=".config.tmp.", dir=tmp_dir)
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            f.write(new_text)
-        os.replace(tmp_path, config_path)
-    except Exception:
-        if os.path.exists(tmp_path):
-            os.unlink(tmp_path)
-        raise
+    _atomic_write_config(new_text)
     print(f"{key} removed (override deleted; project default applies)")
     sys.exit(0)
 
