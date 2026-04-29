@@ -3086,6 +3086,31 @@ else
 fi
 
 # ============================================================
+# T84c — v0.9.1 canonical-output regression (closes #39)
+#   The validator emits the CANONICAL (forward-slash-normalised) path
+#   on stdout, not the raw input. A Windows-style separator must come
+#   back as forward-slash so callers chain on a single convention.
+#   RED: if a future edit removes the canonicalisation, callers would
+#   silently get mixed-separator paths and downstream string compares
+#   would diverge.
+# ============================================================
+note "T84c: validator emits canonical (forward-slash) path on stdout"
+out=$(bash "$VALIDATE" '.sdd\foo\bar' 2>/dev/null)
+ec=$?
+if [ "$ec" -eq 0 ] && [ "$out" = ".sdd/foo/bar" ]; then
+  ok "T84c canonical output: .sdd\\foo\\bar → .sdd/foo/bar"
+else
+  bad "T84c validator did NOT canonicalise backslashes to forward-slashes" "exit=$ec; out='$out'"
+fi
+# Also verify forward-slash input round-trips unchanged.
+out2=$(bash "$VALIDATE" '.sdd/decisions.md' 2>/dev/null)
+if [ "$out2" = ".sdd/decisions.md" ]; then
+  ok "T84c forward-slash input round-trips unchanged"
+else
+  bad "T84c forward-slash input was mutated" "out='$out2'"
+fi
+
+# ============================================================
 # T85 — F1 base: pre-commit-rules.sh enforces touches: independently
 #   The new generic enforcer parallel-fires alongside the legacy
 #   pre-commit-touches.sh. Same scenario (commit without staging a
