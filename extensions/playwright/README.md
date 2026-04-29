@@ -48,7 +48,7 @@ The script:
 2. Creates `tests/example.spec.ts` showing the SDD task-NNN.spec.ts shape.
 3. Creates `docs/sdd-playwright.md` explaining the test pattern.
 4. Adds a `## Testing` section to your project's `.sdd/stack.md` recording the choice (only if the section doesn't already exist).
-5. **Reminds you to install Playwright as a devDependency yourself** — the script does NOT modify `package.json` or run `npm install`. You run those.
+5. **Offers to install Playwright for you** — detects your package manager from the lockfile (npm / yarn / pnpm / bun), asks "install now? [Y/n]", and if you say yes, runs the install + downloads the browser binaries. If you say no (or the install fails), it falls back to printing the manual commands.
 6. Prints next steps.
 
 The script is **idempotent on a per-file basis**: re-running it walks each scaffolded file and asks before overwriting anything that already exists. Files you've edited are never silently replaced.
@@ -126,10 +126,7 @@ npx playwright test
 
 ## What this extension does NOT do
 
-- Doesn't install Playwright. It does not edit `package.json` and does not run
-  `npm install`. It checks whether `@playwright/test` is already in your
-  `package.json`; if missing, it prints the two install commands you run yourself
-  (`npm install --save-dev @playwright/test` + `npx playwright install --with-deps`).
+- Doesn't install Playwright globally — only as a devDependency in your project, and only after you say yes. The install is opt-in (you confirm with a Y/n prompt). If you decline, the script falls back to printing manual install commands.
 - Doesn't write your tests — the agent does that as part of BUILD per task.
 - Doesn't run on CI — you wire that in via `.github/workflows/` or your CI of
   choice. The extension's `playwright.config.ts` is CI-friendly out of the box

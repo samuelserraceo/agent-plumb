@@ -10,3 +10,17 @@
 0.4 .sdd/current-state.md
 0.4 dashboard.html
 0.4 rubric.md
+
+# v0.9 Phase C — F1 generic enforcer subsumes 7 specific hooks +
+# scope-guard moves to CI + SCHEMA.md retired (canonical bits migrated
+# to config.md / stack.md). Added retroactively in v0.13.4 (#73).
+0.9.0 .claude/hooks/pre-commit-block.sh
+0.9.0 .claude/hooks/pre-commit-touches.sh
+0.9.0 .claude/hooks/pre-commit-cofile-block.sh
+0.9.0 .claude/hooks/pre-commit-decisions-append-only.sh
+0.9.0 .claude/hooks/pre-commit-size-cap.sh
+0.9.0 .claude/hooks/pre-commit-claude-md-managed.sh
+0.9.0 .claude/hooks/pre-commit-learn-sync.sh
+0.9.0 .claude/hooks/pre-commit-schema-sync.sh
+0.9.0 .claude/hooks/pre-commit-scope-guard.sh
+0.9.0 SCHEMA.md

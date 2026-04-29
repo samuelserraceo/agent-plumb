@@ -6,7 +6,7 @@
      SDD ships an update. Your edits inside this block will be lost.
      Your project-specific rules go BELOW the END marker.
      ════════════════════════════════════════════════════════════════════ -->
-<!-- SDD-MANAGED-START version: 0.13.3 -->
+<!-- SDD-MANAGED-START version: 0.13.4 -->
 
 # CLAUDE.md
 
@@ -83,7 +83,7 @@ INDEX.md's `## In flight` section can hold multiple work items at once — one p
 4. Switch back to A: `git checkout sdd/001-feature-a` and update `**Active:**` line to point at A's path
 5. Both are visible in `## In flight`; only one is `**Active:**` at a time
 
-**Limitation today:** `**Active:**` is a single line in a shared INDEX.md, so switching branches requires manually updating that line (or `/status` to see what's on each branch). Full per-branch active state (branch-aware lookup) lands in v0.11 — see issue #42.
+**Limitation today:** `**Active:**` is a single line in a shared INDEX.md, so switching branches requires manually updating that line (or `/status` to see what's on each branch). Full per-branch active state (branch-aware lookup) is deferred — see issue #42 for the open SPEC.
 
 For Pipelogic-style projects with 3-5 features in flight at once, this scaffold supports the workflow today; the per-branch UX polish lands later.
 
@@ -440,12 +440,14 @@ Hash: <sha256 if section was approved> (optional; only for approval events)
 
 Non-negotiable order per task:
 
-1. Test file exists at path named in the task line (e.g., `features/<id>/tests/task-001.mjs`).
+1. Test file exists at path named in the task line (e.g., `features/<id>/tests/task-001.mjs` for JS, `tests/task_001.py` for Python, `tests/task_001_test.go` for Go — adapt to your stack's file extension and runner conventions).
 2. Run test → must be **RED**. If GREEN before you wrote code, the test is wrong — rewrite it.
 3. Write code.
 4. Run test → must be **GREEN**.
 5. Commit. Update task status from `RED` → `GREEN` in `spec.md`.
 6. Move to next task per the **run mode**.
+
+**Stack-agnostic note:** the examples throughout `.sdd/actions/*.md` often use JavaScript / TypeScript shapes (`tests/task-NNN.mjs`, `gh pr create`, `npm` commands) because that's the stack the framework was first dogfooded on. Adapt to your stack's idioms — the framework's discipline is language-independent. The test runner you picked at `/sdd-setup` step 4 (e.g. Playwright, Cypress, pytest, Vitest) drives the actual file extension and command shape.
 
 ### Universal halting rules (apply in every run mode, never skip)
 
