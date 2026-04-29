@@ -303,6 +303,10 @@ def _infer_active_context(proj):
         na = json.loads(result.stdout)
     except json.JSONDecodeError:
         return None, None, None
+    if not isinstance(na, dict):
+        # next-action.sh contract is a JSON object; treat any other
+        # shape as a malformed response and fall through to (None,*3).
+        return None, None, None
     action = (na.get("action") or "").strip()
     step = (na.get("step") or "").strip()
     if not action or not step:
@@ -339,7 +343,14 @@ def _resolve_with_provenance(proj, lookup_key, project_value):
         resolved = json.loads(result.stdout)
     except json.JSONDecodeError:
         return project_value, "project"
-    provenance = resolved.get("_provenance", {})
+    if not isinstance(resolved, dict):
+        # resolve-parameters.sh contract is a JSON object with a
+        # _provenance map. Any other shape is malformed; fall back
+        # to project-only.
+        return project_value, "project"
+    provenance = resolved.get("_provenance") or {}
+    if not isinstance(provenance, dict):
+        provenance = {}
     cascade_key_short = lookup_key[len("parameters."):]
     cur = resolved
     for part in _split_dotted(cascade_key_short):
