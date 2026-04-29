@@ -307,8 +307,12 @@ def _infer_active_context(proj):
         # next-action.sh contract is a JSON object; treat any other
         # shape as a malformed response and fall through to (None,*3).
         return None, None, None
-    action = (na.get("action") or "").strip()
-    step = (na.get("step") or "").strip()
+    # Same defensiveness for the scalar fields: non-string values
+    # would crash .strip() (the contract is "string action / step").
+    action_raw = na.get("action")
+    step_raw = na.get("step")
+    action = action_raw.strip() if isinstance(action_raw, str) else ""
+    step = step_raw.strip() if isinstance(step_raw, str) else ""
     if not action or not step:
         return None, None, None
     return spec_path, action, step
@@ -358,7 +362,13 @@ def _resolve_with_provenance(proj, lookup_key, project_value):
             cur = cur[part]
         else:
             return project_value, "project"
-    return cur, provenance.get(cascade_key_short, "project")
+    # Type-guard the source label too — `_provenance[<key>]` should
+    # be a string, but a malformed payload could put a non-string
+    # there and it would render directly into `[<source>]` in the
+    # user-visible output. Fall back to "project" if not a string.
+    raw_source = provenance.get(cascade_key_short)
+    source = raw_source if isinstance(raw_source, str) else "project"
+    return cur, source
 
 def _atomic_write_config(text):
     """Atomic write helper: tempfile + rename so a crash mid-write
