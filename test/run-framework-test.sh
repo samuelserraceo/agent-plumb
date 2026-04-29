@@ -4209,6 +4209,78 @@ else
 fi
 
 # ============================================================
+# T111 — v0.13.3 hotfix: every setup brick's records_at heading/key
+#        must EXIST in the target scaffold (closes the smoke-test
+#        finding that 4 of 6 wizard questions had no place to write).
+#        RED if a future brick references a heading that doesn't exist
+#        in stack.md, or a YAML key that doesn't exist in config.md.
+# ============================================================
+note "T111: every /sdd-setup brick's records_at heading exists in its target scaffold"
+problems=""
+SETUP_DIR="$FRAMEWORK_ROOT/templates/.sdd/setup"
+for brick in "$SETUP_DIR"/[0-9][0-9][0-9]-*.md; do
+  [ -f "$brick" ] || continue
+  brick_name=$(basename "$brick" .md)
+  # Parse records_in + records_at from frontmatter (between --- markers).
+  records_in=$(awk '/^---/{c++; next} c==1 && /^records_in:/{gsub(/records_in:[[:space:]]*"?|"$/, ""); print; exit}' "$brick" | tr -d '"' | tr -d "'" | tr -d ' \n')
+  records_at=$(awk '/^---/{c++; next} c==1 && /^records_at:/{sub(/records_at:[[:space:]]*/, ""); print; exit}' "$brick" | sed -E 's/^"//; s/"$//' | tr -d "'")
+  if [ -z "$records_in" ] || [ -z "$records_at" ]; then
+    problems="$problems $brick_name:missing-frontmatter"
+    continue
+  fi
+  target_file="$FRAMEWORK_ROOT/templates/$records_in"
+  if [ ! -f "$target_file" ]; then
+    problems="$problems $brick_name:target-file-missing($records_in)"
+    continue
+  fi
+  # records_at can be a markdown heading (## Foo) OR a YAML dotted key
+  # (parameters.review). Detect form by leading char.
+  case "$records_at" in
+    "## "*)
+      # Markdown heading — grep for exact match in target file.
+      if ! grep -qFx -- "$records_at" "$target_file" 2>/dev/null; then
+        problems="$problems $brick_name:heading-missing($records_at)"
+      fi
+      ;;
+    [a-z]*)
+      # YAML dotted key — walk the dots, check each level exists in
+      # the YAML frontmatter. Use python for safety.
+      yaml_check=$(python3 - <<PYEOF "$target_file" "$records_at" 2>/dev/null
+import sys, yaml
+target, key = sys.argv[1], sys.argv[2]
+with open(target) as f: text = f.read()
+if not text.startswith("---"):
+    print("no-frontmatter"); sys.exit(0)
+end = text.find("\n---", 4)
+if end == -1:
+    print("frontmatter-not-closed"); sys.exit(0)
+fm = yaml.safe_load(text[4:end])
+if not isinstance(fm, dict):
+    print("frontmatter-not-dict"); sys.exit(0)
+cur = fm
+for part in key.split("."):
+    if not isinstance(cur, dict) or part not in cur:
+        print(f"missing:{part}"); sys.exit(0)
+    cur = cur[part]
+print("ok")
+PYEOF
+)
+      if [ "$yaml_check" != "ok" ]; then
+        problems="$problems $brick_name:yaml-key-missing($records_at:$yaml_check)"
+      fi
+      ;;
+    *)
+      problems="$problems $brick_name:unrecognised-records_at-form($records_at)"
+      ;;
+  esac
+done
+if [ -z "$problems" ]; then
+  ok "T111 every setup brick's records_at exists in its target scaffold"
+else
+  bad "T111 setup wizard scaffolding gap:" "$problems"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
