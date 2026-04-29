@@ -5012,6 +5012,49 @@ else
 fi
 
 # ============================================================
+# T119i — templates/.claude/settings.json registers the post-stop-lint
+#         hook under the Stop event. CR finding on PR #93 cycle-2:
+#         a coverage gap that would let someone silently delete the
+#         registration without any test failing — locking in the
+#         contract that the hook is wired up.
+# ============================================================
+note "T119i: settings.json registers post-stop-lint.sh under the Stop event"
+settings_path="$FRAMEWORK_ROOT/templates/.claude/settings.json"
+if [ ! -f "$settings_path" ]; then
+  bad "T119i settings.json missing" "expected at $settings_path"
+else
+  ok_count=0
+  # Must parse as valid JSON.
+  if python3 -c "import json,sys;json.load(open(sys.argv[1]))" "$settings_path" 2>/dev/null; then
+    ok_count=$((ok_count + 1))
+  fi
+  # Must have a Stop event entry. Walk the JSON in Python so a structural
+  # change (e.g. moving Stop into a different shape) is also caught.
+  py_out=$(python3 - "$settings_path" <<'PY' 2>&1
+import json, sys
+with open(sys.argv[1]) as f: cfg = json.load(f)
+hooks = cfg.get("hooks") or {}
+stops = hooks.get("Stop") or []
+found = False
+for entry in stops:
+    for hook in (entry.get("hooks") or []):
+        if "post-stop-lint.sh" in (hook.get("command") or ""):
+            found = True
+            break
+print("FOUND" if found else "MISSING")
+PY
+  )
+  if [ "$py_out" = "FOUND" ]; then
+    ok_count=$((ok_count + 1))
+  fi
+  if [ "$ok_count" -eq 2 ]; then
+    ok "T119i settings.json registers post-stop-lint under Stop (2/2 assertions)"
+  else
+    bad "T119i settings.json doesn't register post-stop-lint under Stop" "ok_count=$ok_count py_out='$py_out'"
+  fi
+fi
+
+# ============================================================
 # T116 — scope-guard-config.sh emits the v0.13.x defaults when no
 #        config.md exists (closes #16: scope-guard configurability).
 # ============================================================
