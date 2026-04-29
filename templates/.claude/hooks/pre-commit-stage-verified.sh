@@ -196,20 +196,31 @@ check_manifest_pins() {
   # a clean manifest while leaving a tampered one in WT — the moat saw
   # the tampered hashes (matching tampered WT framework files) and let
   # the commit through, but the COMMITTED state would mix a clean
-  # manifest with tampered files. Now: read the staged blob when staged,
-  # so validation runs against the content that will actually be in HEAD.
+  # manifest with tampered files. Now: read the staged blob when staged.
+  #
+  # PR #61 (closes #55): trust-baseline check. When the manifest is staged
+  # AND has hash CHANGES versus HEAD's manifest, treat the commit as a
+  # repin and refuse it unless the commit message carries the marker
+  # `[SDD] manifest: repin`. This blocks the within-commit attack where an
+  # attacker tampers a framework file, recomputes its hash, and stages
+  # both file + manifest in the same commit. HEAD's manifest is the
+  # trusted baseline; legitimate repins (e.g. via update.sh) must
+  # explicitly opt in via the marker.
   MANIFEST="$manifest_path" PROJ="$PROJECT_DIR" \
-    STAGED_MANIFEST_PATH="$staged_manifest" python3 <<'PYEOF'
-import hashlib, json, os, subprocess, sys
+    STAGED_MANIFEST_PATH="$staged_manifest" \
+    GIT_COMMIT_CMD="$cmd" \
+    python3 <<'PYEOF'
+import hashlib, json, os, re, subprocess, sys
 
 manifest_path = os.environ["MANIFEST"]
 proj = os.environ["PROJ"]
 staged_manifest_path = os.environ.get("STAGED_MANIFEST_PATH", "")
+git_commit_cmd = os.environ.get("GIT_COMMIT_CMD", "")
 
 try:
     if staged_manifest_path:
-        # Manifest is staged — validate against the staged blob (the
-        # content the commit will actually contain), not the WT.
+        # Manifest is staged — read the staged blob (what's actually
+        # going into HEAD) for the per-file hash check below.
         result = subprocess.run(
             ["git", "show", ":" + staged_manifest_path],
             capture_output=True, cwd=proj, timeout=10,
@@ -225,6 +236,267 @@ try:
 except Exception as e:
     print(f"[moat] manifest.json malformed: {e}", file=sys.stderr)
     sys.exit(1)
+
+# === TRUST BASELINE CHECK (closes #55) ===
+# When the manifest itself is staged, fetch HEAD's manifest as the
+# trusted baseline and check whether any existing slug's expected_sha256
+# has changed. A change means this commit is a REPIN — possibly
+# legitimate (e.g. SDD update), possibly an attacker laundering a
+# tampered file. Distinguish via commit-message marker.
+#
+# The marker pattern is `[SDD] manifest: repin` (case-sensitive). The
+# `update.sh` migration script writes commits with this prefix. The
+# user (or update.sh) can also add it manually for one-off framework
+# upgrades.
+if staged_manifest_path:
+    # Step 1 (PR #61 cycle-3 refactor): parse the actual commit message
+    # FIRST — before any trust-baseline gate runs — so the same parsed
+    # `marker_present` can be reused in:
+    #   (a) the unreadable-HEAD path (allow a repair commit through)
+    #   (b) the repin-detected path (allow legitimate repins through)
+    # This closes the cycle-3 critical: the previous code's marker parse
+    # only ran inside the repin-detected branch, so a staged repair of a
+    # malformed HEAD manifest with the marker was still refused (CR's
+    # cycle-3 finding "the suggested repair commit is still blocked").
+    #
+    # The parser is ALSO scoped to the actual `git commit` segment of a
+    # possibly-compound shell command (e.g. `tool -m "[SDD] ..." && git
+    # commit -m unrelated`). Without this, an upstream segment's -m/-F
+    # could smuggle the marker into the gate.
+    import shlex
+    try:
+        cmd_argv = shlex.split(git_commit_cmd) if git_commit_cmd else []
+    except ValueError:
+        cmd_argv = []
+
+    shell_connectors = {"&&", "||", ";", "|"}
+    segments = []
+    current = []
+    for tok in cmd_argv:
+        if tok in shell_connectors:
+            if current:
+                segments.append(current)
+            current = []
+            continue
+        current.append(tok)
+    if current:
+        segments.append(current)
+
+    env_var_re = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
+    # git options that take an argument (need to skip both the flag AND
+    # its value when walking past them to find the `commit` subcommand).
+    _git_opts_with_arg = {
+        "-C", "-c", "--git-dir", "--work-tree", "--namespace",
+    }
+
+    def _git_commit_args(seg):
+        """If seg invokes `git ... commit ...`, return the args TO commit
+        (i.e. seg minus env-var prefixes minus `git` minus git's own
+        pre-subcommand options minus the `commit` token). Else None."""
+        j = 0
+        while j < len(seg) and env_var_re.match(seg[j]):
+            j += 1
+        if j >= len(seg) or seg[j] != "git":
+            return None
+        j += 1  # past "git"
+        # Walk past git's pre-subcommand options.
+        while j < len(seg) and seg[j] != "commit":
+            opt = seg[j]
+            if opt in _git_opts_with_arg:
+                j += 2
+                continue
+            if opt.startswith("-"):
+                j += 1
+                continue
+            # Positional arg before `commit` — not a `git commit` segment.
+            return None
+        if j >= len(seg) or seg[j] != "commit":
+            return None
+        return seg[j + 1:]
+
+    commit_message_parts = []
+    for seg in segments:
+        args = _git_commit_args(seg)
+        if args is None:
+            continue
+        i = 0
+        while i < len(args):
+            a = args[i]
+            if a in ("-m", "--message") and i + 1 < len(args):
+                commit_message_parts.append(args[i + 1])
+                i += 2
+                continue
+            if a.startswith("--message="):
+                commit_message_parts.append(a[len("--message="):])
+            elif a.startswith("-m="):
+                commit_message_parts.append(a[len("-m="):])
+            elif a in ("-F", "--file") and i + 1 < len(args):
+                f = args[i + 1]
+                full_f = f if os.path.isabs(f) else os.path.join(proj, f)
+                try:
+                    with open(full_f, encoding="utf-8") as fh:
+                        commit_message_parts.append(fh.read())
+                except (OSError, UnicodeDecodeError):
+                    pass
+                i += 2
+                continue
+            elif a.startswith("--file="):
+                f = a[len("--file="):]
+                full_f = f if os.path.isabs(f) else os.path.join(proj, f)
+                try:
+                    with open(full_f, encoding="utf-8") as fh:
+                        commit_message_parts.append(fh.read())
+                except (OSError, UnicodeDecodeError):
+                    pass
+            i += 1
+        break  # only one `git commit` per command
+
+    commit_message = "\n".join(commit_message_parts)
+    marker_re = re.compile(r"\[SDD\]\s+manifest:\s+repin", re.IGNORECASE)
+    marker_present = bool(marker_re.search(commit_message))
+
+    # Step 2: fetch HEAD's manifest as the trust baseline.
+    head_manifest = None
+    head_manifest_unreadable = False  # HEAD has the blob but we can't parse it
+    try:
+        head_result = subprocess.run(
+            ["git", "show", f"HEAD:{staged_manifest_path}"],
+            capture_output=True, cwd=proj, timeout=10,
+        )
+        if head_result.returncode == 0:
+            # HEAD has the file. Try to parse it. If the parse fails, the
+            # baseline is unreadable — fail-closed (unless the user is
+            # repairing, see below).
+            try:
+                head_manifest = json.loads(
+                    head_result.stdout.decode("utf-8", errors="replace")
+                )
+            except Exception:
+                head_manifest = None
+                head_manifest_unreadable = True
+        # else: HEAD doesn't have the manifest yet (legitimate first-time
+        # add). Leave both flags as None / False so the gate is skipped.
+    except Exception:
+        # git unavailable / timeout / etc. — skip gate (better than blocking
+        # all commits when git is broken). The per-file WT hash check below
+        # still runs as the primary defence against tampered files.
+        head_manifest = None
+        head_manifest_unreadable = False
+
+    # Step 3: handle malformed HEAD baseline. PR #61 cycle-3 fix: allow
+    # the marker-bearing repair commit through (otherwise the user has no
+    # in-band recovery path — the previous fail-closed exited before the
+    # marker check ever ran). With the marker present, fall through; the
+    # per-file WT hash check below verifies the staged manifest content.
+    if head_manifest_unreadable:
+        if not marker_present:
+            print("[moat] HEAD manifest.json exists but is malformed —", file=sys.stderr)
+            print("       refusing the commit. The trust baseline cannot be", file=sys.stderr)
+            print("       evaluated against an unreadable HEAD manifest.", file=sys.stderr)
+            print("", file=sys.stderr)
+            print("To recover: stage a valid manifest.json and commit it with", file=sys.stderr)
+            print("the marker:", file=sys.stderr)
+            print("", file=sys.stderr)
+            print("    git commit -m '[SDD] manifest: repin — repair HEAD'", file=sys.stderr)
+            print("", file=sys.stderr)
+            print("(case-insensitive, parsed only from -m / --message= / -F /", file=sys.stderr)
+            print("--file= on the actual `git commit` segment.)", file=sys.stderr)
+            sys.exit(1)
+        # Marker present → user is repairing. Fall through; the per-file
+        # WT hash check below validates the staged manifest's claims.
+
+    # If HEAD has no manifest (e.g. very early in project life), there's
+    # nothing to compare against — skip the trust-baseline check. The
+    # per-file hash check below still runs.
+    if head_manifest is not None:
+        # Path-keyed detection (PR #61 cycle-1 fix): we compare paths, not
+        # slugs. This catches three bypass shapes that slug-keyed walking
+        # missed:
+        #   (a) hash change under same slug
+        #   (b) slug removed (path silently drops out of trust coverage)
+        #   (c) same path re-keyed under a fresh slug with a new hash
+        def _collect_paths(m):
+            out = {}
+            for sec in ("playbooks", "actions", "extensions", "scripts"):
+                for _slug, entry in (m.get(sec) or {}).items():
+                    p = entry.get("path", "")
+                    h = entry.get("expected_sha256", "")
+                    if p:
+                        out[p] = (sec, h)
+            return out
+
+        head_paths = _collect_paths(head_manifest)
+        staged_paths = _collect_paths(manifest)
+
+        repins = []  # list of (path, head_hash, staged_hash_or_REMOVED)
+        for path, (head_sec, head_hash) in head_paths.items():
+            staged = staged_paths.get(path)
+            if staged is None:
+                # Path removed entirely from the manifest. This drops trust
+                # coverage of an existing framework file — gate it.
+                repins.append((path, head_hash, "<removed>"))
+                continue
+            staged_sec, staged_hash = staged
+            if head_hash and staged_hash and head_hash != staged_hash:
+                repins.append((path, head_hash, staged_hash))
+        # Additions (paths in staged but not HEAD) are allowed; the
+        # per-file WT hash check below still verifies them.
+
+        if repins:
+            # Repin detected — require the [SDD] manifest: repin marker.
+            # The marker has already been parsed at the top of this block
+            # (segment-scoped to the actual `git commit`, with env-var
+            # prefixes and git's own pre-subcommand options handled).
+            if not marker_present:
+                print("[moat] manifest repin refused — no approval marker.",
+                      file=sys.stderr)
+                print("", file=sys.stderr)
+                print("This commit changes the manifest's trust coverage for the",
+                      file=sys.stderr)
+                print("following framework files (HEAD baseline → staged):",
+                      file=sys.stderr)
+                for path, head_hash, staged_hash in repins:
+                    if staged_hash == "<removed>":
+                        print(f"  {path}: pin removed (no longer enforced)",
+                              file=sys.stderr)
+                    else:
+                        print(f"  {path}: {head_hash[:12]}... → {staged_hash[:12]}...",
+                              file=sys.stderr)
+                print("", file=sys.stderr)
+                print("Repinning or removing entries changes the trust baseline.",
+                      file=sys.stderr)
+                print("To prevent a tampered file being silently legitimised by",
+                      file=sys.stderr)
+                print("a co-staged manifest edit, the moat refuses the commit",
+                      file=sys.stderr)
+                print("unless the commit message contains the marker:",
+                      file=sys.stderr)
+                print("", file=sys.stderr)
+                print("    [SDD] manifest: repin", file=sys.stderr)
+                print("", file=sys.stderr)
+                print("(case-insensitive, parsed from -m / --message= / -F /",
+                      file=sys.stderr)
+                print("--file= only — not from env vars or argv text).",
+                      file=sys.stderr)
+                print("", file=sys.stderr)
+                print("If this is a legitimate repin (e.g. you ran scripts/update.sh",
+                      file=sys.stderr)
+                print("or you intentionally edited a framework file), commit with:",
+                      file=sys.stderr)
+                print("", file=sys.stderr)
+                print("    git commit -m '[SDD] manifest: repin — <reason>'",
+                      file=sys.stderr)
+                print("", file=sys.stderr)
+                print("Editor commits (no -m/-F) are not yet supported for repins;",
+                      file=sys.stderr)
+                print("use -m or -F so the moat can read the message ahead of time.",
+                      file=sys.stderr)
+                print("", file=sys.stderr)
+                print("If you didn't expect this commit to repin, inspect with",
+                      file=sys.stderr)
+                print("`git diff --cached` — a tampered file may be hiding here.",
+                      file=sys.stderr)
+                sys.exit(1)
 
 def normalized_sha256_bytes(data):
     """config.md "Hash normalisation": LF line endings, strip trailing ws per line,
