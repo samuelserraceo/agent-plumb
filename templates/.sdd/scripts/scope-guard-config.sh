@@ -112,8 +112,24 @@ case "$MODE" in
     ;;
   --regex)
     # Build the path-prefix regex `^(dir1|dir2|...)/.*\.(ext1|ext2|...)$`.
-    dirs_or=$(printf '%s' "$DIRS" | tr ' ' '|')
-    exts_or=$(printf '%s' "$EXTS" | tr ' ' '|')
+    # Each token is escaped before being joined with `|` so a config
+    # value like `app.[v1]` doesn't corrupt the regex (CR cycle-3
+    # major). Python does the escaping (already a framework dep);
+    # if python3 isn't available, fall through to the unescaped path
+    # — same compatibility contract as the rest of this script.
+    if command -v python3 >/dev/null 2>&1; then
+      dirs_or=$(EXTS="$DIRS" python3 -c "
+import os, re
+print('|'.join(re.escape(t) for t in os.environ['EXTS'].split() if t))
+")
+      exts_or=$(EXTS="$EXTS" python3 -c "
+import os, re
+print('|'.join(re.escape(t) for t in os.environ['EXTS'].split() if t))
+")
+    else
+      dirs_or=$(printf '%s' "$DIRS" | tr ' ' '|')
+      exts_or=$(printf '%s' "$EXTS" | tr ' ' '|')
+    fi
     printf '^(%s)/.*\\.(%s)$' "$dirs_or" "$exts_or"
     ;;
   --min-chars)

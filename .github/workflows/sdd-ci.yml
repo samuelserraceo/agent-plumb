@@ -216,6 +216,16 @@ jobs:
           else
             ui_path_re='^(app|components|pages|src/app|src/components|src/pages)/.*\.(tsx|jsx|ts|js)$'
           fi
+          # Validate the regex compiles (CR cycle-3 major). Without
+          # this check, a malformed scope_guard config in a downstream
+          # project would silently mask Block 2 via `|| true` and any
+          # new UI file slipping through with no `// spec:` reference
+          # would never be flagged. Fail fast instead.
+          if ! printf '' | grep -E -- "$ui_path_re" >/dev/null 2>&1; then
+            echo "::error::[SDD scope-guard] ui_path_re from scope_guard config does not compile as a POSIX ERE: '$ui_path_re'"
+            echo "::error::Fix: check .sdd/config.md scope_guard.file_extensions / ui_dirs for invalid characters."
+            exit 1
+          fi
           new_ui_files=$(git diff --name-only --diff-filter=A "$base...$head" 2>/dev/null \
             | grep -E "$ui_path_re" \
             | grep -vE '\.test\.|\.spec\.|/tests?/' \
