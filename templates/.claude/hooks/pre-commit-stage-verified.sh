@@ -196,20 +196,31 @@ check_manifest_pins() {
   # a clean manifest while leaving a tampered one in WT — the moat saw
   # the tampered hashes (matching tampered WT framework files) and let
   # the commit through, but the COMMITTED state would mix a clean
-  # manifest with tampered files. Now: read the staged blob when staged,
-  # so validation runs against the content that will actually be in HEAD.
+  # manifest with tampered files. Now: read the staged blob when staged.
+  #
+  # PR #61 (closes #55): trust-baseline check. When the manifest is staged
+  # AND has hash CHANGES versus HEAD's manifest, treat the commit as a
+  # repin and refuse it unless the commit message carries the marker
+  # `[SDD] manifest: repin`. This blocks the within-commit attack where an
+  # attacker tampers a framework file, recomputes its hash, and stages
+  # both file + manifest in the same commit. HEAD's manifest is the
+  # trusted baseline; legitimate repins (e.g. via update.sh) must
+  # explicitly opt in via the marker.
   MANIFEST="$manifest_path" PROJ="$PROJECT_DIR" \
-    STAGED_MANIFEST_PATH="$staged_manifest" python3 <<'PYEOF'
-import hashlib, json, os, subprocess, sys
+    STAGED_MANIFEST_PATH="$staged_manifest" \
+    GIT_COMMIT_CMD="$cmd" \
+    python3 <<'PYEOF'
+import hashlib, json, os, re, subprocess, sys
 
 manifest_path = os.environ["MANIFEST"]
 proj = os.environ["PROJ"]
 staged_manifest_path = os.environ.get("STAGED_MANIFEST_PATH", "")
+git_commit_cmd = os.environ.get("GIT_COMMIT_CMD", "")
 
 try:
     if staged_manifest_path:
-        # Manifest is staged — validate against the staged blob (the
-        # content the commit will actually contain), not the WT.
+        # Manifest is staged — read the staged blob (what's actually
+        # going into HEAD) for the per-file hash check below.
         result = subprocess.run(
             ["git", "show", ":" + staged_manifest_path],
             capture_output=True, cwd=proj, timeout=10,
@@ -225,6 +236,110 @@ try:
 except Exception as e:
     print(f"[moat] manifest.json malformed: {e}", file=sys.stderr)
     sys.exit(1)
+
+# === TRUST BASELINE CHECK (closes #55) ===
+# When the manifest itself is staged, fetch HEAD's manifest as the
+# trusted baseline and check whether any existing slug's expected_sha256
+# has changed. A change means this commit is a REPIN — possibly
+# legitimate (e.g. SDD update), possibly an attacker laundering a
+# tampered file. Distinguish via commit-message marker.
+#
+# The marker pattern is `[SDD] manifest: repin` (case-sensitive). The
+# `update.sh` migration script writes commits with this prefix. The
+# user (or update.sh) can also add it manually for one-off framework
+# upgrades.
+if staged_manifest_path:
+    try:
+        head_result = subprocess.run(
+            ["git", "show", f"HEAD:{staged_manifest_path}"],
+            capture_output=True, cwd=proj, timeout=10,
+        )
+        head_manifest = None
+        if head_result.returncode == 0:
+            try:
+                head_manifest = json.loads(
+                    head_result.stdout.decode("utf-8", errors="replace")
+                )
+            except Exception:
+                head_manifest = None
+    except Exception:
+        head_manifest = None
+
+    # If HEAD has no manifest (e.g. very early in project life), there's
+    # nothing to compare against — skip the trust-baseline check. The
+    # per-file hash check below still runs.
+    if head_manifest is not None:
+        repinned_slugs = []
+        for section in ("playbooks", "actions", "extensions", "scripts"):
+            head_section = head_manifest.get(section) or {}
+            staged_section = manifest.get(section) or {}
+            for slug, entry in staged_section.items():
+                head_entry = head_section.get(slug)
+                if head_entry is None:
+                    # New entry — addition is allowed without the marker
+                    # (the per-file hash check still verifies on-disk
+                    # matches the new claim).
+                    continue
+                staged_hash = entry.get("expected_sha256", "")
+                head_hash = head_entry.get("expected_sha256", "")
+                if staged_hash and head_hash and staged_hash != head_hash:
+                    repinned_slugs.append((section, slug, head_hash, staged_hash))
+
+        if repinned_slugs:
+            # The manifest changes existing pins — this is a repin commit.
+            # Require the marker in the commit message.
+            #
+            # Extract message from `git commit -m "..."` shape. For other
+            # commit shapes (interactive editor) we can't see the message
+            # at PreToolUse time; fall back to a relaxed rule: allow the
+            # repin only if `update.sh` is the running script (detected
+            # via the cmd containing `update.sh`) OR the marker is in -m.
+            marker_re = re.compile(r"\[SDD\]\s+manifest:\s+repin", re.IGNORECASE)
+            update_sh_re = re.compile(r"\bupdate\.sh\b")
+            marker_present = bool(marker_re.search(git_commit_cmd))
+            update_sh_present = bool(update_sh_re.search(git_commit_cmd))
+
+            if not (marker_present or update_sh_present):
+                print("[moat] manifest repin refused — no approval marker.",
+                      file=sys.stderr)
+                print("", file=sys.stderr)
+                print("This commit changes existing manifest pins (HEAD baseline)",
+                      file=sys.stderr)
+                print("for the following slugs:", file=sys.stderr)
+                for section, slug, head_hash, staged_hash in repinned_slugs:
+                    print(f"  {section}/{slug}: {head_hash[:12]}... → {staged_hash[:12]}...",
+                          file=sys.stderr)
+                print("", file=sys.stderr)
+                print("Repinning the manifest changes the trust baseline. To prevent",
+                      file=sys.stderr)
+                print("a tampered framework file from being silently legitimised by",
+                      file=sys.stderr)
+                print("a co-staged manifest update, the moat refuses the commit",
+                      file=sys.stderr)
+                print("unless one of these is true:", file=sys.stderr)
+                print("", file=sys.stderr)
+                print("  1. The commit message contains the marker:", file=sys.stderr)
+                print('       [SDD] manifest: repin', file=sys.stderr)
+                print("     (case-insensitive). Use this for legitimate repins —",
+                      file=sys.stderr)
+                print("     e.g. when you intentionally edit a framework file and",
+                      file=sys.stderr)
+                print("     accept the new hash as authoritative.", file=sys.stderr)
+                print("", file=sys.stderr)
+                print("  2. The commit is being made by `scripts/update.sh` (the",
+                      file=sys.stderr)
+                print("     framework's official update path). The script invokes",
+                      file=sys.stderr)
+                print("     git commit with its own message; the moat detects it.",
+                      file=sys.stderr)
+                print("", file=sys.stderr)
+                print("If you didn't expect this commit to repin the manifest,",
+                      file=sys.stderr)
+                print("inspect the staged changes with `git diff --cached` —",
+                      file=sys.stderr)
+                print("a tampered framework file may be hiding behind the repin.",
+                      file=sys.stderr)
+                sys.exit(1)
 
 def normalized_sha256_bytes(data):
     """config.md "Hash normalisation": LF line endings, strip trailing ws per line,

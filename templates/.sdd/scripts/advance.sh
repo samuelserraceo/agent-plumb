@@ -110,8 +110,28 @@ except OSError:
     print(0)
 " 2>/dev/null || echo 0)
           if [ "$age" -gt "$STALE_LOCK_SECONDS" ]; then
-            stale_pid=$(cat "$LOCK_DIR/pid" 2>/dev/null || echo "?")
-            echo "[advance] stale lock detected (pid $stale_pid, age ${age}s > ${STALE_LOCK_SECONDS}s) — removing." >&2
+            # PID liveness check (closes #56). mtime > STALE_LOCK_SECONDS
+            # is a NECESSARY condition for "stale," but not SUFFICIENT —
+            # a long-running advance (e.g. waiting on a slow verify-stage
+            # or external command) might legitimately hold the lock past
+            # the threshold. If the recorded PID is still a live process,
+            # respect it: don't clobber a working run.
+            #
+            # Only remove the lock when BOTH (a) mtime is past the
+            # threshold AND (b) the recorded PID is dead OR the PID file
+            # is missing/unreadable.
+            stale_pid=$(cat "$LOCK_DIR/pid" 2>/dev/null || echo "")
+            if [ -n "$stale_pid" ] && kill -0 "$stale_pid" 2>/dev/null; then
+              # Process still alive → not stale; caller keeps waiting.
+              # Print a one-liner so the user knows why we're not clobbering.
+              if [ "$attempts" -eq 1 ]; then
+                echo "[advance] lock held by pid $stale_pid (alive, age ${age}s); waiting." >&2
+              fi
+              return 1
+            fi
+            # Process dead or PID file unreadable — safe to clean up.
+            display_pid="${stale_pid:-?}"
+            echo "[advance] stale lock detected (pid $display_pid, age ${age}s > ${STALE_LOCK_SECONDS}s, process not alive) — removing." >&2
             rm -rf "$LOCK_DIR" 2>/dev/null
             return 0  # caller should retry mkdir
           fi

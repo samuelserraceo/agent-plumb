@@ -14,7 +14,7 @@
   },
   "scripts": {
     "advance.sh": {
-      "expected_sha256": "338f4fdebdaf0f5cdd850e1f8589604474b1a7d64054293a25bdc5979355cc8b",
+      "expected_sha256": "72ded77c02c951264e5c5f07712170f696de291d315c386a3e291c551351364f",
       "path": ".sdd/scripts/advance.sh",
       "trust": "framework"
     },
