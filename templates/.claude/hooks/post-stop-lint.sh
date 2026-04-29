@@ -69,7 +69,11 @@ check_active_line() {
   local index=".sdd/INDEX.md"
   [ -f "$index" ] || return 0  # No INDEX.md → nothing to check
   local count
-  count=$(grep -cE '^\*\*Active:\*\*' "$index" 2>/dev/null || echo 0)
+  # `grep -c` outputs the count AND exits 1 on zero matches, so `|| echo 0`
+  # would append an extra "0" line, leaving count="0\n0" which breaks the
+  # arithmetic test below. Use `|| true` to swallow the exit code without
+  # touching stdout.
+  count=$(grep -cE '^\*\*Active:\*\*' "$index" 2>/dev/null || true)
   if [ "$count" -eq 0 ]; then
     add_violation "[stop-lint] .sdd/INDEX.md has no **Active:** line.
   Fix: add one line at the top of INDEX.md in this shape:
@@ -160,21 +164,70 @@ $pretty
 }
 
 # ============================================================
-# Helper — find the active feature folder. Reads the **Active:** line
-# from INDEX.md and validates the path shape. Echoes the absolute path
-# on stdout (or empty string if no active feature / can't find it).
+# Helper — find the active feature folder. Pure path resolution: reads
+# the **Active:** line and validates shape. Echoes the absolute path on
+# stdout (or empty string if no active feature exists / shape invalid /
+# folder missing).
+#
+# This is called from $(...) command-substitution by every per-feature
+# check. Subshells discard variable changes — so this function MUST
+# stay side-effect free. Drift on the Active pointer (broken shape,
+# missing folder) is surfaced by `check_active_pointer_target` below,
+# which runs in the main shell where add_violation persists.
 # ============================================================
 locate_active_feature_dir() {
   local index=".sdd/INDEX.md"
   [ -f "$index" ] || { echo ""; return 0; }
   local active_path
   active_path=$(awk '/^\*\*Active:\*\*/{print $2; exit}' "$index" 2>/dev/null || echo "")
-  # Reject placeholders ("_(none)_") and any path that doesn't match
-  # the strict shape <playbook>/<id-slug>.
+  # Empty / placeholder → silent empty.
+  if [ -z "$active_path" ] || echo "$active_path" | grep -qE '^[_()[:space:]]+$|^_\(none\)_$'; then
+    echo ""
+    return 0
+  fi
+  # Malformed shape → silent empty (check_active_pointer_target catches it).
   echo "$active_path" | grep -qE '^[a-z][a-z0-9_-]*/[a-zA-Z0-9][a-zA-Z0-9._-]*$' || { echo ""; return 0; }
   local full="$PROJECT_DIR/.sdd/$active_path"
+  # Missing folder → silent empty (check_active_pointer_target catches it).
   [ -d "$full" ] || { echo ""; return 0; }
   echo "$full"
+}
+
+# ============================================================
+# Invariant 1b — when **Active:** is non-empty AND not a placeholder,
+# the value must match `<playbook>/<id-slug>` AND the folder must
+# exist. Closes the silent-swallow bug flagged by CR on PR #93 cycle-1
+# (`locate_active_feature_dir` was returning empty for both "not yet
+# started" and "broken pointer", indistinguishable to invariants 3-7).
+#
+# Runs in the main shell (NOT via $()), so add_violation persists.
+# ============================================================
+check_active_pointer_target() {
+  local index=".sdd/INDEX.md"
+  [ -f "$index" ] || return 0
+  local active_path
+  active_path=$(awk '/^\*\*Active:\*\*/{print $2; exit}' "$index" 2>/dev/null || echo "")
+  # Empty / placeholder → legitimate "nothing in flight"; no violation.
+  if [ -z "$active_path" ] || echo "$active_path" | grep -qE '^[_()[:space:]]+$|^_\(none\)_$'; then
+    return 0
+  fi
+  # Malformed shape.
+  if ! echo "$active_path" | grep -qE '^[a-z][a-z0-9_-]*/[a-zA-Z0-9][a-zA-Z0-9._-]*$'; then
+    add_violation "[stop-lint] .sdd/INDEX.md **Active:** value is malformed: '$active_path'.
+  Expected shape: \`<playbook>/<id-slug>\` (e.g. \`features/001-auth\`).
+  Or use the placeholder \`**Active:** _(none)_\` when nothing is in flight.
+  Fix: edit the **Active:** line at the top of INDEX.md to one of those shapes."
+    return 0
+  fi
+  # Shape valid but folder missing.
+  local full="$PROJECT_DIR/.sdd/$active_path"
+  if [ ! -d "$full" ]; then
+    add_violation "[stop-lint] .sdd/INDEX.md **Active:** points at \`$active_path\` but \`.sdd/$active_path/\` does not exist.
+  This usually means the folder was deleted, renamed, or the Active line
+  was edited to point at a feature that was never created.
+  Fix: either restore the folder, rename the Active value to match the
+  current folder, or set \`**Active:** _(none)_\` if nothing is in flight."
+  fi
 }
 
 # ============================================================
@@ -187,7 +240,8 @@ check_phase_line() {
   local spec="$active_dir/spec.md"
   [ -f "$spec" ] || return 0  # spec not yet created
   local count
-  count=$(grep -cE '^\[PHASE:[[:space:]]+[A-Z]+\]' "$spec" 2>/dev/null || echo 0)
+  # See note on the matching pattern in check_active_line: `|| true` not `|| echo 0`.
+  count=$(grep -cE '^\[PHASE:[[:space:]]+[A-Z]+\]' "$spec" 2>/dev/null || true)
   if [ "$count" -eq 0 ]; then
     add_violation "[stop-lint] active spec.md has no [PHASE: X] line.
   Spec: ${spec#$PROJECT_DIR/}
@@ -404,6 +458,7 @@ $samples
 # early — we want the user to see the whole picture in one pass.
 # ============================================================
 check_active_line
+check_active_pointer_target
 check_in_flight_paths
 check_phase_line
 check_duplicate_ids
