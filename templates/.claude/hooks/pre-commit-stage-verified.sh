@@ -249,6 +249,113 @@ except Exception as e:
 # user (or update.sh) can also add it manually for one-off framework
 # upgrades.
 if staged_manifest_path:
+    # Step 1 (PR #61 cycle-3 refactor): parse the actual commit message
+    # FIRST — before any trust-baseline gate runs — so the same parsed
+    # `marker_present` can be reused in:
+    #   (a) the unreadable-HEAD path (allow a repair commit through)
+    #   (b) the repin-detected path (allow legitimate repins through)
+    # This closes the cycle-3 critical: the previous code's marker parse
+    # only ran inside the repin-detected branch, so a staged repair of a
+    # malformed HEAD manifest with the marker was still refused (CR's
+    # cycle-3 finding "the suggested repair commit is still blocked").
+    #
+    # The parser is ALSO scoped to the actual `git commit` segment of a
+    # possibly-compound shell command (e.g. `tool -m "[SDD] ..." && git
+    # commit -m unrelated`). Without this, an upstream segment's -m/-F
+    # could smuggle the marker into the gate.
+    import shlex
+    try:
+        cmd_argv = shlex.split(git_commit_cmd) if git_commit_cmd else []
+    except ValueError:
+        cmd_argv = []
+
+    shell_connectors = {"&&", "||", ";", "|"}
+    segments = []
+    current = []
+    for tok in cmd_argv:
+        if tok in shell_connectors:
+            if current:
+                segments.append(current)
+            current = []
+            continue
+        current.append(tok)
+    if current:
+        segments.append(current)
+
+    env_var_re = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
+    # git options that take an argument (need to skip both the flag AND
+    # its value when walking past them to find the `commit` subcommand).
+    _git_opts_with_arg = {
+        "-C", "-c", "--git-dir", "--work-tree", "--namespace",
+    }
+
+    def _git_commit_args(seg):
+        """If seg invokes `git ... commit ...`, return the args TO commit
+        (i.e. seg minus env-var prefixes minus `git` minus git's own
+        pre-subcommand options minus the `commit` token). Else None."""
+        j = 0
+        while j < len(seg) and env_var_re.match(seg[j]):
+            j += 1
+        if j >= len(seg) or seg[j] != "git":
+            return None
+        j += 1  # past "git"
+        # Walk past git's pre-subcommand options.
+        while j < len(seg) and seg[j] != "commit":
+            opt = seg[j]
+            if opt in _git_opts_with_arg:
+                j += 2
+                continue
+            if opt.startswith("-"):
+                j += 1
+                continue
+            # Positional arg before `commit` — not a `git commit` segment.
+            return None
+        if j >= len(seg) or seg[j] != "commit":
+            return None
+        return seg[j + 1:]
+
+    commit_message_parts = []
+    for seg in segments:
+        args = _git_commit_args(seg)
+        if args is None:
+            continue
+        i = 0
+        while i < len(args):
+            a = args[i]
+            if a in ("-m", "--message") and i + 1 < len(args):
+                commit_message_parts.append(args[i + 1])
+                i += 2
+                continue
+            if a.startswith("--message="):
+                commit_message_parts.append(a[len("--message="):])
+            elif a.startswith("-m="):
+                commit_message_parts.append(a[len("-m="):])
+            elif a in ("-F", "--file") and i + 1 < len(args):
+                f = args[i + 1]
+                full_f = f if os.path.isabs(f) else os.path.join(proj, f)
+                try:
+                    with open(full_f, encoding="utf-8") as fh:
+                        commit_message_parts.append(fh.read())
+                except (OSError, UnicodeDecodeError):
+                    pass
+                i += 2
+                continue
+            elif a.startswith("--file="):
+                f = a[len("--file="):]
+                full_f = f if os.path.isabs(f) else os.path.join(proj, f)
+                try:
+                    with open(full_f, encoding="utf-8") as fh:
+                        commit_message_parts.append(fh.read())
+                except (OSError, UnicodeDecodeError):
+                    pass
+            i += 1
+        break  # only one `git commit` per command
+
+    commit_message = "\n".join(commit_message_parts)
+    marker_re = re.compile(r"\[SDD\]\s+manifest:\s+repin", re.IGNORECASE)
+    marker_present = bool(marker_re.search(commit_message))
+
+    # Step 2: fetch HEAD's manifest as the trust baseline.
     head_manifest = None
     head_manifest_unreadable = False  # HEAD has the blob but we can't parse it
     try:
@@ -258,8 +365,8 @@ if staged_manifest_path:
         )
         if head_result.returncode == 0:
             # HEAD has the file. Try to parse it. If the parse fails, the
-            # baseline is unreadable — fail-closed so a malformed HEAD
-            # manifest isn't a bypass for the approval requirement.
+            # baseline is unreadable — fail-closed (unless the user is
+            # repairing, see below).
             try:
                 head_manifest = json.loads(
                     head_result.stdout.decode("utf-8", errors="replace")
@@ -276,19 +383,27 @@ if staged_manifest_path:
         head_manifest = None
         head_manifest_unreadable = False
 
-    # PR #61 cycle-2 fix (closes the major CR finding): if HEAD's manifest
-    # blob exists but didn't parse, do NOT silently fall through. That
-    # would let an attacker bypass the approval requirement by corrupting
-    # HEAD's manifest in an earlier commit. Refuse with a clear message.
+    # Step 3: handle malformed HEAD baseline. PR #61 cycle-3 fix: allow
+    # the marker-bearing repair commit through (otherwise the user has no
+    # in-band recovery path — the previous fail-closed exited before the
+    # marker check ever ran). With the marker present, fall through; the
+    # per-file WT hash check below verifies the staged manifest content.
     if head_manifest_unreadable:
-        print("[moat] HEAD manifest.json exists but is malformed —", file=sys.stderr)
-        print("       refusing the commit. The trust baseline cannot be", file=sys.stderr)
-        print("       evaluated against an unreadable HEAD manifest.", file=sys.stderr)
-        print("", file=sys.stderr)
-        print("To recover: check out HEAD's manifest, repair the JSON, and", file=sys.stderr)
-        print("commit the repair with `[SDD] manifest: repin: repair HEAD`.", file=sys.stderr)
-        print("Then retry the original commit.", file=sys.stderr)
-        sys.exit(1)
+        if not marker_present:
+            print("[moat] HEAD manifest.json exists but is malformed —", file=sys.stderr)
+            print("       refusing the commit. The trust baseline cannot be", file=sys.stderr)
+            print("       evaluated against an unreadable HEAD manifest.", file=sys.stderr)
+            print("", file=sys.stderr)
+            print("To recover: stage a valid manifest.json and commit it with", file=sys.stderr)
+            print("the marker:", file=sys.stderr)
+            print("", file=sys.stderr)
+            print("    git commit -m '[SDD] manifest: repin — repair HEAD'", file=sys.stderr)
+            print("", file=sys.stderr)
+            print("(case-insensitive, parsed only from -m / --message= / -F /", file=sys.stderr)
+            print("--file= on the actual `git commit` segment.)", file=sys.stderr)
+            sys.exit(1)
+        # Marker present → user is repairing. Fall through; the per-file
+        # WT hash check below validates the staged manifest's claims.
 
     # If HEAD has no manifest (e.g. very early in project life), there's
     # nothing to compare against — skip the trust-baseline check. The
@@ -328,59 +443,10 @@ if staged_manifest_path:
         # per-file WT hash check below still verifies them.
 
         if repins:
-            # Repin detected — require the [SDD] manifest: repin marker
-            # in the actual commit message. PR #61 cycle-1 fix: parse the
-            # commit message from -m/-F args in git_commit_cmd rather
-            # than substring-matching the raw command string.
-            #
-            # The previous implementation accepted ANY occurrence of the
-            # marker substring inside the command line — env vars,
-            # unrelated paths, even a stray "update.sh" anywhere — and
-            # rejected legitimate `git commit -F` flows. Now we extract
-            # only the actual message text and match the marker against
-            # that.
-            import shlex
-            try:
-                cmd_argv = shlex.split(git_commit_cmd) if git_commit_cmd else []
-            except ValueError:
-                cmd_argv = []
-
-            commit_message_parts = []
-            i = 0
-            while i < len(cmd_argv):
-                a = cmd_argv[i]
-                if a in ("-m", "--message") and i + 1 < len(cmd_argv):
-                    commit_message_parts.append(cmd_argv[i + 1])
-                    i += 2
-                    continue
-                if a.startswith("--message="):
-                    commit_message_parts.append(a[len("--message="):])
-                elif a.startswith("-m="):
-                    commit_message_parts.append(a[len("-m="):])
-                elif a in ("-F", "--file") and i + 1 < len(cmd_argv):
-                    f = cmd_argv[i + 1]
-                    full_f = f if os.path.isabs(f) else os.path.join(proj, f)
-                    try:
-                        with open(full_f, encoding="utf-8") as fh:
-                            commit_message_parts.append(fh.read())
-                    except (OSError, UnicodeDecodeError):
-                        pass
-                    i += 2
-                    continue
-                elif a.startswith("--file="):
-                    f = a[len("--file="):]
-                    full_f = f if os.path.isabs(f) else os.path.join(proj, f)
-                    try:
-                        with open(full_f, encoding="utf-8") as fh:
-                            commit_message_parts.append(fh.read())
-                    except (OSError, UnicodeDecodeError):
-                        pass
-                i += 1
-
-            commit_message = "\n".join(commit_message_parts)
-            marker_re = re.compile(r"\[SDD\]\s+manifest:\s+repin", re.IGNORECASE)
-            marker_present = bool(marker_re.search(commit_message))
-
+            # Repin detected — require the [SDD] manifest: repin marker.
+            # The marker has already been parsed at the top of this block
+            # (segment-scoped to the actual `git commit`, with env-var
+            # prefixes and git's own pre-subcommand options handled).
             if not marker_present:
                 print("[moat] manifest repin refused — no approval marker.",
                       file=sys.stderr)
