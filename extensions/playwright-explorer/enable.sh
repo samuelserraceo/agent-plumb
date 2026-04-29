@@ -38,6 +38,7 @@ echo "[playwright-explorer] STATUS: scaffold (v0.13.x). Agentic logic deferred �
 # 1. Register the MCP server in .mcp.json.
 MCP_FILE=".mcp.json"
 SERVER_PATH="$EXT_DIR/server.py"
+mcp_registered=false
 if [ ! -f "$MCP_FILE" ]; then
   cat > "$MCP_FILE" <<EOF
 {
@@ -49,6 +50,7 @@ if [ ! -f "$MCP_FILE" ]; then
   }
 }
 EOF
+  mcp_registered=true
   echo "[playwright-explorer] created $MCP_FILE with server registration"
 else
   echo "[playwright-explorer] $MCP_FILE exists — please add the server stanza by hand:"
@@ -98,9 +100,10 @@ cat <<'EOF'
 EOF
 echo ""
 
-cat <<'EOF'
+if [ "$mcp_registered" = "true" ]; then
+  cat <<'EOF'
 
-[playwright-explorer] enabled (scaffold).
+[playwright-explorer] enabled (scaffold) — MCP server registered, stack.md updated, config block printed above.
 
 Next steps:
   1. Verify MCP registration: cat .mcp.json | grep playwright-explorer
@@ -111,3 +114,19 @@ Next steps:
      That kicks off a real SPEC for the follow-up work.
   4. Read extensions/playwright-explorer/README.md for the full design.
 EOF
+else
+  cat <<'EOF'
+
+[playwright-explorer] partial scaffold installed — stack.md updated and config block printed above, BUT the MCP server stanza was NOT auto-registered (your .mcp.json already existed; see manual instructions above). Add the stanza by hand before the explore queries will reach this server.
+
+Next steps:
+  1. Paste the playwright-explorer stanza into .mcp.json (see instructions above).
+  2. Verify MCP registration: cat .mcp.json | grep playwright-explorer
+  3. The explore queries return {"deferred": ...} today — that's correct.
+     The scaffold proves the protocol surface; the implementation fills
+     in the agentic loop.
+  4. To start the implementation: /start "Playwright-explorer agentic implementation"
+     That kicks off a real SPEC for the follow-up work.
+  5. Read extensions/playwright-explorer/README.md for the full design.
+EOF
+fi

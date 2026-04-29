@@ -38,11 +38,14 @@ cd <your-project-root>
 bash <path-to-this-repo>/extensions/playwright-explorer/enable.sh
 ```
 
-The script:
-1. Registers the playwright-explorer MCP server in `.mcp.json`
-2. Adds a `## AI-driven exploration` section to `.sdd/stack.md` recording the choice
-3. Configures `parameters.playwright_explorer` block in `.sdd/config.md` (cost limit, default model, etc.)
-4. Adds the `playwright-explore` action to the SHIP phase of `feature.md` playbook (asks before modifying)
+The script (scaffold scope — partial automation; the rest is documented manual steps):
+
+1. **Registers the MCP server in `.mcp.json` IF the file does not already exist.** If `.mcp.json` is already present (you have other MCP servers), the script prints the stanza you need to paste in by hand — automated merging of an existing `.mcp.json` is intentionally deferred (too easy to clobber other servers' settings).
+2. **Appends a `## AI-driven exploration` section to `.sdd/stack.md`** if that section isn't already there.
+3. **Prints (does NOT write) the `parameters.playwright_explorer` block** for `.sdd/config.md`. You paste it into the `parameters:` block of your config.md frontmatter yourself — automated config writes land with the agentic implementation.
+4. **Does NOT modify `feature.md`.** Wiring the `playwright-explore` action into the SHIP phase is part of the follow-up agentic-logic SPEC, not this scaffold.
+
+Net: after running enable.sh, you have the protocol surface registered (or pasted) and the stack/config recording started. The rest is documented in the next-steps output the script prints.
 
 ## What it will do per feature (when implementation lands)
 

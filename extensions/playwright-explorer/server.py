@@ -30,7 +30,7 @@ import json
 import os
 import sys
 import traceback
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 
 SERVER_NAME = "sdd-playwright-explorer"
@@ -152,21 +152,28 @@ def _handle_tools_call(req: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def handle_message(req: Dict[str, Any]) -> Dict[str, Any]:
-    """Dispatch a single JSON-RPC request. Supports the simplified
-    `{"query": ..., "args": ...}` path (same as sdd-mcp-server) for
-    callers that don't speak full MCP."""
+def handle_message(req: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Dispatch a single JSON-RPC request. Returns None for notifications
+    (no `id` field), per JSON-RPC 2.0 — notifications must NOT receive a
+    response. Supports the simplified `{"query": ..., "args": ...}` path
+    (same as sdd-mcp-server) for callers that don't speak full MCP."""
     if "query" in req and "method" not in req:
-        # Simplified path
+        # Simplified path — always returns a result (this is our own
+        # convention, not JSON-RPC, so notifications don't apply).
         result = _dispatch(req.get("query"), req.get("args", {}) or {})
         return result
     method = req.get("method", "")
+    is_notification = "id" not in req
     if method == "initialize":
         return _handle_initialize(req)
     if method == "tools/list":
         return _handle_tools_list(req)
     if method == "tools/call":
         return _handle_tools_call(req)
+    # Common MCP notification: notifications/initialized has no id and
+    # expects no response.
+    if is_notification:
+        return None
     return {
         "jsonrpc": "2.0",
         "id": req.get("id"),
@@ -190,6 +197,10 @@ def main():
             resp = handle_message(req)
         except Exception:
             resp = {"error": traceback.format_exc().splitlines()[-1]}
+        # Notifications return None — JSON-RPC says we MUST NOT respond
+        # to them, so skip the write and continue the loop.
+        if resp is None:
+            continue
         sys.stdout.write(json.dumps(resp) + "\n")
         sys.stdout.flush()
 
