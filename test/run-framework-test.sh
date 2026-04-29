@@ -96,6 +96,8 @@ mkproj_v08() {
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/settings.sh"             "$d/.sdd/scripts/settings.sh" 2>/dev/null || true
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/revert-phase.sh"         "$d/.sdd/scripts/revert-phase.sh" 2>/dev/null || true
   chmod +x "$d/.sdd/scripts/revert-phase.sh" 2>/dev/null || true
+  cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/check-setup-answer.sh"   "$d/.sdd/scripts/check-setup-answer.sh" 2>/dev/null || true
+  chmod +x "$d/.sdd/scripts/check-setup-answer.sh" 2>/dev/null || true
   cp "$FRAMEWORK_ROOT/templates/.sdd/decisions.md"                    "$d/.sdd/decisions.md"
   cp "$VERIFY_STAGE" "$d/.sdd/scripts/verify-stage.sh" 2>/dev/null || true
   cp "$NEXT_ACTION"  "$d/.sdd/scripts/next-action.sh"  2>/dev/null || true
@@ -4445,6 +4447,119 @@ if [ -z "$problems" ]; then
   ok "T111 every setup brick's records_at exists in its target scaffold"
 else
   bad "T111 setup wizard scaffolding gap:" "$problems"
+fi
+
+# ============================================================
+# T113 — sub-stage triggering: check-setup-answer.sh detects deferred
+#        answers and exits 1 (closes #68).
+# ============================================================
+note "T113: check-setup-answer.sh detects deferred 'not decided yet' value"
+d=$(mktemp -d) || exit 1
+mkdir -p "$d/.sdd/setup" "$d/.sdd/scripts"
+cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/check-setup-answer.sh" "$d/.sdd/scripts/check-setup-answer.sh"
+chmod +x "$d/.sdd/scripts/check-setup-answer.sh"
+cat > "$d/.sdd/setup/005-where-it-runs.md" <<'BRICK'
+---
+id: where-it-runs
+title: "Where will it run when shipped?"
+when: start
+records_in: ".sdd/stack.md"
+records_at: "## Running services"
+agent_infers:
+  - hosting-target
+---
+
+# Where will it run when shipped?
+BRICK
+cat > "$d/.sdd/stack.md" <<'STACK'
+# Stack
+
+## Running services
+
+- **Hosting:** not decided yet
+STACK
+ec=0
+err=$(CLAUDE_PROJECT_DIR="$d" bash "$d/.sdd/scripts/check-setup-answer.sh" where-it-runs 2>&1 1>/dev/null) || ec=$?
+rm -rf "$d"
+if [ "$ec" -eq 1 ] && echo "$err" | grep -qiE 'unanswered|deferred|/sdd-config'; then
+  ok "T113 check-setup-answer.sh refused deferred 'not decided yet' value"
+else
+  bad "T113 check-setup-answer.sh accepted deferred value" "ec=$ec; err='$err'"
+fi
+
+# ============================================================
+# T113b — check-setup-answer.sh PASSES when the answer is real.
+# ============================================================
+note "T113b: check-setup-answer.sh exits 0 when answer is filled in"
+d=$(mktemp -d) || exit 1
+mkdir -p "$d/.sdd/setup" "$d/.sdd/scripts"
+cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/check-setup-answer.sh" "$d/.sdd/scripts/check-setup-answer.sh"
+chmod +x "$d/.sdd/scripts/check-setup-answer.sh"
+cat > "$d/.sdd/setup/005-where-it-runs.md" <<'BRICK'
+---
+id: where-it-runs
+title: "Where will it run when shipped?"
+when: start
+records_in: ".sdd/stack.md"
+records_at: "## Running services"
+agent_infers:
+  - hosting-target
+---
+BRICK
+cat > "$d/.sdd/stack.md" <<'STACK'
+# Stack
+
+## Running services
+
+- **Hosting:** Vercel
+STACK
+ec=0
+out=$(CLAUDE_PROJECT_DIR="$d" bash "$d/.sdd/scripts/check-setup-answer.sh" where-it-runs 2>&1) || ec=$?
+rm -rf "$d"
+if [ "$ec" -eq 0 ] && echo "$out" | grep -qiE 'Vercel'; then
+  ok "T113b check-setup-answer.sh accepts a real answer + prints the value"
+else
+  bad "T113b check-setup-answer.sh rejected a real answer" "ec=$ec; out='$out'"
+fi
+
+# ============================================================
+# T113c — check-setup-answer.sh handles YAML dotted-key records_at
+#         (covers brick 003's parameters.review.bot case).
+# ============================================================
+note "T113c: check-setup-answer.sh resolves YAML dotted-key records_at"
+d=$(mktemp -d) || exit 1
+mkdir -p "$d/.sdd/setup" "$d/.sdd/scripts"
+cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/check-setup-answer.sh" "$d/.sdd/scripts/check-setup-answer.sh"
+chmod +x "$d/.sdd/scripts/check-setup-answer.sh"
+cat > "$d/.sdd/setup/003-pr-reviewer.md" <<'BRICK'
+---
+id: pr-reviewer
+title: "Do you want a code reviewer bot?"
+when: start
+records_in: ".sdd/config.md"
+records_at: "parameters.review.bot"
+agent_infers:
+  - reviewer-bot
+---
+BRICK
+cat > "$d/.sdd/config.md" <<'CFG'
+---
+type: config
+parameters:
+  review:
+    bot: ""
+    poll_interval: 180
+---
+
+# config
+CFG
+ec=0
+err=$(CLAUDE_PROJECT_DIR="$d" bash "$d/.sdd/scripts/check-setup-answer.sh" pr-reviewer 2>&1 1>/dev/null) || ec=$?
+rm -rf "$d"
+if [ "$ec" -eq 1 ] && echo "$err" | grep -qiE 'unanswered|deferred|/sdd-config'; then
+  ok "T113c YAML dotted-key resolution detects empty value"
+else
+  bad "T113c YAML dotted-key resolution failed" "ec=$ec; err='$err'"
 fi
 
 # ============================================================

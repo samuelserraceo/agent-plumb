@@ -9,6 +9,7 @@ steps:
 used_by: [feature]
 references: [problem, success, learn, plan-decompose]
 touches: []
+requires_setup: [where-it-runs]
 trust: framework
 budget:
   max_minutes: 10
@@ -18,6 +19,20 @@ requires_user_approval: false
 ---
 
 Push the feature branch to origin and open a PR against `main`.
+
+**Pre-flight: setup-answer check (closes #68).** Before running the action sequence below, the agent runs:
+
+```bash
+bash .sdd/scripts/check-setup-answer.sh where-it-runs
+```
+
+If the user answered "Not deciding yet" to brick 005 (where-it-runs) at /sdd-setup time, this check exits 1 and prints the recovery instruction. The agent HALTS and tells the user in plain English:
+
+> *"You said 'not deciding yet' for hosting at setup time. Now we're at push-pr — the framework needs to know what to deploy to. Run `/sdd-config where-it-runs` to pick a hosting target. Then re-run /next."*
+
+Don't try to invent a default. Don't continue to git push without an answer. The whole point of `requires_setup:` in the action frontmatter is to force the deferred answer to be filled in BEFORE the dependent action runs.
+
+If the check passes (the user has a real answer in stack.md `## Running services`), proceed to the action sequence below.
 
 **Action sequence:**
 1. `git push -u origin <feature-branch>` — push the branch
