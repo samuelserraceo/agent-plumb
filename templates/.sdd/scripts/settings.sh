@@ -93,13 +93,38 @@ def walk(d, prefix=""):
         else:
             yield path, v
 
+def _split_dotted(s):
+    """Split a dotted key on `.` but respect double-quoted segments
+    so paths embedded in keys (e.g. `file_rules."a.b.md".append_only`)
+    work as a single segment. Closes #35.
+
+    Examples:
+      'a.b.c'                  -> ['a', 'b', 'c']
+      'file_rules."a.b.c".x'   -> ['file_rules', 'a.b.c', 'x']
+      'a."b.c"'                -> ['a', 'b.c']
+    """
+    parts = []
+    cur = []
+    in_quote = False
+    for ch in s:
+        if ch == '"':
+            in_quote = not in_quote
+            continue
+        if ch == '.' and not in_quote:
+            parts.append(''.join(cur))
+            cur = []
+            continue
+        cur.append(ch)
+    parts.append(''.join(cur))
+    return parts
+
 def get_at(d, dotted):
     """Walk dotted path; return value or raise KeyError.
     UAT v0.10.1 (#52): also accept the relative form (without
     `parameters.` prefix) for top-level parameter keys, so users
     reaching for the displayed key from `/settings list` find it.
     Lookup order: full path first, then `parameters.<dotted>`."""
-    parts = dotted.split(".")
+    parts = _split_dotted(dotted)
     try:
         cur = d
         for p in parts:
@@ -200,7 +225,7 @@ def set_at(d, dotted, value):
                 except ValueError:
                     coerced = value
 
-    parts = dotted.split(".")
+    parts = _split_dotted(dotted)
     cur = d
     for p in parts[:-1]:
         if p not in cur or not isinstance(cur[p], dict):
@@ -210,7 +235,7 @@ def set_at(d, dotted, value):
 
 def del_at(d, dotted):
     """Walk dotted path; delete leaf. Returns True if removed."""
-    parts = dotted.split(".")
+    parts = _split_dotted(dotted)
     cur = d
     for p in parts[:-1]:
         if not isinstance(cur, dict) or p not in cur:

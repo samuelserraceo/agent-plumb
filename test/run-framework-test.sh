@@ -4143,6 +4143,34 @@ else
 fi
 
 # ============================================================
+# T110 — settings.sh quoted-key support (closes #35)
+#   The dotted-key parser must respect double-quoted segments so paths
+#   embedded in keys (e.g., `file_rules."a.b.md".append_only`) work
+#   as a single segment. RED: a naive `dotted.split(".")` would split
+#   the path itself and look up `file_rules → a → b → md → append_only`
+#   instead of `file_rules → a.b.md → append_only`.
+# ============================================================
+note "T110: settings.sh handles double-quoted segments with dots inside"
+d=$(mktemp -d) || exit 1
+cp -r "$FRAMEWORK_ROOT/templates/.sdd" "$d/" 2>/dev/null
+cd "$d"
+key='file_rules."some.path.md".append_only'
+out_set=$(bash .sdd/scripts/settings.sh set "$key" true 2>&1)
+out_get=$(bash .sdd/scripts/settings.sh get "$key" 2>&1)
+out_reset=$(bash .sdd/scripts/settings.sh reset "$key" 2>&1)
+cd - >/dev/null
+rm -rf "$d"
+ok_count=0
+echo "$out_set"   | grep -q 'append_only = True'  && ok_count=$((ok_count + 1))
+echo "$out_get"   | grep -q 'append_only = True'  && ok_count=$((ok_count + 1))
+echo "$out_reset" | grep -qiE 'removed|override deleted' && ok_count=$((ok_count + 1))
+if [ "$ok_count" -eq 3 ]; then
+  ok "T110 settings.sh quoted-key set/get/reset cycle works (3/3 assertions)"
+else
+  bad "T110 settings.sh quoted-key handling broken" "set='$out_set' get='$out_get' reset='$out_reset'"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
