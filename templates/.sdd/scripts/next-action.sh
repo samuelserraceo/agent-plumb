@@ -48,8 +48,51 @@ import json, os, re, sys
 spec_path = os.environ["SPEC"]
 proj = os.environ["PROJ"]
 
-# Phase progression — aligned with the 3-phase v0.8/v0.9 feature playbook.
-NEXT_PHASE = {"SPEC": "BUILD", "BUILD": "SHIP", "SHIP": "SHIPPED", "SHIPPED": ""}
+# Phase progression — derived from active playbook's stages: frontmatter
+# rather than hardcoded. Per CLAUDE.md foundation 2 (Lego): each playbook
+# owns its own phase sequence; this script reads what the playbook declares.
+# Falls back to the feature playbook's stages when INDEX.md / playbook
+# missing (preserves Phase A test compatibility on minimal scaffolds).
+def _build_next_phase():
+    fallback_stages = ["SPEC", "BUILD", "SHIP"]
+    fallback_terminal = "SHIPPED"
+    stages = fallback_stages
+    terminal = fallback_terminal
+    try:
+        playbook_slug = "feature"
+        index_path = os.path.join(proj, ".sdd", "INDEX.md")
+        if os.path.isfile(index_path):
+            with open(index_path, encoding="utf-8") as _f:
+                m = re.search(r'^\*\*Playbook:\*\*\s+(\S+)\s*$', _f.read(), re.M)
+                if m and re.match(r'^[a-z][a-z0-9-]*$', m.group(1)):
+                    playbook_slug = m.group(1)
+        pb_path = os.path.join(proj, ".sdd", "playbooks", f"{playbook_slug}.md")
+        if os.path.isfile(pb_path):
+            import yaml
+            with open(pb_path, encoding="utf-8") as _f:
+                _t = _f.read()
+            _fm = re.match(r'^---\n(.*?)\n---', _t, re.DOTALL)
+            if _fm:
+                _meta = yaml.safe_load(_fm.group(1)) or {}
+                _stages = [s.get("id") for s in (_meta.get("stages") or [])
+                           if isinstance(s, dict) and s.get("id")]
+                if _stages:
+                    stages = _stages
+                # Optional: playbook can declare a terminal_state.
+                # If absent, last stage is the terminal (no further transition).
+                terminal = _meta.get("terminal_state") or ""
+    except Exception:
+        pass
+    result = {}
+    for i in range(len(stages) - 1):
+        result[stages[i]] = stages[i + 1]
+    # Last stage maps to terminal (could be SHIPPED for feature, "" for project)
+    result[stages[-1]] = terminal
+    if terminal:
+        result[terminal] = ""
+    return result
+
+NEXT_PHASE = _build_next_phase()
 
 def emit(d):
     # ensure_ascii=False keeps UTF-8 verbatim (e.g. § literal, not §)

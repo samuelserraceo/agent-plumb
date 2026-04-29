@@ -2,7 +2,7 @@
   "extensions": {},
   "playbooks": {
     "feature": {
-      "expected_sha256": "22be2621f79a0537dd4835d9008b04087c25ae86b52b3986d8cc3fd6b666e66f",
+      "expected_sha256": "55ca4fd9d44fac8b8bbf4947b2a25490d400a3b9677fcdad55edc07685ba4f97",
       "path": ".sdd/playbooks/feature.md",
       "trust": "framework"
     },
@@ -49,7 +49,7 @@
       "trust": "framework"
     },
     "next-action.sh": {
-      "expected_sha256": "f4bcb0c354e4d532ad65d472a8a61217d5673fb883df137f5342cc85409d5300",
+      "expected_sha256": "c60051bdcdda4731637621723822e5dedd7132c91535c736b8ceb22261e243d6",
       "path": ".sdd/scripts/next-action.sh",
       "trust": "framework"
     },
