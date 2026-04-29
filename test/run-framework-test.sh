@@ -94,6 +94,8 @@ mkproj_v08() {
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/read-events.sh"          "$d/.sdd/scripts/read-events.sh"
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/validate-sdd-path.sh"    "$d/.sdd/scripts/validate-sdd-path.sh"
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/settings.sh"             "$d/.sdd/scripts/settings.sh" 2>/dev/null || true
+  cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/revert-phase.sh"         "$d/.sdd/scripts/revert-phase.sh" 2>/dev/null || true
+  chmod +x "$d/.sdd/scripts/revert-phase.sh" 2>/dev/null || true
   cp "$FRAMEWORK_ROOT/templates/.sdd/decisions.md"                    "$d/.sdd/decisions.md"
   cp "$VERIFY_STAGE" "$d/.sdd/scripts/verify-stage.sh" 2>/dev/null || true
   cp "$NEXT_ACTION"  "$d/.sdd/scripts/next-action.sh"  2>/dev/null || true
@@ -4206,6 +4208,171 @@ if [ "$ok_count" -eq 3 ]; then
   ok "T110 settings.sh quoted-key set/get/reset cycle works (3/3 assertions)"
 else
   bad "T110 settings.sh quoted-key handling broken" "set='$out_set' get='$out_get' reset='$out_reset'"
+fi
+
+# ============================================================
+# T112 — v0.13.5 hotfix (closes #65): adversarial-review re-run wiring.
+#   When "fix now" fires on a finding, the spec must flip from SHIP back
+#   to BUILD AND un-tick all SHIP step rows so they re-fire on the
+#   second BUILD→SHIP transition. Without un-ticking, next-action.sh
+#   walks SHIP, finds nothing open, transitions to SHIPPED — and
+#   adversarial-review never re-fires on the new code.
+#
+#   This test exercises the deterministic helper revert-phase.sh:
+#     1. Build a fixture spec.md in [PHASE: SHIP] with all SHIP rows
+#        ticked [x] from a notional first pass.
+#     2. Run revert-phase.sh <spec> SHIP BUILD.
+#     3. Assert: [PHASE: SHIP] flipped to [PHASE: BUILD] AND all SHIP
+#        step rows un-ticked back to [ ] AND BUILD/SPEC rows untouched.
+# ============================================================
+note "T112: revert-phase.sh flips phase + un-ticks downstream rows"
+d=$(mktemp -d) || exit 1
+mkdir -p "$d/.sdd/playbooks" "$d/.sdd/scripts" "$d/.sdd/features/001-test"
+cp "$FRAMEWORK_ROOT/templates/.sdd/playbooks/feature.md"   "$d/.sdd/playbooks/feature.md"
+cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/revert-phase.sh" "$d/.sdd/scripts/revert-phase.sh"
+chmod +x "$d/.sdd/scripts/revert-phase.sh"
+spec_path="$d/.sdd/features/001-test/spec.md"
+cat > "$spec_path" <<'SPECEOF'
+# 001-test
+
+[PHASE: SHIP]
+
+## PHASE: SPEC
+
+### action: problem
+- [x] who: a non-technical user
+- [x] why-now: launching next month
+
+## PHASE: BUILD
+
+### action: build-task
+- [x] T01: write the test for the form
+- [x] T02: write the form code
+
+## PHASE: SHIP
+
+### action: verify-test-run
+- [x] vt-run: ran tests, all green
+
+### action: adversarial-review
+- [x] ar-findings: drafted 5 findings
+- [x] ar-triage: user picked fix-now on finding 3
+
+### action: learn
+- [x] learn-summary: brief lessons
+
+### action: push-pr
+- [x] push: opened PR #123
+SPECEOF
+ec=0
+out=$(bash "$d/.sdd/scripts/revert-phase.sh" "$spec_path" SHIP BUILD 2>&1) || ec=$?
+# Check 1: phase flipped to BUILD.
+phase_line=$(grep -m1 -E '^\[PHASE: ' "$spec_path" || echo "")
+# Check 2: all SHIP rows un-ticked.
+ship_x_count=$(awk '/^## PHASE: SHIP/,0' "$spec_path" | grep -cE '^\s*-\s*\[x\]' || true)
+# Check 3: BUILD rows still ticked (they should NOT be touched).
+build_x_count=$(awk '/^## PHASE: BUILD/,/^## PHASE: SHIP/' "$spec_path" | grep -cE '^\s*-\s*\[x\]' || true)
+# Check 4: SPEC rows still ticked.
+spec_x_count=$(awk '/^## PHASE: SPEC/,/^## PHASE: BUILD/' "$spec_path" | grep -cE '^\s*-\s*\[x\]' || true)
+rm -rf "$d"
+problems=""
+[ "$ec" -ne 0 ]                          && problems="$problems exit=$ec"
+[ "$phase_line" != "[PHASE: BUILD]" ]    && problems="$problems phase-not-build($phase_line)"
+[ "$ship_x_count" -ne 0 ]                && problems="$problems ship-rows-not-unticked($ship_x_count)"
+[ "$build_x_count" -lt 2 ]               && problems="$problems build-rows-touched($build_x_count)"
+[ "$spec_x_count" -lt 2 ]                && problems="$problems spec-rows-touched($spec_x_count)"
+if [ -z "$problems" ]; then
+  ok "T112 revert-phase.sh works: SHIP→BUILD, SHIP rows un-ticked, BUILD/SPEC untouched"
+else
+  bad "T112 revert-phase.sh broken:" "$problems out='$out'"
+fi
+
+# ============================================================
+# T112b — revert-phase.sh refuses when current phase doesn't match
+#         from-phase argument (validation guard).
+# ============================================================
+note "T112b: revert-phase.sh refuses when current phase != from-phase argument"
+d=$(mktemp -d) || exit 1
+mkdir -p "$d/.sdd/playbooks" "$d/.sdd/scripts" "$d/.sdd/features/001-test"
+cp "$FRAMEWORK_ROOT/templates/.sdd/playbooks/feature.md"   "$d/.sdd/playbooks/feature.md"
+cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/revert-phase.sh" "$d/.sdd/scripts/revert-phase.sh"
+chmod +x "$d/.sdd/scripts/revert-phase.sh"
+spec_path="$d/.sdd/features/001-test/spec.md"
+cat > "$spec_path" <<'SPECEOF'
+# 001-test
+[PHASE: BUILD]
+
+## PHASE: BUILD
+### action: build-task
+- [x] T01: done
+SPECEOF
+ec=0
+err=$(bash "$d/.sdd/scripts/revert-phase.sh" "$spec_path" SHIP BUILD 2>&1 1>/dev/null) || ec=$?
+rm -rf "$d"
+if [ "$ec" -ne 0 ] && echo "$err" | grep -qiE 'expected.*PHASE.*SHIP|in \[PHASE: BUILD\]'; then
+  ok "T112b revert-phase.sh refused mismatched from-phase argument"
+else
+  bad "T112b revert-phase.sh accepted bad from-phase" "ec=$ec; err='$err'"
+fi
+
+# ============================================================
+# T112c — full re-run flow: revert-phase.sh + simulated BUILD complete
+#         + SHIP re-entry. next-action.sh sees the un-ticked SHIP rows
+#         and CORRECTLY locates the first un-ticked SHIP step row
+#         (proving adversarial-review WILL re-fire on the second pass).
+# ============================================================
+note "T112c: after revert-phase.sh + BUILD complete, next-action.sh finds SHIP rows again"
+d=$(mktemp -d) || exit 1
+mkdir -p "$d/.sdd/playbooks" "$d/.sdd/scripts" "$d/.sdd/features/001-test"
+cp "$FRAMEWORK_ROOT/templates/.sdd/playbooks/feature.md"   "$d/.sdd/playbooks/feature.md"
+cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/revert-phase.sh" "$d/.sdd/scripts/revert-phase.sh"
+cp "$NEXT_ACTION"                                          "$d/.sdd/scripts/next-action.sh"
+chmod +x "$d/.sdd/scripts/revert-phase.sh" "$d/.sdd/scripts/next-action.sh"
+spec_path="$d/.sdd/features/001-test/spec.md"
+cat > "$spec_path" <<'SPECEOF'
+# 001-test
+
+[PHASE: SHIP]
+
+## PHASE: SPEC
+### action: problem
+- [x] who: done
+- [x] why-now: done
+
+## PHASE: BUILD
+### action: build-task
+- [x] T01: done
+
+## PHASE: SHIP
+### action: verify-test-run
+- [x] vt-run: was green
+### action: adversarial-review
+- [x] ar-findings: 5 findings drafted
+- [x] ar-triage: user picked fix-now
+SPECEOF
+# Step 1: revert-phase.sh runs (simulating fix-now path).
+bash "$d/.sdd/scripts/revert-phase.sh" "$spec_path" SHIP BUILD >/dev/null 2>&1
+# Step 2: simulate BUILD task being added + completed.
+python3 - <<PYEOF
+spec = "$spec_path"
+text = open(spec).read()
+# Add BUG task after T01 and mark it green.
+text = text.replace("- [x] T01: done",
+                    "- [x] T01: done\n- [x] T02-bug: fix the finding 3 issue")
+# Now flip phase to SHIP again (simulating BUILD completion → transition).
+text = text.replace("[PHASE: BUILD]", "[PHASE: SHIP]", 1)
+open(spec, "w").write(text)
+PYEOF
+# Step 3: run next-action.sh — it should find SHIP rows still un-ticked.
+out=$(bash "$d/.sdd/scripts/next-action.sh" "$spec_path" 2>&1) || true
+rm -rf "$d"
+# Should find adversarial-review's first step row (ar-findings) un-ticked
+# OR verify-test-run's first row (vt-run) — either way, NOT a TRANSITION
+# response. The key: the response should NOT have "phase":"SHIPPED".
+if echo "$out" | grep -qiE '"phase":\s*"SHIP"' && ! echo "$out" | grep -qiE 'transition.*SHIPPED'; then
+  ok "T112c second SHIP pass finds un-ticked rows; adversarial-review re-fires (closes #65)"
+else
+  bad "T112c second SHIP pass skipped through to SHIPPED — bug NOT fixed" "out=$(echo "$out" | head -3)"
 fi
 
 # ============================================================
