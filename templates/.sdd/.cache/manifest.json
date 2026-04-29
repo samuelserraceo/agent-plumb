@@ -72,6 +72,11 @@
       "expected_sha256": "c8623321af81017f51fc06655aceb135df0b893b74417858eb81fb28265da839",
       "path": ".sdd/scripts/check-setup-answer.sh",
       "trust": "framework"
+    },
+    "post-stop-lint.sh": {
+      "expected_sha256": "0116b07dae0f08aa40296f3195aa2c8b261581422ef39daf55c2eb704b731b73",
+      "path": ".claude/hooks/post-stop-lint.sh",
+      "trust": "framework"
     }
   },
   "sdd_version": "0.11.0",
