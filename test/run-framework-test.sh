@@ -2335,6 +2335,32 @@ else
 fi
 
 # ============================================================
+# T67c — Coverage gap (closes #19 case 1): hooksPath ALREADY set to
+#        `.claude/hooks` is silent on re-run. Re-running /start on an
+#        already-configured project must NOT halt as a conflict (T67b's
+#        logic accidentally firing on a re-run is the regression vector).
+# ============================================================
+note "T67c: /start with hooksPath already set to .claude/hooks is silent on re-run (Cut 11 case 1)"
+d=$(mkproj_v08)
+cd "$d"
+git init -q
+git config user.email t@t.com && git config user.name T
+# Pre-set core.hooksPath to the SDD value — simulates a re-run.
+git config core.hooksPath .claude/hooks
+ec=0
+out=$(bash .sdd/scripts/start.sh "rerun test feature" 2>&1) || ec=$?
+post_hookspath=$(git config --get core.hooksPath 2>/dev/null || echo "")
+cd - >/dev/null
+rm -rf "$d"
+# Must succeed (ec=0), preserve the existing value, and NOT mention conflict.
+if [ "$ec" -eq 0 ] && [ "$post_hookspath" = ".claude/hooks" ] \
+   && ! echo "$out" | grep -qiE 'hook.*conflict|already.*hooks.*conflict|halt'; then
+  ok "T67c /start re-run on already-configured project is silent (no false-halt)"
+else
+  bad "T67c /start halted on re-run despite already-configured hooksPath" "ec=$ec; post=$post_hookspath; out: $(echo "$out" | head -3 | tr '\n' '|')"
+fi
+
+# ============================================================
 # T68 — F4 atomic-step scaffold: /start writes per-step [ ] rows
 #   v0.9 atomic-step granularity. Each action's frontmatter declares
 #   one or more `steps:`; spec.md must scaffold one `- [ ] <step-id>`
