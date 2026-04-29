@@ -11,9 +11,10 @@
 0.4 dashboard.html
 0.4 rubric.md
 
-# v0.9 Phase C — F1 generic enforcer subsumes 7 specific hooks +
+# v0.9 Phase C — F1 generic enforcer subsumes 8 specific hooks +
 # scope-guard moves to CI + SCHEMA.md retired (canonical bits migrated
-# to config.md / stack.md). Added retroactively in v0.13.4 (#73).
+# to config.md / stack.md). 10 file entries total. Added retroactively
+# in v0.13.4 (#73).
 0.9.0 .claude/hooks/pre-commit-block.sh
 0.9.0 .claude/hooks/pre-commit-touches.sh
 0.9.0 .claude/hooks/pre-commit-cofile-block.sh

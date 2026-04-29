@@ -14,7 +14,7 @@ agent_infers:
 
 # A few quick yes/no questions about the rest of your stack
 
-Most prototypes don't need any of these on day one. But picking them up early means the agent never has to ask later, and feature 1's data model factors them in correctly. The agent walks **five separate yes/no questions** here — answer each one in turn. If you say yes, the agent asks a quick follow-up about which provider; if you say no, the agent moves on to the next question.
+Most prototypes don't need any of these on day one. But picking them up early means the agent never has to ask later, and your first feature's database structure (called the *data model* — the list of things your app keeps track of, like users, posts, payments) factors them in correctly. The agent walks **five separate yes/no questions** here — answer each one in turn. If you say yes, the agent asks a quick follow-up about which provider; if you say no, the agent moves on to the next question.
 
 If you're not sure on any one, just say "not sure" and the agent will skip it for now. You can always add or change any of these later via `/sdd-config extras`.
 
@@ -38,7 +38,7 @@ Reply: **yes** / **no** / **not sure**
 
 Reply: **yes** / **no** / **not sure**
 
-- **If yes:** *"Common email providers — Resend (cheapest, modern API), Postmark (deliverability focus), SendGrid (long-established, larger), AWS SES (cheapest at scale, more setup), or describe your own. Which fits?"*
+- **If yes:** *"Common email providers — Resend (cheapest, easy to set up), Postmark (best at making sure emails actually land in the inbox, not spam), SendGrid (long-established, bigger company), AWS SES (cheapest if you send a lot, more setup work). Pick one or describe your own."*
 - **If no / not sure:** record accordingly; ask later if a feature needs email.
 
 ---
@@ -49,7 +49,7 @@ Reply: **yes** / **no** / **not sure**
 
 Reply: **yes** / **no** / **not sure**
 
-- **If yes:** *"Almost everyone uses Stripe (most flexible, most integrations). Alternatives: Paddle (handles tax for you, popular for SaaS), Lemon Squeezy (simplest for indie). Which fits?"*
+- **If yes:** *"Almost everyone uses Stripe (most flexible; connects to the most other tools you might use). Alternatives: Paddle (handles tax filings for you — popular for subscription businesses), Lemon Squeezy (simplest if you're a solo developer). Pick one or describe your own."*
 - **If no / not sure:** record accordingly.
 
 ---
@@ -60,7 +60,7 @@ Reply: **yes** / **no** / **not sure**
 
 Reply: **yes** / **no** / **not sure**
 
-- **If yes:** *"Common error-tracking providers — Sentry (most popular, broad integrations), Honeybadger (simpler), Rollbar (older, still solid), or describe your own. Which fits?"*
+- **If yes:** *"Common error-tracking providers — Sentry (most popular; works with most development tools out of the box), Honeybadger (simpler, smaller), Rollbar (older, still solid). Pick one or describe your own."*
 - **If no / not sure:** record accordingly. (For pre-launch prototypes this is often fine to skip.)
 
 ---
@@ -95,6 +95,6 @@ For each question, records the answer + chosen provider (or "none yet" / "tbd") 
 
 ## Why this is in the setup wizard at all
 
-You could leave each of these for `/sdd-config` to ask later — and that's fine. The reason it's a start-of-project question is that integration shapes matter: if you know you're using Stripe, the agent factors it into the proposed data model from feature 1 (User → Subscription → Charge entities). If you discover Stripe at feature 5, the data model might need a bigger refactor.
+You could leave each of these for `/sdd-config` to ask later — and that's fine. The reason it's a start-of-project question is that the shape of your app changes depending on these choices: if you know you're using Stripe, the agent plans the database to track Users, Subscriptions, and Charges from feature 1. If you discover Stripe at feature 5, the database structure might need bigger restructuring (more work to change later than to plan correctly now).
 
 If you said "tbd" to any question, the agent will re-ask at the first feature whose problem touches that area — e.g. the first feature that mentions "send confirmation email" will re-prompt question 2.
