@@ -59,7 +59,7 @@
       "trust": "framework"
     },
     "settings.sh": {
-      "expected_sha256": "ade3871a2719c0f68bb606adf95188bc7c8257e10731049f914f788a90be33c5",
+      "expected_sha256": "bf3a68901fcd74e6a46b6830b7d9a2ac3a06486708094985b7cf7f428ab6a601",
       "path": ".sdd/scripts/settings.sh",
       "trust": "framework"
     },
@@ -69,8 +69,13 @@
       "trust": "framework"
     },
     "check-setup-answer.sh": {
-      "expected_sha256": "c8623321af81017f51fc06655aceb135df0b893b74417858eb81fb28265da839",
+      "expected_sha256": "e845cf3b5e33f7bfc32a8292dbf39ab5b2edf168f851c73dbbc1e3dab9405d0e",
       "path": ".sdd/scripts/check-setup-answer.sh",
+      "trust": "framework"
+    },
+    "scope-guard-config.sh": {
+      "expected_sha256": "6002764546209d4b07fa1ec140abdbd129f0be98182061aafa0d013bcc33ac8b",
+      "path": ".sdd/scripts/scope-guard-config.sh",
       "trust": "framework"
     }
   },
@@ -137,7 +142,7 @@
       "trust": "framework"
     },
     "proposed-approach": {
-      "expected_sha256": "3bd8ccac8eee9fb70f7757574292b111825447eda13aac65e9aeab9a1b5d8708",
+      "expected_sha256": "5838663dc0c3182ac76f9da7e41930641b2203d8bd03c722b0e3f0a1645491a8",
       "path": ".sdd/actions/proposed-approach.md",
       "trust": "framework"
     },

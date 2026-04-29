@@ -203,7 +203,7 @@ if records_at.startswith("## "):
             # paragraph, or a placeholder). Trim leading bullet markers.
             answer = re.sub(r"^[-*+]\s*", "", stripped)
             break
-elif re.match(r"^[a-z][a-z0-9_]*", records_at):
+elif re.fullmatch(r"[a-z][a-z0-9_]*(?:\.[a-z0-9_]+)*", records_at):
     # YAML dotted key — walk the frontmatter. (yaml is already imported
     # at the top of the python block for brick frontmatter parsing.)
     with open(target_path, encoding="utf-8") as f:

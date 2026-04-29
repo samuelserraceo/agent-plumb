@@ -20,7 +20,7 @@
 - **Test runner**: pure bash + Python 3 stdlib (no pytest / mocha / jest dependency)
 - **Where**: `test/run-framework-test.sh`
 - **Pattern**: each test is a `note` block + assertion bash; mutation-verified discipline
-- **Today's count**: 142+ framework tests (140 baseline + new tests per v1.0 item)
+- **Today's count**: 140+ framework tests (count grows as v1.0 items add new T-cases — derive precisely with `bash test/run-framework-test.sh | tail -1`).
 - **CI**: `.github/workflows/sdd-ci.yml` — framework-tests + scope-guard jobs
 
 ## Running services
@@ -32,7 +32,7 @@
 
 ## Extras (third-party services the framework reaches for)
 
-- **LLM provider for the framework's MCP server semantic search**: Ollama on Sam's GEMMA host (set up 2026-04-29). Embedding model: `nomic-embed-text` or `bge-small-en-v1.5`. Endpoint: `http://gemma.samserra.com:11434/api/embeddings` (Sam's setup; may differ if he changes the host). Configured per the `parameters.mcp.semantic_search` block (lands in v1.0 item 4 / issue #91).
+- **LLM provider for the framework's MCP server semantic search**: Ollama (configurable). Embedding model: `nomic-embed-text` or `bge-small-en-v1.5`. Endpoint: configured per project — placeholder `<MCP_EMBEDDINGS_ENDPOINT>` (e.g. `http://your-host.example:11434/api/embeddings`). Maintainer's local development uses an SSH-tunnelled Ollama instance — exact host details live in the maintainer's local config, never in this public doc. Read the actual endpoint from the project's `parameters.mcp.semantic_search.endpoint` config block. Lands in v1.0 item 4 / issue #91.
 - **Obsidian** (optional, opt-in for users): the framework ships a `.obsidian/` vault config so users can open the project root in Obsidian and see the `.sdd/` tree as a connected graph. Lands in v1.0 item 3 / PR #90.
 - **No other external dependencies.** The framework's runtime is `bash + python3 + PyYAML + git + gh`.
 

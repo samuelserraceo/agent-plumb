@@ -97,6 +97,8 @@ mkproj_v08() {
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/revert-phase.sh"         "$d/.sdd/scripts/revert-phase.sh" 2>/dev/null || true
   chmod +x "$d/.sdd/scripts/revert-phase.sh" 2>/dev/null || true
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/check-setup-answer.sh"   "$d/.sdd/scripts/check-setup-answer.sh" 2>/dev/null || true
+  cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/scope-guard-config.sh"   "$d/.sdd/scripts/scope-guard-config.sh" 2>/dev/null || true
+  chmod +x "$d/.sdd/scripts/scope-guard-config.sh" 2>/dev/null || true
   chmod +x "$d/.sdd/scripts/check-setup-answer.sh" 2>/dev/null || true
   cp "$FRAMEWORK_ROOT/templates/.sdd/decisions.md"                    "$d/.sdd/decisions.md"
   cp "$VERIFY_STAGE" "$d/.sdd/scripts/verify-stage.sh" 2>/dev/null || true
@@ -4692,6 +4694,171 @@ else
   # Self-host hasn't bootstrapped yet (fresh contributor clone before
   # init.sh has been run) — skip cleanly so this doesn't false-fail.
   ok "T118 root .sdd/ not bootstrapped yet — skipping (run scripts/init.sh to enable)"
+fi
+
+# ============================================================
+# T116 — scope-guard-config.sh emits the v0.13.x defaults when no
+#        config.md exists (closes #16: scope-guard configurability).
+# ============================================================
+note "T116: scope-guard-config.sh defaults match the v0.13.x Next.js shape"
+d=$(mktemp -d) || exit 1
+helper="$FRAMEWORK_ROOT/templates/.sdd/scripts/scope-guard-config.sh"
+chmod +x "$helper" 2>/dev/null || true
+globs_out=$(CLAUDE_PROJECT_DIR="$d" bash "$helper" --globs 2>&1)
+regex_out=$(CLAUDE_PROJECT_DIR="$d" bash "$helper" --regex 2>&1)
+mc_out=$(CLAUDE_PROJECT_DIR="$d" bash "$helper" --min-chars 2>&1)
+rm -rf "$d"
+ok_count=0
+# 6 dirs × 4 exts = 24 globs expected
+[ "$(printf '%s\n' "$globs_out" | wc -l)" -eq 24 ] && ok_count=$((ok_count + 1))
+echo "$globs_out" | grep -q '^app/\*\*/\*\.tsx$' && ok_count=$((ok_count + 1))
+echo "$globs_out" | grep -q '^src/pages/\*\*/\*\.js$' && ok_count=$((ok_count + 1))
+echo "$regex_out" | grep -qE 'app\|components\|pages' && ok_count=$((ok_count + 1))
+echo "$regex_out" | grep -qE 'tsx\|jsx\|ts\|js' && ok_count=$((ok_count + 1))
+[ "$mc_out" = "30" ] && ok_count=$((ok_count + 1))
+if [ "$ok_count" -eq 6 ]; then
+  ok "T116 scope-guard-config.sh defaults present (6/6 assertions)"
+else
+  bad "T116 scope-guard-config.sh defaults broken" "ok_count=$ok_count globs='$globs_out' regex='$regex_out' min_chars='$mc_out'"
+fi
+
+# ============================================================
+# T116b — scope-guard-config.sh respects scope_guard.file_extensions
+#         + ui_dirs override in config.md (closes #16).
+# ============================================================
+note "T116b: scope-guard-config.sh respects per-project file_extensions + ui_dirs"
+d=$(mktemp -d) || exit 1
+mkdir -p "$d/.sdd"
+cat > "$d/.sdd/config.md" <<'CFG'
+---
+type: config
+scope_guard:
+  file_extensions: [py]
+  ui_dirs: [src, app]
+  copy_min_chars: 50
+---
+CFG
+globs_out=$(CLAUDE_PROJECT_DIR="$d" bash "$helper" --globs 2>&1)
+regex_out=$(CLAUDE_PROJECT_DIR="$d" bash "$helper" --regex 2>&1)
+mc_out=$(CLAUDE_PROJECT_DIR="$d" bash "$helper" --min-chars 2>&1)
+rm -rf "$d"
+ok_count=0
+# 2 dirs × 1 ext = 2 globs expected
+[ "$(printf '%s\n' "$globs_out" | wc -l)" -eq 2 ] && ok_count=$((ok_count + 1))
+echo "$globs_out" | grep -q '^src/\*\*/\*\.py$' && ok_count=$((ok_count + 1))
+echo "$globs_out" | grep -q '^app/\*\*/\*\.py$' && ok_count=$((ok_count + 1))
+[ "$regex_out" = '^(src|app)/.*\.(py)$' ] && ok_count=$((ok_count + 1))
+[ "$mc_out" = "50" ] && ok_count=$((ok_count + 1))
+if [ "$ok_count" -eq 5 ]; then
+  ok "T116b scope-guard-config.sh respects custom config (5/5 assertions)"
+else
+  bad "T116b scope-guard-config.sh ignored config override" "ok_count=$ok_count globs='$globs_out' regex='$regex_out' min_chars='$mc_out'"
+fi
+
+# ============================================================
+# T116c — scope-guard-config.sh falls back to defaults for any
+#         missing key (partial scope_guard block) — closes #16.
+# ============================================================
+note "T116c: scope-guard-config.sh falls back to defaults per-key when config is partial"
+d=$(mktemp -d) || exit 1
+mkdir -p "$d/.sdd"
+cat > "$d/.sdd/config.md" <<'CFG'
+---
+type: config
+scope_guard:
+  copy_min_chars: 100
+---
+CFG
+globs_out=$(CLAUDE_PROJECT_DIR="$d" bash "$helper" --globs 2>&1)
+mc_out=$(CLAUDE_PROJECT_DIR="$d" bash "$helper" --min-chars 2>&1)
+rm -rf "$d"
+ok_count=0
+# Partial config: only copy_min_chars set; file_extensions + ui_dirs
+# fall back to v0.13.x defaults (24 globs).
+[ "$(printf '%s\n' "$globs_out" | wc -l)" -eq 24 ] && ok_count=$((ok_count + 1))
+echo "$globs_out" | grep -q '^app/\*\*/\*\.tsx$' && ok_count=$((ok_count + 1))
+[ "$mc_out" = "100" ] && ok_count=$((ok_count + 1))
+if [ "$ok_count" -eq 3 ]; then
+  ok "T116c scope-guard-config.sh handles partial config (3/3 assertions)"
+else
+  bad "T116c scope-guard-config.sh broke on partial config" "ok_count=$ok_count globs_count=$(printf '%s\n' "$globs_out" | wc -l) min_chars='$mc_out'"
+fi
+
+# ============================================================
+# T115 — /settings get prints provenance label (closes #34).
+#        With NO active feature, fallback label is `[project]`.
+# ============================================================
+note "T115: settings.sh get prints [project] when no active feature"
+d=$(mktemp -d) || exit 1
+cp -r "$FRAMEWORK_ROOT/templates/.sdd" "$d/"
+cd "$d" || { bad "T115 cd failed" "d=$d"; rm -rf "$d"; exit 1; }
+out=$(bash .sdd/scripts/settings.sh get budget.max_minutes 2>&1)
+cd - >/dev/null || true
+rm -rf "$d"
+# Must contain the value AND a [project] provenance label.
+if echo "$out" | grep -q 'budget.max_minutes = 5' && echo "$out" | grep -q '\[project\]'; then
+  ok "T115 settings.sh get printed value + [project] provenance"
+else
+  bad "T115 settings.sh get missing provenance label" "out='$out'"
+fi
+
+# ============================================================
+# T115b — /settings get walks the F5 cascade and reports a
+#         non-`project` source label when spec.md overrides a
+#         parameters.* leaf via its frontmatter (closes #34).
+#
+# Picks `voice.plain_english` because no action overrides it
+# (action-level overrides would otherwise win the cascade since
+# they sit at level 4, above work-item at level 2).
+# ============================================================
+note "T115b: settings.sh get reports [work-item] when spec.md overrides a value"
+d=$(mktemp -d) || exit 1
+cp -r "$FRAMEWORK_ROOT/templates/.sdd" "$d/"
+cd "$d" || { bad "T115b cd failed" "d=$d"; rm -rf "$d"; exit 1; }
+mkdir -p ".sdd/features/001-prov-test"
+# Use the framework's actual **Active:** format — work-item path
+# RELATIVE TO `.sdd/`, no leading `.sdd/`, no trailing `spec.md`.
+# That's what `start.sh` writes (work_item_rel = features/<NNN>-<slug>).
+cat > ".sdd/INDEX.md" <<'IDX'
+# Project INDEX
+
+**Playbook:** feature
+**Active:** features/001-prov-test
+
+## In flight
+- [ ] 001-prov-test: provenance smoke test
+
+## Shipped
+IDX
+# Spec: overrides voice.plain_english via frontmatter (true → false).
+# Active step is action=problem step=who — canonical first step of
+# the feature playbook so resolve-parameters.sh has a real anchor.
+cat > ".sdd/features/001-prov-test/spec.md" <<'SPEC'
+---
+overrides:
+  voice:
+    plain_english: false
+---
+# 001 prov-test
+
+[PHASE: SPEC]
+
+## PHASE: SPEC
+
+### action: problem
+- [ ] who: who specifically has the problem?
+- [ ] why-now: why this problem now?
+- [ ] what-breaks: what concretely is broken?
+SPEC
+out=$(bash .sdd/scripts/settings.sh get voice.plain_english 2>&1)
+cd - >/dev/null || true
+rm -rf "$d"
+# Must show the overridden value (False, not True) AND a [work-item:...]
+# label (resolve-parameters stamps the work-item id onto the source).
+if echo "$out" | grep -q 'voice.plain_english = False' && echo "$out" | grep -qE '\[work-item:'; then
+  ok "T115b settings.sh get reported [work-item:...] for spec.md override"
+else
+  bad "T115b settings.sh get didn't report cascade source" "out='$out'"
 fi
 
 # ============================================================
