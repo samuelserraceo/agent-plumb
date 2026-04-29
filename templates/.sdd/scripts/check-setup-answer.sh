@@ -83,22 +83,36 @@ if not matches:
     sys.exit(2)
 brick_path = matches[0]
 
-# 2. Parse brick frontmatter for records_in + records_at.
+# 2. Parse brick frontmatter for records_in + records_at. Use a real YAML
+# parser (not regex) so quoted strings, special chars, and unusual key
+# styles don't break the lookup — same approach the script uses below
+# for YAML-key target resolution.
+try:
+    import yaml
+except ImportError:
+    print("check-setup-answer.sh: PyYAML required to parse brick frontmatter",
+          file=sys.stderr)
+    sys.exit(2)
 with open(brick_path, encoding="utf-8") as f:
     brick_text = f.read()
 fm_match = re.match(r"^---\n(.*?)\n---", brick_text, re.DOTALL)
 if not fm_match:
     print(f"check-setup-answer.sh: no frontmatter in {brick_path}", file=sys.stderr)
     sys.exit(2)
-fm_text = fm_match.group(1)
-m_in = re.search(r"^records_in:\s*[\"']?([^\"'\n]+)", fm_text, re.MULTILINE)
-m_at = re.search(r"^records_at:\s*[\"']?([^\"'\n]+)", fm_text, re.MULTILINE)
-if not m_in or not m_at:
+try:
+    fm_data = yaml.safe_load(fm_match.group(1)) or {}
+except Exception as exc:
+    print(f"check-setup-answer.sh: YAML parse error in brick frontmatter at {brick_path}: {exc}",
+          file=sys.stderr)
+    sys.exit(2)
+records_in = fm_data.get("records_in")
+records_at = fm_data.get("records_at")
+if not records_in or not records_at:
     print(f"check-setup-answer.sh: brick missing records_in/records_at: {brick_path}",
           file=sys.stderr)
     sys.exit(2)
-records_in = m_in.group(1).strip().rstrip('"').rstrip("'")
-records_at = m_at.group(1).strip().rstrip('"').rstrip("'")
+records_in = str(records_in).strip()
+records_at = str(records_at).strip()
 
 target_path = os.path.join(proj, records_in)
 if not os.path.isfile(target_path):
@@ -130,10 +144,11 @@ answer = None
 
 if records_at.startswith("## "):
     # Markdown heading. Find the section and read the first non-blank,
-    # non-comment, non-list-bullet content line under it.
+    # non-comment, non-fenced content line under it.
     with open(target_path, encoding="utf-8") as f:
         lines = f.read().split("\n")
     in_section = False
+    in_fence = False
     for line in lines:
         if line.strip() == records_at:
             in_section = True
@@ -143,23 +158,25 @@ if records_at.startswith("## "):
             # Stop if we hit the next ## heading.
             if stripped.startswith("## "):
                 break
-            # Skip blanks, HTML comments, code-fence delimiters.
+            # Track code-fence state so we don't capture fenced content
+            # (e.g. example YAML / bash) as the answer.
+            if stripped.startswith("```"):
+                in_fence = not in_fence
+                continue
+            if in_fence:
+                continue
+            # Skip blanks and HTML comments.
             if not stripped:
                 continue
-            if stripped.startswith("<!--") or stripped.startswith("```"):
+            if stripped.startswith("<!--"):
                 continue
             # The first content line is the answer (could be a bullet, a
             # paragraph, or a placeholder). Trim leading bullet markers.
             answer = re.sub(r"^[-*+]\s*", "", stripped)
             break
 elif re.match(r"^[a-z][a-z0-9_]*", records_at):
-    # YAML dotted key — walk the frontmatter.
-    try:
-        import yaml
-    except ImportError:
-        print("check-setup-answer.sh: PyYAML required for YAML-key resolution",
-              file=sys.stderr)
-        sys.exit(2)
+    # YAML dotted key — walk the frontmatter. (yaml is already imported
+    # at the top of the python block for brick frontmatter parsing.)
     with open(target_path, encoding="utf-8") as f:
         text = f.read()
     fm2 = re.match(r"^---\n(.*?)\n---", text, re.DOTALL)
