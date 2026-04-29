@@ -81,6 +81,17 @@ if not matches:
     print(f"check-setup-answer.sh: no brick found for question id '{question_id}' in {setup_dir}",
           file=sys.stderr)
     sys.exit(2)
+# If 2+ bricks claim the same question id, fail loudly. Silently picking
+# matches[0] would let one brick shadow another and return stale or
+# wrong answers depending on glob ordering.
+if len(matches) > 1:
+    print(f"check-setup-answer.sh: ambiguous — {len(matches)} bricks share question id '{question_id}':",
+          file=sys.stderr)
+    for p in sorted(matches):
+        print(f"  - {p}", file=sys.stderr)
+    print("check-setup-answer.sh: rename one brick or change its frontmatter id so each is unique.",
+          file=sys.stderr)
+    sys.exit(2)
 brick_path = matches[0]
 
 # 2. Parse brick frontmatter for records_in + records_at. Use a real YAML
@@ -114,7 +125,25 @@ if not records_in or not records_at:
 records_in = str(records_in).strip()
 records_at = str(records_at).strip()
 
-target_path = os.path.join(proj, records_in)
+# Constrain records_in to project root: refuse absolute paths and any
+# resolved path that escapes the project directory (e.g. "../../etc/...").
+# records_in is from a framework-shipped brick today, but the value is
+# data we read from disk — we don't trust it to be safe by construction.
+if os.path.isabs(records_in):
+    print(f"check-setup-answer.sh: records_in must be project-relative; got absolute path '{records_in}'",
+          file=sys.stderr)
+    sys.exit(2)
+target_path = os.path.normpath(os.path.join(proj, records_in))
+proj_real = os.path.realpath(proj)
+target_real = os.path.realpath(target_path)
+# Guard via os.path.commonpath: target must be inside the project root.
+try:
+    if os.path.commonpath([proj_real, target_real]) != proj_real:
+        raise ValueError("escapes project root")
+except ValueError:
+    print(f"check-setup-answer.sh: records_in '{records_in}' resolves outside project root ({proj_real})",
+          file=sys.stderr)
+    sys.exit(2)
 if not os.path.isfile(target_path):
     print(f"check-setup-answer.sh: target {records_in} not found at {target_path}",
           file=sys.stderr)
