@@ -123,8 +123,19 @@ if [ "$PLAYWRIGHT_INSTALLED" -eq 0 ] && [ -f "package.json" ]; then
   echo "[playwright-ext] @playwright/test is not yet installed."
   PKG_MGR=$(detect_pkg_manager)
   echo "[playwright-ext] Detected package manager: $PKG_MGR"
-  printf "[playwright-ext] Install Playwright now? [Y/n]: "
-  read -r install_answer
+  # In non-interactive runs (CI / no TTY on stdin), `read` would hit EOF
+  # and — under `set -e` — exit the whole script before the manual-
+  # instructions fallback ever runs. Default to "n" in that case so
+  # the script skips the install attempt and falls through to printing
+  # the manual-install instructions, which is the safer behaviour for
+  # automated/CI runs.
+  install_answer="n"
+  if [ -t 0 ]; then
+    printf "[playwright-ext] Install Playwright now? [Y/n]: "
+    read -r install_answer
+  else
+    echo "[playwright-ext] non-interactive run (no TTY on stdin); skipping the install prompt — manual instructions follow."
+  fi
   if [ "$install_answer" = "" ] || [ "$install_answer" = "y" ] || [ "$install_answer" = "Y" ]; then
     if run_install "$PKG_MGR"; then
       PLAYWRIGHT_INSTALLED=1
