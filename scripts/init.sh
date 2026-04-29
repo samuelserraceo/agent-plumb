@@ -43,9 +43,21 @@ copy_if_absent() {
   fi
 }
 
-# Top-level .sdd/ and .claude/ trees (.sdd/ already includes rubric.md, data-model.md, etc.)
-copy_if_absent "$TEMPLATES/.sdd" "$TARGET/.sdd"
-copy_if_absent "$TEMPLATES/.claude" "$TARGET/.claude"
+# Top-level .sdd/ and .claude/ trees (.sdd/ already includes rubric.md,
+# data-model.md, etc.). Same nesting guard as .obsidian below: a plain
+# `copy_if_absent` would mis-copy under `--force` when the destination
+# already exists, since `cp -R src dst-existing-dir` puts `.sdd` inside
+# `.sdd/.sdd/`. Walk the contents so the destination is the directory
+# ITSELF, not a parent of it.
+for tree in .sdd .claude; do
+  if [ -e "$TARGET/$tree" ] && [ "$FORCE" = "0" ]; then
+    echo "  skip   $TARGET/$tree (exists)"
+  else
+    mkdir -p "$TARGET/$tree"
+    cp -R "$TEMPLATES/$tree/." "$TARGET/$tree/"
+    echo "  write  $TARGET/$tree"
+  fi
+done
 
 # Optional Obsidian Tier-1 vault config (closes #83). Drops a minimal
 # .obsidian/ directory so opening the project root in Obsidian renders

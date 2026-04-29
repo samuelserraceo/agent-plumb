@@ -4702,6 +4702,125 @@ else
 fi
 
 # ============================================================
+# T115 — /settings get prints provenance label (closes #34).
+#        With NO active feature, fallback label is `[project]`.
+# ============================================================
+note "T115: settings.sh get prints [project] when no active feature"
+d=$(mktemp -d) || exit 1
+cp -r "$FRAMEWORK_ROOT/templates/.sdd" "$d/"
+cd "$d" || { bad "T115 cd failed" "d=$d"; rm -rf "$d"; exit 1; }
+out=$(bash .sdd/scripts/settings.sh get budget.max_minutes 2>&1)
+cd - >/dev/null || true
+rm -rf "$d"
+# Must contain the value AND a [project] provenance label.
+if echo "$out" | grep -q 'budget.max_minutes = 5' && echo "$out" | grep -q '\[project\]'; then
+  ok "T115 settings.sh get printed value + [project] provenance"
+else
+  bad "T115 settings.sh get missing provenance label" "out='$out'"
+fi
+
+# ============================================================
+# T115b — /settings get walks the F5 cascade and reports a
+#         non-`project` source label when spec.md overrides a
+#         parameters.* leaf via its frontmatter (closes #34).
+#
+# Picks `voice.plain_english` because no action overrides it
+# (action-level overrides would otherwise win the cascade since
+# they sit at level 4, above work-item at level 2).
+# ============================================================
+note "T115b: settings.sh get reports [work-item] when spec.md overrides a value"
+d=$(mktemp -d) || exit 1
+cp -r "$FRAMEWORK_ROOT/templates/.sdd" "$d/"
+cd "$d" || { bad "T115b cd failed" "d=$d"; rm -rf "$d"; exit 1; }
+mkdir -p ".sdd/features/001-prov-test"
+# Use the framework's actual **Active:** format — work-item path
+# RELATIVE TO `.sdd/`, no leading `.sdd/`, no trailing `spec.md`.
+# That's what `start.sh` writes (work_item_rel = features/<NNN>-<slug>).
+cat > ".sdd/INDEX.md" <<'IDX'
+# Project INDEX
+
+**Playbook:** feature
+**Active:** features/001-prov-test
+
+## In flight
+- [ ] 001-prov-test: provenance smoke test
+
+## Shipped
+IDX
+# Spec: overrides voice.plain_english via frontmatter (true → false).
+# Active step is action=problem step=who — canonical first step of
+# the feature playbook so resolve-parameters.sh has a real anchor.
+cat > ".sdd/features/001-prov-test/spec.md" <<'SPEC'
+---
+overrides:
+  voice:
+    plain_english: false
+---
+# 001 prov-test
+
+[PHASE: SPEC]
+
+## PHASE: SPEC
+
+### action: problem
+- [ ] who: who specifically has the problem?
+- [ ] why-now: why this problem now?
+- [ ] what-breaks: what concretely is broken?
+SPEC
+out=$(bash .sdd/scripts/settings.sh get voice.plain_english 2>&1)
+cd - >/dev/null || true
+rm -rf "$d"
+# Must show the overridden value (False, not True) AND a [work-item:...]
+# label (resolve-parameters stamps the work-item id onto the source).
+if echo "$out" | grep -q 'voice.plain_english = False' && echo "$out" | grep -qE '\[work-item:'; then
+  ok "T115b settings.sh get reported [work-item:...] for spec.md override"
+else
+  bad "T115b settings.sh get didn't report cascade source" "out='$out'"
+fi
+
+# ============================================================
+# T118 — scripts/init.sh's content-copy pattern doesn't nest
+#        a directory inside itself when the destination already
+#        exists. Regression for the cp -R bug flagged on PR #90
+#        cycle-2 (closes #83).
+#
+# Tests the pattern in isolation (init.sh's preflight rubric
+# check is broken on main since v0.8 — separate issue). Verifies
+# `cp -R "$src/." "$dst/"` puts contents into dst, NOT into
+# dst/$(basename src)/.
+# ============================================================
+note "T118: cp -R src/. dst/ pattern doesn't nest src into dst/src/"
+d=$(mktemp -d) || exit 1
+src="$d/src"
+dst="$d/dst"
+mkdir -p "$src"
+echo "rubric content" > "$src/rubric.md"
+mkdir -p "$src/sub"
+echo "nested content" > "$src/sub/file.txt"
+# First copy: dst doesn't exist yet.
+mkdir -p "$dst"
+cp -R "$src/." "$dst/"
+ok_count=0
+[ -f "$dst/rubric.md" ] && ok_count=$((ok_count + 1))
+[ -f "$dst/sub/file.txt" ] && ok_count=$((ok_count + 1))
+[ ! -d "$dst/src" ] && ok_count=$((ok_count + 1))
+# Second copy onto the same dst (simulates --force re-run).
+cp -R "$src/." "$dst/"
+[ ! -d "$dst/src" ] && ok_count=$((ok_count + 1))
+# Compare with the BUGGY pattern: cp -R "$src" "$dst" when dst exists.
+buggy_dst="$d/buggy"
+mkdir -p "$buggy_dst"
+cp -R "$src" "$buggy_dst" 2>/dev/null || true
+# Buggy pattern DOES nest — confirm it (so this test is meaningful).
+[ -d "$buggy_dst/src" ] && ok_count=$((ok_count + 1))
+rm -rf "$d"
+if [ "$ok_count" -eq 5 ]; then
+  ok "T118 cp -R src/. dst/ pattern preserves flat layout (5/5 assertions)"
+else
+  bad "T118 cp -R src/. dst/ nested or lost files" "ok_count=$ok_count/5"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
