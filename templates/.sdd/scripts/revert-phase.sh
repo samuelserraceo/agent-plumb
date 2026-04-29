@@ -25,13 +25,18 @@
 #   4. Writes the result back atomically (tempfile + rename).
 #
 # Exit:
-#   0 — spec.md updated (or no-op if already in <to-phase>)
-#   1 — usage error or validation error (stderr explains)
+#   0 — spec.md updated; one or more downstream phase sections un-ticked.
+#   1 — usage error, validation error, or already-in-<to-phase> (stderr
+#       explains). NOTE: the "already in to-phase" case is INTENTIONALLY
+#       a non-zero exit, not a silent no-op — that would mask caller
+#       bugs (e.g., calling revert-phase.sh twice). If a caller really
+#       wants idempotency, they should grep `[PHASE: X]` themselves
+#       before invoking this script.
 #
 # This script is deliberately phase-agnostic: it doesn't hardcode SPEC /
 # BUILD / SHIP. The caller declares which phase to revert from and to;
-# the script resolves the playbook ordering at runtime to know which
-# phases count as "downstream" of <to-phase>.
+# the script resolves the playbook ordering at runtime by reading the
+# active playbook declared in INDEX.md (same pattern as next-action.sh).
 
 set -euo pipefail
 
@@ -44,22 +49,32 @@ SPEC_PATH="$1"
 FROM_PHASE="$2"
 TO_PHASE="$3"
 
-if [ ! -f "$SPEC_PATH" ]; then
-  echo "revert-phase.sh: spec not found at $SPEC_PATH" >&2
-  exit 1
+# Resolve PROJECT_DIR FIRST (before checking the spec exists), so a
+# repository-relative SPEC_PATH like ".sdd/features/001-x/spec.md"
+# works when this script is invoked from any CWD inside the project.
+if [ -d "$(dirname "$SPEC_PATH")" ]; then
+  PROJECT_DIR="$(cd "$(dirname "$SPEC_PATH")" && git rev-parse --show-toplevel 2>/dev/null || true)"
 fi
-
-# Resolve the project root from the spec path so we can find the playbook.
-PROJECT_DIR="$(cd "$(dirname "$SPEC_PATH")/../../.." 2>/dev/null && pwd)"
-if [ ! -d "$PROJECT_DIR/.sdd" ]; then
-  # Try one level up (in case spec is deeper)
-  PROJECT_DIR="$(cd "$(dirname "$SPEC_PATH")" && git rev-parse --show-toplevel 2>/dev/null)"
+if [ -z "${PROJECT_DIR:-}" ] || [ ! -d "$PROJECT_DIR/.sdd" ]; then
+  PROJECT_DIR="$(git rev-parse --show-toplevel 2>/dev/null || true)"
 fi
-
 if [ -z "${PROJECT_DIR:-}" ] || [ ! -d "$PROJECT_DIR/.sdd" ]; then
   echo "revert-phase.sh: cannot resolve project root with .sdd/ from $SPEC_PATH" >&2
   exit 1
 fi
+
+# Resolve SPEC_PATH against PROJECT_DIR if it's relative. After this,
+# RESOLVED_SPEC is always an absolute path that exists on disk.
+case "$SPEC_PATH" in
+  /*) RESOLVED_SPEC="$SPEC_PATH" ;;
+  *)  RESOLVED_SPEC="$PROJECT_DIR/$SPEC_PATH" ;;
+esac
+
+if [ ! -f "$RESOLVED_SPEC" ]; then
+  echo "revert-phase.sh: spec not found at $SPEC_PATH (looked under $PROJECT_DIR)" >&2
+  exit 1
+fi
+SPEC_PATH="$RESOLVED_SPEC"
 
 command -v python3 >/dev/null 2>&1 || {
   echo "revert-phase.sh: python3 required but not on PATH" >&2
@@ -92,28 +107,42 @@ if current != from_phase:
           file=sys.stderr)
     sys.exit(1)
 
-# 2. Resolve the playbook's phase ordering. Reads `.sdd/playbooks/feature.md`
-# (or whatever playbook the spec uses). For now we use the canonical 3-phase
-# spine SPEC → BUILD → SHIP → SHIPPED — the playbook ordering is loaded from
-# the active playbook below.
+# 2. Resolve the playbook's phase ordering. Read the active playbook slug
+# from INDEX.md (same pattern as next-action.sh — Lego foundation 2: each
+# playbook owns its own phase sequence; this script reads what it declares).
+# Falls back to "feature" if INDEX.md doesn't declare one, then to the
+# canonical 3-phase spine if the playbook itself is unreadable.
 def _load_playbook_phases(proj_dir):
-    """Return a list of phase IDs in playbook order. Reads feature.md
-    (the only playbook with a phase-revert use case today). Falls back
-    to the canonical 3-phase spine if the playbook is unreadable."""
-    pb_path = os.path.join(proj_dir, ".sdd", "playbooks", "feature.md")
+    """Return a list of phase IDs in playbook order, derived from the
+    active playbook's stages: frontmatter. Falls back to the canonical
+    3-phase spine on any read/parse failure."""
+    fallback = ["SPEC", "BUILD", "SHIP", "SHIPPED"]
+    # Resolve the active playbook slug from INDEX.md, mirroring
+    # next-action.sh's `**Playbook:** <slug>` lookup.
+    playbook_slug = "feature"
+    index_path = os.path.join(proj_dir, ".sdd", "INDEX.md")
+    if os.path.isfile(index_path):
+        try:
+            with open(index_path, encoding="utf-8") as f:
+                idx_text = f.read()
+            mp = re.search(r'^\*\*Playbook:\*\*\s+(\S+)\s*$', idx_text, re.M)
+            if mp and re.match(r'^[a-z][a-z0-9-]*$', mp.group(1)):
+                playbook_slug = mp.group(1)
+        except OSError:
+            pass
+    pb_path = os.path.join(proj_dir, ".sdd", "playbooks", f"{playbook_slug}.md")
     if not os.path.isfile(pb_path):
-        return ["SPEC", "BUILD", "SHIP", "SHIPPED"]
+        return fallback
     try:
         import yaml
     except ImportError:
-        return ["SPEC", "BUILD", "SHIP", "SHIPPED"]
+        return fallback
     try:
         with open(pb_path, encoding="utf-8") as f:
             pb_text = f.read()
-        # Parse YAML frontmatter between --- markers.
         fm_match = re.match(r"^---\n(.*?)\n---", pb_text, re.DOTALL)
         if not fm_match:
-            return ["SPEC", "BUILD", "SHIP", "SHIPPED"]
+            return fallback
         fm = yaml.safe_load(fm_match.group(1))
         stages = fm.get("stages", [])
         phases = [s.get("id", "").upper() for s in stages if s.get("id")]
@@ -121,9 +150,9 @@ def _load_playbook_phases(proj_dir):
         terminal = fm.get("terminal_state", "").upper()
         if terminal and terminal not in phases:
             phases.append(terminal)
-        return phases or ["SPEC", "BUILD", "SHIP", "SHIPPED"]
+        return phases or fallback
     except Exception:
-        return ["SPEC", "BUILD", "SHIP", "SHIPPED"]
+        return fallback
 
 phases = _load_playbook_phases(proj)
 try:
