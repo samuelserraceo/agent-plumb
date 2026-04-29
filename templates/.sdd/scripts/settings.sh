@@ -46,8 +46,8 @@ command -v python3 >/dev/null 2>&1 || {
   exit 1
 }
 
-CONFIG="$CONFIG" CMD="$CMD" KEY="$KEY" VAL="$VAL" python3 <<'PYEOF'
-import os, re, sys
+CONFIG="$CONFIG" CMD="$CMD" KEY="$KEY" VAL="$VAL" PROJECT_DIR="$PROJECT_DIR" python3 <<'PYEOF'
+import json, os, re, subprocess, sys
 try:
     import yaml
 except ImportError:
@@ -56,6 +56,7 @@ except ImportError:
     sys.exit(1)
 
 config_path = os.environ["CONFIG"]
+project_dir = os.environ["PROJECT_DIR"]
 cmd = os.environ["CMD"]
 key = os.environ["KEY"]
 val = os.environ["VAL"]
@@ -246,6 +247,129 @@ def del_at(d, dotted):
         return True
     return False
 
+def _infer_active_context(proj):
+    """Return (spec_path, action_slug, step_id) for the active step,
+    or (None, None, None) if no in-flight feature is resolvable.
+
+    Reads `**Active:** <path>` from .sdd/INDEX.md, then invokes
+    next-action.sh on that spec to get the active action + step.
+    Used by `get` to walk the F5 cascade and report provenance for
+    the value the agent would currently see (closes #34).
+
+    Path resolution rules — `**Active:**` is written by start.sh as a
+    work-item path RELATIVE TO `.sdd/`, e.g. `features/001-foo` or
+    `bugs/003-confirm-link-typo`. The actual spec lives at
+    `<proj>/.sdd/<work-item-rel>/spec.md`. Older / hand-edited indexes
+    sometimes also use the full path (`.sdd/features/.../spec.md`) or
+    just the directory name; tolerate all three shapes."""
+    index_path = os.path.join(proj, ".sdd", "INDEX.md")
+    if not os.path.isfile(index_path):
+        return None, None, None
+    try:
+        with open(index_path, encoding="utf-8") as f:
+            idx_text = f.read()
+    except OSError:
+        return None, None, None
+    m = re.search(r'^\*\*Active:\*\*\s+(\S+)', idx_text, re.MULTILINE)
+    if not m:
+        return None, None, None
+    raw = m.group(1).strip()
+    # Try the four canonical shapes in priority order. First one that
+    # resolves to an existing spec.md wins.
+    if os.path.isabs(raw):
+        candidates = [raw if raw.endswith("spec.md") else os.path.join(raw, "spec.md")]
+    else:
+        candidates = [
+            os.path.join(proj, ".sdd", raw, "spec.md"),     # work-item-rel (canonical)
+            os.path.join(proj, raw),                         # already-relative-to-proj (legacy)
+            os.path.join(proj, raw, "spec.md"),              # bare folder under proj
+        ]
+    spec_path = next((p for p in candidates if os.path.isfile(p)), None)
+    if not spec_path:
+        return None, None, None
+    next_action_sh = os.path.join(proj, ".sdd", "scripts", "next-action.sh")
+    if not os.path.isfile(next_action_sh):
+        return None, None, None
+    try:
+        result = subprocess.run(
+            ["bash", next_action_sh, spec_path],
+            capture_output=True, text=True, timeout=5
+        )
+    except (subprocess.TimeoutExpired, OSError):
+        return None, None, None
+    if result.returncode != 0 or not result.stdout.strip():
+        return None, None, None
+    try:
+        na = json.loads(result.stdout)
+    except json.JSONDecodeError:
+        return None, None, None
+    if not isinstance(na, dict):
+        # next-action.sh contract is a JSON object; treat any other
+        # shape as a malformed response and fall through to (None,*3).
+        return None, None, None
+    # Same defensiveness for the scalar fields: non-string values
+    # would crash .strip() (the contract is "string action / step").
+    action_raw = na.get("action")
+    step_raw = na.get("step")
+    action = action_raw.strip() if isinstance(action_raw, str) else ""
+    step = step_raw.strip() if isinstance(step_raw, str) else ""
+    if not action or not step:
+        return None, None, None
+    return spec_path, action, step
+
+def _resolve_with_provenance(proj, lookup_key, project_value):
+    """If `lookup_key` is in the parameters.* cascade AND there's an
+    active in-flight feature, run resolve-parameters.sh and return
+    (effective_value, source_label) per the F5 cascade. Otherwise
+    return (project_value, "project").
+
+    `source_label` is one of: `project`, `work-item`, `stage:<id>`,
+    `action:<slug>`, `step:<id>` — the label resolve-parameters.sh
+    stamps onto the leaf in its `_provenance` map."""
+    if not lookup_key.startswith("parameters."):
+        return project_value, "project"
+    spec_path, action_slug, step_id = _infer_active_context(proj)
+    if not (spec_path and action_slug and step_id):
+        return project_value, "project"
+    resolver = os.path.join(proj, ".sdd", "scripts", "resolve-parameters.sh")
+    if not os.path.isfile(resolver):
+        return project_value, "project"
+    try:
+        result = subprocess.run(
+            ["bash", resolver, spec_path, action_slug, step_id],
+            capture_output=True, text=True, timeout=5
+        )
+    except (subprocess.TimeoutExpired, OSError):
+        return project_value, "project"
+    if result.returncode != 0 or not result.stdout.strip():
+        return project_value, "project"
+    try:
+        resolved = json.loads(result.stdout)
+    except json.JSONDecodeError:
+        return project_value, "project"
+    if not isinstance(resolved, dict):
+        # resolve-parameters.sh contract is a JSON object with a
+        # _provenance map. Any other shape is malformed; fall back
+        # to project-only.
+        return project_value, "project"
+    provenance = resolved.get("_provenance") or {}
+    if not isinstance(provenance, dict):
+        provenance = {}
+    cascade_key_short = lookup_key[len("parameters."):]
+    cur = resolved
+    for part in _split_dotted(cascade_key_short):
+        if isinstance(cur, dict) and part in cur:
+            cur = cur[part]
+        else:
+            return project_value, "project"
+    # Type-guard the source label too — `_provenance[<key>]` should
+    # be a string, but a malformed payload could put a non-string
+    # there and it would render directly into `[<source>]` in the
+    # user-visible output. Fall back to "project" if not a string.
+    raw_source = provenance.get(cascade_key_short)
+    source = raw_source if isinstance(raw_source, str) else "project"
+    return cur, source
+
 def _atomic_write_config(text):
     """Atomic write helper: tempfile + rename so a crash mid-write
     doesn't leave the user with a half-written config.md. Closes #36
@@ -279,13 +403,31 @@ elif cmd == "get":
     if not key:
         print("[settings] usage: settings.sh get <key>", file=sys.stderr)
         sys.exit(1)
+    # Project-default lookup first — also confirms the key is real.
+    # get_at already accepts the relative form (e.g. `budget.max_minutes`)
+    # by falling back to `parameters.<dotted>`; reproduce that
+    # normalisation here so cascade resolution sees the canonical key.
     try:
-        v = get_at(fm, key)
-        print(f"{key} = {v!r}")
+        project_value = get_at(fm, key)
     except KeyError:
         print(f"[settings] key not found: {key}", file=sys.stderr)
         print(f"[settings] run `settings.sh list` to see all keys.", file=sys.stderr)
         sys.exit(2)
+    # Determine the canonical lookup key (for cascade walking).
+    lookup_key = key
+    config_block_prefixes = (
+        "parameters.", "events.", "file_rules.", "state_rules.",
+        "folder_rules.", "file_classes.", "co_stage_block.",
+    )
+    if not lookup_key.startswith(config_block_prefixes):
+        lookup_key = "parameters." + lookup_key
+    # Walk the F5 cascade if the key lives under parameters.* AND an
+    # active feature exists; otherwise fall back to project-only.
+    # Closes #34 — provenance label was doc-claimed but missing in code.
+    effective_value, source = _resolve_with_provenance(
+        project_dir, lookup_key, project_value
+    )
+    print(f"{key} = {effective_value!r} [{source}]")
     sys.exit(0)
 
 elif cmd == "set":

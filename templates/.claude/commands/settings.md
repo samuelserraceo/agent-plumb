@@ -20,17 +20,27 @@
   → prints the full inventory: parameters, file_rules, events, …
 
 /settings get budget.max_minutes
-  → 5  (project default)
+  → budget.max_minutes = 5 [project]
 
 /settings set budget.max_minutes 30
   → updates .sdd/config.md → parameters.budget.max_minutes: 30
 
 /settings get voice.plain_english
-  → true
+  → voice.plain_english = True [project]
 
 /settings get folder_rules.deferred_paths
-  → [ ".sdd/topics/", ".sdd/archive/", ".sdd/bugs/" ]
+  → folder_rules.deferred_paths = ['.sdd/topics/', '.sdd/archive/', '.sdd/bugs/'] [project]
 ```
+
+The bracketed `[project]` label is the **provenance** — where the active value comes from in the cascade. Other possible labels:
+
+- `[project]` — value comes straight from `.sdd/config.md` (the project default)
+- `[work-item:<id>]` — overridden in the active spec.md frontmatter `overrides:` block
+- `[stage:<id>]` — overridden in the active playbook's per-stage `overrides:` block
+- `[action:<slug>]` — overridden in the action's frontmatter (e.g. `proposed-approach.md`)
+- `[step:<id>]` — overridden in spec.md's active step row
+
+Provenance is shown only for `parameters.*` keys (the cascade-aware block). Other keys (file_rules, events, etc.) live in `config.md` only and always show `[project]`.
 
 ## What you can change
 
