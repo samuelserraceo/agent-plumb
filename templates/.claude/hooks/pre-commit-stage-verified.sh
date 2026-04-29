@@ -249,21 +249,46 @@ except Exception as e:
 # user (or update.sh) can also add it manually for one-off framework
 # upgrades.
 if staged_manifest_path:
+    head_manifest = None
+    head_manifest_unreadable = False  # HEAD has the blob but we can't parse it
     try:
         head_result = subprocess.run(
             ["git", "show", f"HEAD:{staged_manifest_path}"],
             capture_output=True, cwd=proj, timeout=10,
         )
-        head_manifest = None
         if head_result.returncode == 0:
+            # HEAD has the file. Try to parse it. If the parse fails, the
+            # baseline is unreadable — fail-closed so a malformed HEAD
+            # manifest isn't a bypass for the approval requirement.
             try:
                 head_manifest = json.loads(
                     head_result.stdout.decode("utf-8", errors="replace")
                 )
             except Exception:
                 head_manifest = None
+                head_manifest_unreadable = True
+        # else: HEAD doesn't have the manifest yet (legitimate first-time
+        # add). Leave both flags as None / False so the gate is skipped.
     except Exception:
+        # git unavailable / timeout / etc. — skip gate (better than blocking
+        # all commits when git is broken). The per-file WT hash check below
+        # still runs as the primary defence against tampered files.
         head_manifest = None
+        head_manifest_unreadable = False
+
+    # PR #61 cycle-2 fix (closes the major CR finding): if HEAD's manifest
+    # blob exists but didn't parse, do NOT silently fall through. That
+    # would let an attacker bypass the approval requirement by corrupting
+    # HEAD's manifest in an earlier commit. Refuse with a clear message.
+    if head_manifest_unreadable:
+        print("[moat] HEAD manifest.json exists but is malformed —", file=sys.stderr)
+        print("       refusing the commit. The trust baseline cannot be", file=sys.stderr)
+        print("       evaluated against an unreadable HEAD manifest.", file=sys.stderr)
+        print("", file=sys.stderr)
+        print("To recover: check out HEAD's manifest, repair the JSON, and", file=sys.stderr)
+        print("commit the repair with `[SDD] manifest: repin: repair HEAD`.", file=sys.stderr)
+        print("Then retry the original commit.", file=sys.stderr)
+        sys.exit(1)
 
     # If HEAD has no manifest (e.g. very early in project life), there's
     # nothing to compare against — skip the trust-baseline check. The

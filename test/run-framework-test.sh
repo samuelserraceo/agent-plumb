@@ -3996,21 +3996,14 @@ git commit -q -m "init" >/dev/null 2>&1
 # Repin an entry to a hash that matches the actual on-disk file content
 # (so the per-file WT hash check below the trust-baseline check passes).
 python3 - <<'PYEOF'
-import hashlib, json, os
+import json
 p = ".sdd/.cache/manifest.json"
 with open(p) as fh: m = json.load(fh)
-fp = ".sdd/actions/problem.md"
-with open(fp, "rb") as fh: data = fh.read()
-text = data.decode("utf-8", errors="replace").replace("\r\n", "\n").replace("\r", "\n")
-ls = [ln.rstrip() for ln in text.split("\n")]
-while ls and ls[0] == "": ls.pop(0)
-while ls and ls[-1] == "": ls.pop()
-new_h = hashlib.sha256("\n".join(ls).encode("utf-8")).hexdigest()
-# Force a "change" by setting to a different value first via mutation
-# of a different field — simpler: stage manifest with same hash and
-# verify the trust-baseline check is skipped (no repin detected).
-# Here we test: actually changing the hash + including the marker = pass.
-m["actions"]["problem"]["expected_sha256"] = "1" * 64  # fake-but-different
+# Set a fake hash that differs from the actual file content. The marker
+# in -m should clear the trust-baseline gate; then the per-file hash
+# check below it will fail (which IS the expected outcome — the test
+# proves the gate cleared, not that the per-file check passed).
+m["actions"]["problem"]["expected_sha256"] = "1" * 64
 with open(p, "w") as fh: json.dump(m, fh, indent=2)
 PYEOF
 git add .sdd/.cache/manifest.json
@@ -4026,6 +4019,39 @@ if [ "$ec" -eq 2 ] && echo "$err" | grep -qiE 'manifest hash-pin failed|tampered
   ok "T106 moat accepted marker-bearing -m (trust-baseline gate cleared)"
 else
   bad "T106 marker-bearing commit not accepted by trust-baseline gate" "exit=$ec; err='$err'"
+fi
+
+# ============================================================
+# T107 — v0.13.1 cycle-2 fix: HEAD's manifest blob exists but is
+#        malformed (corrupt JSON). The trust-baseline check must fail
+#        closed — refuse the commit rather than silently fall through
+#        and treat the corrupt baseline as "no baseline".
+# ============================================================
+note "T107: moat fails closed when HEAD manifest exists but is malformed"
+d=$(mkproj_v08)
+cd "$d"
+git add -A 2>/dev/null
+git commit -q -m "init" >/dev/null 2>&1
+# Corrupt HEAD's manifest by checking out a malformed file as a NEW
+# commit. We need git to have a commit where manifest.json doesn't parse
+# as JSON. Easiest: rewrite manifest as garbage, commit, then restore a
+# valid one in WT. Now `git show HEAD:.../manifest.json` returns garbage.
+echo "this is not json {[{[" > .sdd/.cache/manifest.json
+git add .sdd/.cache/manifest.json
+git commit -q -m "corrupt-head" --no-verify >/dev/null 2>&1
+# Now restore a valid manifest in WT (so the staged version is parseable),
+# stage it, and try to commit. HEAD's blob is corrupt → moat must refuse.
+cp "$FRAMEWORK_ROOT/templates/.sdd/.cache/manifest.json" .sdd/.cache/manifest.json
+git add .sdd/.cache/manifest.json
+hook_stdin='{"tool_input":{"command":"git commit -m \"[SDD] manifest: repin: restore\""}}'
+ec=0
+err=$(echo "$hook_stdin" | bash "$MOAT_HOOK" 2>&1 1>/dev/null) || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 2 ] && echo "$err" | grep -qiE 'malformed|unreadable|cannot be evaluated'; then
+  ok "T107 moat fails closed on malformed HEAD manifest"
+else
+  bad "T107 moat let malformed HEAD manifest pass through (bypass risk)" "exit=$ec; err='$err'"
 fi
 
 # ============================================================
