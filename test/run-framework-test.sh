@@ -3104,10 +3104,11 @@ else
 fi
 # Also verify forward-slash input round-trips unchanged.
 out2=$(bash "$VALIDATE" '.sdd/decisions.md' 2>/dev/null)
-if [ "$out2" = ".sdd/decisions.md" ]; then
+ec2=$?
+if [ "$ec2" -eq 0 ] && [ "$out2" = ".sdd/decisions.md" ]; then
   ok "T84c forward-slash input round-trips unchanged"
 else
-  bad "T84c forward-slash input was mutated" "out='$out2'"
+  bad "T84c forward-slash input check failed" "exit=$ec2; out='$out2'"
 fi
 
 # ============================================================
