@@ -2,7 +2,7 @@
   "extensions": {},
   "playbooks": {
     "feature": {
-      "expected_sha256": "f266f2c8d89e11a56ae1fd6effd782162cc1d56f55cb79b46b4e597fc70d6df4",
+      "expected_sha256": "ec97aea82ef4b2137c75ef8af9914787e14c89cbec439f933d219571f2c93729",
       "path": ".sdd/playbooks/feature.md",
       "trust": "framework"
     },
@@ -72,7 +72,7 @@
       "trust": "framework"
     },
     "adversarial-review": {
-      "expected_sha256": "42d996141cf65ea3abb551c084b62d8e3dacc30018c5cb07cb83588a84a1e629",
+      "expected_sha256": "11ebf9d1b19d38285ed7a8f950b64895cac14898478e918d65dd7b1f27d9bfda",
       "path": ".sdd/actions/adversarial-review.md",
       "trust": "framework"
     },

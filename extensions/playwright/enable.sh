@@ -79,32 +79,48 @@ EOF
   fi
 fi
 
-if [ -f "package.json" ]; then
-  if ! grep -q '"@playwright/test"' package.json 2>/dev/null; then
-    echo ""
-    echo "[playwright-ext] @playwright/test not in package.json devDependencies."
-    echo "[playwright-ext] Run yourself when ready:"
-    echo "[playwright-ext]   npm install --save-dev @playwright/test"
-    echo "[playwright-ext]   npx playwright install --with-deps"
-  fi
+# Detect whether Playwright is already a devDependency. The "next steps"
+# message branches on this so re-runs (where Playwright IS installed)
+# don't tell the user to install it again.
+PLAYWRIGHT_INSTALLED=0
+if [ -f "package.json" ] && grep -q '"@playwright/test"' package.json 2>/dev/null; then
+  PLAYWRIGHT_INSTALLED=1
 fi
 
-cat <<'EOF'
+if [ "$PLAYWRIGHT_INSTALLED" -eq 0 ] && [ -f "package.json" ]; then
+  echo ""
+  echo "[playwright-ext] @playwright/test not in package.json devDependencies."
+  echo "[playwright-ext] Run yourself when ready:"
+  echo "[playwright-ext]   npm install --save-dev @playwright/test"
+  echo "[playwright-ext]   npx playwright install --with-deps"
+fi
 
-[playwright-ext] enabled.
-
-Next steps:
-  1. Install the dependency (the script did NOT run this for you):
-       npm install --save-dev @playwright/test
-       npx playwright install --with-deps
-
-  2. Run the example test to verify:
-       npx playwright test
-
-  3. Read tests/example.spec.ts to see the SDD-shaped test pattern.
-
-  4. Read docs/sdd-playwright.md for the full pattern guide.
-
-  5. Start your first feature — the agent will scaffold task-<NN>.spec.ts
-     files at .sdd/features/<id>/tests/ following the same pattern.
-EOF
+echo ""
+echo "[playwright-ext] enabled."
+echo ""
+echo "Next steps:"
+if [ "$PLAYWRIGHT_INSTALLED" -eq 0 ]; then
+  echo "  1. Install the dependency (the script did NOT run this for you):"
+  echo "       npm install --save-dev @playwright/test"
+  echo "       npx playwright install --with-deps"
+  echo ""
+  echo "  2. Run the example test to verify:"
+  echo "       npx playwright test"
+  echo ""
+  echo "  3. Read tests/example.spec.ts to see the SDD-shaped test pattern."
+  echo ""
+  echo "  4. Read docs/sdd-playwright.md for the full pattern guide."
+  echo ""
+  echo "  5. Start your first feature — the agent will scaffold task-<NN>.spec.ts"
+  echo "     files at .sdd/features/<id>/tests/ following the same pattern."
+else
+  echo "  1. Run the example test to verify (Playwright already installed):"
+  echo "       npx playwright test"
+  echo ""
+  echo "  2. Read tests/example.spec.ts to see the SDD-shaped test pattern."
+  echo ""
+  echo "  3. Read docs/sdd-playwright.md for the full pattern guide."
+  echo ""
+  echo "  4. Start your first feature — the agent will scaffold task-<NN>.spec.ts"
+  echo "     files at .sdd/features/<id>/tests/ following the same pattern."
+fi

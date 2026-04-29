@@ -52,11 +52,22 @@ def _walk_headings(lines: List[str]):
     """
     headings = []
     in_fence = False
+    fence_char = None  # '`' or '~' — only the SAME fence type closes the block
     for idx, line in enumerate(lines):
-        # Toggle fence state on lines that start a code block (with optional
-        # language tag). Match: ```, ```text, ```python, etc.
-        if re.match(r"^\s*```", line):
-            in_fence = not in_fence
+        # Toggle fence state on lines that start a code block. Match BOTH
+        # backtick fences (```, ```text, ```python) AND tilde fences
+        # (~~~, ~~~text, ~~~yaml). A markdown example with `~~~` was
+        # leaking interior `##` lines into the heading walker.
+        m_fence = re.match(r"^\s*(```+|~~~+)", line)
+        if m_fence:
+            opener = m_fence.group(1)[0]  # '`' or '~'
+            if not in_fence:
+                in_fence = True
+                fence_char = opener
+            elif opener == fence_char:
+                # Only close on the same fence type
+                in_fence = False
+                fence_char = None
             continue
         if in_fence:
             continue

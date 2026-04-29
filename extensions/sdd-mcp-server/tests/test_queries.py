@@ -273,13 +273,22 @@ class ProtocolShimTests(_FixtureBase):
         results. Now the shim only checks for the `error` key. This test guards
         against regressing back to the old behaviour.
         """
-        # Build a fixture, then delete spec.md so get_active_step returns
-        # a contextual error: {"error": "spec.md not found at ...", + active context}.
-        # This is the exact shape that exercised the bug.
+        # Build a fixture, then rewrite spec.md so the phase exists but
+        # has no open [ ] steps. get_active_step returns a contextual
+        # error of the exact bug shape: {feature_path, phase, error}.
+        # This is what the earlier shim's `"feature_path" not in result`
+        # gate silently downgraded to success.
         proj, cleanup = make_temp_project()
         try:
             spec_path = os.path.join(proj, ".sdd", "features", "001-waitlist", "spec.md")
-            os.remove(spec_path)
+            with open(spec_path, "w", encoding="utf-8") as fh:
+                fh.write(
+                    "# 001-waitlist\n\n"
+                    "[PHASE: BUILD]\n\n"
+                    "## PHASE: BUILD\n\n"
+                    "- [x] task-001: completed step\n"
+                    "- [x] task-002: also completed\n"
+                )
             os.environ["CLAUDE_PROJECT_DIR"] = proj
             try:
                 resp = handle_message({
@@ -291,7 +300,8 @@ class ProtocolShimTests(_FixtureBase):
             finally:
                 os.environ.pop("CLAUDE_PROJECT_DIR", None)
             # The shim must mark this as an error, even though the inner result
-            # might carry feature_path or phase context.
+            # ALSO carries feature_path and phase context (the exact shape
+            # that the earlier "feature_path not in result" gate downgraded).
             self.assertTrue(
                 resp["result"]["isError"],
                 "tools/call must set isError=True when result has 'error' key — "
@@ -299,6 +309,16 @@ class ProtocolShimTests(_FixtureBase):
             )
             decoded = json.loads(resp["result"]["content"][0]["text"])
             self.assertIn("error", decoded)
+            # Stronger guard: verify the result actually has the success-shaped
+            # context fields that originally triggered the bug. If the handler
+            # later stops returning feature_path/phase on error paths, this
+            # test will fail and force a rethink rather than silently passing.
+            self.assertIn("feature_path", decoded,
+                          "contextual-error result should still carry feature_path "
+                          "(otherwise the bug shape isn't exercised)")
+            self.assertIn("phase", decoded,
+                          "contextual-error result should still carry phase "
+                          "(otherwise the bug shape isn't exercised)")
         finally:
             cleanup()
 

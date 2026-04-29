@@ -116,10 +116,34 @@ _TOOL_SCHEMAS: Dict[str, Dict[str, Any]] = {
 def _project_root() -> str:
     """Return the .sdd-bearing project root.
 
-    We prefer `CLAUDE_PROJECT_DIR` (the convention the rest of the framework
-    follows) and fall back to the current working directory.
+    Resolution order:
+      1. `CLAUDE_PROJECT_DIR` env var — the convention the rest of the framework
+         follows. The harness sets this when launching the server.
+      2. `git rev-parse --show-toplevel` from cwd — for setups where the
+         server is launched by absolute path from elsewhere on the filesystem
+         and CLAUDE_PROJECT_DIR isn't set, but cwd is inside a git repo.
+      3. `os.getcwd()` — last-resort fallback.
+
+    The git-root step closes the gap where a wrapper script invokes the
+    server with an absolute path while the harness's working dir isn't the
+    project root. Without it, queries silently look at the wrong .sdd/.
     """
-    return os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
+    env = os.environ.get("CLAUDE_PROJECT_DIR")
+    if env and os.path.isdir(env):
+        return env
+    try:
+        import subprocess
+        result = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            capture_output=True, text=True, timeout=2,
+        )
+        if result.returncode == 0:
+            root = result.stdout.strip()
+            if root and os.path.isdir(root):
+                return root
+    except Exception:
+        pass
+    return os.getcwd()
 
 
 def _dispatch(name: str, args: Dict[str, Any]) -> Dict[str, Any]:

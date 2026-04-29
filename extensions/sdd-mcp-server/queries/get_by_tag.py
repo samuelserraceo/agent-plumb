@@ -92,12 +92,27 @@ def get_by_tag(project_root: str, args: Dict[str, Any]) -> Dict[str, Any]:
 
     body = _slice_section(text.split("\n"), heading)
     matches: List[Dict[str, Any]] = []
+    in_html_comment = False
     for line in body:
         s = line.strip()
-        if not s:
+        # Track HTML-comment block state across lines so interior bullet
+        # lines inside `<!-- ... -->` don't get picked up as fake feature
+        # entries. A comment can span multiple lines:
+        #   <!--
+        #   - some example feature entry
+        #   -->
+        # Toggle on the opening token; stay inside until we see -->.
+        if "<!--" in s and "-->" not in s:
+            in_html_comment = True
             continue
-        # Skip HTML comments (template ships with hint comments).
-        if s.startswith("<!--") or s.startswith("-->"):
+        if in_html_comment:
+            if "-->" in s:
+                in_html_comment = False
+            continue
+        # Single-line comment (open + close on same line) — skip.
+        if s.startswith("<!--") and s.endswith("-->"):
+            continue
+        if not s:
             continue
         # Skip the literal "_(none)_" / "_(empty)_" placeholders.
         if s.startswith("_(") and s.endswith(")_"):

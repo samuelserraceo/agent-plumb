@@ -64,7 +64,7 @@ If you're not sure, pick `feature` and the agent will redirect if your work item
 
 Three stages, walking left-to-right:
 
-1. **SPEC** — 14 questions / drafts that turn the idea into a concrete plan. Some you answer (USER-LED), some the agent drafts and you approve (AGENT-LED). About 30-90 minutes the first time you run a feature, less as you build a feel for it.
+1. **SPEC** — 15 questions / drafts that turn the idea into a concrete plan. Some you answer (USER-LED), some the agent drafts and you approve (AGENT-LED). About 30-90 minutes the first time you run a feature, less as you build a feel for it.
 2. **BUILD** — write a test, write code to pass the test, commit, repeat. The agent does the work; you decide pace via "run mode" (step-by-step, checkpointed, or autonomous).
 3. **SHIP** — verify, summarize lessons, open PR, watch CI, mark shipped.
 
@@ -83,7 +83,7 @@ LOCATE + EXECUTE are agent-driven prose. SYNC + ADVANCE are structural (real bas
 
 ## What's locked, what's not
 
-The 22 actions in this playbook's frontmatter are **closed for v0.9**. Adding new actions requires Phase C work (touches schema validation + the action library). The order is also fixed — actions inside each stage must be filled in sequence.
+The 24 actions in this playbook's frontmatter (15 SPEC + 2 BUILD + 7 SHIP) are **closed for v0.13**. Adding new actions requires explicit framework work (touches schema validation + the action library). The order is also fixed — actions inside each stage must be filled in sequence.
 
 Four actions default to **`requires_user_approval: true`** in their frontmatter:
 - `proposed-approach` — closes Codex's silent-design-softening attack

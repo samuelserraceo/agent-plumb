@@ -27,7 +27,7 @@ the environment variables it asks you to set up.
    set up; pay only when you grow.
 3. **AWS / Google Cloud / Azure** — your team uses one of these already, or you
    need fine control over hosting. Higher complexity; more flexibility.
-4. **Cloudflare Workers / edge** — you want it fast worldwide, ran close to
+4. **Cloudflare Workers / edge** — you want it fast worldwide, run close to
    users. Different shape (no long-running servers; everything is a
    short-lived function).
 5. **A private server (your own VPS, Docker, or self-hosted)** — you have a

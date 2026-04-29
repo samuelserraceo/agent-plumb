@@ -91,6 +91,7 @@ else (spec-traceability comment, plain-English test name, A/A/A structure)
 is runner-agnostic.
 
 For pytest:
+
 ```python
 # spec: §11.AC1   task: T01
 # What this asserts (plain English): visitor signs up via email and sees success.
@@ -106,6 +107,7 @@ def test_visitor_signs_up_via_email_and_sees_success_state(client):
 ```
 
 For Vitest:
+
 ```typescript
 // spec: §11.AC1   task: T01
 // What this asserts (plain English): SignupForm renders the email input.

@@ -57,6 +57,19 @@ _(empty — fill in as you make architectural commitments)_
 - Cache layer is **Redis on Railway** (NOT in-memory)
 -->
 
+## Extras
+
+_(empty — populated by `/sdd-setup` step 6 if you opt into auth / email / payments / error-tracking / analytics on day one)_
+
+<!-- Example shape:
+- **Auth:** Clerk
+- **Email:** Resend
+- **Payments:** Stripe
+- **Error tracking:** Sentry
+- **Analytics:** PostHog
+- **Other:** —
+-->
+
 ---
 
 ## Why this file exists

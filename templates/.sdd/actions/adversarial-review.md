@@ -9,7 +9,7 @@ steps:
   - { id: ar-triage, action: ask, field: "§13.triage" }
 used_by: [feature]
 references: [verify-test-run, learn]
-touches: [".sdd/<work-item>/spec.md"]
+touches: [".sdd/<work-item>/spec.md", ".sdd/<work-item>/wireframe.html"]
 trust: framework
 budget:
   max_minutes: 15
