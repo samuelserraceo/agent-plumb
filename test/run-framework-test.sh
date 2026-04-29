@@ -3966,10 +3966,13 @@ done
 # truth for the framework's "what we're on now"). RED if README's
 # version drifts from the version file.
 current_version=$(tr -d ' \n' < "$FRAMEWORK_ROOT/templates/.sdd/CLAUDE.version" 2>/dev/null || echo "")
-if [ -n "$current_version" ]; then
-  if ! grep -qF -- "Currently at **v$current_version" "$FRAMEWORK_ROOT/README.md" 2>/dev/null; then
-    problems="$problems status-not-v$current_version"
-  fi
+if [ -z "$current_version" ]; then
+  # Fail fast when the source-of-truth file is missing or unreadable —
+  # silently skipping would let a corrupt CLAUDE.version slip past the
+  # version-drift gate (CR cycle-1 finding on PR #63).
+  problems="$problems missing-or-empty-CLAUDE.version"
+elif ! grep -qF -- "Currently at **v$current_version" "$FRAMEWORK_ROOT/README.md" 2>/dev/null; then
+  problems="$problems status-not-v$current_version"
 fi
 if [ -z "$problems" ]; then
   ok "T103 README reflects v$current_version — architecture phrases + current-version line present"
