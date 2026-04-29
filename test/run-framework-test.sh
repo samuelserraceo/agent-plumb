@@ -4697,6 +4697,51 @@ else
 fi
 
 # ============================================================
+# T117 — Obsidian Tier 1 vault config: every JSON file in
+#        templates/.obsidian/ parses as valid JSON (closes #83).
+# ============================================================
+note "T117: templates/.obsidian/*.json all parse as valid JSON"
+obsidian_dir="$FRAMEWORK_ROOT/templates/.obsidian"
+ok_count=0
+total=0
+for f in "$obsidian_dir"/*.json; do
+  [ -f "$f" ] || continue
+  total=$((total + 1))
+  if python3 -c "import json,sys;json.load(open(sys.argv[1]))" "$f" 2>/dev/null; then
+    ok_count=$((ok_count + 1))
+  fi
+done
+if [ "$total" -ge 3 ] && [ "$ok_count" -eq "$total" ]; then
+  ok "T117 all $total Obsidian config files parse as valid JSON"
+else
+  bad "T117 Obsidian config files invalid" "$ok_count/$total parsed (need at least 3)"
+fi
+
+# ============================================================
+# T117b — Obsidian graph.json declares colour groups for the
+#         four canonical SDD knowledge surfaces (closes #83).
+# ============================================================
+note "T117b: graph.json colour groups cover features / decisions / patterns / data-model"
+graph_json="$FRAMEWORK_ROOT/templates/.obsidian/graph.json"
+if [ -f "$graph_json" ]; then
+  out=$(python3 -c "
+import json, sys
+with open(sys.argv[1]) as f: g = json.load(f)
+queries = [c.get('query','') for c in (g.get('colorGroups') or [])]
+needed = ['features', 'decisions', 'patterns', 'data-model']
+print('|'.join(['HIT' if any(n in q for q in queries) else 'MISS' for n in needed]))
+" "$graph_json" 2>/dev/null)
+  hit_count=$(echo "$out" | tr '|' '\n' | grep -c HIT)
+  if [ "$hit_count" -eq 4 ]; then
+    ok "T117b graph.json colour groups cover all 4 knowledge surfaces"
+  else
+    bad "T117b graph.json colour groups incomplete" "hit_count=$hit_count out='$out'"
+  fi
+else
+  bad "T117b graph.json missing" "expected at $graph_json"
+fi
+
+# ============================================================
 # T116 — scope-guard-config.sh emits the v0.13.x defaults when no
 #        config.md exists (closes #16: scope-guard configurability).
 # ============================================================
@@ -4859,6 +4904,48 @@ if echo "$out" | grep -q 'voice.plain_english = False' && echo "$out" | grep -qE
   ok "T115b settings.sh get reported [work-item:...] for spec.md override"
 else
   bad "T115b settings.sh get didn't report cascade source" "out='$out'"
+fi
+
+# ============================================================
+# T118 — scripts/init.sh's content-copy pattern doesn't nest
+#        a directory inside itself when the destination already
+#        exists. Regression for the cp -R bug flagged on PR #90
+#        cycle-2 (closes #83).
+#
+# Tests the pattern in isolation (init.sh's preflight rubric
+# check is broken on main since v0.8 — separate issue). Verifies
+# `cp -R "$src/." "$dst/"` puts contents into dst, NOT into
+# dst/$(basename src)/.
+# ============================================================
+note "T118: cp -R src/. dst/ pattern doesn't nest src into dst/src/"
+d=$(mktemp -d) || exit 1
+src="$d/src"
+dst="$d/dst"
+mkdir -p "$src"
+echo "rubric content" > "$src/rubric.md"
+mkdir -p "$src/sub"
+echo "nested content" > "$src/sub/file.txt"
+# First copy: dst doesn't exist yet.
+mkdir -p "$dst"
+cp -R "$src/." "$dst/"
+ok_count=0
+[ -f "$dst/rubric.md" ] && ok_count=$((ok_count + 1))
+[ -f "$dst/sub/file.txt" ] && ok_count=$((ok_count + 1))
+[ ! -d "$dst/src" ] && ok_count=$((ok_count + 1))
+# Second copy onto the same dst (simulates --force re-run).
+cp -R "$src/." "$dst/"
+[ ! -d "$dst/src" ] && ok_count=$((ok_count + 1))
+# Compare with the BUGGY pattern: cp -R "$src" "$dst" when dst exists.
+buggy_dst="$d/buggy"
+mkdir -p "$buggy_dst"
+cp -R "$src" "$buggy_dst" 2>/dev/null || true
+# Buggy pattern DOES nest — confirm it (so this test is meaningful).
+[ -d "$buggy_dst/src" ] && ok_count=$((ok_count + 1))
+rm -rf "$d"
+if [ "$ok_count" -eq 5 ]; then
+  ok "T118 cp -R src/. dst/ pattern preserves flat layout (5/5 assertions)"
+else
+  bad "T118 cp -R src/. dst/ nested or lost files" "ok_count=$ok_count/5"
 fi
 
 # ============================================================
