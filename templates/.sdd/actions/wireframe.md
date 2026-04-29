@@ -29,7 +29,7 @@ requires_user_approval: false
 
 **Sync requirement (F1 generic enforcer (`pre-commit-rules.sh`)'s `touches:` enforcement):** the commit that closes SPEC must stage `wireframe.html` alongside `spec.md`.
 
-**Note on placeholder paths:** the `touches:` declaration here uses `<work-item>` as a placeholder. F1's pre-commit-rules.sh currently SKIPS placeholder-templated paths during enforcement (it doesn't substitute the live work-item path before checking) — the inline rule lives in `pre-commit-rules.sh` at the touches-validation loop, where any path containing `<` is intentionally bypassed. So this declaration documents intent but doesn't actively block. The wireframe action's USER-LED iteration keeps the agent in the right place. Full template-substitution enforcement is deferred — see issue #42 (per-branch worktree-aware INDEX.md) which is the natural place to wire it.
+**Note on placeholder paths:** the `touches:` declaration here uses `<work-item>` as a placeholder. F1's pre-commit-rules.sh currently SKIPS placeholder-templated paths during enforcement (it doesn't substitute the live work-item path before checking) — the inline rule lives in `pre-commit-rules.sh` at the touches-validation loop, where any path containing `<` is intentionally bypassed. So this declaration documents intent but doesn't actively block. The wireframe action's AGENT-LED iteration (drafted by the agent, refined with the user until they say `looks good`) keeps the wireframe pointed at the right work-item. Full template-substitution enforcement is deferred — see issue #42 (per-branch worktree-aware INDEX.md) which is the natural place to wire it.
 
 **Output:** the HTML file at `.sdd/features/<id>/wireframe.html` + filled `Approved by user: [x]` in spec.md.
 

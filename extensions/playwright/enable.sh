@@ -87,10 +87,12 @@ fi
 
 # Detect package manager from lockfile presence (closes #70). Default to
 # npm if no lockfile is found — most projects start there.
+# Bun: v1.2+ defaults to text-based bun.lock; older versions used the
+# binary bun.lockb. Detect either so both Bun generations resolve to bun.
 detect_pkg_manager() {
   if [ -f "pnpm-lock.yaml" ]; then echo "pnpm"
   elif [ -f "yarn.lock" ]; then echo "yarn"
-  elif [ -f "bun.lockb" ]; then echo "bun"
+  elif [ -f "bun.lock" ] || [ -f "bun.lockb" ]; then echo "bun"
   else echo "npm"
   fi
 }

@@ -177,7 +177,7 @@
       "trust": "framework"
     },
     "wireframe": {
-      "expected_sha256": "bb045f80c931df700ec9873d5c6d7cd151b918a8cab0b30cc6f886a75147adf5",
+      "expected_sha256": "fb8fefd868711832a790ba8a3851892aaec0f63bd31086480a40a648e22ec4da",
       "path": ".sdd/actions/wireframe.md",
       "trust": "framework"
     },
