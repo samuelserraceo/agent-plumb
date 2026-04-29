@@ -1,6 +1,6 @@
 {
   "collapse-filter": false,
-  "search": "-path:.cache -path:.claude -path:templates -path:test -path:node_modules",
+  "search": "-path:.git -path:.cache -path:.claude -path:templates -path:test -path:node_modules",
   "showTags": false,
   "showAttachments": false,
   "hideUnresolved": false,
