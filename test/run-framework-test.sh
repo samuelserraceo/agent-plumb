@@ -4566,7 +4566,7 @@ fi
 # T114 — pre-commit-no-assumed-markers refuses (assumed) / (TBD) / (?) tokens
 #        in staged spec.md (closes #72: mechanical never-assume).
 # ============================================================
-note "T114: pre-commit-no-assumed-markers refuses (assumed) placeholder"
+note "T114: pre-commit-no-assumed-markers refuses (assumed) / (TBD) / (?) placeholders"
 d=$(mkproj_v08)
 cd "$d"
 mkdir -p .claude/hooks .sdd/features/001-test
@@ -4578,6 +4578,8 @@ cat > .sdd/features/001-test/spec.md <<'SPEC'
 ## PHASE: SPEC
 ### action: problem
 - [x] who: small business owners (assumed)
+- [x] when-broken: signup form fails (TBD)
+- [x] frequency: at every page load (?)
 SPEC
 git add .sdd/features/001-test/spec.md
 hook_stdin='{"tool_input":{"command":"git commit -m m1"}}'
@@ -4585,10 +4587,16 @@ ec=0
 err=$(echo "$hook_stdin" | bash .claude/hooks/pre-commit-no-assumed-markers.sh 2>&1 1>/dev/null) || ec=$?
 cd - >/dev/null
 rm -rf "$d"
-if [ "$ec" -eq 2 ] && echo "$err" | grep -qiE 'placeholder|never assume|assumed'; then
-  ok "T114 hook refused (assumed) placeholder in staged spec.md"
+# All three placeholder shapes must be reported in stderr (so a fix-once
+# pass catches all of them, not just the first).
+if [ "$ec" -eq 2 ] \
+   && echo "$err" | grep -q "(assumed)" \
+   && echo "$err" | grep -q "(TBD)" \
+   && echo "$err" | grep -q "(?)"; then
+  ok "T114 hook refused (assumed), (TBD), and (?) placeholders in staged spec.md"
 else
-  bad "T114 hook accepted (assumed) placeholder" "ec=$ec; err='$err'"
+  bad "T114 hook missed one or more of the three placeholder tokens" \
+      "ec=$ec; err='$err'"
 fi
 
 # ============================================================

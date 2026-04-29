@@ -72,8 +72,20 @@ found_problems=""
 while IFS= read -r spec; do
   [ -z "$spec" ] && continue
   # Read the staged blob (not the working-tree file — what's actually
-  # going into the commit).
-  staged_content=$(git show ":$spec" 2>/dev/null || true)
+  # going into the commit). The file IS staged (it came from
+  # `git diff --cached --name-only` above), so git show should
+  # succeed; if it fails, that's an unexpected condition and we
+  # refuse rather than silently skipping a file that might still
+  # contain placeholders.
+  if ! staged_content=$(git show ":$spec" 2>/dev/null); then
+    cat >&2 <<EOF
+[no-assumed-markers] could not read staged content for $spec — refusing commit.
+This is unexpected (the file is staged but git show failed). Check
+git status / git ls-files --stage and re-stage if necessary.
+EOF
+    exit 2
+  fi
+  # An intentionally empty staged file passes (nothing to scan).
   [ -z "$staged_content" ] && continue
   matches=$(printf '%s' "$staged_content" | grep -nE "$PATTERNS" || true)
   if [ -n "$matches" ]; then
