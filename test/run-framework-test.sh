@@ -4369,7 +4369,7 @@ rm -rf "$d"
 # Should find adversarial-review's first step row (ar-findings) un-ticked
 # OR verify-test-run's first row (vt-run) — either way, NOT a TRANSITION
 # response. The key: the response should NOT have "phase":"SHIPPED".
-if echo "$out" | grep -qiE '"phase":\s*"SHIP"' && ! echo "$out" | grep -qiE 'transition.*SHIPPED'; then
+if echo "$out" | grep -qiE '"phase"[[:space:]]*:[[:space:]]*"SHIP"' && ! echo "$out" | grep -qiE 'transition.*SHIPPED'; then
   ok "T112c second SHIP pass finds un-ticked rows; adversarial-review re-fires (closes #65)"
 else
   bad "T112c second SHIP pass skipped through to SHIPPED — bug NOT fixed" "out=$(echo "$out" | head -3)"

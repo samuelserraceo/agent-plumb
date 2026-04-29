@@ -33,7 +33,7 @@
 # the script resolves the playbook ordering at runtime to know which
 # phases count as "downstream" of <to-phase>.
 
-set -uo pipefail
+set -euo pipefail
 
 if [ $# -lt 3 ]; then
   echo "revert-phase.sh: usage: revert-phase.sh <spec-path> <from-phase> <to-phase>" >&2
