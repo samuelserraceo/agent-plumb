@@ -454,6 +454,83 @@ $samples
 }
 
 # ============================================================
+# Invariant 8 — every wiki-link in .sdd/ markdown resolves to a real node.
+#
+# v1.0 graph layer: cross-references between markdown atoms become
+# first-class via `[[slug]]` syntax. A broken link means a node was
+# renamed/deleted without updating its citers, OR a citer assumed a
+# pattern/entity exists that doesn't.
+#
+# Foundation 3 ("never assume — always check") applied to retrieval:
+# don't trust that wiki-links are honest; verify each resolves at
+# turn-boundary so drift surfaces before commit-time.
+#
+# Wiki-link grammar accepted (refused if extended):
+#   - [[001-waitlist]]            (feature folder)
+#   - [[entity:User]]             (data-model.md heading)
+#   - [[pattern:auth-retry]]      (patterns.md heading)
+# NO section anchors (#section), NO display aliases (|alias).
+#
+# Implementation: shells out to a Python helper that uses the MCP
+# server's _graph_cache module — same path the queries use, so the
+# stop-hook's view of "broken" is exactly what `get_backlinks` sees.
+# Falls back to silent pass if the MCP server isn't available
+# (extension is optional; this hook is mandatory).
+# ============================================================
+check_wiki_links_resolve() {
+  local mcp_root="$PROJECT_DIR/extensions/sdd-mcp-server"
+  # When running on a downstream user's project, the MCP server lives at the
+  # framework's own path — try a few common locations.
+  if [ ! -d "$mcp_root" ]; then
+    # Fall back to the framework-bundled copy if installed via plugin path.
+    local plugin_root="${CLAUDE_PLUGIN_ROOT:-}"
+    if [ -n "$plugin_root" ] && [ -d "$plugin_root/extensions/sdd-mcp-server" ]; then
+      mcp_root="$plugin_root/extensions/sdd-mcp-server"
+    else
+      return 0  # MCP server not present; graph layer is opt-in via extension
+    fi
+  fi
+  local result
+  result=$(MCP_ROOT="$mcp_root" PROJECT_DIR="$PROJECT_DIR" python3 <<'PYEOF' 2>/dev/null || true
+import os, sys
+sys.path.insert(0, os.environ["MCP_ROOT"])
+try:
+    from queries import _graph_cache
+except ImportError:
+    sys.exit(0)
+proj = os.environ["PROJECT_DIR"]
+try:
+    g = _graph_cache.build(proj)
+except Exception:
+    sys.exit(0)
+broken = _graph_cache.find_broken_edges(g)
+if not broken:
+    sys.exit(0)
+print(f"BROKEN:{len(broken)}")
+for e in broken[:5]:
+    raw = e.get("raw") or e.get("to_path", "?")
+    src = e.get("from_path", "?")
+    line = e.get("from_line", "?")
+    print(f"  {src}:{line}  [[{raw}]]")
+PYEOF
+)
+  if [ -n "$result" ] && [[ "$result" == BROKEN:* ]]; then
+    local first_line
+    first_line=$(echo "$result" | head -1)
+    local count="${first_line#BROKEN:}"
+    local samples
+    samples=$(echo "$result" | tail -n +2 | head -5)
+    add_violation "[stop-lint] $count wiki-link(s) don't resolve to a known node.
+  Sample (showing first 5):
+$samples
+  Fix: either rename the link to match an existing node (feature folder, pattern
+       heading in patterns.md, or entity heading in data-model.md), or create
+       the target node. Run \`get_backlinks(slug)\` via the MCP server to see
+       what cites a node before renaming it."
+  fi
+}
+
+# ============================================================
 # Run all checks. Each adds to $violations on drift; nothing exits
 # early — we want the user to see the whole picture in one pass.
 # ============================================================
@@ -465,6 +542,7 @@ check_duplicate_ids
 check_decisions_append_only
 check_manifest_json
 check_ticked_rows_have_answers
+check_wiki_links_resolve
 
 # Happy path: no violations → silent allow.
 [ -z "$violations" ] && exit 0

@@ -16,6 +16,9 @@ from .get_pattern import get_pattern
 from .get_references import get_references
 from .get_decisions_since import get_decisions_since
 from .search import search
+from .get_backlinks import get_backlinks
+from .get_neighbours import get_neighbours
+from .search_within import search_within
 
 REGISTRY = {
     "get_active_step": get_active_step,
@@ -24,6 +27,9 @@ REGISTRY = {
     "get_references": get_references,
     "get_decisions_since": get_decisions_since,
     "search": search,
+    "get_backlinks": get_backlinks,
+    "get_neighbours": get_neighbours,
+    "search_within": search_within,
 }
 
 __all__ = ["REGISTRY", *REGISTRY.keys()]

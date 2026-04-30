@@ -682,7 +682,14 @@ def search(project_root: str, args: Dict[str, Any]) -> Dict[str, Any]:
         }
 
     # Walk + chunk every searchable file.
+    # Internal hint from `search_within`: `_path_allowlist` filters down to
+    # files inside a graph-bounded subgraph. Public callers don't pass it.
     files = _walk_sdd_files(project_root)
+    allowlist = (args or {}).get("_path_allowlist")
+    if isinstance(allowlist, list) and allowlist:
+        allowed = set(allowlist)
+        files = [(rel, content) for (rel, content) in files
+                 if os.path.normpath(os.path.join(project_root, rel)) in allowed]
     if not files:
         return {
             "matches": [],
