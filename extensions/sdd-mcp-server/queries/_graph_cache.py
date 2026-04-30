@@ -253,6 +253,51 @@ def _build_nodes_and_edges(project_root: str, paths: List[str]) -> Tuple[List[Di
             return (None, "file")
         return best
 
+    # Inline-code span pattern: `text` (single backticks). The graph parser
+    # skips wiki-links and md-links inside these spans because they're
+    # documentation examples, not real edges. Multi-backtick fence handling
+    # lives in `_fenced_line_set` below.
+    _INLINE_CODE_RE = re.compile(r"`[^`\n]*`")
+
+    def _strip_inline_code(line: str) -> str:
+        """Remove `inline code` spans from a line so wiki-link / md-link
+        regex matchers won't pick up examples like `\`[[entity:User]]\``."""
+        return _INLINE_CODE_RE.sub("", line)
+
+    def _fenced_line_set(text: str) -> set:
+        """Return the set of 1-based line numbers that fall inside a fenced
+        code block (``` … ``` or ~~~ … ~~~). Wiki-links AND md-links inside
+        fenced examples are NOT real graph edges — they're documentation
+        showing what the syntax looks like. Walking them as edges would
+        flag every doc-block example as a broken edge.
+
+        Same fence-tracking discipline `get_pattern.py`'s `_walk_headings`
+        already uses. Only the same fence type closes the block (``` does
+        not close ~~~ and vice versa).
+        """
+        inside: set = set()
+        in_fence = False
+        fence_char = None  # '`' or '~'
+        for idx, line in enumerate(text.split("\n"), start=1):
+            stripped = line.lstrip()
+            if stripped.startswith("```") or stripped.startswith("~~~"):
+                opener = stripped[0]
+                if not in_fence:
+                    in_fence = True
+                    fence_char = opener
+                elif opener == fence_char:
+                    in_fence = False
+                    fence_char = None
+                # Fence delimiters themselves aren't "inside the fence" —
+                # but they're not edge content either. Treat them as fence
+                # so wiki-links accidentally on the same line as a fence
+                # delimiter don't slip through.
+                inside.add(idx)
+                continue
+            if in_fence:
+                inside.add(idx)
+        return inside
+
     # Walk every markdown file for outgoing edges.
     for src_path in paths:
         try:
@@ -262,46 +307,63 @@ def _build_nodes_and_edges(project_root: str, paths: List[str]) -> Tuple[List[Di
             # CR cycle-9 — same defensive skip as notebook reads above.
             continue
         rel_src = os.path.relpath(src_path, project_root)
+        # v1.0 step 4 — pre-compute fenced-line set so the link extractors
+        # below skip wiki-links and md-links inside ``` / ~~~ code blocks.
+        # Without this, every documentation example showing wiki-link
+        # syntax (in CLAUDE.md, action prose, etc.) gets walked as a real
+        # edge and trips invariant 8 / the CI graph-integrity gate.
+        fenced_lines = _fenced_line_set(content)
         # Wiki-link edges. Normalise to lowercase for lookup so `[[Entity:User]]`
         # and `[[entity:user]]` both resolve to the same node.
-        for m in _WIKI_LINK_RE.finditer(content):
-            slug = m.group(1).lower()
-            target = by_slug.get(slug)  # may be None if slug is ambiguous
-            line_no = content[:m.start()].count("\n") + 1
-            from_slug, from_kind = _resolve_from(rel_src, line_no)
-            edge = {
-                "from_path": rel_src,
-                "from_line": line_no,
-                "from_slug": from_slug,
-                "from_kind": from_kind,
-                "raw": slug,
-                "kind": "wiki-link",
-            }
-            if target is None:
-                edge["to_slug"] = None
-                edge["resolved"] = False
-            else:
-                edge["to_slug"] = target["slug"]
-                edge["to_path"] = target["path"]
-                edge["to_kind"] = target["kind"]
-                edge["resolved"] = True
-            edges.append(edge)
-        # Markdown-link edges (only when target path resolves under .sdd/).
-        for m in _MD_LINK_RE.finditer(content):
-            link_path = m.group(2)
-            base = os.path.dirname(src_path)
-            target_abs = os.path.normpath(os.path.join(base, link_path))
-            if not target_abs.startswith(sdd_root + os.sep) and target_abs != sdd_root:
+        # v1.0 step 4 — walk line-by-line so we can strip inline `code`
+        # spans before regex matching. Wiki-links inside inline code are
+        # documentation examples (e.g. `[[entity:User]]` in prose), not
+        # real edges.
+        for line_no, raw_line in enumerate(content.split("\n"), start=1):
+            if line_no in fenced_lines:
                 continue
-            line_no = content[:m.start()].count("\n") + 1
-            target_rel = os.path.relpath(target_abs, project_root)
-            edges.append({
-                "from_path": rel_src,
-                "from_line": line_no,
-                "to_path": target_rel,
-                "kind": "md-link",
-                "resolved": os.path.exists(target_abs),
-            })
+            stripped_line = _strip_inline_code(raw_line)
+            # Wiki-link edges on this line.
+            for m in _WIKI_LINK_RE.finditer(stripped_line):
+                slug = m.group(1).lower()
+                target = by_slug.get(slug)  # may be None if slug is ambiguous
+                from_slug, from_kind = _resolve_from(rel_src, line_no)
+                edge = {
+                    "from_path": rel_src,
+                    "from_line": line_no,
+                    "from_slug": from_slug,
+                    "from_kind": from_kind,
+                    "raw": slug,
+                    "kind": "wiki-link",
+                }
+                if target is None:
+                    edge["to_slug"] = None
+                    edge["resolved"] = False
+                else:
+                    edge["to_slug"] = target["slug"]
+                    edge["to_path"] = target["path"]
+                    edge["to_kind"] = target["kind"]
+                    edge["resolved"] = True
+                edges.append(edge)
+            # Markdown-link edges on this line (also fence- and inline-code-aware
+            # via the same stripped_line).
+            for m in _MD_LINK_RE.finditer(stripped_line):
+                link_path = m.group(2)
+                base = os.path.dirname(src_path)
+                target_abs = os.path.normpath(os.path.join(base, link_path))
+                if not target_abs.startswith(sdd_root + os.sep) and target_abs != sdd_root:
+                    continue
+                target_rel = os.path.relpath(target_abs, project_root)
+                edges.append({
+                    "from_path": rel_src,
+                    "from_line": line_no,
+                    "to_path": target_rel,
+                    "kind": "md-link",
+                    "resolved": os.path.exists(target_abs),
+                })
+        # (Wiki-link AND md-link extraction now happens inside the
+        # line-by-line walk above so both share the fenced-block and
+        # inline-code skip logic.)
 
     return nodes, edges
 

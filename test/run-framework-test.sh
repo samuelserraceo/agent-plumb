@@ -5505,6 +5505,48 @@ fi
 rm -rf "$d"
 
 # ============================================================
+# T133 — graph-integrity: wiki-links in fenced blocks + inline code spans
+#   are NOT walked as real edges (closes #26 / step 4 — the framework's
+#   own action prose has many `[[X]]` documentation examples that
+#   shouldn't trip the graph-integrity CI gate).
+# ============================================================
+note "T133: graph cache skips wiki-links inside fenced blocks + inline code"
+d=$(mktemp -d) || { bad "T133 cannot mktemp" ""; }
+mkdir -p "$d/.sdd/features/001-real" "$d/.sdd/.cache" "$d/extensions/sdd-mcp-server" 2>/dev/null
+cp -r "$FRAMEWORK_ROOT/extensions/sdd-mcp-server/queries" "$d/extensions/sdd-mcp-server/" 2>/dev/null
+cat > "$d/.sdd/features/001-real/spec.md" <<'EOF'
+# 001-real
+
+This is a doc paragraph showing a wiki-link example: `[[pattern:fake-pattern]]` should not be picked up.
+
+```markdown
+This fenced example also has [[pattern:another-fake]] that must not count.
+```
+
+A real wiki-link OUTSIDE code is fine: [[001-real]] (resolves to this feature).
+EOF
+result=$(PYTHONPATH="$d/extensions/sdd-mcp-server" python3 - "$d" <<'PYEOF' 2>&1 || echo "PYERR:$?"
+import os, sys
+proj = sys.argv[1]
+from queries import _graph_cache
+g = _graph_cache.build(proj)
+broken = [e for e in _graph_cache.find_broken_edges(g) if e.get("kind") == "wiki-link"]
+real_edges = [e for e in g.get("edges", []) if e.get("kind") == "wiki-link"]
+print(f"broken={len(broken)} real={len(real_edges)} nodes={len(g.get('nodes', []))}")
+for e in real_edges:
+    print(f"  edge: line={e['from_line']} raw={e['raw']} resolved={e.get('resolved')}")
+PYEOF
+)
+rm -rf "$d"
+# Expected: 1 real edge (the [[001-real]] outside code), 0 broken (the
+# fake-pattern inside inline code + fenced block were skipped).
+if echo "$result" | grep -qE 'broken=0 real=1'; then
+  ok "T133 graph cache correctly skips wiki-links in fenced + inline-code spans"
+else
+  bad "T133 graph cache leaked wiki-links from code blocks" "$result"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
