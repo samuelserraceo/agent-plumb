@@ -176,10 +176,18 @@ if branch:
             for top in tops:
                 if top.startswith(".") or top.startswith("_"):
                     continue
+                rel = f"{top}/{slug}"
+                # Same path-shape contract as INDEX: only canonical
+                # `<lowercase-folder>/<slug>` shapes count. A stray
+                # `.sdd/FEATURES/001-foo/` (uppercase top) would
+                # otherwise be emitted by branch resolution and
+                # rejected by INDEX, breaking source symmetry.
+                if not WORK_ITEM_PATH_RE.match(rel):
+                    continue
                 candidate_dir = os.path.join(sdd_root_real, top, slug)
                 spec_md = os.path.join(candidate_dir, "spec.md")
-                if os.path.isfile(spec_md) and is_inside_sdd(f"{top}/{slug}"):
-                    matches.append(f"{top}/{slug}")
+                if os.path.isfile(spec_md) and is_inside_sdd(rel):
+                    matches.append(rel)
             if len(matches) == 1:
                 branch_active = matches[0]
             elif len(matches) > 1:

@@ -5445,10 +5445,13 @@ cd "$d"
 git init -q
 git config user.email t@t.com && git config user.name T
 git commit --allow-empty -q -m "init"
+# Pin the branch to a known non-SDD name. Without this the test relies
+# on git's `init.defaultBranch` config, which a user could plausibly
+# set to something like `sdd/release` and break the test (CR cycle-10).
+git branch -M main
 mkdir -p .sdd/features/002-in-index
 touch .sdd/features/002-in-index/spec.md
 echo '**Active:** features/002-in-index' > .sdd/INDEX.md
-# Stay on the default branch (main / master) — not an SDD branch.
 out=$(bash "$RESOLVE_ACTIVE" 2>&1)
 cd - >/dev/null
 rm -rf "$d"

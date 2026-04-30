@@ -59,7 +59,7 @@
       "trust": "framework"
     },
     "settings.sh": {
-      "expected_sha256": "371a97bda1693e1bff54070de7102f2a72409a15f6b00388886fa5c34027b105",
+      "expected_sha256": "9e10c426c8669e6ce73136e7d82a6ae8a5706823cb2e0190b8fced8b2ac431d5",
       "path": ".sdd/scripts/settings.sh",
       "trust": "framework"
     },
@@ -84,12 +84,12 @@
       "trust": "framework"
     },
     "resolve-active.sh": {
-      "expected_sha256": "347570ef90f79d8cdbbf5943ccfd5c19debb1222f73ea04407b8c762b3cbcc84",
+      "expected_sha256": "944db1e0ef71c0dfa9c14fbbd47fce6e2ac82363b4e748f7a1f7f9401d68e03e",
       "path": ".sdd/scripts/resolve-active.sh",
       "trust": "framework"
     },
     "status-banner.sh": {
-      "expected_sha256": "555824bbf85e033ee46e2c79bbc3920e8c71bbbeccf0594fa7503ce566e6a147",
+      "expected_sha256": "b883cd20b533dbe57f8bd8914ea02a68a5b4d6224ea6d8153100fc93e823d08f",
       "path": ".sdd/scripts/status-banner.sh",
       "trust": "framework"
     }

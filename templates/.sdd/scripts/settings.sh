@@ -345,18 +345,30 @@ def _infer_active_context(proj):
         if os.path.isabs(raw) or ".." in raw.split("/"):
             return None, None, None
         # Spec-path constraint: only accept paths that resolve to a
-        # *spec.md* file. CR cycle-8 minor: without this, a tampered
-        # `**Active:** README.md` would let `os.path.join(proj, raw)`
-        # pick up README.md as `spec_path`. The legacy
-        # already-relative-to-proj shape is preserved only when the
-        # raw value already looks like a spec.md path.
+        # *spec.md* file. The legacy already-relative-to-proj shape
+        # is preserved only when the raw value already looks like a
+        # spec.md path.
         candidates = [
             os.path.join(proj, ".sdd", raw, "spec.md"),     # work-item-rel (canonical)
             os.path.join(proj, raw, "spec.md"),              # bare folder under proj
         ]
         if raw.startswith(".sdd/") and raw.endswith("/spec.md"):
             candidates.insert(1, os.path.join(proj, raw))    # legacy shape
-        spec_path = next((p for p in candidates if os.path.isfile(p)), None)
+        # Containment: every candidate must resolve INSIDE .sdd/.
+        # Without this, `**Active:** docs` would pick up
+        # `<proj>/docs/spec.md` as the active spec — outside the
+        # framework tree. CR cycle-10 MAJOR.
+        sdd_root_real = os.path.realpath(os.path.join(proj, ".sdd"))
+        def _inside_sdd(candidate):
+            candidate_real = os.path.realpath(candidate)
+            try:
+                return os.path.commonpath([sdd_root_real, candidate_real]) == sdd_root_real
+            except ValueError:
+                return False
+        spec_path = next(
+            (p for p in candidates if os.path.isfile(p) and _inside_sdd(p)),
+            None,
+        )
         if not spec_path:
             return None, None, None
     next_action_sh = os.path.join(proj, ".sdd", "scripts", "next-action.sh")
