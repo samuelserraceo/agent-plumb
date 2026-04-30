@@ -5,7 +5,7 @@ tag: AGENT-LED
 title: "plan-decompose"
 short_label: "Plan"
 steps:
-  - { id: tasks, action: convert_acs_to_ordered_tasks_one_test_file_per_task, field: "BUILD.tasks" }
+  - { id: tasks, action: "convert acceptance criteria into ordered build tasks (one test file per task)", field: "BUILD.tasks" }
 used_by: [feature]
 references: [acceptance-criteria, success, user-stories, ux-brief]
 touches: []

@@ -5,7 +5,7 @@ tag: AGENT-LED
 title: "§7 Flows"
 short_label: "Flows"
 steps:
-  - { id: flows, action: draft_1_to_3_critical_flows_referencing_user_stories, field: "§7" }
+  - { id: flows, action: "draft 1-3 critical flows, each referencing the user story it implements", field: "§7" }
 used_by: [feature]
 references: [user-stories, success]
 touches: []

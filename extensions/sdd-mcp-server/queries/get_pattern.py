@@ -28,7 +28,16 @@ from typing import Any, Dict, List
 
 
 _SOURCE_RE = re.compile(
-    r"(?:Source|From feature|Where it came from)\s*[:=]?\s*([A-Za-z0-9_/-]+)",
+    # Accept EITHER fully-paired wiki-link form `[[slug]]` OR bare slug.
+    # Earlier iterations let unbalanced brackets through (`Source: [[001-x`,
+    # single bracket, trailing `]`). CR cycle-9 flagged that the bare-slug
+    # branch still matched `Source: 001-x]]` because it consumed before the
+    # alternation could reject. Negative lookahead `(?!\])` forbids the
+    # bare-slug capture from being followed by `]` — only fully-paired
+    # `[[slug]]` or a truly bare slug match.
+    # Group 1 captures the wrapped slug; group 2 captures the bare slug.
+    r"(?:Source|From feature|Where it came from)\s*[:=]?\s*"
+    r"(?:\[\[([A-Za-z0-9_/-]+)\]\]|([A-Za-z0-9_/-]+)(?!\]))",
     re.IGNORECASE,
 )
 
@@ -118,7 +127,9 @@ def get_pattern(project_root: str, args: Dict[str, Any]) -> Dict[str, Any]:
     feature_source = None
     sm = _SOURCE_RE.search(content)
     if sm:
-        feature_source = sm.group(1)
+        # Group 1 = wrapped form `[[slug]]`; group 2 = bare slug.
+        # The alternation guarantees exactly one of the two matched.
+        feature_source = sm.group(1) or sm.group(2)
 
     return {
         "slug": _slugify(name),

@@ -34,7 +34,7 @@
       "trust": "framework"
     },
     "start.sh": {
-      "expected_sha256": "2ba8c9717ff91e12787f9958bb6a2f2425c1dbe41fb3ce85e4f8df96d7df2ef8",
+      "expected_sha256": "cd27239eece0f9da500fb3860855387d37a48ef432678fa98f1567cb67565d6f",
       "path": ".sdd/scripts/start.sh",
       "trust": "framework"
     },
@@ -49,7 +49,7 @@
       "trust": "framework"
     },
     "next-action.sh": {
-      "expected_sha256": "c60051bdcdda4731637621723822e5dedd7132c91535c736b8ceb22261e243d6",
+      "expected_sha256": "ddb8fd2185d0ae23ccf9f32f9c66c632a9e24b214bbdc1d10ab971991a873c35",
       "path": ".sdd/scripts/next-action.sh",
       "trust": "framework"
     },
@@ -87,7 +87,7 @@
   "sdd_version": "0.11.0",
   "actions": {
     "acceptance-criteria": {
-      "expected_sha256": "fec1a8ff749a42f99b37cf19d04e9b2ffe3ee21b0c43bd0bf15a524a447c04b6",
+      "expected_sha256": "72ecddb55208259745786e030aaebfe037470628078a9e9999b5131a28fdb148",
       "path": ".sdd/actions/acceptance-criteria.md",
       "trust": "framework"
     },
@@ -97,32 +97,32 @@
       "trust": "framework"
     },
     "build-task": {
-      "expected_sha256": "65783b74c3e83bb061199761a5d24699c027aa108cc3abac707a4bb97b2ef29e",
+      "expected_sha256": "4c7e38d8c2d285bf046f8b65b8b0c897dbe6a0b3fd9997c593e9e2bf4d0cc7cf",
       "path": ".sdd/actions/build-task.md",
       "trust": "framework"
     },
     "data-contract": {
-      "expected_sha256": "c58a24a301e198d0f544f19f03c393925b3143ef061b3ba3564448777b866813",
+      "expected_sha256": "26f16174ea61c17052d20f4f6ededd2dd4dacb07c462e9a939397cda390ab252",
       "path": ".sdd/actions/data-contract.md",
       "trust": "framework"
     },
     "dependencies": {
-      "expected_sha256": "b02add4043aac257fda551f236dce4f299ef7e3277cecb6b3111665d85e202bc",
+      "expected_sha256": "ce6be62633f49616e469e095ff4c124cc1fee4c64260d50f34078bbc4f6557d6",
       "path": ".sdd/actions/dependencies.md",
       "trust": "framework"
     },
     "flows": {
-      "expected_sha256": "69f3ba8f15c5d20859859e59cad800488175a3646abd7abb81123f7340b38412",
+      "expected_sha256": "5f0ec16c733854e94bb7265eaf27f579245462cb17c2d16985faab0a6fa703c9",
       "path": ".sdd/actions/flows.md",
       "trust": "framework"
     },
     "mark-shipped": {
-      "expected_sha256": "ac8f290ab70aa3b5d3c51c926f1c34b4ad6502aa17f3d50539a1fbaa833afb50",
+      "expected_sha256": "fb260e408f5c8e9c3d9f7e806dc4d5bb66a150b744fb6fc8b4fe9d98bd509db1",
       "path": ".sdd/actions/mark-shipped.md",
       "trust": "framework"
     },
     "non-functional": {
-      "expected_sha256": "88ee6845e260ca0ae08b4e9c0a80c60307f321cc2d47c9335db38868a7267429",
+      "expected_sha256": "a381b744b63193378a0c4116f8f0b54f4ef1b6bc887038580ece1d71a37a903e",
       "path": ".sdd/actions/non-functional.md",
       "trust": "framework"
     },
@@ -132,7 +132,7 @@
       "trust": "framework"
     },
     "plan-decompose": {
-      "expected_sha256": "49c3518624efd8b0aadcbef3ed5edbb586696f138cb28b65815abcf026ab18a7",
+      "expected_sha256": "391281e1168d91136d89bf337e6c28a4df3f17b670c136ccceebf36a6af9df7b",
       "path": ".sdd/actions/plan-decompose.md",
       "trust": "framework"
     },
@@ -147,12 +147,12 @@
       "trust": "framework"
     },
     "proposed-approach": {
-      "expected_sha256": "5838663dc0c3182ac76f9da7e41930641b2203d8bd03c722b0e3f0a1645491a8",
+      "expected_sha256": "8dcc4726e0d4d3429223e2f55f0b344dd6cc3376cf8c3a3916b46d9c5bf0ade2",
       "path": ".sdd/actions/proposed-approach.md",
       "trust": "framework"
     },
     "push-pr": {
-      "expected_sha256": "9e5c3502d2a608f478c1fe3d959e9c2c071d82ed4fb10125069ae0ad2d9791d1",
+      "expected_sha256": "fd155db71edb317f26cba8109392ac4496885c0d3f550766fb5f6bef0fa8892a",
       "path": ".sdd/actions/push-pr.md",
       "trust": "framework"
     },
@@ -177,12 +177,12 @@
       "trust": "framework"
     },
     "ux-brief": {
-      "expected_sha256": "8508705ee08d33fadb41ab351145a7ee7bd40e29ea70c2f0b5f83fb7e3c5d2db",
+      "expected_sha256": "11a6d871677ec1972c634f4c4a95e003eee52ce94bc3bb1989b803b54904f831",
       "path": ".sdd/actions/ux-brief.md",
       "trust": "framework"
     },
     "verify-ci-green": {
-      "expected_sha256": "581ae5f0e6d79cbdec7061ab25dd753ae0a8d5ce5e73fe5a684cba334567fffd",
+      "expected_sha256": "f05e8fc2d704fb4fbe867bab2b1afd629155bc7ae872a139c46980801fb72fbe",
       "path": ".sdd/actions/verify-ci-green.md",
       "trust": "framework"
     },
@@ -192,18 +192,18 @@
       "trust": "framework"
     },
     "verify-test-run": {
-      "expected_sha256": "63aa059281836a4338051701daca2f18f605b6ba4d5fd1e63bece948f7369abe",
+      "expected_sha256": "0111d7dde7308a06876c012f0c29da9f5fe89f5e42fd7649d7c8a4a7c2a57acb",
       "path": ".sdd/actions/verify-test-run.md",
       "trust": "framework"
     },
     "wireframe": {
-      "expected_sha256": "fb8fefd868711832a790ba8a3851892aaec0f63bd31086480a40a648e22ec4da",
+      "expected_sha256": "90252398fa07a6e0a33da1e467d56524c2393a06e8f579e1bc7f2ff7c5e6af34",
       "path": ".sdd/actions/wireframe.md",
       "trust": "framework"
     },
     "learn": {
       "path": ".sdd/actions/learn.md",
-      "expected_sha256": "5018602e347bfe650c8970b1f100a20baab376cd96b2cd7e680c1845a8572e9a"
+      "expected_sha256": "83d05d6fd3e3279c7dc06ad767af56e76d7c6e4695010014f9ca6c516f1bf3a5"
     },
     "project-problem": {
       "expected_sha256": "2000da0943888285e3581de5a45b294d9dc43d93582d3560105bbcb03dc66e3c",
@@ -221,12 +221,12 @@
       "trust": "framework"
     },
     "project-capabilities": {
-      "expected_sha256": "f9d31c8025a99beacd6e8d8ff44fc61b04857f497fc886fd4a39ca73be8aa6b5",
+      "expected_sha256": "25b9b7db31c12a38429e4bd0140d046daa97a5778bc0f42abbe1ef0953776588",
       "path": ".sdd/actions/project-capabilities.md",
       "trust": "framework"
     },
     "project-priorities": {
-      "expected_sha256": "27c16201141e1306ff72051f5c389edf1eec142fa093f596b75a6f28b3a94352",
+      "expected_sha256": "58a7f2e6f04b5962d63c7225d0effa389fd3fefe09774eca20071c025308f7b5",
       "path": ".sdd/actions/project-priorities.md",
       "trust": "framework"
     },

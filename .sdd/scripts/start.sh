@@ -233,17 +233,40 @@ if not stages:
     sys.exit(1)
 
 # --- Slugify the title ---
+# D3 (stress-test) — truncate to 80 chars so a 10000-char title doesn't
+# produce an OSError("filename too long"). 80 chars is comfortably under
+# every common filesystem limit (Linux ext4 = 255, macOS APFS = 255, NTFS = 255).
+# D7 (stress-test) — when slug is empty (title was "..." or "!!!" — only
+# non-alphanumeric chars), emit a warning. The fallback "untitled" is
+# kept to avoid a hard fail (could collide with prior empty-title runs as
+# 001-untitled, 002-untitled, etc.) but the user gets told.
 def slugify(s):
     s = s.lower()
     s = re.sub(r"[^a-z0-9]+", "-", s)
     s = s.strip("-")
-    return s or "untitled"
+    if not s:
+        return ""
+    return s[:80].rstrip("-") or s[:80]
 
 slug = slugify(title)
+if not slug:
+    print(f"[/start] title {title!r} has no alphanumeric content — using 'untitled' "
+          "as the slug. Re-run with a more descriptive title (e.g., '/start \"add login flow\"') "
+          "for a better folder name.", file=sys.stderr)
+    slug = "untitled"
 
 # --- Compute next NNN ---
 work_dir = os.path.join(proj, ".sdd", work_item_folder.rstrip("/"))
-os.makedirs(work_dir, exist_ok=True)
+# D2 (stress-test) — wrap makedirs in try/except so a read-only filesystem
+# (Docker volume, NFS mount, network drive) gives a plain-English error
+# instead of a Python traceback.
+try:
+    os.makedirs(work_dir, exist_ok=True)
+except OSError as e:
+    print(f"[/start] can't create the work-item folder at {work_dir}: {e}", file=sys.stderr)
+    print(f"         The filesystem may be read-only (Docker volume, NFS mount, "
+          f"or a permission issue). Check that you can write to {proj}.", file=sys.stderr)
+    sys.exit(1)
 existing_ids = []
 for entry in os.listdir(work_dir):
     m = re.match(r"^(\d{3})-", entry)
@@ -258,7 +281,12 @@ item_dir = os.path.join(work_dir, folder_name)
 if os.path.exists(item_dir):
     print(f"[/start] work item already exists: {item_dir}", file=sys.stderr)
     sys.exit(1)
-os.makedirs(item_dir)
+# D2 (stress-test) — same read-only-fs guard as work_dir above.
+try:
+    os.makedirs(item_dir)
+except OSError as e:
+    print(f"[/start] can't create the work-item folder at {item_dir}: {e}", file=sys.stderr)
+    sys.exit(1)
 
 # --- Resolve --extends if provided ---
 # extends_raw can be: "001", "001-waitlist", "features/001-waitlist", a substring
@@ -342,7 +370,19 @@ spec_lines = list(frontmatter_lines) + [
     "",
 ]
 if extends_resolved:
-    spec_lines.append(f"**Extends:** `{extends_resolved}` (read INDEX.md's Shipped block for the prior feature's distilled context — do NOT cold-read its spec.md)")
+    # v1.0 graph layer — emit the predecessor as a wiki-link so the new feature's
+    # §1 prose is mechanically queryable as a graph edge (new feature → predecessor).
+    # The bare slug form `[[<id>-<slug>]]` resolves via priority 1 (filename match)
+    # ONLY for items under `.sdd/features/` — that's the only folder _graph_cache.py
+    # registers as the bare-slug node space. Custom playbooks with a different
+    # work_item_folder (e.g., a future `bugs/` playbook) wouldn't resolve, so for
+    # those we fall back to the plain backtick form to avoid tripping invariant 8
+    # (CR cycle-7 Major).
+    extends_slug = candidates[0]
+    if work_item_folder.rstrip("/") == "features":
+        spec_lines.append(f"**Extends:** [[{extends_slug}]] (read INDEX.md's Shipped block for the prior feature's distilled context — do NOT cold-read its spec.md)")
+    else:
+        spec_lines.append(f"**Extends:** `{extends_resolved}` (read INDEX.md's Shipped block for the prior item's distilled context — do NOT cold-read its spec.md)")
     spec_lines.append("")
 spec_lines.append(f"## PHASE: {first_stage_id}")
 spec_lines.append("")

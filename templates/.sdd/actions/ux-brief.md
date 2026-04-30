@@ -5,7 +5,7 @@ tag: AGENT-LED
 title: "§4 UX & Design brief"
 short_label: "UX brief"
 steps:
-  - { id: brief, action: infer_ux_direction_from_problem_success_user_stories, field: "§4" }
+  - { id: brief, action: "infer the UX direction from problem, success, and user stories", field: "§4" }
 used_by: [feature]
 references: [problem, success, user-stories]
 touches: []

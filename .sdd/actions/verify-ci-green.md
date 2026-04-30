@@ -5,7 +5,7 @@ tag: AGENT-LED
 title: "verify-ci-green"
 short_label: "CI green"
 steps:
-  - { id: poll-ci, action: poll_pr_ci_status_until_green_or_red_open_bug_on_red, field: "§verify-ci-green" }
+  - { id: poll-ci, action: "poll PR CI until green; if red, open a bug", field: "§verify-ci-green" }
 used_by: [feature]
 references: [push-pr]
 touches: []

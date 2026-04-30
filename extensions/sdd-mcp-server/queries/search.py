@@ -589,7 +589,37 @@ def search(project_root: str, args: Dict[str, Any]) -> Dict[str, Any]:
     sem = (((cfg.get("parameters") or {}).get("mcp") or {}).get("semantic_search") or {})
     if not isinstance(sem, dict):
         sem = {}
-    enabled = bool(sem.get("enabled"))
+
+    # D6 (stress-test) — schema validation up front. Strings-as-bools
+    # ("enabled: true" as a string), negative top_k, and non-numeric
+    # max_chunks were previously silently accepted then exploded at
+    # runtime with confusing tracebacks. Refuse them here with a plain-
+    # English error so the user fixes config.md before any work happens.
+    enabled_raw = sem.get("enabled")
+    if enabled_raw is not None and not isinstance(enabled_raw, bool):
+        return {
+            "error": (
+                f"parameters.mcp.semantic_search.enabled must be true or false "
+                f"(YAML boolean), got {enabled_raw!r}. In YAML, write "
+                f"`enabled: true` (no quotes); strings like \"true\" or \"yes\" "
+                f"are not booleans."
+            ),
+            "config_shape": _CONFIG_SHAPE,
+            "query": query,
+        }
+    for k in ("top_k", "max_chunks_per_run"):
+        v = sem.get(k)
+        if v is not None and (not isinstance(v, int) or isinstance(v, bool) or v <= 0):
+            return {
+                "error": (
+                    f"parameters.mcp.semantic_search.{k} must be a positive "
+                    f"integer, got {v!r}. Set it to a number like "
+                    f"`{k}: {5 if k == 'top_k' else 1000}` in .sdd/config.md."
+                ),
+                "config_shape": _CONFIG_SHAPE,
+                "query": query,
+            }
+    enabled = bool(enabled_raw)
 
     if not enabled:
         return {
@@ -682,7 +712,32 @@ def search(project_root: str, args: Dict[str, Any]) -> Dict[str, Any]:
         }
 
     # Walk + chunk every searchable file.
+    # Internal hint from `search_within`: `_path_allowlist` filters down to
+    # files inside a graph-bounded subgraph. Public callers don't pass it.
     files = _walk_sdd_files(project_root)
+    allowlist = (args or {}).get("_path_allowlist")
+    if isinstance(allowlist, list) and allowlist:
+        # CR cycle-6 Minor — defensive: only accept hashable string paths.
+        # CR cycle-9 — also canonicalise via realpath and enforce a project-
+        # root boundary. The allowlist comes from search_within (internal),
+        # but realpath defends against any future caller passing symlinked
+        # paths that point outside the project root, and the boundary check
+        # makes a path-traversal foothold a no-op rather than relying on
+        # .normpath alone.
+        proj_root_real = os.path.realpath(os.path.normpath(project_root))
+        allowed_real = {
+            os.path.realpath(os.path.normpath(os.path.join(project_root, p)))
+            for p in allowlist if isinstance(p, str)
+        }
+        # Re-narrow the allowlist to entries inside the project root.
+        allowed_real = {
+            p for p in allowed_real
+            if p == proj_root_real or p.startswith(proj_root_real + os.sep)
+        }
+        def _in_allowlist(rel: str) -> bool:
+            file_real = os.path.realpath(os.path.normpath(os.path.join(project_root, rel)))
+            return file_real in allowed_real
+        files = [(rel, content) for (rel, content) in files if _in_allowlist(rel)]
     if not files:
         return {
             "matches": [],

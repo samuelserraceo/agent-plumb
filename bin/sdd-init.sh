@@ -102,6 +102,20 @@ cp "$TEMPLATE_CLAUDE_MD" CLAUDE.md || {
   exit 1
 }
 
+# D9 (stress-test) — copy the Obsidian vault config from templates/.obsidian
+# if it ships with this version of the framework. Item 3 (#90) added this
+# in v1.0 but only via the legacy scripts/init.sh path; the plugin-path
+# install (this script) was missed. Plugin-path users were getting an SDD
+# project with no Obsidian configuration.
+TEMPLATE_OBSIDIAN="$PLUGIN_ROOT/templates/.obsidian"
+if [ -d "$TEMPLATE_OBSIDIAN" ] && [ ! -d ".obsidian" ]; then
+  cp -r "$TEMPLATE_OBSIDIAN" .obsidian || {
+    # Non-fatal — the project still works without Obsidian. Tell the user.
+    echo "[SDD init] note: failed to copy templates/.obsidian/ (Obsidian vault config)." >&2
+    echo "[SDD init]       The project still works; you just lose the graph view." >&2
+  }
+fi
+
 # Wire git hooksPath if a git repo is present and no conflicting setup
 # is in place. Same conflict-aware logic as start.sh — refuse to
 # silently override an existing Husky/lefthook setup.
@@ -125,19 +139,34 @@ EOF
 fi
 
 # Add the runtime stamp file to .gitignore so it doesn't get committed.
+# CR cycle-6 Major / cycle-7 Major refinement — ALWAYS add `/.obsidian/`,
+# regardless of whether we just copied templates/.obsidian/. Reasoning:
+# even if the vault copy failed (non-fatal at line 116) or the plugin
+# build doesn't ship templates/.obsidian/, a downstream user can still
+# open the project in Obsidian themselves at any later time and create
+# a local `.obsidian/` directory. Pre-emptively ignoring it prevents
+# accidental commits of per-user vault state. The committed copy lives
+# at `templates/.obsidian/`; downstream projects keep their own
+# .obsidian/ local-only.
 GITIGNORE="$PROJECT_DIR/.gitignore"
+gitignore_block=""
 if [ -f "$GITIGNORE" ]; then
   if ! grep -qF ".sdd/.advance.last-head" "$GITIGNORE" 2>/dev/null; then
-    {
-      echo ""
-      echo "# SDD runtime state (don't commit)"
-      echo ".sdd/.advance.last-head"
-    } >> "$GITIGNORE"
+    gitignore_block="${gitignore_block}# SDD runtime state (don't commit)"$'\n'".sdd/.advance.last-head"$'\n'
+  fi
+  if ! grep -qF "/.obsidian/" "$GITIGNORE" 2>/dev/null; then
+    gitignore_block="${gitignore_block}# Per-user Obsidian vault state (don't commit; templates/.obsidian/ is the shipped copy)"$'\n'"/.obsidian/"$'\n'
+  fi
+  if [ -n "$gitignore_block" ]; then
+    printf '\n%s' "$gitignore_block" >> "$GITIGNORE"
   fi
 else
   cat > "$GITIGNORE" <<'EOF'
 # SDD runtime state (don't commit)
 .sdd/.advance.last-head
+
+# Per-user Obsidian vault state (don't commit; templates/.obsidian/ is the shipped copy)
+/.obsidian/
 EOF
 fi
 

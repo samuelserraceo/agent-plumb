@@ -1,0 +1,159 @@
+"""get_neighbours — outgoing + incoming edges for a node.
+
+Tier 1 graph traversal. Returns the 1-hop subgraph by default; `depth` can
+extend up to 3 (silently capped). Useful for "what does this feature
+depend on, and what depends on it" — a single call surfaces both sides.
+
+Args:
+    slug: the node (bare or qualified)
+    depth: 1, 2, or 3 (default 1; >3 silently capped)
+
+Returns on success:
+    {
+        "slug": "<resolved slug>",
+        "node": {path, kind, ...},
+        "outgoing": [{to_slug, to_path, to_kind, from_line, kind}, ...],
+        "incoming": [{from_slug, from_path, from_line, kind}, ...],
+        "depth": <effective depth>,
+        "stats": {"outgoing_count": N, "incoming_count": M},
+        "warning": "depth capped at 3" (only when relevant)
+    }
+"""
+
+from __future__ import annotations
+
+from typing import Any, Dict, List, Set
+
+from . import _graph_cache
+
+
+_MAX_DEPTH = 3
+
+
+def get_neighbours(project_root: str, args: Dict[str, Any]) -> Dict[str, Any]:
+    slug = (args or {}).get("slug")
+    if not slug or not isinstance(slug, str):
+        return {"error": "missing arg 'slug'"}
+
+    requested_depth = (args or {}).get("depth", 1)
+    if not isinstance(requested_depth, int) or requested_depth < 1:
+        requested_depth = 1
+    capped = requested_depth > _MAX_DEPTH
+    depth = min(requested_depth, _MAX_DEPTH)
+
+    graph = _graph_cache.load(project_root)
+    root = _graph_cache.find_node(graph, slug)
+    if root is None:
+        return {
+            "error": f"slug not found: {slug!r}",
+            "slug": slug,
+            "available": _graph_cache.list_nodes(graph)[:30],
+        }
+
+    # BFS up to `depth` hops. Track both outgoing and incoming separately.
+    edges = graph.get("edges", [])
+    out_edges: List[Dict[str, Any]] = []
+    in_edges: List[Dict[str, Any]] = []
+    seen_out: Set[str] = set()
+    seen_in: Set[str] = set()
+
+    # CR Major #3 fix — BFS over wiki-link edges only. Md-link edges have
+    # `to_path` but no `to_slug`, so feeding them through slug-keyed BFS
+    # would push `None` into seen_out/next_frontier and let later md-links
+    # appear adjacent to that synthetic node. Md-links are still surfaced
+    # at depth 1 below as a separate `file_links` array — they're useful
+    # context but don't compose into multi-hop traversal.
+    #
+    # CR cycle-9 — read `edge["from_slug"]` (populated by _build_nodes_and_edges
+    # via heading-aware resolution) instead of computing a synthetic file-level
+    # slug. The synthetic `_file:<basename>` token never appeared in the real
+    # node namespace, so BFS expansion silently failed for any edge inside a
+    # notebook file. With heading-aware from_slug, an edge inside the body of
+    # `### Auth retry logic` correctly carries `from_slug = "auth-retry-logic"`.
+    frontier = {root["slug"]}
+    for _ in range(depth):
+        next_frontier: Set[str] = set()
+        for edge in edges:
+            if not edge.get("resolved"):
+                continue
+            if edge.get("kind") != "wiki-link":
+                continue  # md-links don't carry a slug; skip in BFS
+            to_slug = edge.get("to_slug")
+            if not to_slug:
+                continue  # defensive: a malformed wiki-link with no slug
+            from_slug = edge.get("from_slug")
+            if from_slug is None:
+                # Edge sits before the first heading in a notebook file (orphan).
+                # Skip — no real owning node to attribute the edge to.
+                continue
+            # Outgoing: edges whose source is in the current frontier.
+            if from_slug in frontier and to_slug not in seen_out and to_slug != root["slug"]:
+                out_edges.append({
+                    "to_slug": to_slug,
+                    "to_path": edge.get("to_path", ""),
+                    "to_kind": edge.get("to_kind", ""),
+                    "from_path": edge["from_path"],
+                    "from_line": edge["from_line"],
+                    "kind": edge["kind"],
+                })
+                seen_out.add(to_slug)
+                next_frontier.add(to_slug)
+            # Incoming: edges whose target is in the current frontier.
+            if to_slug in frontier and from_slug and from_slug not in seen_in and from_slug != root["slug"]:
+                in_edges.append({
+                    "from_slug": from_slug,
+                    "from_path": edge["from_path"],
+                    "from_line": edge["from_line"],
+                    "kind": edge["kind"],
+                })
+                seen_in.add(from_slug)
+                next_frontier.add(from_slug)
+        frontier = next_frontier
+        if not frontier:
+            break
+
+    # File-level edges (md-links pointing at the root's path) — surfaced
+    # separately so callers see "this file is also linked from X" without
+    # confusing it with the slug-based graph traversal.
+    file_links: List[Dict[str, Any]] = []
+    seen_file_links: Set[str] = set()
+    for edge in edges:
+        if not edge.get("resolved") or edge.get("kind") != "md-link":
+            continue
+        if edge.get("to_path") == root["path"]:
+            key = f"{edge['from_path']}:{edge['from_line']}"
+            if key not in seen_file_links:
+                file_links.append({
+                    "from_path": edge["from_path"],
+                    "from_line": edge["from_line"],
+                    "kind": "md-link",
+                })
+                seen_file_links.add(key)
+
+    result: Dict[str, Any] = {
+        "slug": root["slug"],
+        "node": {
+            "path": root["path"],
+            "kind": root["kind"],
+            **({"heading": root["heading"]} if "heading" in root else {}),
+        },
+        "outgoing": out_edges,
+        "incoming": in_edges,
+        "file_links": file_links,
+        "depth": depth,
+        "stats": {
+            "outgoing_count": len(out_edges),
+            "incoming_count": len(in_edges),
+            "file_links_count": len(file_links),
+        },
+    }
+    if capped:
+        result["warning"] = f"depth capped at {_MAX_DEPTH} to bound output size"
+    return result
+
+
+# CR cycle-9 — `_slug_for_path` removed. The reverse-path-lookup approach
+# couldn't distinguish between multiple headings inside the same notebook
+# file (it returned a synthetic file-level slug for ALL of them). Edges
+# now carry `from_slug` populated at build time via heading-aware
+# resolution, so this helper isn't needed.
