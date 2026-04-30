@@ -5420,9 +5420,10 @@ touch .sdd/features/001-on-branch/spec.md .sdd/features/002-in-index/spec.md
 echo '**Active:** features/002-in-index' > .sdd/INDEX.md
 git checkout -q -b sdd/001-on-branch
 out=$(bash "$RESOLVE_ACTIVE" 2>&1)
+rc=$?
 cd - >/dev/null
 rm -rf "$d"
-if echo "$out" | python3 -c '
+if [ "$rc" -eq 0 ] && echo "$out" | python3 -c '
 import json, sys
 d = json.loads(sys.stdin.read())
 assert d["active"] == "features/001-on-branch", f"active={d['"'"'active'"'"']}"
@@ -5453,9 +5454,10 @@ mkdir -p .sdd/features/002-in-index
 touch .sdd/features/002-in-index/spec.md
 echo '**Active:** features/002-in-index' > .sdd/INDEX.md
 out=$(bash "$RESOLVE_ACTIVE" 2>&1)
+rc=$?
 cd - >/dev/null
 rm -rf "$d"
-if echo "$out" | python3 -c '
+if [ "$rc" -eq 0 ] && echo "$out" | python3 -c '
 import json, sys
 d = json.loads(sys.stdin.read())
 assert d["active"] == "features/002-in-index", f"active={d['"'"'active'"'"']}"
@@ -5488,9 +5490,10 @@ mkdir -p .sdd/features/999-not-scaffolded-yet
 echo '**Active:** features/002-in-index' > .sdd/INDEX.md
 git checkout -q -b sdd/999-not-scaffolded-yet
 out=$(bash "$RESOLVE_ACTIVE" 2>&1)
+rc=$?
 cd - >/dev/null || true
 rm -rf "$d"
-if echo "$out" | python3 -c '
+if [ "$rc" -eq 0 ] && echo "$out" | python3 -c '
 import json, sys
 d = json.loads(sys.stdin.read())
 assert d["active"] == "features/002-in-index", f"active={d['"'"'active'"'"']}"
@@ -5511,9 +5514,10 @@ d=$(mktemp -d) || exit 1
 cd "$d" || { bad "T121d cd failed" "d=$d"; rm -rf "$d"; exit 1; }
 mkdir -p .sdd
 out=$(bash "$RESOLVE_ACTIVE" 2>&1)
+rc=$?
 cd - >/dev/null
 rm -rf "$d"
-if echo "$out" | python3 -c '
+if [ "$rc" -eq 0 ] && echo "$out" | python3 -c '
 import json, sys
 d = json.loads(sys.stdin.read())
 assert d["active"] is None, f"active={d['"'"'active'"'"']}"
@@ -5653,9 +5657,10 @@ touch .sdd/features/001-A/spec.md .sdd/features/002-B/spec.md
 echo '**Active:** features/002-B' > .sdd/INDEX.md
 git checkout -q -b sdd/001-A
 out=$(bash "$RESOLVE_ACTIVE" 2>&1)
+rc=$?
 cd - >/dev/null
 rm -rf "$d"
-if echo "$out" | python3 -c '
+if [ "$rc" -eq 0 ] && echo "$out" | python3 -c '
 import json, sys
 d = json.loads(sys.stdin.read())
 assert d["active"] == "features/001-A"
@@ -5685,9 +5690,10 @@ touch "$d/escape-target/spec.md"
 # Malicious INDEX: claim active is one level up + over to escape-target
 echo '**Active:** ../escape-target' > .sdd/INDEX.md
 out=$(bash "$RESOLVE_ACTIVE" 2>&1)
+rc=$?
 cd - >/dev/null
 rm -rf "$d"
-if echo "$out" | python3 -c '
+if [ "$rc" -eq 0 ] && echo "$out" | python3 -c '
 import json, sys
 d = json.loads(sys.stdin.read())
 # Must reject — index_active was malformed, so resolver leaves it null.
@@ -5715,9 +5721,10 @@ mkdir -p .sdd "$d/abs-attack"
 touch "$d/abs-attack/spec.md"
 echo "**Active:** $d/abs-attack" > .sdd/INDEX.md
 out=$(bash "$RESOLVE_ACTIVE" 2>&1)
+rc=$?
 cd - >/dev/null || true
 rm -rf "$d"
-if echo "$out" | python3 -c '
+if [ "$rc" -eq 0 ] && echo "$out" | python3 -c '
 import json, sys
 d = json.loads(sys.stdin.read())
 assert d["active"] is None
@@ -5762,7 +5769,7 @@ chmod +x fake-bin/git
 out=$(PATH="$PWD/fake-bin:$PATH" bash "$RESOLVE_ACTIVE" 2>&1)
 cd - >/dev/null
 rm -rf "$d"
-if echo "$out" | python3 -c '
+if [ "$rc" -eq 0 ] && echo "$out" | python3 -c '
 import json, sys
 d = json.loads(sys.stdin.read())
 # Resolver sees the malicious slug, BRANCH_SLUG_RE rejects it.
@@ -5801,9 +5808,10 @@ touch .sdd/features/001-real-feature/spec.md .sdd/release/release/spec.md
 echo '**Active:** features/001-real-feature' > .sdd/INDEX.md
 git checkout -q -b sdd/release
 out=$(bash "$RESOLVE_ACTIVE" 2>&1)
+rc=$?
 cd - >/dev/null
 rm -rf "$d"
-if echo "$out" | python3 -c '
+if [ "$rc" -eq 0 ] && echo "$out" | python3 -c '
 import json, sys
 d = json.loads(sys.stdin.read())
 assert d["active"] == "features/001-real-feature", f"active={d['"'"'active'"'"']}"
@@ -5835,9 +5843,10 @@ mkdir -p .sdd/features/001-collide .sdd/bugs/001-collide
 touch .sdd/features/001-collide/spec.md .sdd/bugs/001-collide/spec.md
 git checkout -q -b sdd/001-collide
 out=$(bash "$RESOLVE_ACTIVE" 2>&1)
+rc=$?
 cd - >/dev/null
 rm -rf "$d"
-if echo "$out" | python3 -c '
+if [ "$rc" -eq 0 ] && echo "$out" | python3 -c '
 import json, sys
 d = json.loads(sys.stdin.read())
 assert d["active"] is None, f"active leaked despite ambiguity: {d['"'"'active'"'"']}"
@@ -6023,9 +6032,10 @@ ln -s "$d/escape-target/spec.md" .sdd/features/001-symlink-attack/spec.md
 # resolver would emit features/001-symlink-attack as active.
 git checkout -q -b sdd/001-symlink-attack
 out=$(bash "$RESOLVE_ACTIVE" 2>&1)
+rc=$?
 cd - >/dev/null || true
 rm -rf "$d"
-if echo "$out" | python3 -c '
+if [ "$rc" -eq 0 ] && echo "$out" | python3 -c '
 import json, sys
 d = json.loads(sys.stdin.read())
 # Resolver must reject the symlink-escaped folder.
@@ -6062,9 +6072,10 @@ mkdir -p .sdd/features
 ln -s "$d/escape-target-dir" .sdd/features/001-symlink-attack
 git checkout -q -b sdd/001-symlink-attack
 out=$(bash "$RESOLVE_ACTIVE" 2>&1)
+rc=$?
 cd - >/dev/null || true
 rm -rf "$d"
-if echo "$out" | python3 -c '
+if [ "$rc" -eq 0 ] && echo "$out" | python3 -c '
 import json, sys
 d = json.loads(sys.stdin.read())
 assert d["active"] is None, f"dir-symlink-escape leaked: active={d['"'"'active'"'"']}"
