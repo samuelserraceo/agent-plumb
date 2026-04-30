@@ -66,11 +66,20 @@ except Exception:
 if not isinstance(d, dict):
     d = {}
 
-active       = d.get("active") or ""
-source       = d.get("source") or ""
-branch       = d.get("branch") or ""
-index_active = d.get("index_active") or ""
-ambiguous    = bool(d.get("ambiguous"))
+# Per-field coercion: even when d is a dict, individual values can be
+# wrong-typed. e.g. `{"branch": 42}` would crash `re.match(...)` with
+# TypeError. CR cycle-19 minor: coerce each text field through
+# _as_str so malformed payloads degrade to empty rather than crash.
+def _as_str(v):
+    return v if isinstance(v, str) else ""
+
+active       = _as_str(d.get("active"))
+source       = _as_str(d.get("source"))
+branch       = _as_str(d.get("branch"))
+index_active = _as_str(d.get("index_active"))
+# `is True` is stricter than `bool(...)`: 1, "yes", or [1] would
+# otherwise look truthy.
+ambiguous    = d.get("ambiguous") is True
 
 if ambiguous:
     print(f"Active source: NONE — branch \x27{branch}\x27 slug matched 2+ work-item folders.")

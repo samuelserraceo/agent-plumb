@@ -6160,6 +6160,77 @@ else
 fi
 
 # ============================================================
+# T121-malformed-resolver — settings.sh fails closed on malformed
+#   resolver JSON. The resolver could exit 0 but emit `{}`, `null`,
+#   or wrong-typed fields (e.g. `{"active": 42}`). The cycle-18
+#   _well_typed gate in settings.sh::_infer_active_context must
+#   refuse such payloads and fall through to project default.
+#   CR cycle-19: prove the gate works end-to-end.
+# ============================================================
+note "T121-malformed-resolver: settings.sh fails closed on malformed resolver JSON"
+d=$(mktemp -d) || exit 1
+cp -r "$FRAMEWORK_ROOT/templates/.sdd" "$d/"
+cd "$d" || { bad "T121-malformed-resolver cd failed" "d=$d"; rm -rf "$d"; exit 1; }
+git init -q
+git config user.email t@t.com && git config user.name T
+# Real work-item with a voice.plain_english override. If settings.sh
+# trusted a malformed resolver and skipped past _well_typed, it
+# might still find the spec via the resolver's claimed `active`
+# value — or it might hit the legacy fallback. Either way, the test
+# asserts the project default (True) is returned, NOT the override.
+mkdir -p .sdd/features/001-malformed
+cat > .sdd/features/001-malformed/spec.md <<'SPEC'
+---
+overrides:
+  voice:
+    plain_english: false
+---
+# 001 malformed-resolver
+[PHASE: SPEC]
+## PHASE: SPEC
+### action: problem
+- [ ] who: who specifically has the problem?
+SPEC
+cat > .sdd/INDEX.md <<'IDX'
+**Playbook:** feature
+**Active:** _(none)_
+
+## In flight
+
+## Shipped
+IDX
+git add . && git commit -q -m "scaffold" --no-verify
+# Replace resolve-active.sh with a stub that emits malformed JSON.
+# Three flavours, each should be rejected:
+#   1. wrong type for `active` (number)
+#   2. missing required key (no `ambiguous`)
+#   3. invalid `source` enum
+malformed_passes=0
+for payload in \
+  '{"active":42,"ambiguous":false,"branch":"sdd/001-malformed","index_active":null,"source":"branch"}' \
+  '{"active":"features/001-malformed","branch":null,"index_active":null,"source":"branch"}' \
+  '{"active":"features/001-malformed","ambiguous":false,"branch":null,"index_active":null,"source":"frobnicate"}'
+do
+  cat > .sdd/scripts/resolve-active.sh <<STUB
+#!/usr/bin/env bash
+echo '$payload'
+STUB
+  chmod +x .sdd/scripts/resolve-active.sh
+  out=$(bash .sdd/scripts/settings.sh get voice.plain_english 2>&1)
+  rc=$?
+  if [ "$rc" -eq 0 ] && echo "$out" | grep -q 'voice.plain_english = True' && echo "$out" | grep -q '\[project\]'; then
+    malformed_passes=$((malformed_passes+1))
+  fi
+done
+cd - >/dev/null || true
+rm -rf "$d"
+if [ "$malformed_passes" -eq 3 ]; then
+  ok "T121-malformed-resolver settings.sh fails closed on 3/3 malformed payloads"
+else
+  bad "T121-malformed-resolver settings.sh trusted at least one malformed payload" "passes=$malformed_passes/3"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
