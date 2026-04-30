@@ -126,6 +126,21 @@ When SPEC is fully filled, the agent transitions you to BUILD. At BUILD entry th
 
 Pushes the branch, opens a PR, watches CI. On pass: marks shipped, distills the feature to a rich one-liner block in INDEX with cross-references, marks the feature folder cold. On fail: captures the CI error as a bug task, flips back to BUILD.
 
+### Optional: open in Obsidian for the graph view
+
+The framework ships a minimal `.obsidian/` config so you can open the project root in [Obsidian](https://obsidian.md) and immediately see your project as a connected graph: features → decisions → patterns → data-model entries, colour-coded by type. No setup beyond opening the folder.
+
+If you also use **Copilot for Obsidian** or **Smart Connections** (Brian Petro's), they work normally over the `.sdd/` markdown content — useful for asking *"why did we pick Postgres on this project?"* and getting the right decision quoted back. The framework doesn't auto-configure those plugins; install + connect them yourself. Wiring SDD's MCP server semantic search to the same model is on the v1.x roadmap (closes that gap once an embedding model is settled on).
+
+### Dogfood — the framework runs SDD on itself
+
+From v1.0, the framework's own work-items walk SDD's SPEC → BUILD → SHIP loop. This repo has **two `.sdd/` paths**:
+
+- **`templates/.sdd/`** — the framework SOURCE that gets shipped to consumer projects. Editing here changes what every consumer gets on their next `scripts/init.sh` run.
+- **`.sdd/` at repo root** — the framework's OWN consumer state. `INDEX.md`, `decisions.md`, `data-model.md`, `patterns.md`, `stack.md`, plus a copy of the framework files (`playbooks/`, `actions/`, `scripts/`) so `/start` and `/next` work on the framework's own work-items.
+
+When you edit a framework file in `templates/.sdd/`, the in-sync test (T120 in `test/run-framework-test.sh`, headed `# T120 — SDD self-host parity`) reminds you to update the matching file in `.sdd/` too. The framework eats its own dog food: a fix that hurts to ship through SDD on this repo would hurt the same way for any consumer, and we feel it first.
+
 ---
 
 ## Slash commands at a glance

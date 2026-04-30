@@ -25,14 +25,12 @@ parameters:
     manual: false        # true = wait for human review only; agent doesn't poll for bots
   mcp:
     enabled: false       # populated by /sdd-setup brick 007 — true if user wants the SDD MCP server (40-60% across-session token saving)
-    semantic_search:     # opt-in semantic search over .sdd/ — embeds notebooks once, ranks chunks by cosine similarity. See extensions/sdd-mcp-server/README.md.
+    semantic_search:     # opt-in semantic search over .sdd/ (deferred — see queries/search.py for the schema and provider opt-in path)
       enabled: false
-      provider: ""              # "openai" (default OpenAI-compatible shape — works with Ollama in compatible mode, vLLM, etc.) | "ollama-native"
-      endpoint: ""              # http(s)://host:port — base URL, the path is appended per provider
-      model: ""                 # embedding model name (e.g. "nomic-embed-text" or "bge-small-en-v1.5")
-      top_k: 5                  # how many results to return per search
-      max_chunks_per_run: 1000  # cost ceiling — refuses to embed more chunks than this in one call
-      auth_header: ""           # optional; e.g. "Bearer xyz" — added as the Authorization header if non-empty
+      provider: ""       # "openai" | "anthropic" | "ollama" | "local-gemma" | etc.
+      endpoint: ""       # https://... or http://localhost:port
+      model: ""          # embedding model name
+      top_k: 5
 file_classes:
   CLAIM:
     - '(^|/)verification\.json$'
@@ -104,14 +102,6 @@ folder_rules:
     - "tests"
     - "templates"
     - ".github"
-scope_guard:
-  # Per-project scope-guard configuration (closes #16). The CI's scope-guard
-  # job checks that newly-added UI copy strings (≥ copy_min_chars) appear in
-  # spec.md or wireframe.html, and that new UI files have a `// spec:` comment.
-  # Defaults below match the v0.13.x Next.js shape; override per project.
-  file_extensions: [tsx, jsx, ts, js]
-  ui_dirs: [app, components, pages, src/app, src/components, src/pages]
-  copy_min_chars: 30
 events:
   section_approved:
     actions:
@@ -136,7 +126,7 @@ This file is your one knob for telling SDD what's available in this project. The
 
 ## What each switch means (plain English)
 
-### `sdd_version: 0.11.2` (or current ship)
+### `sdd_version: 0.13.6` (or current ship)
 
 Which version of the SDD framework this project was created against. The framework warns on mismatch so you can re-run a migration if you upgrade.
 
