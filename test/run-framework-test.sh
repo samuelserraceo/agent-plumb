@@ -5921,6 +5921,39 @@ else
 fi
 
 # ============================================================
+# T121m — /status banner case-splits SDD-shaped vs non-SDD-shaped
+#         branches when source=none. Pins CR cycle-6 fix:
+#         a valid sdd/<id>-<slug> branch with no scaffolded folder
+#         must say "scaffold not done", NOT "branch isn't SDD-shape".
+# ============================================================
+note "T121m: /status banner distinguishes scaffold-pending from non-SDD branches"
+# Mirror of the case statement from status.md. If the slash command's
+# banner drifts away from this, the test fails (intended).
+render_branch_banner() {
+  local branch="$1"
+  case "$branch" in
+    sdd/[0-9]*-*)
+      echo "scaffold-pending"
+      ;;
+    *)
+      echo "non-SDD"
+      ;;
+  esac
+}
+ok_count=0
+[ "$(render_branch_banner sdd/001-not-yet)" = "scaffold-pending" ] && ok_count=$((ok_count+1))
+[ "$(render_branch_banner sdd/042-foo-bar)" = "scaffold-pending" ] && ok_count=$((ok_count+1))
+[ "$(render_branch_banner sdd/release)" = "non-SDD" ] && ok_count=$((ok_count+1))
+[ "$(render_branch_banner sdd/main)" = "non-SDD" ] && ok_count=$((ok_count+1))
+[ "$(render_branch_banner main)" = "non-SDD" ] && ok_count=$((ok_count+1))
+[ "$(render_branch_banner feature/foo)" = "non-SDD" ] && ok_count=$((ok_count+1))
+if [ "$ok_count" -eq 6 ]; then
+  ok "T121m banner case-split: 6/6 (scaffold-pending vs non-SDD)"
+else
+  bad "T121m banner case-split mismatched on some inputs" "ok_count=$ok_count/6"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'

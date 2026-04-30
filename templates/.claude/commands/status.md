@@ -66,9 +66,21 @@ else
     echo "  - edit INDEX.md to point at a real folder, or"
     echo "  - check out an SDD-style branch (sdd/<id>-<slug>) whose folder exists."
   elif [ -n "$branch" ]; then
-    echo "Active source: NONE — current branch '$branch' isn't an SDD-shape"
-    echo "  branch (sdd/<id>-<slug>) and INDEX.md doesn't point at any work item."
-    echo "  Run /start <one-line title> to scaffold a new feature."
+    # Two sub-cases: SDD-shape branch that hasn't been scaffolded yet
+    # (most likely — user ran /branch but not /start), versus a non-
+    # SDD-shape branch that just doesn't match the convention.
+    case "$branch" in
+      sdd/[0-9]*-*)
+        echo "Active source: NONE — current branch '$branch' is SDD-shaped, but"
+        echo "  no matching work-item folder with spec.md exists yet."
+        echo "  Run /start <one-line title> to scaffold it, or switch branches."
+        ;;
+      *)
+        echo "Active source: NONE — current branch '$branch' isn't an SDD-shape"
+        echo "  branch (sdd/<id>-<slug>) and INDEX.md doesn't point at any work item."
+        echo "  Run /start <one-line title> to scaffold a new feature."
+        ;;
+    esac
   else
     echo "Active source: NONE — no active work item."
     echo "  Run /start <one-line title> to scaffold one."
