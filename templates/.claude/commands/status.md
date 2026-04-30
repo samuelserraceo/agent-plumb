@@ -10,22 +10,30 @@ echo ""
 echo "---"
 # Resolve the active work item via resolve-active.sh (branch-aware,
 # falls back to INDEX.md **Active:** when not on an SDD branch).
-# Single Python parse → 4 tab-separated values; one process, no
-# repeat JSON parsing.
+# Single Python parse → 5 tab-separated values; one process, no
+# repeat JSON parsing. The `ambiguous` field is "1" when the branch
+# slug matched 2+ work-item folders (resolver fails closed).
 resolve_json=$(bash .sdd/scripts/resolve-active.sh 2>/dev/null || echo '{}')
-IFS=$'\t' read -r active source branch index_active < <(
+IFS=$'\t' read -r active source branch index_active ambiguous < <(
   echo "$resolve_json" | python3 -c '
 import json, sys
 try:
     d = json.load(sys.stdin)
 except Exception:
     d = {}
-print("\t".join((d.get(k) or "") for k in ("active", "source", "branch", "index_active")))
+fields = (d.get(k) or "" for k in ("active", "source", "branch", "index_active"))
+amb = "1" if d.get("ambiguous") else "0"
+print("\t".join(list(fields) + [amb]))
 ' 2>/dev/null)
 # Branch-aware status banner — explains where the active value came
 # from + flags drift between branch and INDEX.md so the user sees
 # what's going on across multiple worktrees.
-if [ "$source" = "branch" ]; then
+if [ "$ambiguous" = "1" ]; then
+  echo "Active source: NONE — branch '$branch' slug matched 2+ work-item folders."
+  echo "  The resolver refuses to pick one silently. Rename one of the"
+  echo "  matching folders so the slug is unique, or check out a different"
+  echo "  branch."
+elif [ "$source" = "branch" ]; then
   echo "Active source: branch ($branch) → $active"
   if [ -n "$index_active" ] && [ "$index_active" != "$active" ]; then
     echo "  Note: INDEX.md **Active:** points at $index_active — drift is OK in"

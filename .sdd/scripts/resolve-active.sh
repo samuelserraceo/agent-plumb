@@ -26,6 +26,13 @@
 #   index_active  — whatever the **Active:** line in INDEX.md points at
 #                   (string), or null when the line is missing /
 #                   placeholder / file absent
+#   ambiguous     — true when the branch slug matched 2+ work-item
+#                   folders (e.g. `sdd/001-foo` with both
+#                   `features/001-foo/` AND `bugs/001-foo/` present);
+#                   false otherwise. When true, `active` is null and
+#                   `source` is "none" — the resolver fails closed
+#                   instead of silently picking one. Callers should
+#                   tell the user to rename one of the matching folders.
 #
 # Drift detection: when source=="branch" and index_active is non-null
 # and index_active != active, the consumer (e.g. /status) can render a
@@ -41,7 +48,7 @@ set -uo pipefail
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(pwd)}"
 
 command -v python3 >/dev/null 2>&1 || {
-  echo '{"active":null,"branch":null,"index_active":null,"source":"none"}'
+  echo '{"active":null,"ambiguous":false,"branch":null,"index_active":null,"source":"none"}'
   exit 0
 }
 
@@ -75,9 +82,10 @@ def is_inside_sdd(rel_path):
         return False  # different drives on Windows etc.
     return common == sdd_root_real and full_real != sdd_root_real
 
-def emit(active, source, branch, index_active):
+def emit(active, source, branch, index_active, ambiguous=False):
     out = {
         "active": active,
+        "ambiguous": ambiguous,
         "branch": branch,
         "index_active": index_active,
         "source": source,
@@ -128,10 +136,17 @@ if os.path.isfile(index_path):
 
 # 3. Branch-derived active. Branch shape `sdd/<slug>` maps to a folder
 # `<work-item-folder>/<slug>/` under .sdd/. Scan all top-level subdirs
-# of .sdd/ for one matching `<slug>` with a spec.md inside.
+# of .sdd/ for ALL folders matching `<slug>` with a spec.md inside.
 # Slug validated against BRANCH_SLUG_RE so `sdd/../escape` can't be
 # used to escape .sdd/ via os.path.join.
+#
+# Ambiguity handling: if the same `<slug>` exists under multiple top-
+# level folders (e.g. `features/001-foo/` AND `bugs/001-foo/`), we
+# fail closed — `active` stays None, source becomes "none", and the
+# `ambiguous` flag goes true so callers can render a "rename one of
+# these folders" warning instead of silently picking by sort order.
 branch_active = None
+branch_ambiguous = False
 if branch:
     m = re.match(r"^sdd/(.+)$", branch)
     if m:
@@ -141,18 +156,27 @@ if branch:
                 tops = sorted(os.listdir(sdd_root_real))
             except OSError:
                 tops = []
+            matches = []
             for top in tops:
                 if top.startswith(".") or top.startswith("_"):
                     continue
                 candidate_dir = os.path.join(sdd_root_real, top, slug)
                 spec_md = os.path.join(candidate_dir, "spec.md")
                 if os.path.isfile(spec_md) and is_inside_sdd(f"{top}/{slug}"):
-                    branch_active = f"{top}/{slug}"
-                    break  # first match wins (deterministic by sort order)
+                    matches.append(f"{top}/{slug}")
+            if len(matches) == 1:
+                branch_active = matches[0]
+            elif len(matches) > 1:
+                branch_ambiguous = True
 
 # 4. Resolve and emit.
 if branch_active:
     emit(branch_active, "branch", branch, index_active)
+elif branch_ambiguous:
+    # Fail-closed on multi-match: don't pick one silently. Caller
+    # (e.g. /status) reads `ambiguous: true` and tells the user to
+    # rename one of the matching folders.
+    emit(None, "none", branch, index_active, ambiguous=True)
 elif index_active:
     # Validate that the INDEX pointer actually exists on disk AND has
     # a spec.md inside. We already shape-checked + containment-checked

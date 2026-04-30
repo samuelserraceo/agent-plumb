@@ -5724,6 +5724,41 @@ else
 fi
 
 # ============================================================
+# T121j — resolve-active.sh fails closed on ambiguous branch slug.
+#         When the same `<id>-<slug>` exists under two top-level
+#         folders (e.g. features/001-foo AND bugs/001-foo), the
+#         resolver must NOT pick one silently — it sets active=null,
+#         source=none, ambiguous=true so callers can warn the user.
+#         (CodeRabbit MAJOR cycle-2 PR #99.)
+# ============================================================
+note "T121j: resolve-active.sh fails closed on ambiguous branch slug"
+d=$(mktemp -d) || exit 1
+cd "$d"
+git init -q
+git config user.email t@t.com && git config user.name T
+git commit --allow-empty -q -m "init"
+# Two work-item folders with the SAME slug under different roots —
+# this is the ambiguity case CR cycle-2 flagged.
+mkdir -p .sdd/features/001-collide .sdd/bugs/001-collide
+touch .sdd/features/001-collide/spec.md .sdd/bugs/001-collide/spec.md
+git checkout -q -b sdd/001-collide
+out=$(bash "$RESOLVE_ACTIVE" 2>&1)
+cd - >/dev/null
+rm -rf "$d"
+if echo "$out" | python3 -c '
+import json, sys
+d = json.loads(sys.stdin.read())
+assert d["active"] is None, f"active leaked despite ambiguity: {d['"'"'active'"'"']}"
+assert d["source"] == "none", f"source={d['"'"'source'"'"']}"
+assert d["ambiguous"] is True, f"ambiguous flag missing: {d.get('"'"'ambiguous'"'"')}"
+assert d["branch"] == "sdd/001-collide"
+' 2>/dev/null; then
+  ok "T121j ambiguous branch slug fails closed (active=null, ambiguous=true)"
+else
+  bad "T121j ambiguous slug picked silently or flag missing" "out='$out'"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
