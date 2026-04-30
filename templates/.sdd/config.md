@@ -32,7 +32,7 @@ parameters:
       model: ""                 # embedding model name (e.g. "nomic-embed-text" or "bge-small-en-v1.5")
       top_k: 5                  # how many results to return per search
       max_chunks_per_run: 1000  # cost ceiling — refuses to embed more chunks than this in one call
-      auth_header: ""           # optional; e.g. "Bearer xyz" — added as the Authorization header if non-empty
+      auth_header: ""           # optional. To keep tokens OUT of tracked config, use ${ENV_VAR_NAME} indirection (e.g. "${SDD_MCP_AUTH}") and put the literal token in the env var. Literal values still work. Empty = no auth header sent.
 file_classes:
   CLAIM:
     - '(^|/)verification\.json$'

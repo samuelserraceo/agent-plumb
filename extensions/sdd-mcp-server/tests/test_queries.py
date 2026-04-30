@@ -30,7 +30,7 @@ from queries import (  # noqa: E402
     get_decisions_since,
     search,
 )
-from queries.search import _chunk_text, _normalize_endpoint  # noqa: E402
+from queries.search import _chunk_text, _normalize_endpoint, _resolve_auth_header  # noqa: E402
 from server import handle_message  # noqa: E402
 
 from tests.conftest import make_temp_project  # noqa: E402
@@ -238,6 +238,58 @@ class ChunkerLineTrackingTests(unittest.TestCase):
         self.assertEqual(chunks[0]["content"], "A line")
         self.assertEqual(chunks[1]["start_line"], 5)  # not 7 (the old buggy answer)
         self.assertEqual(chunks[1]["content"], "B line")
+
+    def test_whitespace_only_line_is_paragraph_break(self):
+        # CR cycle-5 finding: a line containing only whitespace
+        # (spaces/tabs) used to be treated as content, merging the
+        # paragraphs above and below it into one chunk. The fix:
+        # paragraphs require at least one non-whitespace character.
+        content = "A line\n   \nB line"  # middle line is 3 spaces
+        chunks = _chunk_text(content, max_chars=100)
+        self.assertEqual(len(chunks), 2)
+        self.assertEqual(chunks[0]["content"], "A line")
+        self.assertEqual(chunks[0]["start_line"], 1)
+        self.assertEqual(chunks[1]["content"], "B line")
+        self.assertEqual(chunks[1]["start_line"], 3)
+
+
+# -- auth_header env-var indirection ------------------------------------------
+
+class AuthHeaderResolutionTests(unittest.TestCase):
+    """Verify the framework keeps tokens out of tracked config when the
+    user sets `auth_header: ${ENV_VAR}`. CR cycle-5 finding."""
+
+    def test_empty_returns_none(self):
+        self.assertIsNone(_resolve_auth_header(""))
+        self.assertIsNone(_resolve_auth_header(None))  # type: ignore[arg-type]
+
+    def test_literal_value_returned_as_is(self):
+        # Literal tokens still work for compatibility, even though
+        # they're discouraged in tracked configs.
+        self.assertEqual(_resolve_auth_header("Bearer abc123"), "Bearer abc123")
+
+    def test_env_var_indirection_resolves(self):
+        os.environ["SDD_TEST_AUTH"] = "Bearer secret"
+        try:
+            self.assertEqual(
+                _resolve_auth_header("${SDD_TEST_AUTH}"),
+                "Bearer secret",
+            )
+        finally:
+            del os.environ["SDD_TEST_AUTH"]
+
+    def test_env_var_missing_returns_none(self):
+        # Missing env var → None. The search() caller turns this into
+        # a config error so the user knows to set the var.
+        os.environ.pop("SDD_TEST_AUTH_MISSING", None)
+        self.assertIsNone(_resolve_auth_header("${SDD_TEST_AUTH_MISSING}"))
+
+    def test_env_var_empty_treated_as_missing(self):
+        os.environ["SDD_TEST_AUTH_EMPTY"] = ""
+        try:
+            self.assertIsNone(_resolve_auth_header("${SDD_TEST_AUTH_EMPTY}"))
+        finally:
+            del os.environ["SDD_TEST_AUTH_EMPTY"]
 
 
 # -- endpoint normalization (avoids double-appended paths) --------------------

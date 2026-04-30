@@ -62,9 +62,11 @@ _CONFIG_SHAPE = {
                 "model": "<embedding model, e.g. nomic-embed-text>",
                 "top_k": 5,
                 "max_chunks_per_run": 1000,
-                # Optional auth header (e.g. "Bearer <token>") for endpoints
-                # that gate access. Empty string = no auth header sent.
-                "auth_header": "",
+                # Optional auth header for gated endpoints. Use
+                # `${ENV_VAR}` to read the token from an environment
+                # variable (recommended — keeps secrets out of tracked
+                # config). Literal values still work. Empty = no auth.
+                "auth_header": "<${ENV_VAR_NAME} or empty>",
             }
         }
     }
@@ -240,7 +242,12 @@ def _chunk_text(content: str, max_chars: int = _DEFAULT_CHUNK_CHARS) -> List[Dic
     # whenever the separator between paragraphs had more than two
     # newlines: an empty para's count('\n')+1 = 1 (it's actually 0
     # source lines), so each extra blank line over-advanced by 1.
-    para_re = re.compile(r"[^\n]+(?:\n[^\n]+)*", re.DOTALL)
+    # Paragraph = one or more non-blank lines. A "blank" line is one
+    # that's empty OR contains only whitespace — `^\s*$`. Without the
+    # `\S` requirement, CR cycle-5 noted that input like "A\n   \nB"
+    # (a single whitespace-only line between A and B) was treated as
+    # one paragraph, miscounting source lines.
+    para_re = re.compile(r"[^\n]*\S[^\n]*(?:\n[^\n]*\S[^\n]*)*")
     for para_match in para_re.finditer(content):
         para = para_match.group()
         if not para.strip():
@@ -344,6 +351,29 @@ def _endpoint_signature(provider: str, endpoint: str, model: str) -> str:
     return hashlib.sha256(
         f"{provider}|{endpoint}|{model}".encode("utf-8")
     ).hexdigest()[:16]
+
+
+_ENV_REF_RE = re.compile(r"^\$\{([A-Z_][A-Z0-9_]*)\}$")
+
+
+def _resolve_auth_header(raw: str) -> Optional[str]:
+    """Resolve an auth_header config value.
+
+    - `${ENV_VAR}` form → look up `os.environ["ENV_VAR"]`. Returns
+      None if the env var is missing or empty (caller surfaces this
+      as a config error).
+    - Anything else → returned as-is (literal token). Strongly
+      discouraged for tracked configs but supported for compatibility.
+
+    Empty / non-string input → None ("no auth header").
+    """
+    if not raw or not isinstance(raw, str):
+        return None
+    match = _ENV_REF_RE.match(raw.strip())
+    if match:
+        env_value = os.environ.get(match.group(1), "")
+        return env_value if env_value else None
+    return raw
 
 
 def _normalize_endpoint(provider: str, endpoint: str) -> str:
@@ -628,8 +658,28 @@ def search(project_root: str, args: Dict[str, Any]) -> Dict[str, Any]:
         top_k = top_k_raw
     max_chunks_cfg = sem.get("max_chunks_per_run", 1000)
     max_chunks = int(max_chunks_cfg) if isinstance(max_chunks_cfg, int) and max_chunks_cfg > 0 else 1000
-    auth_header = sem.get("auth_header")  # optional; e.g. "Bearer xyz"
-    auth_header = auth_header if isinstance(auth_header, str) and auth_header else None
+    # auth_header is optional. To keep secrets OUT of tracked config
+    # files, the framework resolves `${ENV_VAR}` indirection at runtime
+    # — set the config value to e.g. `${SDD_MCP_AUTH}` and put the
+    # actual token in the env var. Literal values still work but are
+    # discouraged (CR cycle-5 finding); a one-line warning fires when
+    # the literal looks like a real bearer token.
+    auth_header_raw = sem.get("auth_header")
+    auth_header = _resolve_auth_header(auth_header_raw) if isinstance(auth_header_raw, str) and auth_header_raw else None
+    if auth_header_raw and not auth_header:
+        # Indirection pointed at a missing env var. Surface this as a
+        # config error instead of silently dropping the auth header
+        # (which would then 401 from the endpoint and confuse the user).
+        return {
+            "error": (
+                f"parameters.mcp.semantic_search.auth_header references an "
+                f"unset environment variable (value: {auth_header_raw!r}). "
+                f"Set the env var, or change the config to a literal value, "
+                f"or empty string for no auth."
+            ),
+            "config_shape": _CONFIG_SHAPE,
+            "query": query,
+        }
 
     # Walk + chunk every searchable file.
     files = _walk_sdd_files(project_root)
