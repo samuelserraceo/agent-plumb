@@ -59,28 +59,59 @@ def search_within(project_root: str, args: Dict[str, Any]) -> Dict[str, Any]:
             "available": _graph_cache.list_nodes(graph)[:30],
         }
 
-    # Collect the set of file paths in the depth-bounded subgraph. Always
-    # include the root's own file. BFS over edges in both directions.
-    paths: Set[str] = {root["path"]}
-    frontier_paths: Set[str] = {root["path"]}
+    # CR Major #4 fix — slug-scoped BFS, not path-scoped.
+    #
+    # Path-scoped BFS over-collects when the seed is a notebook heading
+    # (pattern / entity / decision): every heading inside `patterns.md`
+    # shares the path `.sdd/patterns.md`, so the BFS would expand the
+    # same set of files for every pattern slug. The query advertised
+    # node-level precision but delivered file-level precision.
+    #
+    # Approach: walk the slug graph (wiki-link edges, slug-keyed). Map
+    # each visited slug to its node's file path; that's the allowlist.
+    # File-level md-link edges are added at the end as "also includes",
+    # so the search isn't artificially narrow either.
     edges = graph.get("edges", [])
+    by_slug = {n["slug"]: n for n in graph.get("nodes", [])}
 
+    visited_slugs: Set[str] = {root["slug"]}
+    frontier_slugs: Set[str] = {root["slug"]}
     for _ in range(depth):
         next_frontier: Set[str] = set()
         for edge in edges:
-            if not edge.get("resolved"):
+            if not edge.get("resolved") or edge.get("kind") != "wiki-link":
                 continue
-            from_path = edge.get("from_path")
-            to_path = edge.get("to_path")
-            if from_path in frontier_paths and to_path and to_path not in paths:
-                paths.add(to_path)
-                next_frontier.add(to_path)
-            if to_path in frontier_paths and from_path and from_path not in paths:
-                paths.add(from_path)
-                next_frontier.add(from_path)
-        frontier_paths = next_frontier
-        if not frontier_paths:
+            from_slug = _slug_for_from_path(graph, edge["from_path"])
+            to_slug = edge.get("to_slug")
+            if not to_slug:
+                continue
+            if from_slug in frontier_slugs and to_slug not in visited_slugs:
+                visited_slugs.add(to_slug)
+                next_frontier.add(to_slug)
+            elif to_slug in frontier_slugs and from_slug and from_slug not in visited_slugs:
+                visited_slugs.add(from_slug)
+                next_frontier.add(from_slug)
+        frontier_slugs = next_frontier
+        if not frontier_slugs:
             break
+
+    # Translate slugs back to file paths for the search allowlist. Always
+    # include the root's path (the seed file is searched even at depth 0).
+    paths: Set[str] = {root["path"]}
+    for s in visited_slugs:
+        n = by_slug.get(s)
+        if n and n.get("path"):
+            paths.add(n["path"])
+    # Add file-level md-links that touch any of the collected files.
+    for edge in edges:
+        if not edge.get("resolved") or edge.get("kind") != "md-link":
+            continue
+        from_p = edge.get("from_path")
+        to_p = edge.get("to_path")
+        if to_p in paths and from_p:
+            paths.add(from_p)
+        if from_p in paths and to_p:
+            paths.add(to_p)
 
     # Normalise paths to absolute for the search module's path filter.
     abs_paths = {os.path.normpath(os.path.join(project_root, p)) for p in paths}
@@ -104,6 +135,16 @@ def search_within(project_root: str, args: Dict[str, Any]) -> Dict[str, Any]:
         result["slug"] = root["slug"]
         result["subgraph"] = {
             "files_searched": sorted(paths),
+            "slugs_visited": sorted(visited_slugs),
             "depth": depth,
         }
     return result
+
+
+def _slug_for_from_path(graph: Dict[str, Any], path: str) -> str:
+    """Reverse-lookup: which feature owns `path`? Notebook files have many
+    headings but no single owning slug, so we use the basename."""
+    for n in graph.get("nodes", []):
+        if n.get("path") == path and n.get("kind") == "feature":
+            return n["slug"]
+    return os.path.splitext(os.path.basename(path))[0]

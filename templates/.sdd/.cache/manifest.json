@@ -34,7 +34,7 @@
       "trust": "framework"
     },
     "start.sh": {
-      "expected_sha256": "b1939e7a9f85cfd21e89bb3262d2b99070fcf437340f09573b6efeec6c4abfd4",
+      "expected_sha256": "788d4d0e879d4b198c85efc6f92134f76d7a6797fa603c1ca9fbbb53e1d6591d",
       "path": ".sdd/scripts/start.sh",
       "trust": "framework"
     },
@@ -74,7 +74,7 @@
       "trust": "framework"
     },
     "post-stop-lint.sh": {
-      "expected_sha256": "e4efc6a878a025cb565d79a6944b6f3546dfdef73ce9162b1ff390dad18e4bd0",
+      "expected_sha256": "f2b9e68c035047fa81f268dbcacf2ab22c3e47ee9d6eb24652fc9d3eac41414d",
       "path": ".claude/hooks/post-stop-lint.sh",
       "trust": "framework"
     },
@@ -203,7 +203,7 @@
     },
     "learn": {
       "path": ".sdd/actions/learn.md",
-      "expected_sha256": "1a8b8a8d73db9068387877100417b417e202a13b55c0c1486fc7ce6cb7dbef10"
+      "expected_sha256": "a739e676f5761c21d5f4ef09891958a64ec013cc06e1de8649249ecc66911f0f"
     },
     "project-problem": {
       "expected_sha256": "2000da0943888285e3581de5a45b294d9dc43d93582d3560105bbcb03dc66e3c",

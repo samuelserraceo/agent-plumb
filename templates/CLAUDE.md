@@ -271,7 +271,7 @@ v0.8's design memo declined wiki-links to avoid creating a hard Obsidian depende
 
 You write a wiki-link only in these shapes; anything else trips invariant 8:
 
-```
+```text
 [[001-waitlist]]               OK — feature folder
 [[entity:User]]                OK — entity heading in data-model.md
 [[pattern:auth-retry-logic]]   OK — pattern heading in patterns.md

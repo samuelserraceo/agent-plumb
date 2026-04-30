@@ -265,7 +265,7 @@ try:
 except OSError as e:
     print(f"[/start] can't create the work-item folder at {work_dir}: {e}", file=sys.stderr)
     print(f"         The filesystem may be read-only (Docker volume, NFS mount, "
-          "or a permission issue). Check that you can write to {proj}.", file=sys.stderr)
+          f"or a permission issue). Check that you can write to {proj}.", file=sys.stderr)
     sys.exit(1)
 existing_ids = []
 for entry in os.listdir(work_dir):

@@ -87,14 +87,32 @@ def _walk_markdown(project_root: str) -> List[str]:
     return paths
 
 
-def _file_signature(paths: List[str]) -> str:
-    """Hash of all file contents concatenated. Invalidates the cache on any change."""
+def _file_signature(project_root: str, paths: List[str]) -> str:
+    """Hash of all (relative_path + content) tuples.
+
+    Invalidates the cache when:
+    - any file's content changes
+    - a file is added or removed
+    - a feature folder is renamed (path changes even though content doesn't —
+      CR Major #1 fix; rename `.sdd/features/001-waitlist/` to
+      `.sdd/features/001-signup/` and the slug-resolution graph changes
+      without any content edit)
+
+    Path is hashed before content with a NUL separator so a path-only change
+    invalidates the signature even if the file's bytes are byte-identical to
+    a different file's bytes.
+    """
     h = hashlib.sha256()
     for p in paths:
+        # Hash the relative path first so a folder rename invalidates the
+        # cache even when content is unchanged.
+        rel = os.path.relpath(p, project_root).replace(os.sep, "/")
+        h.update(rel.encode("utf-8"))
+        h.update(b"\x00")
         try:
             with open(p, "rb") as f:
                 h.update(f.read())
-            h.update(b"\x00")  # separator so concatenation is unambiguous
+            h.update(b"\x00")
         except OSError:
             continue
     return h.hexdigest()
@@ -232,7 +250,7 @@ def build(project_root: str) -> Dict[str, Any]:
     """Build the graph from scratch (don't read or write the cache).
     Returns a dict with `nodes`, `edges`, `source_signature`."""
     paths = _walk_markdown(project_root)
-    sig = _file_signature(paths)
+    sig = _file_signature(project_root, paths)
     nodes, edges = _build_nodes_and_edges(project_root, paths)
     return {
         "version": _CACHE_VERSION,
@@ -246,7 +264,7 @@ def load(project_root: str) -> Dict[str, Any]:
     """Return the graph, using the cached copy if its source-signature still
     matches the disk. Builds fresh + writes cache otherwise."""
     paths = _walk_markdown(project_root)
-    expected_sig = _file_signature(paths)
+    expected_sig = _file_signature(project_root, paths)
     cache_p = _cache_path(project_root)
     if os.path.isfile(cache_p):
         try:

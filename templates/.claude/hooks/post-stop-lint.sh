@@ -491,9 +491,14 @@ check_no_nul_bytes() {
          --include='*.md' --include='*.json' --include='*.yaml' --include='*.yml' \
          --exclude-dir='.cache' --exclude-dir='archive' --exclude-dir='ideas' || true)
   if [ -n "$hits" ]; then
+    # CR Minor #6 fix — quote $hits via newline-IFS read so paths with
+    # spaces don't get word-split into garbage args (SC2086).
+    local formatted=""
+    while IFS= read -r path; do
+      [ -n "$path" ] && formatted="${formatted}  ${path}"$'\n'
+    done <<< "$hits"
     add_violation "[stop-lint] NUL bytes found in framework files (binary contamination):
-$(printf "  %s\n" $hits)
-  Fix: open the file in your editor and save again as UTF-8 (text). NUL
+${formatted}  Fix: open the file in your editor and save again as UTF-8 (text). NUL
        bytes usually mean a half-written save or filesystem corruption.
        If the file is unrecoverable, restore it: \`git checkout HEAD -- <path>\`."
   fi

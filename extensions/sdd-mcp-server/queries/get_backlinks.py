@@ -50,18 +50,32 @@ def get_backlinks(project_root: str, args: Dict[str, Any]) -> Dict[str, Any]:
 
     target_slug = node["slug"]
     target_path = node["path"]
+    target_kind = node["kind"]
     backlinks = []
     for edge in graph.get("edges", []):
         if not edge.get("resolved"):
             continue
-        # Match either by resolved to_slug (wiki-link) or by to_path (md-link).
+        # Wiki-link edges resolve to a specific node (by slug). These are the
+        # primary backlinks regardless of the target's kind.
         if edge.get("to_slug") == target_slug:
             backlinks.append({
                 "from_path": edge["from_path"],
                 "from_line": edge["from_line"],
                 "kind": edge["kind"],
             })
-        elif edge.get("to_path") == target_path and edge.get("kind") == "md-link":
+            continue
+        # CR Major #2 fix — md-link edges target a file path, not a heading.
+        # Only attribute md-links as backlinks when the target node IS the
+        # file (kind == "feature"; the spec.md is the only thing the file
+        # represents). Notebook nodes (pattern / entity / decision) are
+        # heading-level; an md-link to `.sdd/patterns.md` cites the file
+        # generically, not any specific heading inside it. Counting it as a
+        # backlink for every heading would overcount and let drift slip
+        # past invariant 8 ("link to patterns.md" looks resolved even when
+        # the cited heading was renamed).
+        if (edge.get("kind") == "md-link"
+                and edge.get("to_path") == target_path
+                and target_kind == "feature"):
             backlinks.append({
                 "from_path": edge["from_path"],
                 "from_line": edge["from_line"],

@@ -210,7 +210,7 @@ check_manifest_pins() {
     STAGED_MANIFEST_PATH="$staged_manifest" \
     GIT_COMMIT_CMD="$cmd" \
     python3 <<'PYEOF'
-import hashlib, json, os, re, subprocess, sys
+import hashlib, json, os, re, shlex, subprocess, sys
 
 manifest_path = os.environ["MANIFEST"]
 proj = os.environ["PROJ"]
@@ -596,7 +596,9 @@ if mismatches:
     print("  them, or a find-and-replace ran across the repo), restore them:", file=sys.stderr)
     print("", file=sys.stderr)
     for rel, _kind, _a, _e in mismatches:
-        print(f"      git checkout HEAD -- {rel}", file=sys.stderr)
+        # CR Minor #7 — quote rel so paths with spaces or shell metacharacters
+        # produce a copy-pasteable command.
+        print(f"      git checkout HEAD -- {shlex.quote(rel)}", file=sys.stderr)
     print("", file=sys.stderr)
     print("  If you DID change them on purpose (e.g. upgrading SDD or applying", file=sys.stderr)
     print("  a framework patch), ask the agent to re-seal the manifest before", file=sys.stderr)

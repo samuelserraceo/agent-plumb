@@ -57,14 +57,24 @@ def get_neighbours(project_root: str, args: Dict[str, Any]) -> Dict[str, Any]:
     seen_out: Set[str] = set()
     seen_in: Set[str] = set()
 
+    # CR Major #3 fix — BFS over wiki-link edges only. Md-link edges have
+    # `to_path` but no `to_slug`, so feeding them through slug-keyed BFS
+    # would push `None` into seen_out/next_frontier and let later md-links
+    # appear adjacent to that synthetic node. Md-links are still surfaced
+    # at depth 1 below as a separate `file_links` array — they're useful
+    # context but don't compose into multi-hop traversal.
     frontier = {root["slug"]}
     for _ in range(depth):
         next_frontier: Set[str] = set()
         for edge in edges:
             if not edge.get("resolved"):
                 continue
-            from_slug = _slug_for_path(graph, edge["from_path"])
+            if edge.get("kind") != "wiki-link":
+                continue  # md-links don't carry a slug; skip in BFS
             to_slug = edge.get("to_slug")
+            if not to_slug:
+                continue  # defensive: a malformed wiki-link with no slug
+            from_slug = _slug_for_path(graph, edge["from_path"])
             # Outgoing: edges whose source is in the current frontier.
             if from_slug in frontier and to_slug not in seen_out and to_slug != root["slug"]:
                 out_edges.append({
@@ -91,6 +101,24 @@ def get_neighbours(project_root: str, args: Dict[str, Any]) -> Dict[str, Any]:
         if not frontier:
             break
 
+    # File-level edges (md-links pointing at the root's path) — surfaced
+    # separately so callers see "this file is also linked from X" without
+    # confusing it with the slug-based graph traversal.
+    file_links: List[Dict[str, Any]] = []
+    seen_file_links: Set[str] = set()
+    for edge in edges:
+        if not edge.get("resolved") or edge.get("kind") != "md-link":
+            continue
+        if edge.get("to_path") == root["path"]:
+            key = f"{edge['from_path']}:{edge['from_line']}"
+            if key not in seen_file_links:
+                file_links.append({
+                    "from_path": edge["from_path"],
+                    "from_line": edge["from_line"],
+                    "kind": "md-link",
+                })
+                seen_file_links.add(key)
+
     result: Dict[str, Any] = {
         "slug": root["slug"],
         "node": {
@@ -100,10 +128,12 @@ def get_neighbours(project_root: str, args: Dict[str, Any]) -> Dict[str, Any]:
         },
         "outgoing": out_edges,
         "incoming": in_edges,
+        "file_links": file_links,
         "depth": depth,
         "stats": {
             "outgoing_count": len(out_edges),
             "incoming_count": len(in_edges),
+            "file_links_count": len(file_links),
         },
     }
     if capped:
