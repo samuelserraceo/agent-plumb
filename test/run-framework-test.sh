@@ -5696,31 +5696,85 @@ fi
 #         os.path.join. Strict slug regex blocks the attack.
 # ============================================================
 note "T121i: resolve-active.sh rejects sdd/../escape branch slugs"
+# Git's check-ref-format rejects `sdd/../escape` outright, so we
+# can't actually create that branch. To reach the resolver's slug
+# regex with a malicious value we stub `git` on PATH to lie about
+# the current branch — that simulates the case where, somehow, a
+# malicious branch name reaches the resolver. CR cycle-3 minor:
+# without the stub, this test silently fell through to the benign
+# fallback name and didn't actually exercise BRANCH_SLUG_RE.
+d=$(mktemp -d) || exit 1
+cd "$d"
+mkdir -p .sdd "$d/escape-target" fake-bin
+touch "$d/escape-target/spec.md"
+# Stub git: any `git -C <proj> rev-parse --abbrev-ref HEAD` call
+# returns the malicious branch. Other args get a real-git fallback
+# via /usr/bin/env so the test isn't fragile to other invocations.
+real_git=$(command -v git)
+cat > fake-bin/git <<GITSTUB
+#!/usr/bin/env bash
+# argv: git -C <proj> rev-parse --abbrev-ref HEAD
+if [ "\$3" = "rev-parse" ] && [ "\$5" = "HEAD" ]; then
+  echo "sdd/../escape-target"
+  exit 0
+fi
+exec "$real_git" "\$@"
+GITSTUB
+chmod +x fake-bin/git
+out=$(PATH="$PWD/fake-bin:$PATH" bash "$RESOLVE_ACTIVE" 2>&1)
+cd - >/dev/null
+rm -rf "$d"
+if echo "$out" | python3 -c '
+import json, sys
+d = json.loads(sys.stdin.read())
+# Resolver sees the malicious slug, BRANCH_SLUG_RE rejects it.
+# active must stay null (filesystem scan never runs).
+assert d["active"] is None, f"active leaked: {d['"'"'active'"'"']}"
+assert d["source"] == "none", f"source={d['"'"'source'"'"']}"
+# branch field carries the raw value as-reported (informational).
+assert d["branch"] == "sdd/../escape-target"
+' 2>/dev/null; then
+  ok "T121i malicious slug rejected by BRANCH_SLUG_RE before filesystem scan"
+else
+  bad "T121i malicious branch slug escaped" "out='$out'"
+fi
+
+# ============================================================
+# T121i-non-sdd — resolve-active.sh ignores branches that match
+#                 `sdd/<anything>` but aren't the framework's
+#                 documented `sdd/<id>-<slug>` shape. Catches the
+#                 `sdd/release` / `sdd/main` override flagged by
+#                 CodeRabbit cycle-3 MAJOR — without this, a
+#                 release branch could shadow INDEX.md if a folder
+#                 named `release/` happened to exist.
+# ============================================================
+note "T121i-non-sdd: resolve-active.sh skips non-SDD-shape sdd/<x> branches"
 d=$(mktemp -d) || exit 1
 cd "$d"
 git init -q
 git config user.email t@t.com && git config user.name T
 git commit --allow-empty -q -m "init"
-mkdir -p .sdd "$d/escape-target"
-touch "$d/escape-target/spec.md"
-# Attempt to create a branch with a malicious slug. Git allows `..` in
-# branch names so this is a real attack surface.
-git checkout -q -b 'sdd/..%2fescape-target' 2>/dev/null || git checkout -q -b 'sdd/escape-attempt'
+# Create an INDEX-pointed folder + a folder that would match a
+# bare-name branch like `sdd/release`. If the resolver picked the
+# branch, it'd return release/release; we want it to fall back to
+# INDEX.md instead.
+mkdir -p .sdd/features/001-real-feature .sdd/release/release
+touch .sdd/features/001-real-feature/spec.md .sdd/release/release/spec.md
+echo '**Active:** features/001-real-feature' > .sdd/INDEX.md
+git checkout -q -b sdd/release
 out=$(bash "$RESOLVE_ACTIVE" 2>&1)
 cd - >/dev/null
 rm -rf "$d"
 if echo "$out" | python3 -c '
 import json, sys
 d = json.loads(sys.stdin.read())
-# Source must NOT be "branch" pointing outside .sdd/.
-assert d["source"] != "branch" or (d["active"] and not d["active"].startswith("/"))
-# active should be null since no .sdd/<top>/<slug>/spec.md exists for
-# the malicious slug AND containment check fails.
-assert d["active"] is None or "/" in d["active"]
+assert d["active"] == "features/001-real-feature", f"active={d['"'"'active'"'"']}"
+assert d["source"] == "index", f"source={d['"'"'source'"'"']} (should fall back to INDEX, not pick sdd/release as branch)"
+assert d["branch"] == "sdd/release"
 ' 2>/dev/null; then
-  ok "T121i malicious branch slug doesn't escape .sdd/"
+  ok "T121i-non-sdd sdd/release ignored, INDEX fallback used"
 else
-  bad "T121i malicious branch slug escaped" "out='$out'"
+  bad "T121i-non-sdd sdd/release branch overrode INDEX" "out='$out'"
 fi
 
 # ============================================================

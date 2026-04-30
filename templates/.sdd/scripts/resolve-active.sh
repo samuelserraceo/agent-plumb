@@ -64,10 +64,13 @@ sdd_root_real = os.path.realpath(os.path.join(proj, ".sdd"))
 # for `## In flight` row validation. We trust this shape; everything
 # else gets rejected before `os.path.join` ever runs.
 WORK_ITEM_PATH_RE = re.compile(r"^[a-z][a-z0-9_-]*/[a-zA-Z0-9][a-zA-Z0-9._-]*$")
-# Shape of the slug after the `sdd/` prefix in a branch name. Must
-# match a legitimate folder-name component of the path above so a
-# malicious branch like `sdd/../etc` can't escape `.sdd/`.
-BRANCH_SLUG_RE = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9._-]*$")
+# Shape of the slug after the `sdd/` prefix in a branch name. CLAUDE.md
+# documents the convention as `sdd/<feature-id>-<slug>` — e.g.
+# `sdd/001-user-auth`. Anchor the digits + hyphen so non-SDD branches
+# like `sdd/release` or `sdd/main` can't accidentally override
+# INDEX.md when a folder of that name happens to exist. Also blocks
+# `sdd/../etc` since `..` doesn't start with a digit.
+BRANCH_SLUG_RE = re.compile(r"^[0-9]+-[A-Za-z0-9][A-Za-z0-9._-]*$")
 
 def is_inside_sdd(rel_path):
     """True iff joining `rel_path` to .sdd/ lands inside .sdd/ on the
