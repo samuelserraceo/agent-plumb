@@ -252,8 +252,8 @@ Once the feature is identified, hand off to the right slash command:
 
 Every turn:
 
-1. **Read state first.** `.sdd/INDEX.md` tells you which feature is active. `.sdd/features/<active-id>/spec.md` is the current state.
-2. **Find the active step.** Run `.sdd/scripts/next-action.sh <spec-path>` to get the next `[ ]` step row in the current phase plus its action / step / tag / prompt / field info. The `Active blocker` line at the top of `spec.md` should point at the active action — update if stale.
+1. **Read state first.** Run `.sdd/scripts/resolve-active.sh` to learn which feature is active — it returns JSON with `active` (work-item path, e.g. `features/001-foo`), `source` (`branch` / `index` / `none`), and `ambiguous` (`true` when the branch slug matched 2+ work-item folders). Branch-derived `source: "branch"` is the common path; `source: "index"` falls back to the INDEX.md `**Active:**` line. The active spec lives at `.sdd/<active>/spec.md`.
+2. **Find the active step.** Run `.sdd/scripts/next-action.sh <active-spec-path>` to get the next `[ ]` step row in the current phase plus its action / step / tag / prompt / field info. The `Active blocker` line at the top of `spec.md` should point at the active action — update if stale.
 3. **Do exactly one atomic step.** v0.9 atomic-step granularity (F4): each `[ ]` row is one step; one step = one commit. The next-action.sh `tag` field decides what kind of EXECUTE you run (USER-LED ask / AGENT-LED draft+iterate / BUILD-TASK test→code→green).
 4. **Update `spec.md`** by replacing the matched step row `- [ ] <step-id>: <prompt>` with `- [x] <step-id>: <one-line summary of the answer>`. Long-form content goes under the action heading after the step rows.
 5. **Commit** per the convention below — one step per commit, no batching.
@@ -585,10 +585,10 @@ If a feature folder has no `.shipped` marker, treat it as in-flight and read nor
 
 ## Your first move when you start a session
 
-1. Cat `.sdd/INDEX.md`.
+1. Cat `.sdd/INDEX.md` for the project catalog (Shipped + In flight context).
 2. **Cat `.sdd/stack.md`** — refresh on the project's tech stack (running services, providers, version pins, architecture facts). Don't propose alternatives that contradict what's already in stack.md.
-3. Identify the active feature.
-4. Cat `.sdd/features/<active-id>/spec.md`.
+3. Identify the active feature: run `.sdd/scripts/resolve-active.sh`. The `active` field is the work-item path (e.g. `features/001-foo`); `source` tells you whether the current branch chose it (`branch`) or INDEX.md's `**Active:**` line did (`index`). Halt and ask the user if `ambiguous: true`.
+4. Cat `.sdd/<active>/spec.md`.
 5. Find the active blocker.
 6. State out loud (one short sentence): "We're on `<feature>`, phase `<phase>`, next blocker is `<section>`. The question is: `<question>`."
 7. Ask or propose.

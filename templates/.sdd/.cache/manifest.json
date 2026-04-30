@@ -59,7 +59,7 @@
       "trust": "framework"
     },
     "settings.sh": {
-      "expected_sha256": "6e3386ce3e9d71a4a71ae1b34c70d2177e1406990bed87ee21239d25672b9afd",
+      "expected_sha256": "2dd4eed20b1ce0359808c2fcc385b58cacb0b51d68676832519a2d5fa7771f1b",
       "path": ".sdd/scripts/settings.sh",
       "trust": "framework"
     },
@@ -84,7 +84,7 @@
       "trust": "framework"
     },
     "resolve-active.sh": {
-      "expected_sha256": "f3b2ef2042db0d3e24997dc91583af15695ae8262d1cbd4114d4483edf245ac5",
+      "expected_sha256": "c70cbeed18a1f3b84449f977b5e2ec5c5d58df4ede510c8e744feccbe7aa002e",
       "path": ".sdd/scripts/resolve-active.sh",
       "trust": "framework"
     },

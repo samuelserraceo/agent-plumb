@@ -9,12 +9,18 @@
 # shape. INDEX.md's `**Active:**` line becomes the fallback for when
 # no SDD branch is checked out (e.g., on `main`).
 #
-# Resolution order (first match wins):
-#   1. Branch-derived. If the current git branch matches `sdd/<slug>`
-#      AND a work-item folder ending in `<slug>` exists under .sdd/
-#      with a spec.md inside, that's the active. Source label: "branch".
+# Resolution order:
+#   1. Branch-derived. If the current git branch matches the documented
+#      shape `sdd/<id>-<slug>` (digits + hyphen + slug) AND exactly one
+#      `.sdd/<top>/<id>-<slug>/spec.md` exists, that's the active.
+#      Source label: "branch".
+#      If 2+ matches exist (same slug under different work-item roots,
+#      e.g. features/001-foo/ AND bugs/001-foo/), the resolver fails
+#      closed: active=null, source="none", `ambiguous: true`. Callers
+#      should tell the user to rename one of the matching folders.
 #   2. INDEX.md fallback. Read the `**Active:**` line; if it points at
-#      a real work-item folder, use it. Source label: "index".
+#      a real work-item folder (path-shape validated, kept inside
+#      .sdd/ via realpath), use it. Source label: "index".
 #   3. None of the above → active is null. Source label: "none".
 #
 # Output: JSON on stdout, one line, sorted keys (deterministic).

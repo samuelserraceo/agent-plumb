@@ -77,9 +77,10 @@ fi
 
 Then give a one-line summary to the user. Match what the Python block actually printed:
 
+- **Ambiguous branch slug** (banner started with `Active source: NONE — branch '<x>' slug matched`): *"Your branch slug matches two folders under `.sdd/` — rename one of them so the slug is unique, then run `/status` again."* Don't suggest `/start`; the user already has work items, just collide-named ones.
 - **Active step present** (action + step both populated): *"You're on `<work-item>`, phase `<phase>`, on action `<action>`/step `<step>`. Run `/next` to advance one step."*
 - **Transition signal** (Python printed "transition signal"): *"You're on `<work-item>`, phase `<phase>` — all step rows in this phase are filled. Run `/next` to advance to the next phase."*
 - **No active step / legacy spec** (Python printed "No active step"): *"You're on `<work-item>`, phase `<phase>` — no atomic step rows yet. Run `/next` to start the first one."*
-- **No active work item** (the `active=""` branch above): *"No active work item. Run `/start <one-line title>` to scaffold a new one."*
+- **No active work item** (the `active=""` branch above, banner did NOT mention ambiguity): *"No active work item. Run `/start <one-line title>` to scaffold a new one."*
 
 If `parameters` was empty or null, mention it briefly: *"(parameters cascade not resolved — INDEX.md `**Playbook:**` line missing? Check with `cat .sdd/INDEX.md`.)"*

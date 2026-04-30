@@ -329,13 +329,18 @@ def _infer_active_context(proj):
         # project data, even on the legacy fallback path.
         if os.path.isabs(raw) or ".." in raw.split("/"):
             return None, None, None
-        # Try the three canonical relative shapes in priority order.
-        # First one that resolves to an existing spec.md wins.
+        # Spec-path constraint: only accept paths that resolve to a
+        # *spec.md* file. CR cycle-8 minor: without this, a tampered
+        # `**Active:** README.md` would let `os.path.join(proj, raw)`
+        # pick up README.md as `spec_path`. The legacy
+        # already-relative-to-proj shape is preserved only when the
+        # raw value already looks like a spec.md path.
         candidates = [
             os.path.join(proj, ".sdd", raw, "spec.md"),     # work-item-rel (canonical)
-            os.path.join(proj, raw),                         # already-relative-to-proj (legacy)
             os.path.join(proj, raw, "spec.md"),              # bare folder under proj
         ]
+        if raw.startswith(".sdd/") and raw.endswith("/spec.md"):
+            candidates.insert(1, os.path.join(proj, raw))    # legacy shape
         spec_path = next((p for p in candidates if os.path.isfile(p)), None)
         if not spec_path:
             return None, None, None

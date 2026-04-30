@@ -5887,7 +5887,7 @@ fi
 #         Now the test pipes synthetic resolver JSON into the real
 #         shipped helper and asserts the rendered banner.
 # ============================================================
-note "T121k: status-banner.sh renders the right banner for 6 source/ambiguous combos"
+note "T121k: status-banner.sh renders the right banner for 7 source/ambiguous combos"
 STATUS_BANNER="$FRAMEWORK_ROOT/templates/.sdd/scripts/status-banner.sh"
 ok_count=0
 # 1. branch source — happy path
@@ -5896,22 +5896,25 @@ echo "$out" | grep -q "Active source: branch (sdd/001-x) → features/001-x" && 
 # 2. branch source with drift — extra "Note:" line
 out=$(echo '{"active":"features/001-x","ambiguous":false,"branch":"sdd/001-x","index_active":"features/002-other","source":"branch"}' | bash "$STATUS_BANNER")
 echo "$out" | grep -q "Note: INDEX.md \*\*Active:\*\* points at features/002-other" && ok_count=$((ok_count+1))
-# 3. ambiguous slug — fail-closed banner
+# 3. index source — off-SDD-branch fallback (CR cycle-8 added this).
+out=$(echo '{"active":"features/001-x","ambiguous":false,"branch":"main","index_active":"features/001-x","source":"index"}' | bash "$STATUS_BANNER")
+echo "$out" | grep -q "Active source: INDEX.md (branch 'main' is not an SDD branch) → features/001-x" && ok_count=$((ok_count+1))
+# 4. ambiguous slug — fail-closed banner
 out=$(echo '{"active":null,"ambiguous":true,"branch":"sdd/001-collide","index_active":null,"source":"none"}' | bash "$STATUS_BANNER")
 echo "$out" | grep -q "matched 2+ work-item folders" && ok_count=$((ok_count+1))
-# 4. broken INDEX pointer
+# 5. broken INDEX pointer
 out=$(echo '{"active":null,"ambiguous":false,"branch":"main","index_active":"features/999-broken","source":"none"}' | bash "$STATUS_BANNER")
 echo "$out" | grep -q "INDEX.md \*\*Active:\*\* points at \`features/999-broken\`" && ok_count=$((ok_count+1))
-# 5. SDD-shape branch, scaffold not done
+# 6. SDD-shape branch, scaffold not done
 out=$(echo '{"active":null,"ambiguous":false,"branch":"sdd/042-pending","index_active":null,"source":"none"}' | bash "$STATUS_BANNER")
 echo "$out" | grep -q "is SDD-shaped, but" && ok_count=$((ok_count+1))
-# 6. non-SDD branch, no INDEX, no folders
+# 7. non-SDD branch, no INDEX, no folders
 out=$(echo '{"active":null,"ambiguous":false,"branch":"feature/foo","index_active":null,"source":"none"}' | bash "$STATUS_BANNER")
 echo "$out" | grep -q "isn't an SDD-shape" && ok_count=$((ok_count+1))
-if [ "$ok_count" -eq 6 ]; then
-  ok "T121k status-banner.sh rendered correctly for 6/6 cases"
+if [ "$ok_count" -eq 7 ]; then
+  ok "T121k status-banner.sh rendered correctly for 7/7 cases"
 else
-  bad "T121k status-banner.sh rendered wrong output" "ok_count=$ok_count/6"
+  bad "T121k status-banner.sh rendered wrong output" "ok_count=$ok_count/7"
 fi
 
 # ============================================================
