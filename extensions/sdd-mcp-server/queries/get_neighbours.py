@@ -141,16 +141,21 @@ def get_neighbours(project_root: str, args: Dict[str, Any]) -> Dict[str, Any]:
     return result
 
 
+import os as _os
+
+
 def _slug_for_path(graph: Dict[str, Any], path: str) -> str:
     """Reverse-lookup: given a markdown file path, find which feature/notebook
     node 'owns' it. For feature spec.md files, that's the feature folder slug.
-    For notebook files (patterns.md / data-model.md / decisions.md), use the
-    file's basename without extension as a stable handle."""
+    For notebook files (patterns.md / data-model.md / decisions.md), use a
+    prefixed filename token so the fallback can never collide with a real
+    feature slug (CR cycle-7 Major — bare `patterns` would have collided with
+    a hypothetical `001-patterns` feature folder)."""
     for n in graph.get("nodes", []):
         if n.get("path") == path and n.get("kind") == "feature":
             return n["slug"]
     # Notebook files don't have a single owning slug — they have many headings.
-    # Use the bare filename (without .md) as a stable identifier so the caller
-    # can at least see "an edge came from patterns.md".
-    import os
-    return os.path.splitext(os.path.basename(path))[0]
+    # Use `_file:<basename>` as a stable identifier; the leading underscore +
+    # colon are not produced by `_slugify`, so the result lies outside the
+    # feature-slug namespace by construction.
+    return f"_file:{_os.path.splitext(_os.path.basename(path))[0]}"

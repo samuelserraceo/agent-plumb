@@ -372,9 +372,17 @@ spec_lines = list(frontmatter_lines) + [
 if extends_resolved:
     # v1.0 graph layer — emit the predecessor as a wiki-link so the new feature's
     # §1 prose is mechanically queryable as a graph edge (new feature → predecessor).
-    # The bare slug form `[[<id>-<slug>]]` resolves via priority 1 (filename match).
+    # The bare slug form `[[<id>-<slug>]]` resolves via priority 1 (filename match)
+    # ONLY for items under `.sdd/features/` — that's the only folder _graph_cache.py
+    # registers as the bare-slug node space. Custom playbooks with a different
+    # work_item_folder (e.g., a future `bugs/` playbook) wouldn't resolve, so for
+    # those we fall back to the plain backtick form to avoid tripping invariant 8
+    # (CR cycle-7 Major).
     extends_slug = candidates[0]
-    spec_lines.append(f"**Extends:** [[{extends_slug}]] (read INDEX.md's Shipped block for the prior feature's distilled context — do NOT cold-read its spec.md)")
+    if work_item_folder.rstrip("/") == "features":
+        spec_lines.append(f"**Extends:** [[{extends_slug}]] (read INDEX.md's Shipped block for the prior feature's distilled context — do NOT cold-read its spec.md)")
+    else:
+        spec_lines.append(f"**Extends:** `{extends_resolved}` (read INDEX.md's Shipped block for the prior item's distilled context — do NOT cold-read its spec.md)")
     spec_lines.append("")
 spec_lines.append(f"## PHASE: {first_stage_id}")
 spec_lines.append("")

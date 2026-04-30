@@ -143,8 +143,10 @@ def search_within(project_root: str, args: Dict[str, Any]) -> Dict[str, Any]:
 
 def _slug_for_from_path(graph: Dict[str, Any], path: str) -> str:
     """Reverse-lookup: which feature owns `path`? Notebook files have many
-    headings but no single owning slug, so we use the basename."""
+    headings but no single owning slug — use a prefixed `_file:<basename>`
+    fallback so the synthetic notebook handle can never collide with a real
+    feature slug (CR cycle-7 Major; mirrors the same fix in get_neighbours.py)."""
     for n in graph.get("nodes", []):
         if n.get("path") == path and n.get("kind") == "feature":
             return n["slug"]
-    return os.path.splitext(os.path.basename(path))[0]
+    return f"_file:{os.path.splitext(os.path.basename(path))[0]}"

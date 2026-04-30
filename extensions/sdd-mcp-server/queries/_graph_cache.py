@@ -183,19 +183,38 @@ def _build_nodes_and_edges(project_root: str, paths: List[str]) -> Tuple[List[Di
 
     # Build a slug → primary-node map for resolving wiki-links during edge
     # extraction. Lower priority wins (= higher precedence).
-    by_slug: Dict[str, Dict[str, Any]] = {}
+    #
+    # CR cycle-7 Major — same-priority same-slug collisions used to bind
+    # to whichever node appeared first in walk order. The doctrine says
+    # they're ambiguous and should fail invariant 8. Track collisions
+    # explicitly; mark the slug as ambiguous (None) so wiki-links pointing
+    # at it surface as broken edges rather than silently picking one
+    # candidate at random.
+    by_slug: Dict[str, Optional[Dict[str, Any]]] = {}
+    ambiguous: set = set()
     for n in nodes:
         slug = n["slug"]
+        keys = [slug]
         # Prefixed forms: `pattern:auth-retry`, `entity:user`.
         if n["kind"] in ("pattern", "entity", "decision"):
-            prefixed = f"{n['kind']}:{slug}"
-            existing = by_slug.get(prefixed)
-            if existing is None or n["priority"] < existing["priority"]:
-                by_slug[prefixed] = n
-        # Bare slug — first match by priority wins.
-        existing = by_slug.get(slug)
-        if existing is None or n["priority"] < existing["priority"]:
-            by_slug[slug] = n
+            keys.append(f"{n['kind']}:{slug}")
+        for key in keys:
+            existing = by_slug.get(key)
+            if existing is None:
+                by_slug[key] = n
+            elif n["priority"] < existing["priority"]:
+                # New node has higher precedence; takes the slot. Drop any
+                # previous ambiguity flag — the higher-priority node wins
+                # cleanly even if there were lower-priority collisions.
+                by_slug[key] = n
+                ambiguous.discard(key)
+            elif n["priority"] == existing["priority"]:
+                # Same-priority collision — ambiguous per doctrine.
+                ambiguous.add(key)
+    # Mark ambiguous keys as unresolved so wiki-links to them break
+    # invariant 8 instead of silently binding to one of the candidates.
+    for key in ambiguous:
+        by_slug[key] = None
 
     # Walk every markdown file for outgoing edges.
     for src_path in paths:
@@ -209,7 +228,7 @@ def _build_nodes_and_edges(project_root: str, paths: List[str]) -> Tuple[List[Di
         # and `[[entity:user]]` both resolve to the same node.
         for m in _WIKI_LINK_RE.finditer(content):
             slug = m.group(1).lower()
-            target = by_slug.get(slug)
+            target = by_slug.get(slug)  # may be None if slug is ambiguous
             line_no = content[:m.start()].count("\n") + 1
             edge = {
                 "from_path": rel_src,
