@@ -5467,6 +5467,30 @@ else
 fi
 
 # ============================================================
+# T132 — refactor.md playbook ships in v1.0 (closes #85, step 3)
+#   /start --playbook=refactor "extract atomic-write" scaffolds under
+#   refactors/<NNN>-<slug>/ with the 4-section SPEC: refactor-scope,
+#   regression-coverage, refactor-approach, minimal-diff-verify.
+# ============================================================
+note "T132: refactor.md playbook scaffolds correctly via --playbook=refactor"
+d=$(mkproj_v08)
+cd "$d"
+out=$(bash "$START_SH" --playbook=refactor "extract atomic-write helper" 2>&1) && ec=0 || ec=$?
+cd - >/dev/null
+spec="$d/.sdd/refactors/001-extract-atomic-write-helper/spec.md"
+if [ "$ec" -eq 0 ] \
+   && [ -f "$spec" ] \
+   && grep -q '^### action: refactor-scope' "$spec" \
+   && grep -q '^### action: regression-coverage' "$spec" \
+   && grep -q '^### action: refactor-approach' "$spec" \
+   && grep -q '^### action: minimal-diff-verify' "$spec"; then
+  ok "T132 refactor.md scaffolded with all 4 SPEC actions"
+else
+  bad "T132 refactor.md scaffold incomplete" "exit=$ec; spec_head=$(head -25 "$spec" 2>/dev/null)"
+fi
+rm -rf "$d"
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
