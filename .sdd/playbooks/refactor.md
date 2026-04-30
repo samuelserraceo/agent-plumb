@@ -55,7 +55,7 @@ Three stages, lighter than `feature.md`:
 
 1. **SPEC** — 4 sections. Most are 1-2 paragraphs. Total time: 15-45 minutes (longer than a bug because regression coverage takes thinking).
 2. **BUILD** — implement the refactor in the smallest commits possible. Test discipline still applies: every commit must keep the regression tests GREEN.
-3. **SHIP** — verify-test-run + learn + push-pr + ship. Skips adversarial-review (replaced by §2 regression-coverage from SPEC) and edge-case-sweep (refactors don't change behaviour, no new edges).
+3. **SHIP** — verify-test-run + learn + push-pr + verify-ci-green + mark-shipped. Skips adversarial-review (replaced by §2 regression-coverage from SPEC) and edge-case-sweep (refactors don't change behaviour, no new edges).
 
 If the SPEC reveals you're actually about to change behaviour (new edge cases, new return values, new side effects), the framework halts and asks: *"this looks like a feature, not a refactor — switch?"*
 

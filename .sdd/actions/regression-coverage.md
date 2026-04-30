@@ -15,7 +15,7 @@ budget:
   max_minutes: 30
   max_tokens: 6000
   max_commits: 2
-requires_user_approval: false
+requires_user_approval: true
 ---
 
 Before changing the code's shape, prove the behaviour it has today is captured by tests. The refactor is safe iff those tests still pass after.
