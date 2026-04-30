@@ -91,6 +91,29 @@ def is_inside_sdd(rel_path):
         return False  # different drives on Windows etc.
     return common == sdd_root_real and full_real != sdd_root_real
 
+def has_safe_spec(rel_path):
+    """True iff BOTH the work-item folder AND its spec.md resolve
+    inside .sdd/ on the real filesystem. Closes the symlink-escape
+    finding from CR cycle-13: a repo can plant
+    `.sdd/features/001-foo/spec.md` as a symlink to `/etc/passwd`,
+    and the directory-only containment check would still emit
+    `features/001-foo` as active. Now we realpath both the folder
+    and the file before trusting either."""
+    full_real = os.path.realpath(os.path.join(sdd_root_real, rel_path))
+    spec_real = os.path.realpath(os.path.join(full_real, "spec.md"))
+    try:
+        folder_common = os.path.commonpath([sdd_root_real, full_real])
+        spec_common = os.path.commonpath([sdd_root_real, spec_real])
+    except ValueError:
+        return False
+    return (
+        folder_common == sdd_root_real
+        and full_real != sdd_root_real
+        and spec_common == sdd_root_real
+        and os.path.isdir(full_real)
+        and os.path.isfile(spec_real)
+    )
+
 def emit(active, source, branch, index_active, ambiguous=False):
     out = {
         "active": active,
@@ -184,9 +207,11 @@ if branch:
                 # rejected by INDEX, breaking source symmetry.
                 if not WORK_ITEM_PATH_RE.match(rel):
                     continue
-                candidate_dir = os.path.join(sdd_root_real, top, slug)
-                spec_md = os.path.join(candidate_dir, "spec.md")
-                if os.path.isfile(spec_md) and is_inside_sdd(rel):
+                # has_safe_spec realpath-checks BOTH folder and spec.md.
+                # Without the spec.md realpath, a symlinked spec.md
+                # pointing outside .sdd/ (e.g. /etc/passwd) would still
+                # be emitted as active. CR cycle-13 MAJOR.
+                if has_safe_spec(rel):
                     matches.append(rel)
             if len(matches) == 1:
                 branch_active = matches[0]
@@ -202,13 +227,11 @@ elif branch_ambiguous:
     # rename one of the matching folders.
     emit(None, "none", branch, index_active, ambiguous=True)
 elif index_active:
-    # Validate that the INDEX pointer actually exists on disk AND has
-    # a spec.md inside. We already shape-checked + containment-checked
-    # above, but a non-folder path or a folder without spec.md is
-    # still treated as a broken pointer.
-    full = os.path.realpath(os.path.join(sdd_root_real, index_active))
-    spec_md = os.path.join(full, "spec.md")
-    if os.path.isdir(full) and os.path.isfile(spec_md):
+    # Validate that the INDEX pointer resolves to a real, contained
+    # work-item folder with a real, contained spec.md. has_safe_spec
+    # realpath-checks both — closes the symlink-escape finding from
+    # CR cycle-13.
+    if has_safe_spec(index_active):
         emit(index_active, "index", branch, index_active)
     else:
         # Pointer is broken — surface as none, but keep index_active

@@ -5984,6 +5984,46 @@ else
 fi
 
 # ============================================================
+# T121n — resolve-active.sh refuses spec.md symlink escapes.
+#         A repo can plant `.sdd/features/001-foo/spec.md` as a
+#         symlink to a file outside `.sdd/` (or even a file inside
+#         it that isn't really a spec). Without realpath-checking
+#         spec.md itself, the resolver would emit features/001-foo
+#         as active and downstream tools would follow the symlink
+#         outside the trust boundary. CR cycle-13 MAJOR.
+# ============================================================
+note "T121n: resolve-active.sh rejects spec.md symlinks pointing outside .sdd/"
+d=$(mktemp -d) || exit 1
+cd "$d" || { bad "T121n cd failed" "d=$d"; rm -rf "$d"; exit 1; }
+git init -q
+git config user.email t@t.com && git config user.name T
+git commit --allow-empty -q -m "init"
+git branch -M main
+# Plant a target file outside .sdd/ for the symlink to escape to.
+mkdir -p "$d/escape-target"
+echo "secret content outside .sdd/" > "$d/escape-target/spec.md"
+# Create the work-item folder with a symlinked spec.md.
+mkdir -p .sdd/features/001-symlink-attack
+ln -s "$d/escape-target/spec.md" .sdd/features/001-symlink-attack/spec.md
+# Branch matches the work-item folder; without symlink check, the
+# resolver would emit features/001-symlink-attack as active.
+git checkout -q -b sdd/001-symlink-attack
+out=$(bash "$RESOLVE_ACTIVE" 2>&1)
+cd - >/dev/null || true
+rm -rf "$d"
+if echo "$out" | python3 -c '
+import json, sys
+d = json.loads(sys.stdin.read())
+# Resolver must reject the symlink-escaped folder.
+assert d["active"] is None, f"symlink-escape leaked: active={d['"'"'active'"'"']}"
+assert d["source"] == "none", f"source={d['"'"'source'"'"']}"
+' 2>/dev/null; then
+  ok "T121n spec.md symlink to outside .sdd/ rejected (active=null)"
+else
+  bad "T121n spec.md symlink escape was accepted" "out='$out'"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'

@@ -84,7 +84,7 @@
       "trust": "framework"
     },
     "resolve-active.sh": {
-      "expected_sha256": "944db1e0ef71c0dfa9c14fbbd47fce6e2ac82363b4e748f7a1f7f9401d68e03e",
+      "expected_sha256": "51a99e13c882c0e4d31e5127fe7268e2d0fb1fe72c3f064fb0c87303a3477e22",
       "path": ".sdd/scripts/resolve-active.sh",
       "trust": "framework"
     },
