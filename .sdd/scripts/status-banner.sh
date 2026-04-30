@@ -99,9 +99,12 @@ else:
     # sub-cases: broken INDEX pointer, scaffold-pending SDD branch,
     # non-SDD branch / fresh project.
     if index_active and not active:
+        # Do not suggest /start here -- there is already an INDEX
+        # entry, just stale. Scaffolding a NEW feature would leave
+        # the broken pointer in place and create a second one. CR
+        # cycle-17 minor.
         print(f"Active source: NONE — INDEX.md **Active:** points at `{index_active}` but")
         print("  the folder doesn\x27t exist (or has no spec.md inside). Either:")
-        print("  - run /start to scaffold a new work item, or")
         print("  - edit INDEX.md to point at a real folder, or")
         print("  - check out an SDD-style branch (sdd/<id>-<slug>) whose folder exists.")
     elif branch:

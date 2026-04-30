@@ -59,7 +59,7 @@
       "trust": "framework"
     },
     "settings.sh": {
-      "expected_sha256": "8908f915d63012c167e849d149d6cb7f7d11ed3d685080a975dba84017379c9d",
+      "expected_sha256": "6e472424732957b75e2db63a3414a4179cadc4ce339ae1e0479eda7741afce75",
       "path": ".sdd/scripts/settings.sh",
       "trust": "framework"
     },
@@ -89,7 +89,7 @@
       "trust": "framework"
     },
     "status-banner.sh": {
-      "expected_sha256": "b475b61258a7b760779a58b53f0e557ec5eb739a21b25bcd3ceab4fd09305cb5",
+      "expected_sha256": "33b56eeb504bd20ff37d0e3dfd18746fe5e5eeffe36830373f394e8c78b79291",
       "path": ".sdd/scripts/status-banner.sh",
       "trust": "framework"
     }

@@ -289,35 +289,51 @@ def _infer_active_context(proj):
             )
             if r.returncode == 0 and r.stdout.strip():
                 # Only mark the resolver authoritative after the JSON
-                # passes contract validation. CR cycle-12 MAJOR: an
-                # `resolver_ran = True` set before `json.loads` would
-                # cause a truncated / log-noise stdout to skip the
-                # legacy fallback (`/settings get` silently dropping
-                # to project defaults during a mid-update window).
+                # passes the FULL contract — all 5 documented keys
+                # present + `source` is one of the documented enum
+                # values. CR cycle-17: an `isinstance(dict)` check
+                # alone would accept `{}` or other malformed dicts
+                # and flip resolver_ran, skipping the legacy INDEX
+                # fallback during the exact "resolver is present
+                # but broken" window the fallback exists for.
                 resolved = json.loads(r.stdout)
-                if isinstance(resolved, dict):
+                required_keys = {"active", "ambiguous", "branch",
+                                 "index_active", "source"}
+                valid_sources = {"branch", "index", "none"}
+                if (
+                    isinstance(resolved, dict)
+                    and required_keys.issubset(resolved)
+                    and resolved.get("source") in valid_sources
+                ):
                     resolver_ran = True
                     raw_active = resolved.get("active")
                     if isinstance(raw_active, str) and raw_active:
                         # Defence in depth: even though resolve-active.sh
-                        # validates `active` before emitting, never
+                        # validates `active` before emitting (folder AND
+                        # spec.md realpath via has_safe_spec), never
                         # trust a subprocess return blindly. Containment-
-                        # check the resolved path stays inside .sdd/
-                        # before joining it into a spec.md path.
+                        # check BOTH the resolved folder AND the spec.md
+                        # file stay inside .sdd/ — mirrors resolve-active
+                        # .sh's has_safe_spec helper. CR cycle-17 MAJOR:
+                        # without the file-level realpath check, a
+                        # symlinked spec.md could redirect /settings
+                        # outside the trust boundary even when the
+                        # folder check passes.
                         sdd_root_real = os.path.realpath(os.path.join(proj, ".sdd"))
                         candidate_dir = os.path.realpath(os.path.join(sdd_root_real, raw_active))
+                        candidate = os.path.join(candidate_dir, "spec.md")
+                        candidate_real = os.path.realpath(candidate)
                         try:
                             inside_sdd = (
                                 os.path.commonpath([sdd_root_real, candidate_dir]) == sdd_root_real
                                 and candidate_dir != sdd_root_real
+                                and os.path.commonpath([sdd_root_real, candidate_real]) == sdd_root_real
                             )
                         except ValueError:
                             inside_sdd = False
-                        if inside_sdd:
-                            candidate = os.path.join(candidate_dir, "spec.md")
-                            if os.path.isfile(candidate):
-                                spec_path = candidate
-                                raw = raw_active
+                        if inside_sdd and os.path.isfile(candidate_real):
+                            spec_path = candidate_real
+                            raw = raw_active
         except (subprocess.TimeoutExpired, OSError, json.JSONDecodeError):
             pass
 

@@ -5862,6 +5862,40 @@ else
 fi
 
 # ============================================================
+# T121j-bugs — resolve-active.sh resolves non-features work-item
+#              folders too. The branch resolution shouldn't be
+#              hardcoded to features/ — bugs/, ideas/, and any
+#              other top-level work-item folder added later must
+#              all work. CR cycle-17 nit: T121j only proves the
+#              fail-closed case; positive coverage of bugs/<slug>
+#              proves the resolver isn't features-biased.
+# ============================================================
+note "T121j-bugs: resolve-active.sh resolves bugs/<slug> work-items"
+d=$(mktemp -d) || exit 1
+cd "$d" || { bad "T121j-bugs cd failed" "d=$d"; rm -rf "$d"; exit 1; }
+git init -q
+git config user.email t@t.com && git config user.name T
+git commit --allow-empty -q -m "init"
+mkdir -p .sdd/bugs/001-bug-feature
+touch .sdd/bugs/001-bug-feature/spec.md
+git checkout -q -b sdd/001-bug-feature
+out=$(bash "$RESOLVE_ACTIVE" 2>&1)
+rc=$?
+cd - >/dev/null || true
+rm -rf "$d"
+if [ "$rc" -eq 0 ] && echo "$out" | python3 -c '
+import json, sys
+d = json.loads(sys.stdin.read())
+assert d["active"] == "bugs/001-bug-feature", f"active={d['"'"'active'"'"']}"
+assert d["source"] == "branch", f"source={d['"'"'source'"'"']}"
+assert d["ambiguous"] is False
+' 2>/dev/null; then
+  ok "T121j-bugs resolver returns bugs/<slug> (not features-biased)"
+else
+  bad "T121j-bugs resolver did not resolve bugs/ work-item" "rc=$rc out='$out'"
+fi
+
+# ============================================================
 # T121l — /settings inherits the resolver's fail-closed contract.
 #         When the resolver returns active=null (ambiguous slug,
 #         malicious INDEX, etc.), settings.sh MUST report the
