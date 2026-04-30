@@ -5669,16 +5669,18 @@ fi
 # ============================================================
 note "T121h-abs: resolve-active.sh rejects absolute paths in **Active:**"
 d=$(mktemp -d) || exit 1
-cd "$d"
+cd "$d" || { bad "T121h-abs cd failed" "d=$d"; rm -rf "$d"; exit 1; }
 git init -q
 git config user.email t@t.com && git config user.name T
 git commit --allow-empty -q -m "init"
-mkdir -p .sdd /tmp/sdd-step1-abs-attack 2>/dev/null
-touch /tmp/sdd-step1-abs-attack/spec.md 2>/dev/null
-echo '**Active:** /tmp/sdd-step1-abs-attack' > .sdd/INDEX.md
+# Per-test absolute-path target under $d so parallel runs don't race
+# on a shared /tmp file. CR cycle-5 minor.
+mkdir -p .sdd "$d/abs-attack"
+touch "$d/abs-attack/spec.md"
+echo "**Active:** $d/abs-attack" > .sdd/INDEX.md
 out=$(bash "$RESOLVE_ACTIVE" 2>&1)
-cd - >/dev/null
-rm -rf "$d" /tmp/sdd-step1-abs-attack
+cd - >/dev/null || true
+rm -rf "$d"
 if echo "$out" | python3 -c '
 import json, sys
 d = json.loads(sys.stdin.read())
@@ -5810,6 +5812,69 @@ assert d["branch"] == "sdd/001-collide"
   ok "T121j ambiguous branch slug fails closed (active=null, ambiguous=true)"
 else
   bad "T121j ambiguous slug picked silently or flag missing" "out='$out'"
+fi
+
+# ============================================================
+# T121l — /settings inherits the resolver's fail-closed contract.
+#         When the resolver returns active=null (ambiguous slug,
+#         malicious INDEX, etc.), settings.sh MUST report the
+#         project default — never re-parse INDEX.md from inside
+#         _infer_active_context. Otherwise the resolver's hardening
+#         is bypassed for the cascade lookup. CR cycle-5 MAJOR.
+# ============================================================
+note "T121l: /settings respects resolver fail-closed (no INDEX bypass)"
+d=$(mktemp -d) || exit 1
+cp -r "$FRAMEWORK_ROOT/templates/.sdd" "$d/"
+cd "$d" || { bad "T121l cd failed" "d=$d"; rm -rf "$d"; exit 1; }
+git init -q
+git config user.email t@t.com && git config user.name T
+# Two folders with the same slug — ambiguous case. INDEX points at
+# the second one with an override. If settings.sh respects the
+# resolver's null + ambiguous=true, the cascade walk is skipped and
+# the override is NEVER read. If settings.sh falls through to the
+# legacy parser, it'll find features/001-collide via INDEX and pick
+# up the override — wrong answer.
+mkdir -p .sdd/features/001-collide .sdd/bugs/001-collide
+cat > .sdd/features/001-collide/spec.md <<'SPEC'
+---
+overrides:
+  voice:
+    plain_english: false
+---
+# 001 collide (features) — INDEX target with override
+[PHASE: SPEC]
+## PHASE: SPEC
+### action: problem
+- [ ] who: who specifically has the problem?
+SPEC
+cat > .sdd/bugs/001-collide/spec.md <<'SPEC'
+# 001 collide (bugs) — no override
+[PHASE: SPEC]
+## PHASE: SPEC
+### action: problem
+- [ ] who: who specifically has the problem?
+SPEC
+cat > .sdd/INDEX.md <<'IDX'
+**Playbook:** feature
+**Active:** features/001-collide
+
+## In flight
+- features/001-collide
+- bugs/001-collide
+
+## Shipped
+IDX
+git add . && git commit -q -m "scaffold" --no-verify
+git checkout -q -b sdd/001-collide
+out=$(bash .sdd/scripts/settings.sh get voice.plain_english 2>&1)
+cd - >/dev/null || true
+rm -rf "$d"
+# Resolver returns ambiguous=true → settings.sh treats as no active
+# context → falls back to project default (True, NOT False).
+if echo "$out" | grep -q 'voice.plain_english = True' && echo "$out" | grep -q '\[project\]'; then
+  ok "T121l /settings honored resolver fail-closed (no legacy bypass)"
+else
+  bad "T121l /settings bypassed resolver and walked cascade against ambiguous match" "out='$out'"
 fi
 
 # ============================================================

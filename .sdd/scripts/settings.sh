@@ -254,31 +254,32 @@ def _infer_active_context(proj):
     """Return (spec_path, action_slug, step_id) for the active step,
     or (None, None, None) if no in-flight feature is resolvable.
 
-    Resolution order (v1.0):
-    1. Branch-derived. Calls `.sdd/scripts/resolve-active.sh`, which
-       reads the current git branch — if it matches `sdd/<slug>` and
-       a matching work-item folder exists, that wins. This makes
-       `/settings get` return the right cascade for whichever feature
-       the user is on the branch for, without manual INDEX.md edits.
-    2. INDEX.md fallback. When not on an SDD branch (e.g. on `main`,
-       on a non-`sdd/`-prefixed branch, or when the branch's slug has
-       no matching folder), reads the `**Active:**` line directly
-       from INDEX.md as the legacy path resolution.
+    Resolution (v1.0): the resolver at `.sdd/scripts/resolve-active.sh`
+    is AUTHORITATIVE. It already handles branch-derived active, the
+    INDEX.md `**Active:**` fallback, path-traversal rejection, and
+    fail-closed on ambiguous branch slugs. /settings inherits all of
+    those guarantees by trusting whatever the resolver returns.
 
-    Both paths invoke next-action.sh on the resolved spec to get the
-    active action + step, which is what `/settings get` walks the F5
-    cascade against (closes #34).
+    When the resolver deliberately returns `active: null` (because the
+    slug was ambiguous, the INDEX value was malicious, or there's no
+    work item yet), we MUST NOT re-parse INDEX.md from here — that
+    would silently bypass the resolver's hardening. Returning
+    (None, None, None) makes the caller fall back to the project
+    default, which is the right behaviour: no active context, no
+    cascade override.
 
-    Path resolution rules — `**Active:**` is written by start.sh as a
-    work-item path RELATIVE TO `.sdd/`, e.g. `features/001-foo` or
-    `bugs/003-confirm-link-typo`. The actual spec lives at
-    `<proj>/.sdd/<work-item-rel>/spec.md`. Older / hand-edited indexes
-    sometimes also use the full path (`.sdd/features/.../spec.md`) or
-    just the directory name; tolerate all three shapes."""
+    The legacy in-line INDEX.md parser (still below as a last-resort)
+    only fires when the resolver itself is missing or unreadable — a
+    framework-broken state that suggests the user hasn't run /update
+    yet. If you remove the legacy block, /settings still works on a
+    healthy framework."""
     spec_path = None
     raw = None
+    resolver_ran = False
 
-    # 1. Branch-derived (preferred) — call resolve-active.sh first.
+    # 1. Resolver is authoritative when present + healthy. Anything it
+    # returns (including null) is final — never re-parse INDEX.md
+    # from here.
     resolver = os.path.join(proj, ".sdd", "scripts", "resolve-active.sh")
     if os.path.isfile(resolver):
         try:
@@ -287,6 +288,7 @@ def _infer_active_context(proj):
                 capture_output=True, text=True, timeout=5, cwd=proj,
             )
             if r.returncode == 0 and r.stdout.strip():
+                resolver_ran = True
                 resolved = json.loads(r.stdout)
                 if isinstance(resolved, dict):
                     raw_active = resolved.get("active")
@@ -298,7 +300,17 @@ def _infer_active_context(proj):
         except (subprocess.TimeoutExpired, OSError, json.JSONDecodeError):
             pass
 
-    # 2. INDEX.md fallback — only when branch resolution didn't land.
+    # 2. Resolver-authoritative: if it ran and returned no usable
+    # active (deliberate fail-closed OR genuinely no work item),
+    # respect that. /settings caller falls back to project source.
+    if resolver_ran and spec_path is None:
+        return None, None, None
+
+    # 3. Last-resort legacy parse — fires only when the resolver is
+    # missing or broken (manifest-tampered, file unreadable, etc.).
+    # On a healthy framework this branch is dead code. We keep it so
+    # /settings still reports SOMETHING useful when the framework is
+    # mid-update and resolve-active.sh hasn't landed yet.
     if spec_path is None:
         index_path = os.path.join(proj, ".sdd", "INDEX.md")
         if not os.path.isfile(index_path):
