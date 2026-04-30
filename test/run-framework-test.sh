@@ -5473,16 +5473,22 @@ fi
 # ============================================================
 note "T121c: resolve-active.sh tolerates SDD branch with no matching folder"
 d=$(mktemp -d) || exit 1
-cd "$d"
+cd "$d" || { bad "T121c cd failed" "d=$d"; rm -rf "$d"; exit 1; }
 git init -q
 git config user.email t@t.com && git config user.name T
 git commit --allow-empty -q -m "init"
 mkdir -p .sdd/features/002-in-index
 touch .sdd/features/002-in-index/spec.md
+# Half-scaffolded folder: directory exists but spec.md is missing.
+# The resolver must treat this the same as "no folder" — branch
+# resolution requires spec.md, so this falls back to INDEX. CR
+# cycle-12 nit: without this case, a regression that started
+# accepting bare directories would still go green here.
+mkdir -p .sdd/features/999-not-scaffolded-yet
 echo '**Active:** features/002-in-index' > .sdd/INDEX.md
 git checkout -q -b sdd/999-not-scaffolded-yet
 out=$(bash "$RESOLVE_ACTIVE" 2>&1)
-cd - >/dev/null
+cd - >/dev/null || true
 rm -rf "$d"
 if echo "$out" | python3 -c '
 import json, sys
@@ -5491,9 +5497,9 @@ assert d["active"] == "features/002-in-index", f"active={d['"'"'active'"'"']}"
 assert d["source"] == "index", f"source={d['"'"'source'"'"']}"
 assert d["branch"] == "sdd/999-not-scaffolded-yet", f"branch={d['"'"'branch'"'"']}"
 ' 2>/dev/null; then
-  ok "T121c orphan SDD branch falls back to INDEX.md cleanly"
+  ok "T121c half-scaffolded SDD branch falls back to INDEX.md cleanly"
 else
-  bad "T121c orphan SDD branch wrong" "out='$out'"
+  bad "T121c half-scaffolded SDD branch wrong" "out='$out'"
 fi
 
 # ============================================================
@@ -5549,18 +5555,28 @@ rm -rf "$d"
 all_same=1
 all_ok=1
 all_parse=1
+all_keys_sorted=1
 for r in "${runs[@]}"; do
   [ "$r" != "${runs[0]}" ] && all_same=0
   [ -z "$r" ] && all_ok=0
   echo "$r" | python3 -c 'import json,sys; json.load(sys.stdin)' 2>/dev/null || all_parse=0
+  # Contract: keys are sorted (deterministic across emitters). A
+  # stable but unsorted output would pass byte-equality but break
+  # downstream tools that rely on the documented order. CR cycle-12.
+  echo "$r" | python3 -c '
+import json, sys
+pairs = json.loads(sys.stdin.read(), object_pairs_hook=list)
+keys = [k for k, _ in pairs]
+assert keys == sorted(keys), keys
+' 2>/dev/null || all_keys_sorted=0
 done
 for ec in "${exits[@]}"; do
   [ "$ec" -ne 0 ] && all_ok=0
 done
-if [ "$all_same" -eq 1 ] && [ "$all_ok" -eq 1 ] && [ "$all_parse" -eq 1 ]; then
-  ok "T121e resolve-active.sh deterministic + ec=0 + parses (5/5)"
+if [ "$all_same" -eq 1 ] && [ "$all_ok" -eq 1 ] && [ "$all_parse" -eq 1 ] && [ "$all_keys_sorted" -eq 1 ]; then
+  ok "T121e resolve-active.sh deterministic + ec=0 + parses + keys sorted (5/5)"
 else
-  bad "T121e resolve-active.sh broken" "same=$all_same ok=$all_ok parse=$all_parse first='${runs[0]}' last='${runs[4]}'"
+  bad "T121e resolve-active.sh broken" "same=$all_same ok=$all_ok parse=$all_parse sorted=$all_keys_sorted first='${runs[0]}' last='${runs[4]}'"
 fi
 
 # ============================================================

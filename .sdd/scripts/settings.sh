@@ -288,9 +288,15 @@ def _infer_active_context(proj):
                 capture_output=True, text=True, timeout=5, cwd=proj,
             )
             if r.returncode == 0 and r.stdout.strip():
-                resolver_ran = True
+                # Only mark the resolver authoritative after the JSON
+                # passes contract validation. CR cycle-12 MAJOR: an
+                # `resolver_ran = True` set before `json.loads` would
+                # cause a truncated / log-noise stdout to skip the
+                # legacy fallback (`/settings get` silently dropping
+                # to project defaults during a mid-update window).
                 resolved = json.loads(r.stdout)
                 if isinstance(resolved, dict):
+                    resolver_ran = True
                     raw_active = resolved.get("active")
                     if isinstance(raw_active, str) and raw_active:
                         # Defence in depth: even though resolve-active.sh
