@@ -118,7 +118,7 @@ Together: the closest to "least bugs in production" the framework can offer. Fou
 
 ## Architecture (one screen)
 
-```
+```text
 extensions/playwright-explorer/
 ├── server.py           # MCP server: explore / summarise_findings / report_status
 ├── explorer.py         # the cost-bounded explore loop (no I/O — orchestration only)

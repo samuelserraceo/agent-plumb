@@ -103,13 +103,27 @@ class HttpLLMDriverConstructionTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             HttpLLMDriver(endpoint="http://x/v1/chat", model="")
 
+    def test_rejects_unsafe_url_scheme(self):
+        # SSRF defence — file:// would let urllib read local files.
+        for bad in ("file:///etc/passwd", "ftp://x/y", "gopher://x"):
+            with self.assertRaises(ValueError, msg=f"accepted unsafe scheme: {bad}"):
+                HttpLLMDriver(endpoint=bad, model="m")
+
     def test_default_cost_is_one_cent(self):
         driver = HttpLLMDriver(endpoint="http://x", model="m")
         self.assertAlmostEqual(driver.cost_per_call_usd, 0.01)
 
     def test_http_error_returns_noop_probe_not_raise(self):
-        driver = HttpLLMDriver(endpoint="http://127.0.0.1:1/v1/chat/completions", model="m", timeout_seconds=0.1)
-        probe = driver.propose_probe(category="empty", state={}, spec_acs=[], history=[])
+        # Don't connect to a real port — mock urlopen to raise URLError so the
+        # test doesn't depend on a guaranteed-closed port (which CI sandboxes
+        # sometimes intercept differently).
+        import urllib.error
+        driver = HttpLLMDriver(endpoint="http://example.com/v1/chat/completions", model="m")
+        with mock.patch(
+            "urllib.request.urlopen",
+            side_effect=urllib.error.URLError("Connection refused"),
+        ):
+            probe = driver.propose_probe(category="empty", state={}, spec_acs=[], history=[])
         self.assertEqual(probe["action"], "noop")
         self.assertIn("error", probe["rationale"].lower())
 

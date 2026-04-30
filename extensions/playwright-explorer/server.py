@@ -130,7 +130,7 @@ def _build_default_drivers(args: Dict[str, Any]) -> Tuple[LLMDriver, BrowserDriv
         )
     llm = HttpLLMDriver(endpoint=endpoint, model=model, auth_env=auth_env)
     # Lazy import — keeps the test path free of playwright as a hard dep.
-    from drivers.browser import PlaywrightBrowserDriver  # noqa: WPS433
+    from drivers.browser import PlaywrightBrowserDriver
     browser = PlaywrightBrowserDriver(
         auth_cookie=args.get("auth_cookie"),
         headless=bool(args.get("headless", True)),
@@ -145,6 +145,21 @@ _explore_factory: Callable[[Dict[str, Any]], Tuple[LLMDriver, BrowserDriver]] = 
 
 # -- Tool dispatch ------------------------------------------------------------
 
+def _safe_int(val: Any, default: int) -> int:
+    """Convert val to int; return default on None / non-numeric input."""
+    try:
+        return int(val) if val is not None else default
+    except (TypeError, ValueError):
+        return default
+
+
+def _safe_float(val: Any, default: float) -> float:
+    try:
+        return float(val) if val is not None else default
+    except (TypeError, ValueError):
+        return default
+
+
 def _do_explore(args: Dict[str, Any]) -> Dict[str, Any]:
     global _LAST_RUN
     try:
@@ -157,9 +172,9 @@ def _do_explore(args: Dict[str, Any]) -> Dict[str, Any]:
             spec_path=args.get("spec_path") or "",
             llm=llm,
             browser=browser,
-            max_llm_calls=int(args.get("max_llm_calls", 50)),
-            max_browser_actions=int(args.get("max_browser_actions", 200)),
-            cost_limit_usd=float(args.get("cost_limit_usd", 1.00)),
+            max_llm_calls=_safe_int(args.get("max_llm_calls"), 50),
+            max_browser_actions=_safe_int(args.get("max_browser_actions"), 200),
+            cost_limit_usd=_safe_float(args.get("cost_limit_usd"), 1.00),
         )
     except ValueError as exc:
         return {"error": str(exc)}

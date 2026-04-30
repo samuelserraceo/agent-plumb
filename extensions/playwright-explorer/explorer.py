@@ -314,9 +314,12 @@ def explore(
                         "ac_link": f"[[ac:{_slugify(probe.get('rationale') or expected_text)}]]"
                                    if covered_idx is None else "",
                     })
+            # for/else: the `else` runs when the inner attempts loop completes
+            # normally; `continue` then proceeds to the next category. If the
+            # inner loop broke early (budget hit), `else` is skipped and the
+            # `break` below propagates out of the category loop too.
             else:
                 continue
-            # Inner break (budget hit) → break the outer loop too.
             break
     finally:
         try:

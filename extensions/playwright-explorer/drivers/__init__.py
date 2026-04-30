@@ -9,8 +9,11 @@ real implementation for live runs:
 The MCP server's `explore` tool composes one of each. Tests use the
 mock pair; production composes HttpLLMDriver + PlaywrightBrowserDriver.
 
-Real Playwright is imported lazily inside PlaywrightBrowserDriver so
-the mock-only test path runs without playwright installed.
+PlaywrightBrowserDriver is defined in `drivers.browser` but
+intentionally NOT re-exported here. The server imports it lazily from
+its full module path so that test runs (which only need the mocks)
+don't have to install playwright. Callers needing the real driver
+import it directly from `drivers.browser`.
 """
 
 from .llm import LLMDriver, MockLLMDriver, HttpLLMDriver

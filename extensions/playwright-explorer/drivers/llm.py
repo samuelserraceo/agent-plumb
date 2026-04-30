@@ -78,9 +78,9 @@ class LLMDriver(ABC):
         """Return a probe dict {action, target, value, expected, rationale}."""
 
     @property
+    @abstractmethod
     def cost_per_call_usd(self) -> float:
         """Per-call cost estimate in USD. Used by the explorer's cost gate."""
-        return 0.0
 
 
 # -- mock (used by tests) -----------------------------------------------------
@@ -181,6 +181,15 @@ class HttpLLMDriver(LLMDriver):
             raise ValueError("HttpLLMDriver: endpoint is required")
         if not model:
             raise ValueError("HttpLLMDriver: model is required")
+        # Refuse non-http(s) schemes — file://, gopher://, ftp://, etc.
+        # let urllib reach surfaces it shouldn't (SSRF / local file read).
+        from urllib.parse import urlparse
+        parsed = urlparse(endpoint)
+        if parsed.scheme not in ("http", "https"):
+            raise ValueError(
+                "HttpLLMDriver: endpoint must be an http(s) URL "
+                f"(got scheme={parsed.scheme!r})"
+            )
         self.endpoint = endpoint
         self.model = model
         self.auth_env = auth_env
