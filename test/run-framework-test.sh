@@ -6124,6 +6124,42 @@ else
 fi
 
 # ============================================================
+# T121-next-doctrine — /next slash-command body uses resolve-active.sh
+#                       as the source of truth for the active feature.
+#                       /next is a markdown-prose-for-the-agent file
+#                       (not an executable), so we can't "invoke" it
+#                       like the other helpers. Instead this test
+#                       grep-asserts the doctrine: the body must call
+#                       resolve-active.sh and must NOT instruct the
+#                       agent to parse INDEX.md directly for active.
+#                       Catches doctrine drift if a future cycle ever
+#                       reverts the consumer back to INDEX-parsing.
+#                       (CR cycle-18 duplicate flagged the missing
+#                       /next coverage; this is the closest test we
+#                       can write for a slash-command-body file.)
+# ============================================================
+note "T121-next-doctrine: /next.md uses resolve-active.sh as active source"
+NEXT_MD="$FRAMEWORK_ROOT/templates/.claude/commands/next.md"
+ok_count=0
+# Must reference resolve-active.sh
+grep -q '\.sdd/scripts/resolve-active\.sh' "$NEXT_MD" && ok_count=$((ok_count+1))
+# Must call out ambiguous halt branch
+grep -q 'ambiguous: true' "$NEXT_MD" && ok_count=$((ok_count+1))
+# Must NOT instruct the agent to parse INDEX.md as the active source
+# directly (the v0.x doctrine — should be replaced by resolver).
+if grep -qE 'Find the active work item from the \*\*Active:\*\* pointer line' "$NEXT_MD"; then
+  drift=1
+else
+  drift=0
+  ok_count=$((ok_count+1))
+fi
+if [ "$ok_count" -eq 3 ]; then
+  ok "T121-next-doctrine /next.md uses resolver, not direct INDEX parse (3/3)"
+else
+  bad "T121-next-doctrine /next.md doctrine drift" "ok=$ok_count/3 drift=$drift"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'

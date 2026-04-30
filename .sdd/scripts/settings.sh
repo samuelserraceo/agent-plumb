@@ -300,11 +300,26 @@ def _infer_active_context(proj):
                 required_keys = {"active", "ambiguous", "branch",
                                  "index_active", "source"}
                 valid_sources = {"branch", "index", "none"}
-                if (
-                    isinstance(resolved, dict)
-                    and required_keys.issubset(resolved)
-                    and resolved.get("source") in valid_sources
-                ):
+                # Validate full contract — keys present AND each field
+                # has the documented type. Without per-key type checks,
+                # something like `{"active": [], "ambiguous": "yes",
+                # "source": "branch", ...}` would still flip
+                # resolver_ran. CR cycle-18 minor.
+                def _well_typed(d):
+                    if not isinstance(d, dict):
+                        return False
+                    if not required_keys.issubset(d):
+                        return False
+                    if d.get("source") not in valid_sources:
+                        return False
+                    if not isinstance(d.get("ambiguous"), bool):
+                        return False
+                    for k in ("active", "branch", "index_active"):
+                        v = d.get(k)
+                        if v is not None and not isinstance(v, str):
+                            return False
+                    return True
+                if _well_typed(resolved):
                     resolver_ran = True
                     raw_active = resolved.get("active")
                     if isinstance(raw_active, str) and raw_active:

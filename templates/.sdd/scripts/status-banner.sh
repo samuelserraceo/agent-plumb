@@ -60,6 +60,11 @@ try:
     d = json.load(sys.stdin)
 except Exception:
     d = {}
+# JSON top-level can legally be a non-dict (null, list, scalar). Guard
+# so subsequent .get() calls do not raise AttributeError; the script
+# must always exit 0 per its docblock.
+if not isinstance(d, dict):
+    d = {}
 
 active       = d.get("active") or ""
 source       = d.get("source") or ""
