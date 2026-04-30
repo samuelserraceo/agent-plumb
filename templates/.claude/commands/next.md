@@ -8,8 +8,9 @@ You are running the SDD workflow. **Do exactly one atomic step — no more, no l
 
 ## What to do
 
-1. **Read state.** Read `.sdd/INDEX.md`. Find the active work item from the `**Active:**` pointer line.
-   - **No active work item** → tell the user, in plain English: *"No active work item. Run `/start <one-line title>` to scaffold a new one (e.g., `/start build a waitlist landing page`)."* Stop here. `/next` does not bootstrap — `/start` is the single entry point for new work.
+1. **Read state.** Run `.sdd/scripts/resolve-active.sh` and parse the JSON. The `active` field is the work-item path relative to `.sdd/` (e.g. `features/001-waitlist`); `source` tells you whether it came from the current branch (`branch`) or the INDEX.md `**Active:**` line (`index`). Branch-derived wins so multi-feature parallel work just works — switching branches switches the active feature without editing INDEX.md.
+   - **`active` is null** (`source: "none"`) → tell the user, in plain English: *"No active work item. Run `/start <one-line title>` to scaffold a new one (e.g., `/start build a waitlist landing page`)."* Stop here. `/next` does not bootstrap — `/start` is the single entry point for new work.
+   - **The active spec lives at** `.sdd/<active>/spec.md`. Use that path everywhere this prose says "active spec".
 
 2. **Resolve the next step.** Run `.sdd/scripts/next-action.sh <active-spec-path>` and parse the JSON output. Fields you care about:
    - `phase` — active phase ID (SPEC / BUILD / SHIP / SHIPPED).

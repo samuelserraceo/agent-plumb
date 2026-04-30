@@ -254,10 +254,20 @@ def _infer_active_context(proj):
     """Return (spec_path, action_slug, step_id) for the active step,
     or (None, None, None) if no in-flight feature is resolvable.
 
-    Reads `**Active:** <path>` from .sdd/INDEX.md, then invokes
-    next-action.sh on that spec to get the active action + step.
-    Used by `get` to walk the F5 cascade and report provenance for
-    the value the agent would currently see (closes #34).
+    Resolution order (v1.0):
+    1. Branch-derived. Calls `.sdd/scripts/resolve-active.sh`, which
+       reads the current git branch — if it matches `sdd/<slug>` and
+       a matching work-item folder exists, that wins. This makes
+       `/settings get` return the right cascade for whichever feature
+       the user is on the branch for, without manual INDEX.md edits.
+    2. INDEX.md fallback. When not on an SDD branch (e.g. on `main`,
+       on a non-`sdd/`-prefixed branch, or when the branch's slug has
+       no matching folder), reads the `**Active:**` line directly
+       from INDEX.md as the legacy path resolution.
+
+    Both paths invoke next-action.sh on the resolved spec to get the
+    active action + step, which is what `/settings get` walks the F5
+    cascade against (closes #34).
 
     Path resolution rules — `**Active:**` is written by start.sh as a
     work-item path RELATIVE TO `.sdd/`, e.g. `features/001-foo` or
@@ -265,31 +275,56 @@ def _infer_active_context(proj):
     `<proj>/.sdd/<work-item-rel>/spec.md`. Older / hand-edited indexes
     sometimes also use the full path (`.sdd/features/.../spec.md`) or
     just the directory name; tolerate all three shapes."""
-    index_path = os.path.join(proj, ".sdd", "INDEX.md")
-    if not os.path.isfile(index_path):
-        return None, None, None
-    try:
-        with open(index_path, encoding="utf-8") as f:
-            idx_text = f.read()
-    except OSError:
-        return None, None, None
-    m = re.search(r'^\*\*Active:\*\*\s+(\S+)', idx_text, re.MULTILINE)
-    if not m:
-        return None, None, None
-    raw = m.group(1).strip()
-    # Try the four canonical shapes in priority order. First one that
-    # resolves to an existing spec.md wins.
-    if os.path.isabs(raw):
-        candidates = [raw if raw.endswith("spec.md") else os.path.join(raw, "spec.md")]
-    else:
-        candidates = [
-            os.path.join(proj, ".sdd", raw, "spec.md"),     # work-item-rel (canonical)
-            os.path.join(proj, raw),                         # already-relative-to-proj (legacy)
-            os.path.join(proj, raw, "spec.md"),              # bare folder under proj
-        ]
-    spec_path = next((p for p in candidates if os.path.isfile(p)), None)
-    if not spec_path:
-        return None, None, None
+    spec_path = None
+    raw = None
+
+    # 1. Branch-derived (preferred) — call resolve-active.sh first.
+    resolver = os.path.join(proj, ".sdd", "scripts", "resolve-active.sh")
+    if os.path.isfile(resolver):
+        try:
+            r = subprocess.run(
+                ["bash", resolver],
+                capture_output=True, text=True, timeout=5, cwd=proj,
+            )
+            if r.returncode == 0 and r.stdout.strip():
+                resolved = json.loads(r.stdout)
+                if isinstance(resolved, dict):
+                    raw_active = resolved.get("active")
+                    if isinstance(raw_active, str) and raw_active:
+                        candidate = os.path.join(proj, ".sdd", raw_active, "spec.md")
+                        if os.path.isfile(candidate):
+                            spec_path = candidate
+                            raw = raw_active
+        except (subprocess.TimeoutExpired, OSError, json.JSONDecodeError):
+            pass
+
+    # 2. INDEX.md fallback — only when branch resolution didn't land.
+    if spec_path is None:
+        index_path = os.path.join(proj, ".sdd", "INDEX.md")
+        if not os.path.isfile(index_path):
+            return None, None, None
+        try:
+            with open(index_path, encoding="utf-8") as f:
+                idx_text = f.read()
+        except OSError:
+            return None, None, None
+        m = re.search(r'^\*\*Active:\*\*\s+(\S+)', idx_text, re.MULTILINE)
+        if not m:
+            return None, None, None
+        raw = m.group(1).strip()
+        # Try the four canonical shapes in priority order. First one that
+        # resolves to an existing spec.md wins.
+        if os.path.isabs(raw):
+            candidates = [raw if raw.endswith("spec.md") else os.path.join(raw, "spec.md")]
+        else:
+            candidates = [
+                os.path.join(proj, ".sdd", raw, "spec.md"),     # work-item-rel (canonical)
+                os.path.join(proj, raw),                         # already-relative-to-proj (legacy)
+                os.path.join(proj, raw, "spec.md"),              # bare folder under proj
+            ]
+        spec_path = next((p for p in candidates if os.path.isfile(p)), None)
+        if not spec_path:
+            return None, None, None
     next_action_sh = os.path.join(proj, ".sdd", "scripts", "next-action.sh")
     if not os.path.isfile(next_action_sh):
         return None, None, None

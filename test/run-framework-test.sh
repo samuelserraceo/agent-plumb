@@ -94,6 +94,8 @@ mkproj_v08() {
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/read-events.sh"          "$d/.sdd/scripts/read-events.sh"
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/validate-sdd-path.sh"    "$d/.sdd/scripts/validate-sdd-path.sh"
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/settings.sh"             "$d/.sdd/scripts/settings.sh" 2>/dev/null || true
+  cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/resolve-active.sh"       "$d/.sdd/scripts/resolve-active.sh" 2>/dev/null || true
+  chmod +x "$d/.sdd/scripts/resolve-active.sh" 2>/dev/null || true
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/revert-phase.sh"         "$d/.sdd/scripts/revert-phase.sh" 2>/dev/null || true
   chmod +x "$d/.sdd/scripts/revert-phase.sh" 2>/dev/null || true
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/check-setup-answer.sh"   "$d/.sdd/scripts/check-setup-answer.sh" 2>/dev/null || true
@@ -5398,6 +5400,235 @@ if [ "$ok_count" -eq 5 ]; then
   ok "T118 cp -R src/. dst/ pattern preserves flat layout (5/5 assertions)"
 else
   bad "T118 cp -R src/. dst/ nested or lost files" "ok_count=$ok_count/5"
+fi
+
+# ============================================================
+# T121 — resolve-active.sh: branch wins when current branch matches
+#        an existing SDD work-item folder (closes #42, v1.0 step 1).
+# ============================================================
+note "T121: resolve-active.sh prefers branch-derived active over INDEX.md"
+RESOLVE_ACTIVE="$FRAMEWORK_ROOT/templates/.sdd/scripts/resolve-active.sh"
+d=$(mktemp -d) || exit 1
+cd "$d"
+git init -q
+git config user.email t@t.com && git config user.name T
+git commit --allow-empty -q -m "init"
+mkdir -p .sdd/features/001-on-branch .sdd/features/002-in-index
+touch .sdd/features/001-on-branch/spec.md .sdd/features/002-in-index/spec.md
+echo '**Active:** features/002-in-index' > .sdd/INDEX.md
+git checkout -q -b sdd/001-on-branch
+out=$(bash "$RESOLVE_ACTIVE" 2>&1)
+cd - >/dev/null
+rm -rf "$d"
+if echo "$out" | python3 -c '
+import json, sys
+d = json.loads(sys.stdin.read())
+assert d["active"] == "features/001-on-branch", f"active={d['"'"'active'"'"']}"
+assert d["source"] == "branch", f"source={d['"'"'source'"'"']}"
+assert d["branch"] == "sdd/001-on-branch", f"branch={d['"'"'branch'"'"']}"
+assert d["index_active"] == "features/002-in-index", f"index_active={d['"'"'index_active'"'"']}"
+' 2>/dev/null; then
+  ok "T121 branch active wins, INDEX value preserved as fallback"
+else
+  bad "T121 branch resolution wrong" "out='$out'"
+fi
+
+# ============================================================
+# T121b — resolve-active.sh: falls back to INDEX.md when not on
+#         an `sdd/...` branch (e.g., on `main`).
+# ============================================================
+note "T121b: resolve-active.sh falls back to INDEX.md off SDD branches"
+d=$(mktemp -d) || exit 1
+cd "$d"
+git init -q
+git config user.email t@t.com && git config user.name T
+git commit --allow-empty -q -m "init"
+mkdir -p .sdd/features/002-in-index
+touch .sdd/features/002-in-index/spec.md
+echo '**Active:** features/002-in-index' > .sdd/INDEX.md
+# Stay on the default branch (main / master) — not an SDD branch.
+out=$(bash "$RESOLVE_ACTIVE" 2>&1)
+cd - >/dev/null
+rm -rf "$d"
+if echo "$out" | python3 -c '
+import json, sys
+d = json.loads(sys.stdin.read())
+assert d["active"] == "features/002-in-index", f"active={d['"'"'active'"'"']}"
+assert d["source"] == "index", f"source={d['"'"'source'"'"']}"
+' 2>/dev/null; then
+  ok "T121b INDEX.md fallback hit when not on SDD branch"
+else
+  bad "T121b INDEX.md fallback wrong" "out='$out'"
+fi
+
+# ============================================================
+# T121c — resolve-active.sh: SDD-style branch with no matching
+#         folder falls back to INDEX.md cleanly (the user might
+#         have branched to a name that hasn't been scaffolded yet).
+# ============================================================
+note "T121c: resolve-active.sh tolerates SDD branch with no matching folder"
+d=$(mktemp -d) || exit 1
+cd "$d"
+git init -q
+git config user.email t@t.com && git config user.name T
+git commit --allow-empty -q -m "init"
+mkdir -p .sdd/features/002-in-index
+touch .sdd/features/002-in-index/spec.md
+echo '**Active:** features/002-in-index' > .sdd/INDEX.md
+git checkout -q -b sdd/999-not-scaffolded-yet
+out=$(bash "$RESOLVE_ACTIVE" 2>&1)
+cd - >/dev/null
+rm -rf "$d"
+if echo "$out" | python3 -c '
+import json, sys
+d = json.loads(sys.stdin.read())
+assert d["active"] == "features/002-in-index", f"active={d['"'"'active'"'"']}"
+assert d["source"] == "index", f"source={d['"'"'source'"'"']}"
+assert d["branch"] == "sdd/999-not-scaffolded-yet", f"branch={d['"'"'branch'"'"']}"
+' 2>/dev/null; then
+  ok "T121c orphan SDD branch falls back to INDEX.md cleanly"
+else
+  bad "T121c orphan SDD branch wrong" "out='$out'"
+fi
+
+# ============================================================
+# T121d — resolve-active.sh: nothing resolvable → emits null active
+#         with source=none. Doesn't crash; emits a parseable JSON.
+# ============================================================
+note "T121d: resolve-active.sh emits null active when nothing resolves"
+d=$(mktemp -d) || exit 1
+cd "$d"
+mkdir -p .sdd
+out=$(bash "$RESOLVE_ACTIVE" 2>&1)
+cd - >/dev/null
+rm -rf "$d"
+if echo "$out" | python3 -c '
+import json, sys
+d = json.loads(sys.stdin.read())
+assert d["active"] is None, f"active={d['"'"'active'"'"']}"
+assert d["source"] == "none", f"source={d['"'"'source'"'"']}"
+' 2>/dev/null; then
+  ok "T121d emits null active + source=none on empty project"
+else
+  bad "T121d empty-project case wrong" "out='$out'"
+fi
+
+# ============================================================
+# T121e — resolve-active.sh deterministic: 5 invocations on the
+#         same project produce byte-identical output.
+# ============================================================
+note "T121e: resolve-active.sh deterministic across 5 invocations"
+d=$(mktemp -d) || exit 1
+cd "$d"
+git init -q
+git config user.email t@t.com && git config user.name T
+git commit --allow-empty -q -m "init"
+mkdir -p .sdd/features/001-determinism-test
+touch .sdd/features/001-determinism-test/spec.md
+echo '**Active:** features/001-determinism-test' > .sdd/INDEX.md
+git checkout -q -b sdd/001-determinism-test
+runs=()
+for i in 1 2 3 4 5; do
+  runs+=("$(bash "$RESOLVE_ACTIVE")")
+done
+cd - >/dev/null
+rm -rf "$d"
+all_same=1
+for r in "${runs[@]}"; do
+  [ "$r" != "${runs[0]}" ] && all_same=0
+done
+if [ "$all_same" -eq 1 ]; then
+  ok "T121e resolve-active.sh deterministic (5/5 identical)"
+else
+  bad "T121e resolve-active.sh non-deterministic across runs" "first='${runs[0]}' last='${runs[4]}'"
+fi
+
+# ============================================================
+# T121f — settings.sh inherits branch-aware active. When on
+#         sdd/<id>-<slug>, /settings get walks the cascade against
+#         THE BRANCH'S spec.md, not whatever **Active:** points at.
+# ============================================================
+note "T121f: settings.sh uses branch-derived active for F5 cascade"
+d=$(mktemp -d) || exit 1
+cp -r "$FRAMEWORK_ROOT/templates/.sdd" "$d/"
+cd "$d"
+git init -q
+git config user.email t@t.com && git config user.name T
+# Two work-items: A (which the branch points at) and B (which INDEX
+# points at). The spec for A overrides voice.plain_english=False so
+# the cascade lookup PROVES which one was resolved.
+mkdir -p .sdd/features/001-on-branch .sdd/features/002-in-index
+cat > .sdd/features/001-on-branch/spec.md <<'SPEC'
+---
+overrides:
+  voice:
+    plain_english: false
+---
+# 001 on-branch
+[PHASE: SPEC]
+## PHASE: SPEC
+### action: problem
+- [ ] who: who specifically has the problem?
+SPEC
+cat > .sdd/features/002-in-index/spec.md <<'SPEC'
+# 002 in-index
+[PHASE: SPEC]
+## PHASE: SPEC
+### action: problem
+- [ ] who: who specifically has the problem?
+SPEC
+cat > .sdd/INDEX.md <<'IDX'
+**Playbook:** feature
+**Active:** features/002-in-index
+
+## In flight
+- features/001-on-branch
+- features/002-in-index
+
+## Shipped
+IDX
+git add . && git commit -q -m "scaffold"
+git checkout -q -b sdd/001-on-branch
+out=$(bash .sdd/scripts/settings.sh get voice.plain_english 2>&1)
+cd - >/dev/null
+rm -rf "$d"
+# If branch wins, the cascade reads the override (False).
+# If INDEX wins, the cascade reads the project default (True).
+if echo "$out" | grep -q 'voice.plain_english = False'; then
+  ok "T121f /settings get followed branch-derived active to spec.md override"
+else
+  bad "T121f /settings get used INDEX.md value instead of branch's spec" "out='$out'"
+fi
+
+# ============================================================
+# T121g — resolve-active.sh: drift signal. When branch is sdd/A but
+#         INDEX **Active:** is B (and both folders exist), `active`
+#         points at A and `index_active` carries B so /status can
+#         render the drift to the user.
+# ============================================================
+note "T121g: resolve-active.sh exposes drift between branch + INDEX"
+d=$(mktemp -d) || exit 1
+cd "$d"
+git init -q
+git config user.email t@t.com && git config user.name T
+git commit --allow-empty -q -m "init"
+mkdir -p .sdd/features/001-A .sdd/features/002-B
+touch .sdd/features/001-A/spec.md .sdd/features/002-B/spec.md
+echo '**Active:** features/002-B' > .sdd/INDEX.md
+git checkout -q -b sdd/001-A
+out=$(bash "$RESOLVE_ACTIVE" 2>&1)
+cd - >/dev/null
+rm -rf "$d"
+if echo "$out" | python3 -c '
+import json, sys
+d = json.loads(sys.stdin.read())
+assert d["active"] == "features/001-A"
+assert d["index_active"] == "features/002-B"
+assert d["active"] != d["index_active"]
+' 2>/dev/null; then
+  ok "T121g drift surfaced: active=branch, index_active=INDEX line"
+else
+  bad "T121g drift fields wrong" "out='$out'"
 fi
 
 # ============================================================

@@ -8,9 +8,30 @@ Show the user the current workflow state. Run these Bash commands and present th
 cat .sdd/INDEX.md
 echo ""
 echo "---"
-# Active work item's spec summary
-active=$(awk '/^\*\*Active:\*\*/{print $2; exit}' .sdd/INDEX.md 2>/dev/null || echo "")
-echo "$active" | grep -qE '^[a-z][a-z0-9_-]*/[A-Za-z0-9._-]+$' || active=""
+# Resolve the active work item via resolve-active.sh (branch-aware,
+# falls back to INDEX.md **Active:** when not on an SDD branch).
+resolve_json=$(bash .sdd/scripts/resolve-active.sh 2>/dev/null || echo '{}')
+active=$(echo "$resolve_json" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("active") or "")' 2>/dev/null)
+source=$(echo "$resolve_json" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("source") or "")' 2>/dev/null)
+branch=$(echo "$resolve_json" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("branch") or "")' 2>/dev/null)
+index_active=$(echo "$resolve_json" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("index_active") or "")' 2>/dev/null)
+# Branch-aware status banner — explains where the active value came
+# from + flags drift between branch and INDEX.md so the user sees
+# what's going on across multiple worktrees.
+if [ "$source" = "branch" ]; then
+  echo "Active source: branch ($branch) → $active"
+  if [ -n "$index_active" ] && [ "$index_active" != "$active" ]; then
+    echo "  Note: INDEX.md **Active:** points at $index_active — drift is OK in"
+    echo "        multi-worktree work. The branch wins. Switch branches to"
+    echo "        switch features, no manual INDEX.md edit needed."
+  fi
+elif [ "$source" = "index" ]; then
+  if [ -n "$branch" ]; then
+    echo "Active source: INDEX.md (branch '$branch' is not an SDD branch) → $active"
+  else
+    echo "Active source: INDEX.md → $active"
+  fi
+fi
 if [ -n "$active" ] && [ -f ".sdd/$active/spec.md" ]; then
   spec=".sdd/$active/spec.md"
   echo "Active spec: $spec"

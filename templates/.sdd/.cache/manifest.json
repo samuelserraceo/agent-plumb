@@ -59,7 +59,7 @@
       "trust": "framework"
     },
     "settings.sh": {
-      "expected_sha256": "bf3a68901fcd74e6a46b6830b7d9a2ac3a06486708094985b7cf7f428ab6a601",
+      "expected_sha256": "fb783b1e2a3ac4737f60266ba8bf98551734d3b4f61a6e1f427d1f26a0b5d046",
       "path": ".sdd/scripts/settings.sh",
       "trust": "framework"
     },
@@ -81,6 +81,11 @@
     "scope-guard-config.sh": {
       "expected_sha256": "6002764546209d4b07fa1ec140abdbd129f0be98182061aafa0d013bcc33ac8b",
       "path": ".sdd/scripts/scope-guard-config.sh",
+      "trust": "framework"
+    },
+    "resolve-active.sh": {
+      "expected_sha256": "8977afd576f2ff13c910a0db61eec06c6eff51bd96d52919f7b3975bf36b05c9",
+      "path": ".sdd/scripts/resolve-active.sh",
       "trust": "framework"
     }
   },
