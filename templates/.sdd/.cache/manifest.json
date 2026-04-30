@@ -2,7 +2,7 @@
   "extensions": {},
   "playbooks": {
     "feature": {
-      "expected_sha256": "ec97aea82ef4b2137c75ef8af9914787e14c89cbec439f933d219571f2c93729",
+      "expected_sha256": "932048322a09eddd2254024d2ed36273e2695eded38cec7a49698cf20e207c19",
       "path": ".sdd/playbooks/feature.md",
       "trust": "framework"
     },
@@ -238,6 +238,11 @@
     "project-start-first": {
       "expected_sha256": "5a0873b63b426bdb538c39bcb7219232d5f6d0d9caa8f33b13785d34e11ec4ac",
       "path": ".sdd/actions/project-start-first.md",
+      "trust": "framework"
+    },
+    "playwright-explore": {
+      "expected_sha256": "63aad54e6a8d2d505d5eeb0813a79d164a713a061ff00a362082351267dfb857",
+      "path": ".sdd/actions/playwright-explore.md",
       "trust": "framework"
     }
   }
