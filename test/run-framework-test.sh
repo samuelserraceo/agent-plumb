@@ -5511,7 +5511,7 @@ rm -rf "$d"
 #   shouldn't trip the graph-integrity CI gate).
 # ============================================================
 note "T133: graph cache skips wiki-links inside fenced blocks + inline code"
-d=$(mktemp -d) || { bad "T133 cannot mktemp" ""; }
+d=$(mktemp -d) || { bad "T133 cannot mktemp" "mktemp failed"; exit 1; }
 mkdir -p "$d/.sdd/features/001-real" "$d/.sdd/.cache" "$d/extensions/sdd-mcp-server" 2>/dev/null
 cp -r "$FRAMEWORK_ROOT/extensions/sdd-mcp-server/queries" "$d/extensions/sdd-mcp-server/" 2>/dev/null
 cat > "$d/.sdd/features/001-real/spec.md" <<'EOF'
