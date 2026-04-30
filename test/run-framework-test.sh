@@ -4693,17 +4693,19 @@ fi
 # ============================================================
 note "T119-zero: post-stop-lint refuses INDEX.md with no **Active:** line"
 d=$(mkproj_v08)
-cd "$d"
-cat > .sdd/INDEX.md <<'IDX'
+ec=0
+err=""
+if cd "$d"; then
+  cat > .sdd/INDEX.md <<'IDX'
 # Project Index
 
 ## In flight
 
 ## Shipped
 IDX
-ec=0
-err=$(echo '{"hook_event_name":"Stop"}' | bash .claude/hooks/post-stop-lint.sh 2>&1 1>/dev/null) || ec=$?
-cd - >/dev/null
+  err=$(echo '{"hook_event_name":"Stop"}' | bash .claude/hooks/post-stop-lint.sh 2>&1 1>/dev/null) || ec=$?
+  cd - >/dev/null
+fi
 rm -rf "$d"
 if [ "$ec" -eq 2 ] && echo "$err" | grep -q "no \*\*Active:\*\* line"; then
   ok "T119-zero hook refused INDEX.md with missing Active invariant"
@@ -4779,8 +4781,10 @@ fi
 # ============================================================
 note "T119c-zero: post-stop-lint refuses active spec.md with no [PHASE: X] line"
 d=$(mkproj_v08)
-cd "$d"
-cat > .sdd/INDEX.md <<'IDX'
+ec=0
+err=""
+if cd "$d"; then
+  cat > .sdd/INDEX.md <<'IDX'
 # Project Index
 
 **Active:** features/001-test
@@ -4790,13 +4794,13 @@ cat > .sdd/INDEX.md <<'IDX'
 
 ## Shipped
 IDX
-cat > .sdd/features/001-test/spec.md <<'SPEC'
+  cat > .sdd/features/001-test/spec.md <<'SPEC'
 # 001-test
 ## PHASE: SPEC
 SPEC
-ec=0
-err=$(echo '{"hook_event_name":"Stop"}' | bash .claude/hooks/post-stop-lint.sh 2>&1 1>/dev/null) || ec=$?
-cd - >/dev/null
+  err=$(echo '{"hook_event_name":"Stop"}' | bash .claude/hooks/post-stop-lint.sh 2>&1 1>/dev/null) || ec=$?
+  cd - >/dev/null
+fi
 rm -rf "$d"
 if [ "$ec" -eq 2 ] && echo "$err" | grep -q "no \[PHASE: X\] line"; then
   ok "T119c-zero hook refused spec.md with missing PHASE invariant"
@@ -4812,8 +4816,10 @@ fi
 # ============================================================
 note "T119-broken-active: post-stop-lint surfaces broken Active pointer"
 d=$(mkproj_v08)
-cd "$d"
-cat > .sdd/INDEX.md <<'IDX'
+ec=0
+err=""
+if cd "$d"; then
+  cat > .sdd/INDEX.md <<'IDX'
 # Project Index
 
 **Active:** features/999-deleted
@@ -4823,11 +4829,11 @@ cat > .sdd/INDEX.md <<'IDX'
 
 ## Shipped
 IDX
-# Note: 999-deleted folder is NOT created — the test exercises the
-# "Active points at non-existent folder" drift case.
-ec=0
-err=$(echo '{"hook_event_name":"Stop"}' | bash .claude/hooks/post-stop-lint.sh 2>&1 1>/dev/null) || ec=$?
-cd - >/dev/null
+  # Note: 999-deleted folder is NOT created — the test exercises the
+  # "Active points at non-existent folder" drift case.
+  err=$(echo '{"hook_event_name":"Stop"}' | bash .claude/hooks/post-stop-lint.sh 2>&1 1>/dev/null) || ec=$?
+  cd - >/dev/null
+fi
 rm -rf "$d"
 if [ "$ec" -eq 2 ] && echo "$err" | grep -q "Active:.*points at.*999-deleted"; then
   ok "T119-broken-active hook surfaced broken Active pointer"
@@ -5030,17 +5036,36 @@ else
   fi
   # Must have a Stop event entry. Walk the JSON in Python so a structural
   # change (e.g. moving Stop into a different shape) is also caught.
+  # CR cycle-3 finding: substring match would also accept commands like
+  # "do-not-run-post-stop-lint.sh-anymore.sh" which is wrong. Parse the
+  # command and check the executable token's basename precisely.
   py_out=$(python3 - "$settings_path" <<'PY' 2>&1
-import json, sys
+import json, shlex, sys
 with open(sys.argv[1]) as f: cfg = json.load(f)
 hooks = cfg.get("hooks") or {}
 stops = hooks.get("Stop") or []
 found = False
 for entry in stops:
     for hook in (entry.get("hooks") or []):
-        if "post-stop-lint.sh" in (hook.get("command") or ""):
+        cmd = (hook.get("command") or "").strip()
+        if not cmd:
+            continue
+        # Parse as a shell command — the executable is the first token.
+        try:
+            tokens = shlex.split(cmd)
+        except ValueError:
+            continue
+        if not tokens:
+            continue
+        # Match the basename (so "./.claude/hooks/post-stop-lint.sh" or
+        # ".claude/hooks/post-stop-lint.sh" both qualify) but require an
+        # exact filename match — no substring shenanigans.
+        exe = tokens[0]
+        if exe.split("/")[-1] == "post-stop-lint.sh":
             found = True
             break
+    if found:
+        break
 print("FOUND" if found else "MISSING")
 PY
   )
@@ -5052,6 +5077,32 @@ PY
   else
     bad "T119i settings.json doesn't register post-stop-lint under Stop" "ok_count=$ok_count py_out='$py_out'"
   fi
+fi
+
+# ============================================================
+# T119j — post-stop-lint exits 0 silently in a project that has NO
+#         .sdd/ directory. The hook fires on EVERY Claude turn,
+#         including in projects that aren't SDD-bootstrapped — it
+#         must not false-fail or print noise in that common case.
+#         CR cycle-3 finding on PR #93.
+# ============================================================
+note "T119j: post-stop-lint silent + ec=0 in a project with no .sdd/"
+d=$(mktemp -d) || exit 1
+# Copy ONLY the hook file in (no .sdd/ scaffolding).
+mkdir -p "$d/.claude/hooks"
+cp "$FRAMEWORK_ROOT/templates/.claude/hooks/post-stop-lint.sh" "$d/.claude/hooks/post-stop-lint.sh"
+chmod +x "$d/.claude/hooks/post-stop-lint.sh"
+ec=0
+out=""
+if cd "$d"; then
+  out=$(echo '{"hook_event_name":"Stop"}' | bash .claude/hooks/post-stop-lint.sh 2>&1) || ec=$?
+  cd - >/dev/null
+fi
+rm -rf "$d"
+if [ "$ec" -eq 0 ] && [ -z "$(echo "$out" | tr -d '[:space:]')" ]; then
+  ok "T119j hook exited 0 silently in non-SDD project (no false-fail)"
+else
+  bad "T119j hook noisy or non-zero in non-SDD project" "ec=$ec; out='$out'"
 fi
 
 # ============================================================
