@@ -10,6 +10,11 @@
       "expected_sha256": "4c6ce120e9000dfe522a38626398cc612fcc330ee05b8a8cdd448eed3b69f29a",
       "path": ".sdd/playbooks/project.md",
       "trust": "framework"
+    },
+    "bug": {
+      "path": ".sdd/playbooks/bug.md",
+      "trust": "framework",
+      "expected_sha256": "c63c648876651c006df9346e21ef0f7d28366138a18e923f522648146fac5814"
     }
   },
   "scripts": {
@@ -34,7 +39,7 @@
       "trust": "framework"
     },
     "start.sh": {
-      "expected_sha256": "cd27239eece0f9da500fb3860855387d37a48ef432678fa98f1567cb67565d6f",
+      "expected_sha256": "be61f81b004ee3d611e66edf808b63fd5c4aa78366481037e5b6bfc108cf270a",
       "path": ".sdd/scripts/start.sh",
       "trust": "framework"
     },
@@ -244,6 +249,31 @@
       "expected_sha256": "0da8716f3f5b80679886a3a4fee2bcfc69c0eaf7e95459a97e359d46800389e5",
       "path": ".sdd/actions/playwright-explore.md",
       "trust": "framework"
+    },
+    "bug-problem": {
+      "path": ".sdd/actions/bug-problem.md",
+      "trust": "framework",
+      "expected_sha256": "9eb3e6d55807117e899963b9b05953a76d55cc9b5695d070846641582f0154e5"
+    },
+    "bug-repro": {
+      "path": ".sdd/actions/bug-repro.md",
+      "trust": "framework",
+      "expected_sha256": "2b16dd672bbfc892404f09a32515a9a88e369e2a8af7abeeff15c84693d32bec"
+    },
+    "bug-root-cause": {
+      "path": ".sdd/actions/bug-root-cause.md",
+      "trust": "framework",
+      "expected_sha256": "3b235e03f84882d5dadbbf9886d5708d25ffa3415d95f7716feff3e7a605fffa"
+    },
+    "bug-fix": {
+      "path": ".sdd/actions/bug-fix.md",
+      "trust": "framework",
+      "expected_sha256": "3626a38ccb48d05b9fff2685663641b936f7e8d2df71c4a4606b8ed2f93e33a3"
+    },
+    "bug-regression-test": {
+      "path": ".sdd/actions/bug-regression-test.md",
+      "trust": "framework",
+      "expected_sha256": "57c52a06e48bf1024d4c163f5c9834f12de063a0a478218c83e60cf807ad6b43"
     }
   }
 }

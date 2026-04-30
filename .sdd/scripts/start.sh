@@ -156,6 +156,18 @@ title = os.environ["TITLE_INPUT"].strip()
 playbook_override = os.environ["PLAYBOOK_OVERRIDE"].strip()
 extends_raw = os.environ.get("EXTENDS", "").strip()
 
+# v1.0 Step 2 — `/start [BUG] "..."` auto-routes to the bug playbook.
+# Strip the leading `[BUG]` (or `[bug]` — case-insensitive) prefix from
+# the title and set playbook_override to "bug" if not already set.
+# An explicit `--playbook=feature` overrides the prefix shortcut so the
+# user can still walk a bug-shaped problem through `feature.md` if they
+# really want to.
+_bug_prefix = re.match(r"^\[bug\]\s*", title, re.IGNORECASE)
+if _bug_prefix:
+    title = title[_bug_prefix.end():].strip()
+    if not playbook_override:
+        playbook_override = "bug"
+
 # --- Read config.md frontmatter ---
 config_path = os.path.join(proj, ".sdd", "config.md")
 with open(config_path, encoding="utf-8") as f:
@@ -178,7 +190,7 @@ default_playbook = config_fm.get("default_playbook", "")
 if playbook_override:
     if playbook_override not in playbooks_available:
         print(f"[/start] '{playbook_override}' is not an available playbook in this project.", file=sys.stderr)
-        if playbook_override in ("bug", "idea", "question"):
+        if playbook_override in ("idea", "question"):
             # Pre-shipped playbook names with a known successor message.
             print(f"[/start] {playbook_override.title()} playbook is coming in a future release. For now, use 'feature' "
                   "— it's the same process, just with extra steps you can leave blank.", file=sys.stderr)
