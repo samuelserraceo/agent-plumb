@@ -518,17 +518,23 @@ check_wiki_links_resolve() {
     fi
   fi
   local result
-  result=$(MCP_ROOT="$mcp_root" PROJECT_DIR="$PROJECT_DIR" python3 <<'PYEOF' 2>/dev/null || true
+  # CR cycle-2 Major — when the graph checker is FOUND but BROKEN (import
+  # error, exception during build, etc.), surface that as ERROR so the user
+  # sees invariant 8 has been silently disabled. Old code exited 0 in that
+  # branch, hiding broken wiki-links exactly when graph code had drifted.
+  result=$(MCP_ROOT="$mcp_root" PROJECT_DIR="$PROJECT_DIR" python3 <<'PYEOF' 2>&1
 import os, sys
 sys.path.insert(0, os.environ["MCP_ROOT"])
 try:
     from queries import _graph_cache
-except ImportError:
+except ImportError as exc:
+    print(f"ERROR:import failed — {type(exc).__name__}: {exc}")
     sys.exit(0)
 proj = os.environ["PROJECT_DIR"]
 try:
     g = _graph_cache.build(proj)
-except Exception:
+except Exception as exc:
+    print(f"ERROR:graph cache build failed — {type(exc).__name__}: {exc}")
     sys.exit(0)
 broken = _graph_cache.find_broken_edges(g)
 if not broken:
@@ -554,6 +560,17 @@ $samples
        heading in patterns.md, or entity heading in data-model.md), or create
        the target node. Run \`get_backlinks(slug)\` via the MCP server to see
        what cites a node before renaming it."
+  elif [ -n "$result" ] && [[ "$result" == ERROR:* ]]; then
+    # The graph checker is present but failed to run — surface that as a
+    # violation so invariant 8 isn't silently disabled when the graph code
+    # itself has drifted (CR cycle-2 Major).
+    add_violation "[stop-lint] invariant 8 (wiki-link resolution) couldn't run because the
+  graph cache helper failed. Wiki-links are NOT being checked this turn.
+  Detail: ${result#ERROR:}
+  Fix: investigate why \`extensions/sdd-mcp-server/queries/_graph_cache.py\`
+       can't be imported / can't build the graph. Common causes: a syntax error
+       in a recent edit, a missing dependency, or a malformed .sdd/ tree that
+       trips the walker. The other 8 invariants still ran."
   fi
 }
 

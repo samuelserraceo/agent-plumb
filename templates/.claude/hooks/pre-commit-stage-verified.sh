@@ -592,14 +592,39 @@ if mismatches:
     file_list = "\n".join(f"         {rel}" for rel, _kind, _a, _e in mismatches)
     print(f"  Files that changed:\n{file_list}", file=sys.stderr)
     print("", file=sys.stderr)
-    print("  If you didn't change these on purpose (e.g. an editor auto-formatted", file=sys.stderr)
-    print("  them, or a find-and-replace ran across the repo), restore them:", file=sys.stderr)
-    print("", file=sys.stderr)
-    for rel, _kind, _a, _e in mismatches:
-        # CR Minor #7 — quote rel so paths with spaces or shell metacharacters
-        # produce a copy-pasteable command.
-        print(f"      git checkout HEAD -- {shlex.quote(rel)}", file=sys.stderr)
-    print("", file=sys.stderr)
+
+    # CR cycle-2 Major — split recovery suggestions by mismatch kind.
+    # Working-tree mismatches: WT has the bad copy → restore from HEAD.
+    # HEAD-only mismatches: WT is already clean, HEAD has the bad copy →
+    #   `git checkout HEAD --` would OVERWRITE the clean WT with the bad
+    #   blob and re-create the failure; the right path is to amend HEAD.
+    wt_mismatches = [m for m in mismatches if "HEAD" not in m[1]]
+    head_mismatches = [m for m in mismatches if "HEAD" in m[1]]
+
+    if wt_mismatches:
+        print("  If you didn't change these on purpose (e.g. an editor auto-formatted", file=sys.stderr)
+        print("  them, or a find-and-replace ran across the repo), restore them from HEAD:", file=sys.stderr)
+        print("", file=sys.stderr)
+        for rel, _kind, _a, _e in wt_mismatches:
+            print(f"      git checkout HEAD -- {shlex.quote(rel)}", file=sys.stderr)
+        print("", file=sys.stderr)
+
+    if head_mismatches:
+        print("  Some files have a mismatch in HEAD (committed earlier) but the", file=sys.stderr)
+        print("  current working tree IS clean. Restoring with `git checkout HEAD`", file=sys.stderr)
+        print("  would overwrite your clean copy with the bad blob — DON'T do that.", file=sys.stderr)
+        print("  Instead, the bad commit needs to be replaced. The safest path:", file=sys.stderr)
+        print("  re-stage the working-tree copy and amend the offending commit", file=sys.stderr)
+        print("  (or re-pin the manifest if that's the intended state):", file=sys.stderr)
+        print("", file=sys.stderr)
+        for rel, _kind, _a, _e in head_mismatches:
+            print(f"      git add {shlex.quote(rel)} && git commit --amend --no-edit", file=sys.stderr)
+        print("", file=sys.stderr)
+        print("  If multiple commits sit between HEAD and the tamper, an", file=sys.stderr)
+        print("  interactive rebase (`git rebase -i`) targeting the bad commit", file=sys.stderr)
+        print("  is the safer route.", file=sys.stderr)
+        print("", file=sys.stderr)
+
     print("  If you DID change them on purpose (e.g. upgrading SDD or applying", file=sys.stderr)
     print("  a framework patch), ask the agent to re-seal the manifest before", file=sys.stderr)
     print("  committing — the commit message must include the marker", file=sys.stderr)
