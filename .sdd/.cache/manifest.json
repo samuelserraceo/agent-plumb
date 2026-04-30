@@ -2,7 +2,7 @@
   "extensions": {},
   "playbooks": {
     "feature": {
-      "expected_sha256": "ec97aea82ef4b2137c75ef8af9914787e14c89cbec439f933d219571f2c93729",
+      "expected_sha256": "932048322a09eddd2254024d2ed36273e2695eded38cec7a49698cf20e207c19",
       "path": ".sdd/playbooks/feature.md",
       "trust": "framework"
     },
@@ -71,6 +71,11 @@
     "check-setup-answer.sh": {
       "expected_sha256": "e845cf3b5e33f7bfc32a8292dbf39ab5b2edf168f851c73dbbc1e3dab9405d0e",
       "path": ".sdd/scripts/check-setup-answer.sh",
+      "trust": "framework"
+    },
+    "post-stop-lint.sh": {
+      "expected_sha256": "d35ceb3b1fcca53863e64a5852e6156bc14e4dc2ed54255cfa7cf48bfc24eaba",
+      "path": ".claude/hooks/post-stop-lint.sh",
       "trust": "framework"
     },
     "scope-guard-config.sh": {
@@ -233,6 +238,11 @@
     "project-start-first": {
       "expected_sha256": "5a0873b63b426bdb538c39bcb7219232d5f6d0d9caa8f33b13785d34e11ec4ac",
       "path": ".sdd/actions/project-start-first.md",
+      "trust": "framework"
+    },
+    "playwright-explore": {
+      "expected_sha256": "0da8716f3f5b80679886a3a4fee2bcfc69c0eaf7e95459a97e359d46800389e5",
+      "path": ".sdd/actions/playwright-explore.md",
       "trust": "framework"
     }
   }

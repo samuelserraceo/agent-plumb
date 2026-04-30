@@ -38,6 +38,7 @@ stages:
       - verify-test-run
       - verify-prod-only-acs
       - adversarial-review
+      - playwright-explore
       - learn
       - push-pr
       - verify-ci-green
@@ -83,7 +84,7 @@ LOCATE + EXECUTE are agent-driven prose. SYNC + ADVANCE are structural (real bas
 
 ## What's locked, what's not
 
-The 24 actions in this playbook's frontmatter (15 SPEC + 2 BUILD + 7 SHIP) are **closed for v0.13**. Adding new actions requires explicit framework work (touches schema validation + the action library). The order is also fixed — actions inside each stage must be filled in sequence.
+The 25 actions in this playbook's frontmatter (15 SPEC + 2 BUILD + 8 SHIP) are **closed for v1.0**. Adding new actions requires explicit framework work (touches schema validation + the action library). The order is also fixed — actions inside each stage must be filled in sequence.
 
 Four actions default to **`requires_user_approval: true`** in their frontmatter:
 - `proposed-approach` — closes Codex's silent-design-softening attack
