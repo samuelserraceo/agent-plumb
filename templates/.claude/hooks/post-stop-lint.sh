@@ -536,7 +536,14 @@ try:
 except Exception as exc:
     print(f"ERROR:graph cache build failed — {type(exc).__name__}: {exc}")
     sys.exit(0)
-broken = _graph_cache.find_broken_edges(g)
+# CR cycle-3 Major — invariant 8 is documented as "wiki-link resolution".
+# `find_broken_edges()` returns unresolved wiki-link AND md-link edges; the
+# md-link branch represents a different drift class (path-based references
+# pointing at missing files) and isn't part of this invariant. Filter to
+# wiki-links only here. Broken md-links can be a separate invariant later
+# if useful, but conflating them dilutes the wiki-link guarantee.
+broken = [e for e in _graph_cache.find_broken_edges(g)
+          if e.get("kind") == "wiki-link"]
 if not broken:
     sys.exit(0)
 print(f"BROKEN:{len(broken)}")
