@@ -173,11 +173,13 @@ if os.path.isfile(index_path):
                 and is_inside_sdd(raw)):
             index_active = raw
 
-# 3. Branch-derived active. Branch shape `sdd/<slug>` maps to a folder
-# `<work-item-folder>/<slug>/` under .sdd/. Scan all top-level subdirs
-# of .sdd/ for ALL folders matching `<slug>` with a spec.md inside.
-# Slug validated against BRANCH_SLUG_RE so `sdd/../escape` can't be
-# used to escape .sdd/ via os.path.join.
+# 3. Branch-derived active. Branch shape `sdd/<id>-<slug>` (the
+# enforced convention; see BRANCH_SLUG_RE) maps to a folder
+# `<work-item-folder>/<id>-<slug>/` under .sdd/. Scan all top-level
+# subdirs of .sdd/ for ALL folders matching that `<id>-<slug>` with
+# a spec.md inside. The id-prefix anchor in BRANCH_SLUG_RE blocks
+# both `sdd/release` (no digits) and `sdd/../escape` (no digits +
+# path-traversal) before os.path.join is ever called.
 #
 # Ambiguity handling: if the same `<slug>` exists under multiple top-
 # level folders (e.g. `features/001-foo/` AND `bugs/001-foo/`), we

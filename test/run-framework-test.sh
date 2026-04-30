@@ -5411,7 +5411,7 @@ fi
 note "T121: resolve-active.sh prefers branch-derived active over INDEX.md"
 RESOLVE_ACTIVE="$FRAMEWORK_ROOT/templates/.sdd/scripts/resolve-active.sh"
 d=$(mktemp -d) || exit 1
-cd "$d"
+cd "$d" || { bad "T121 cd failed" "d=$d"; rm -rf "$d"; exit 1; }
 git init -q
 git config user.email t@t.com && git config user.name T
 git commit --allow-empty -q -m "init"
@@ -5441,7 +5441,7 @@ fi
 # ============================================================
 note "T121b: resolve-active.sh falls back to INDEX.md off SDD branches"
 d=$(mktemp -d) || exit 1
-cd "$d"
+cd "$d" || { bad "T121b cd failed" "d=$d"; rm -rf "$d"; exit 1; }
 git init -q
 git config user.email t@t.com && git config user.name T
 git commit --allow-empty -q -m "init"
@@ -5508,7 +5508,7 @@ fi
 # ============================================================
 note "T121d: resolve-active.sh emits null active when nothing resolves"
 d=$(mktemp -d) || exit 1
-cd "$d"
+cd "$d" || { bad "T121d cd failed" "d=$d"; rm -rf "$d"; exit 1; }
 mkdir -p .sdd
 out=$(bash "$RESOLVE_ACTIVE" 2>&1)
 cd - >/dev/null
@@ -5587,7 +5587,7 @@ fi
 note "T121f: settings.sh uses branch-derived active for F5 cascade"
 d=$(mktemp -d) || exit 1
 cp -r "$FRAMEWORK_ROOT/templates/.sdd" "$d/"
-cd "$d"
+cd "$d" || { bad "T121f cd failed" "d=$d"; rm -rf "$d"; exit 1; }
 git init -q
 git config user.email t@t.com && git config user.name T
 # Two work-items: A (which the branch points at) and B (which INDEX
@@ -5644,7 +5644,7 @@ fi
 # ============================================================
 note "T121g: resolve-active.sh exposes drift between branch + INDEX"
 d=$(mktemp -d) || exit 1
-cd "$d"
+cd "$d" || { bad "T121g cd failed" "d=$d"; rm -rf "$d"; exit 1; }
 git init -q
 git config user.email t@t.com && git config user.name T
 git commit --allow-empty -q -m "init"
@@ -5676,7 +5676,7 @@ fi
 # ============================================================
 note "T121h: resolve-active.sh rejects ../escape paths in **Active:**"
 d=$(mktemp -d) || exit 1
-cd "$d"
+cd "$d" || { bad "T121h cd failed" "d=$d"; rm -rf "$d"; exit 1; }
 git init -q
 git config user.email t@t.com && git config user.name T
 git commit --allow-empty -q -m "init"
@@ -5742,7 +5742,7 @@ note "T121i: resolve-active.sh rejects sdd/../escape branch slugs"
 # without the stub, this test silently fell through to the benign
 # fallback name and didn't actually exercise BRANCH_SLUG_RE.
 d=$(mktemp -d) || exit 1
-cd "$d"
+cd "$d" || { bad "T121i cd failed" "d=$d"; rm -rf "$d"; exit 1; }
 mkdir -p .sdd "$d/escape-target" fake-bin
 touch "$d/escape-target/spec.md"
 # Stub git: any `git -C <proj> rev-parse --abbrev-ref HEAD` call
@@ -5788,7 +5788,7 @@ fi
 # ============================================================
 note "T121i-non-sdd: resolve-active.sh skips non-SDD-shape sdd/<x> branches"
 d=$(mktemp -d) || exit 1
-cd "$d"
+cd "$d" || { bad "T121i-non-sdd cd failed" "d=$d"; rm -rf "$d"; exit 1; }
 git init -q
 git config user.email t@t.com && git config user.name T
 git commit --allow-empty -q -m "init"
@@ -5825,7 +5825,7 @@ fi
 # ============================================================
 note "T121j: resolve-active.sh fails closed on ambiguous branch slug"
 d=$(mktemp -d) || exit 1
-cd "$d"
+cd "$d" || { bad "T121j cd failed" "d=$d"; rm -rf "$d"; exit 1; }
 git init -q
 git config user.email t@t.com && git config user.name T
 git commit --allow-empty -q -m "init"
@@ -5923,32 +5923,46 @@ fi
 # ============================================================
 note "T121k: status-banner.sh renders the right banner for 7 source/ambiguous combos"
 STATUS_BANNER="$FRAMEWORK_ROOT/templates/.sdd/scripts/status-banner.sh"
+# Per-case helper: pipe JSON, capture stderr + exit code, only count
+# the case as ok if BOTH the grep matches AND the exit code is 0.
+# Without the rc check the test would still pass on a silent-fail
+# helper. CR cycle-14 nit.
+banner_case() {
+  local json="$1" pattern="$2"
+  local out rc
+  out=$(echo "$json" | bash "$STATUS_BANNER" 2>&1)
+  rc=$?
+  if [ "$rc" -eq 0 ] && echo "$out" | grep -q "$pattern"; then
+    return 0
+  fi
+  return 1
+}
 ok_count=0
 # 1. branch source — happy path
-out=$(echo '{"active":"features/001-x","ambiguous":false,"branch":"sdd/001-x","index_active":"features/001-x","source":"branch"}' | bash "$STATUS_BANNER")
-echo "$out" | grep -q "Active source: branch (sdd/001-x) → features/001-x" && ok_count=$((ok_count+1))
+banner_case '{"active":"features/001-x","ambiguous":false,"branch":"sdd/001-x","index_active":"features/001-x","source":"branch"}' \
+  "Active source: branch (sdd/001-x) → features/001-x" && ok_count=$((ok_count+1))
 # 2. branch source with drift — extra "Note:" line
-out=$(echo '{"active":"features/001-x","ambiguous":false,"branch":"sdd/001-x","index_active":"features/002-other","source":"branch"}' | bash "$STATUS_BANNER")
-echo "$out" | grep -q "Note: INDEX.md \*\*Active:\*\* points at features/002-other" && ok_count=$((ok_count+1))
+banner_case '{"active":"features/001-x","ambiguous":false,"branch":"sdd/001-x","index_active":"features/002-other","source":"branch"}' \
+  "Note: INDEX.md \*\*Active:\*\* points at features/002-other" && ok_count=$((ok_count+1))
 # 3. index source — off-SDD-branch fallback (CR cycle-8 added this).
-out=$(echo '{"active":"features/001-x","ambiguous":false,"branch":"main","index_active":"features/001-x","source":"index"}' | bash "$STATUS_BANNER")
-echo "$out" | grep -q "Active source: INDEX.md (branch 'main' is not an SDD branch) → features/001-x" && ok_count=$((ok_count+1))
+banner_case '{"active":"features/001-x","ambiguous":false,"branch":"main","index_active":"features/001-x","source":"index"}' \
+  "Active source: INDEX.md (branch 'main' is not an SDD branch) → features/001-x" && ok_count=$((ok_count+1))
 # 4. ambiguous slug — fail-closed banner
-out=$(echo '{"active":null,"ambiguous":true,"branch":"sdd/001-collide","index_active":null,"source":"none"}' | bash "$STATUS_BANNER")
-echo "$out" | grep -q "matched 2+ work-item folders" && ok_count=$((ok_count+1))
+banner_case '{"active":null,"ambiguous":true,"branch":"sdd/001-collide","index_active":null,"source":"none"}' \
+  "matched 2+ work-item folders" && ok_count=$((ok_count+1))
 # 5. broken INDEX pointer
-out=$(echo '{"active":null,"ambiguous":false,"branch":"main","index_active":"features/999-broken","source":"none"}' | bash "$STATUS_BANNER")
-echo "$out" | grep -q "INDEX.md \*\*Active:\*\* points at \`features/999-broken\`" && ok_count=$((ok_count+1))
+banner_case '{"active":null,"ambiguous":false,"branch":"main","index_active":"features/999-broken","source":"none"}' \
+  "INDEX.md \*\*Active:\*\* points at \`features/999-broken\`" && ok_count=$((ok_count+1))
 # 6. SDD-shape branch, scaffold not done
-out=$(echo '{"active":null,"ambiguous":false,"branch":"sdd/042-pending","index_active":null,"source":"none"}' | bash "$STATUS_BANNER")
-echo "$out" | grep -q "is SDD-shaped, but" && ok_count=$((ok_count+1))
+banner_case '{"active":null,"ambiguous":false,"branch":"sdd/042-pending","index_active":null,"source":"none"}' \
+  "is SDD-shaped, but" && ok_count=$((ok_count+1))
 # 7. non-SDD branch, no INDEX, no folders
-out=$(echo '{"active":null,"ambiguous":false,"branch":"feature/foo","index_active":null,"source":"none"}' | bash "$STATUS_BANNER")
-echo "$out" | grep -q "isn't an SDD-shape" && ok_count=$((ok_count+1))
+banner_case '{"active":null,"ambiguous":false,"branch":"feature/foo","index_active":null,"source":"none"}' \
+  "isn't an SDD-shape" && ok_count=$((ok_count+1))
 if [ "$ok_count" -eq 7 ]; then
-  ok "T121k status-banner.sh rendered correctly for 7/7 cases"
+  ok "T121k status-banner.sh rendered correctly + ec=0 for 7/7 cases"
 else
-  bad "T121k status-banner.sh rendered wrong output" "ok_count=$ok_count/7"
+  bad "T121k status-banner.sh rendered wrong output (or non-zero ec)" "ok_count=$ok_count/7"
 fi
 
 # ============================================================
@@ -6021,6 +6035,44 @@ assert d["source"] == "none", f"source={d['"'"'source'"'"']}"
   ok "T121n spec.md symlink to outside .sdd/ rejected (active=null)"
 else
   bad "T121n spec.md symlink escape was accepted" "out='$out'"
+fi
+
+# ============================================================
+# T121n-dir — resolve-active.sh refuses work-item directory
+#             symlink escapes too. Pair with T121n which covers
+#             spec.md symlinks; this one covers the case where
+#             the WORK-ITEM DIRECTORY itself is a symlink to
+#             outside .sdd/. The folder containment check inside
+#             has_safe_spec catches both. CR cycle-14 nit.
+# ============================================================
+note "T121n-dir: resolve-active.sh rejects work-item directory symlinks"
+d=$(mktemp -d) || exit 1
+cd "$d" || { bad "T121n-dir cd failed" "d=$d"; rm -rf "$d"; exit 1; }
+git init -q
+git config user.email t@t.com && git config user.name T
+git commit --allow-empty -q -m "init"
+git branch -M main
+# Plant a real folder outside .sdd/ with a normal spec.md.
+mkdir -p "$d/escape-target-dir"
+echo "outside spec content" > "$d/escape-target-dir/spec.md"
+# .sdd/features/001-symlink-attack is itself a symlink, not a real
+# folder. Without the FOLDER realpath check, the resolver would
+# follow it into the escape target.
+mkdir -p .sdd/features
+ln -s "$d/escape-target-dir" .sdd/features/001-symlink-attack
+git checkout -q -b sdd/001-symlink-attack
+out=$(bash "$RESOLVE_ACTIVE" 2>&1)
+cd - >/dev/null || true
+rm -rf "$d"
+if echo "$out" | python3 -c '
+import json, sys
+d = json.loads(sys.stdin.read())
+assert d["active"] is None, f"dir-symlink-escape leaked: active={d['"'"'active'"'"']}"
+assert d["source"] == "none", f"source={d['"'"'source'"'"']}"
+' 2>/dev/null; then
+  ok "T121n-dir work-item directory symlink to outside .sdd/ rejected"
+else
+  bad "T121n-dir work-item directory symlink escape was accepted" "out='$out'"
 fi
 
 # ============================================================
