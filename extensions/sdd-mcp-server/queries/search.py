@@ -40,6 +40,7 @@ plain-English explanation + a config_shape pointer for fixing:
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 import os
@@ -61,6 +62,9 @@ _CONFIG_SHAPE = {
                 "model": "<embedding model, e.g. nomic-embed-text>",
                 "top_k": 5,
                 "max_chunks_per_run": 1000,
+                # Optional auth header (e.g. "Bearer <token>") for endpoints
+                # that gate access. Empty string = no auth header sent.
+                "auth_header": "",
             }
         }
     }
@@ -158,11 +162,11 @@ def _save_cache(project_root: str, cache: Dict[str, Any]) -> None:
             json.dump(cache, fh, ensure_ascii=False, separators=(",", ":"))
         os.replace(tmp, path)
     except Exception:
-        if os.path.exists(tmp):
-            try:
-                os.unlink(tmp)
-            except OSError:
-                pass
+        # Best-effort cleanup of the temp file — the original error
+        # is what matters, not the cleanup outcome. contextlib.suppress
+        # makes the intent explicit.
+        with contextlib.suppress(OSError):
+            os.unlink(tmp)
         raise
 
 
@@ -237,11 +241,11 @@ def _chunk_text(content: str, max_chars: int = _DEFAULT_CHUNK_CHARS) -> List[Dic
     # newlines: an empty para's count('\n')+1 = 1 (it's actually 0
     # source lines), so each extra blank line over-advanced by 1.
     para_re = re.compile(r"[^\n]+(?:\n[^\n]+)*", re.DOTALL)
-    for m in para_re.finditer(content):
-        para = m.group()
+    for para_match in para_re.finditer(content):
+        para = para_match.group()
         if not para.strip():
             continue
-        para_start_off = m.start()
+        para_start_off = para_match.start()
         # Source line where this paragraph begins (1-based).
         current_line = content.count("\n", 0, para_start_off) + 1
         para_lines = para.count("\n") + 1
@@ -289,8 +293,10 @@ def _chunk_text(content: str, max_chars: int = _DEFAULT_CHUNK_CHARS) -> List[Dic
                 })
                 chunk_idx += 1
 
-            for m in sentences:
-                sent_start, sent_end = m.start(), m.end()
+            for sent_match in sentences:
+                # Renamed from `m` to avoid shadowing the outer
+                # paragraph-match `m` used earlier in this scope.
+                sent_start, sent_end = sent_match.start(), sent_match.end()
                 if not para[sent_start:sent_end].strip():
                     continue  # skip pure-whitespace tail match from `|$` branch
                 # Would adding this sentence overflow the cap?
