@@ -278,8 +278,8 @@ You write a wiki-link only in these shapes; anything else trips invariant 8:
 
 [[001-waitlist#§5]]            REFUSED — section anchors
 [[001-waitlist|the waitlist]]  REFUSED — display aliases
-[[entity:user account]]        REFUSED — slug must be hyphenated, lower-case
-[[pattern:Auth Retry]]         REFUSED — case-sensitive in source; agent always lower-cases
+[[entity:user account]]        REFUSED — slug must be hyphenated (no spaces)
+[[pattern:Auth Retry]]         REFUSED — slug must be hyphenated (no spaces); the parser is case-insensitive but spaces still break it
 ```
 
 When emitting a link, check the target exists *before* you write — the MCP server's `get_pattern` / `get_references` queries are how you confirm. Don't invent links.

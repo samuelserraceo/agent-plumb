@@ -312,9 +312,10 @@ Resolves `slug` against the project's wiki-link graph (the derived index at `.sd
   "result": {
     "slug": "auth-retry-logic",
     "node": {
-      "slug": "auth-retry-logic",
+      "path": ".sdd/patterns.md",
       "kind": "pattern",
-      "path": ".sdd/patterns.md"
+      "heading": "Auth retry logic",
+      "line": 7
     },
     "backlinks": [
       {
@@ -323,15 +324,17 @@ Resolves `slug` against the project's wiki-link graph (the derived index at `.sd
         "kind": "wiki-link"
       }
     ],
-    "stats": {"total_edges": 1, "broken": 0}
+    "stats": {"count": 1}
   }
 }
 ```
 
+(`heading` and `line` are present only for notebook-heading nodes — pattern / entity / decision; they're omitted for feature nodes.)
+
 **Error shapes:**
 
 - `{"error": "missing arg 'slug'"}`
-- `{"error": "node not found", "available": [{"slug": "...", "kind": "..."}, ...]}` — slug doesn't resolve; list shows what's in the graph.
+- `{"error": "slug not found: 'auth-retry'", "slug": "auth-retry", "available": [{"slug": "auth-retry-logic", "path": "...", "kind": "pattern"}, ...]}` — slug doesn't resolve; list shows up to 30 known nodes.
 
 ---
 
@@ -357,23 +360,26 @@ Returns the slug's outgoing edges (links it emits) and incoming edges (links poi
 {
   "result": {
     "slug": "001-waitlist",
-    "node": {"slug": "001-waitlist", "kind": "feature", "path": ".sdd/features/001-waitlist/spec.md"},
-    "depth_requested": 2,
-    "depth_used": 2,
+    "node": {"path": ".sdd/features/001-waitlist/spec.md", "kind": "feature"},
+    "depth": 2,
     "outgoing": [
-      {"to_slug": "pattern:auth-retry-logic", "to_path": ".sdd/patterns.md", "from_line": 42, "kind": "wiki-link"}
+      {"to_slug": "auth-retry-logic", "to_path": ".sdd/patterns.md", "to_kind": "pattern",
+       "from_path": ".sdd/features/001-waitlist/spec.md", "from_line": 42, "kind": "wiki-link"}
     ],
     "incoming": [
-      {"from_path": ".sdd/INDEX.md", "from_line": 18, "kind": "wiki-link"}
+      {"from_slug": "INDEX", "from_path": ".sdd/INDEX.md", "from_line": 18, "kind": "wiki-link"}
     ],
-    "warnings": []
+    "file_links": [],
+    "stats": {"outgoing_count": 1, "incoming_count": 1, "file_links_count": 0}
   }
 }
 ```
 
-When `depth > 3` the request is capped and `warnings` includes a note.
+When `depth > 3` the request is capped at 3 and the result includes a singular `warning: "depth capped at 3 to bound output size"` field.
 
-**Error shapes:** same as `get_backlinks` — missing slug, unknown slug.
+`file_links` surfaces md-link edges that point at the same file path as the seed node — those are file-level references that don't compose into the slug-based BFS but are useful context.
+
+**Error shapes:** missing slug → `{"error": "missing arg 'slug'"}`; unknown slug → `{"error": "slug not found: '<input>'", "slug": "<input>", "available": [...]}` (same shape as `get_backlinks`).
 
 ---
 
@@ -405,13 +411,25 @@ Requires the same `parameters.mcp.semantic_search` config as the plain `search` 
 }
 ```
 
-**Sample response:** the `search` query's standard result shape, with the search restricted to the seed slug's neighbourhood. The `_path_allowlist` hint is computed internally — clients don't pass it.
+**Sample response:** the `search` query's standard result shape, with the search restricted to the seed slug's neighbourhood. The result is augmented with a `subgraph` block:
+
+```json
+{
+  "subgraph": {
+    "files_searched": [".sdd/features/001-waitlist/spec.md", ".sdd/patterns.md"],
+    "slugs_visited": ["001-waitlist", "auth-retry-logic"],
+    "depth": 2
+  }
+}
+```
+
+The `_path_allowlist` hint is computed internally — clients don't pass it.
 
 **Error shapes:**
 
 - `{"error": "missing arg 'slug'"}`
 - `{"error": "missing arg 'query'"}`
-- `{"error": "node not found", "available": [...]}` — same as `get_backlinks`.
+- `{"error": "slug not found: '<input>'", "slug": "<input>", "available": [...]}` — same shape as `get_backlinks`.
 - Plus all the standard `search` errors when the seed resolves but semantic search isn't configured / unreachable.
 
 ---

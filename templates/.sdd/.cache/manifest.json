@@ -49,7 +49,7 @@
       "trust": "framework"
     },
     "next-action.sh": {
-      "expected_sha256": "f13f3dc71db033033365571617eff59b538e8f46ae68e277c0c38adaae3efa82",
+      "expected_sha256": "ddb8fd2185d0ae23ccf9f32f9c66c632a9e24b214bbdc1d10ab971991a873c35",
       "path": ".sdd/scripts/next-action.sh",
       "trust": "framework"
     },
@@ -203,7 +203,7 @@
     },
     "learn": {
       "path": ".sdd/actions/learn.md",
-      "expected_sha256": "a739e676f5761c21d5f4ef09891958a64ec013cc06e1de8649249ecc66911f0f"
+      "expected_sha256": "83d05d6fd3e3279c7dc06ad767af56e76d7c6e4695010014f9ca6c516f1bf3a5"
     },
     "project-problem": {
       "expected_sha256": "2000da0943888285e3581de5a45b294d9dc43d93582d3560105bbcb03dc66e3c",

@@ -139,20 +139,33 @@ EOF
 fi
 
 # Add the runtime stamp file to .gitignore so it doesn't get committed.
+# CR cycle-6 Major — also add `.obsidian/` if we just copied the Obsidian
+# vault config. The vault directory accumulates per-user state (workspace.json,
+# pinned tabs, recent-files history) that should never land in the project
+# repo. The committed copy lives at `templates/.obsidian/`; downstream
+# projects keep their own .obsidian/ local-only.
 GITIGNORE="$PROJECT_DIR/.gitignore"
+gitignore_block=""
 if [ -f "$GITIGNORE" ]; then
   if ! grep -qF ".sdd/.advance.last-head" "$GITIGNORE" 2>/dev/null; then
-    {
-      echo ""
-      echo "# SDD runtime state (don't commit)"
-      echo ".sdd/.advance.last-head"
-    } >> "$GITIGNORE"
+    gitignore_block="${gitignore_block}# SDD runtime state (don't commit)"$'\n'".sdd/.advance.last-head"$'\n'
+  fi
+  if [ -d "$PROJECT_DIR/.obsidian" ] && ! grep -qF "/.obsidian/" "$GITIGNORE" 2>/dev/null; then
+    gitignore_block="${gitignore_block}# Per-user Obsidian vault state (don't commit; templates/.obsidian/ is the shipped copy)"$'\n'"/.obsidian/"$'\n'
+  fi
+  if [ -n "$gitignore_block" ]; then
+    printf '\n%s' "$gitignore_block" >> "$GITIGNORE"
   fi
 else
-  cat > "$GITIGNORE" <<'EOF'
-# SDD runtime state (don't commit)
-.sdd/.advance.last-head
-EOF
+  {
+    echo "# SDD runtime state (don't commit)"
+    echo ".sdd/.advance.last-head"
+    if [ -d "$PROJECT_DIR/.obsidian" ]; then
+      echo ""
+      echo "# Per-user Obsidian vault state (don't commit; templates/.obsidian/ is the shipped copy)"
+      echo "/.obsidian/"
+    fi
+  } > "$GITIGNORE"
 fi
 
 cat <<EOF

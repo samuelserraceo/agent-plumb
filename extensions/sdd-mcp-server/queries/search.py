@@ -717,7 +717,11 @@ def search(project_root: str, args: Dict[str, Any]) -> Dict[str, Any]:
     files = _walk_sdd_files(project_root)
     allowlist = (args or {}).get("_path_allowlist")
     if isinstance(allowlist, list) and allowlist:
-        allowed = set(allowlist)
+        # CR cycle-6 Minor — defensive: only accept hashable string paths.
+        # _path_allowlist is internal-only (passed by search_within), but a
+        # malformed call site could put a nested list/dict in here and
+        # crash with TypeError. Filter to strings.
+        allowed = {p for p in allowlist if isinstance(p, str)}
         files = [(rel, content) for (rel, content) in files
                  if os.path.normpath(os.path.join(project_root, rel)) in allowed]
     if not files:

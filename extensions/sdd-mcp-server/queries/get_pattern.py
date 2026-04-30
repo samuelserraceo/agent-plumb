@@ -28,7 +28,13 @@ from typing import Any, Dict, List
 
 
 _SOURCE_RE = re.compile(
-    r"(?:Source|From feature|Where it came from)\s*[:=]?\s*([A-Za-z0-9_/-]+)",
+    # Allow optional `[[…]]` wiki-link wrapping around the slug — v1.0
+    # graph layer encourages writing `Source: [[<id>-<slug>]]` so the
+    # pattern → feature edge gets indexed by the graph cache.
+    # `[A-Za-z0-9_/-]+` captures the slug regardless of whether it's
+    # wrapped, so `Source: [[001-waitlist]]` and `Source: 001-waitlist`
+    # both yield `feature_source: "001-waitlist"`.
+    r"(?:Source|From feature|Where it came from)\s*[:=]?\s*\[?\[?([A-Za-z0-9_/-]+)\]?\]?",
     re.IGNORECASE,
 )
 

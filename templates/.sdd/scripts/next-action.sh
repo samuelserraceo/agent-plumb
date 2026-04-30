@@ -122,6 +122,13 @@ except UnicodeDecodeError:
     sys.exit(1)
 if spec_text.startswith("﻿"):
     spec_text = spec_text[1:]
+# CR cycle-6 Critical — normalise CRLF/CR endings before split. Windows-saved
+# files (Notepad, GitBash on Windows, sed -i on a CRLF source) leave \r at
+# every line tail; later string equality checks like `line == target_heading`
+# silently never match, and the script reports "no open [ ] step in PHASE: X"
+# even when there ARE open steps. That returns a transition signal, which the
+# agent then mistakes for "phase done" — drift-by-line-ending.
+spec_text = spec_text.replace("\r\n", "\n").replace("\r", "\n")
 spec_lines = spec_text.split("\n")
 
 # 1. Find [PHASE: X] line.
