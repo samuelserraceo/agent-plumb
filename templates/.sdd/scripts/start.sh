@@ -156,6 +156,18 @@ title = os.environ["TITLE_INPUT"].strip()
 playbook_override = os.environ["PLAYBOOK_OVERRIDE"].strip()
 extends_raw = os.environ.get("EXTENDS", "").strip()
 
+# v1.0 Step 2 — `/start [BUG] "..."` auto-routes to the bug playbook.
+# CR cycle-1 — the prefix shortcut runs ONLY when --playbook isn't
+# explicitly set. With an explicit override (e.g. --playbook=feature),
+# the prefix stays in the title so the user's intent is preserved
+# verbatim. Earlier behaviour stripped the prefix even on override,
+# which silently mutated the slug.
+if not playbook_override:
+    _bug_prefix = re.match(r"^\[bug\]\s*", title, re.IGNORECASE)
+    if _bug_prefix:
+        title = title[_bug_prefix.end():].strip()
+        playbook_override = "bug"
+
 # --- Read config.md frontmatter ---
 config_path = os.path.join(proj, ".sdd", "config.md")
 with open(config_path, encoding="utf-8") as f:
@@ -178,7 +190,7 @@ default_playbook = config_fm.get("default_playbook", "")
 if playbook_override:
     if playbook_override not in playbooks_available:
         print(f"[/start] '{playbook_override}' is not an available playbook in this project.", file=sys.stderr)
-        if playbook_override in ("bug", "idea", "question"):
+        if playbook_override in ("idea", "question"):
             # Pre-shipped playbook names with a known successor message.
             print(f"[/start] {playbook_override.title()} playbook is coming in a future release. For now, use 'feature' "
                   "— it's the same process, just with extra steps you can leave blank.", file=sys.stderr)
