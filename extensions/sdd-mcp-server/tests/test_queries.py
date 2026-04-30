@@ -30,6 +30,7 @@ from queries import (  # noqa: E402
     get_decisions_since,
     search,
 )
+from queries.search import _chunk_text  # noqa: E402  — internal but tested
 from server import handle_message  # noqa: E402
 
 from tests.conftest import make_temp_project  # noqa: E402
@@ -175,6 +176,57 @@ class GetDecisionsSinceTests(_FixtureBase):
         self.assertIn("error", result)
 
 
+# -- chunker (internal — line-tracking correctness) ---------------------------
+
+class ChunkerLineTrackingTests(unittest.TestCase):
+    """Pin the line-tracking contract for `_chunk_text`. CR cycle-2
+    flagged that an earlier implementation drifted line numbers when
+    the sentence-fallback or hard-split paths fired. These tests
+    document the expected semantics."""
+
+    def test_short_paragraphs_one_chunk_each(self):
+        content = "First.\n\nSecond.\n\nThird."
+        chunks = _chunk_text(content, max_chars=100)
+        # 3 paragraphs separated by blank lines.
+        self.assertEqual(len(chunks), 3)
+        self.assertEqual(chunks[0]["start_line"], 1)
+        self.assertEqual(chunks[1]["start_line"], 3)
+        self.assertEqual(chunks[2]["start_line"], 5)
+
+    def test_sentence_split_keeps_source_line_for_inline_sentences(self):
+        # Long single-line paragraph → sentence-split. All emitted
+        # chunks must point at the SAME source line (they're all on
+        # line 1) — not drift down because of the rebuilt buffer.
+        para = (" ".join([f"Sentence {i}." for i in range(20)]))
+        chunks = _chunk_text(para, max_chars=80)
+        self.assertGreater(len(chunks), 1, "expected multiple chunks")
+        for c in chunks:
+            self.assertEqual(c["start_line"], 1, f"unexpected drift in {c}")
+            self.assertEqual(c["end_line"], 1, f"unexpected drift in {c}")
+
+    def test_hard_split_long_run_on_sentence_keeps_source_line(self):
+        # Single sentence longer than max_chars on one source line →
+        # hard-split into pieces. Every piece stays on line 1.
+        content = "x" * 350  # one long line, no whitespace
+        chunks = _chunk_text(content, max_chars=100)
+        self.assertGreaterEqual(len(chunks), 3)
+        for c in chunks:
+            self.assertEqual(c["start_line"], 1, f"hard-split drifted: {c}")
+            self.assertEqual(c["end_line"], 1, f"hard-split drifted: {c}")
+
+    def test_line_numbers_monotonic_and_in_bounds(self):
+        content = "\n".join([f"Line {i}: some content here." for i in range(1, 11)])
+        chunks = _chunk_text(content, max_chars=80)
+        total_lines = len(content.split("\n"))
+        prev_end = 0
+        for c in chunks:
+            self.assertGreaterEqual(c["start_line"], 1)
+            self.assertLessEqual(c["end_line"], total_lines)
+            self.assertLessEqual(c["start_line"], c["end_line"])
+            self.assertGreaterEqual(c["start_line"], prev_end)
+            prev_end = c["end_line"]
+
+
 # -- search (opt-in stub) -----------------------------------------------------
 
 class SearchDisabledTests(_FixtureBase):
@@ -224,6 +276,15 @@ class SearchEnabledTests(_FixtureBase):
         # Error names which providers ARE supported.
         self.assertIn("openai", result["error"])
         self.assertIn("ollama-native", result["error"])
+        # Must include the canonical config_shape so the agent renders
+        # the user-facing fix path. Without this, an embedding-failure
+        # fallback could pass the substring check above without giving
+        # the user a real config blueprint. CR cycle-2 finding.
+        self.assertIn("config_shape", result)
+        self.assertEqual(
+            result["config_shape"]["parameters"]["mcp"]["semantic_search"]["provider"],
+            "<openai|ollama-native>",
+        )
 
     def test_missing_provider_rejected_with_config_shape(self):
         # Per framework doctrine, provider is REQUIRED — no silent

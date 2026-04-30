@@ -81,6 +81,12 @@ _DEFAULT_CHUNK_CHARS = 500
 # slow networks + retries.
 _HTTP_TIMEOUT_SECONDS = 30
 
+# Whitelisted provider strings. Update both this set AND the per-provider
+# branch in `_embed_one` together when adding a new shape — the upstream
+# config-resolution check uses this set for early rejection so users get a
+# clean error before chunking and network work.
+_SUPPORTED_PROVIDERS = {"openai", "ollama-native"}
+
 
 # ────────────────────────────────────────────────────────────────────
 # Config + cache I/O
@@ -241,56 +247,64 @@ def _chunk_text(content: str, max_chars: int = _DEFAULT_CHUNK_CHARS) -> List[Dic
         else:
             # Paragraph too long — sub-split on sentences. Naïve but
             # good enough; markdown blocks rarely have run-on sentences.
-            sentences = re.split(r"(?<=[.!?])\s+", para)
-            buf = ""
-            buf_lines = 0
-            buf_start = current_line
-            for sent in sentences:
-                if len(buf) + len(sent) + 1 <= max_chars:
-                    buf = buf + (" " if buf else "") + sent
-                    buf_lines = buf.count("\n") + 1
-                else:
-                    if buf:
-                        chunks.append({
-                            "chunk_index": chunk_idx,
-                            "start_line": buf_start,
-                            "end_line": buf_start + buf_lines - 1,
-                            "content": buf.strip(),
-                        })
-                        chunk_idx += 1
-                        buf_start = buf_start + buf_lines
-                    if len(sent) > max_chars:
-                        # Hard split — rare; usually a code block or
-                        # base64 paste. Advance buf_start per emitted
-                        # slice so each chunk's start_line/end_line
-                        # reflects its actual position (CR cycle-1 fix:
-                        # before, every hard-split slice reported the
-                        # same buf_start, so search results couldn't
-                        # locate a hit inside a long block).
-                        for i in range(0, len(sent), max_chars):
-                            piece = sent[i:i + max_chars]
-                            piece_lines = piece.count("\n") + 1
-                            chunks.append({
-                                "chunk_index": chunk_idx,
-                                "start_line": buf_start,
-                                "end_line": buf_start + piece_lines - 1,
-                                "content": piece.strip(),
-                            })
-                            chunk_idx += 1
-                            buf_start = buf_start + piece_lines
-                        buf = ""
-                        buf_lines = 0
-                    else:
-                        buf = sent
-                        buf_lines = sent.count("\n") + 1
-            if buf:
+            #
+            # CR cycle-2 finding: track sentence positions as offsets
+            # into the ORIGINAL `para` text, not as substrings of a
+            # rebuilt buffer. The earlier `re.split` approach dropped
+            # the separator whitespace (including embedded newlines),
+            # so `buf.count("\n")` undercounted source lines whenever
+            # the split point crossed a line break. By using
+            # `re.finditer` with span info, line counts come straight
+            # from the original para via `para[a:b].count("\n")` —
+            # always exact.
+            sentence_re = re.compile(r".+?(?:[.!?](?:\s+|$)|$)", re.DOTALL)
+            sentences = list(sentence_re.finditer(para))
+            chunk_start_off = 0  # offset into para where the current chunk begins
+            buf_end_off = 0      # offset into para where the current chunk ends so far
+
+            def _line_at(offset: int) -> int:
+                """1-based source line number of `offset` within the
+                file, given the paragraph starts at `current_line`."""
+                return current_line + para[:offset].count("\n")
+
+            def _emit(start_off: int, end_off: int) -> None:
+                nonlocal chunk_idx
+                snippet = para[start_off:end_off].strip()
+                if not snippet:
+                    return
                 chunks.append({
                     "chunk_index": chunk_idx,
-                    "start_line": buf_start,
-                    "end_line": buf_start + buf_lines - 1,
-                    "content": buf.strip(),
+                    "start_line": _line_at(start_off),
+                    "end_line": _line_at(end_off - 1) if end_off > start_off else _line_at(start_off),
+                    "content": snippet,
                 })
                 chunk_idx += 1
+
+            for m in sentences:
+                sent_start, sent_end = m.start(), m.end()
+                if not para[sent_start:sent_end].strip():
+                    continue  # skip pure-whitespace tail match from `|$` branch
+                # Would adding this sentence overflow the cap?
+                if sent_end - chunk_start_off > max_chars and buf_end_off > chunk_start_off:
+                    _emit(chunk_start_off, buf_end_off)
+                    chunk_start_off = buf_end_off
+                # Sentence on its own exceeds cap → hard-split it into
+                # max_chars-sized pieces. Advance chunk_start_off per
+                # emitted piece so each piece's start_line/end_line is
+                # computed from its real para offsets.
+                if sent_end - sent_start > max_chars:
+                    if buf_end_off > chunk_start_off:
+                        _emit(chunk_start_off, buf_end_off)
+                        chunk_start_off = buf_end_off
+                    for i in range(sent_start, sent_end, max_chars):
+                        piece_end = min(i + max_chars, sent_end)
+                        _emit(i, piece_end)
+                    chunk_start_off = sent_end
+                    buf_end_off = sent_end
+                else:
+                    buf_end_off = sent_end
+            if buf_end_off > chunk_start_off:
+                _emit(chunk_start_off, buf_end_off)
         current_line += para_lines + 1  # +1 for the splitter blank line
     return chunks
 
@@ -405,7 +419,11 @@ def _embed_one(
                 f"embedding endpoint not reachable: {exc.reason}. "
                 f"Check the endpoint URL or the SSH tunnel/network connection."
             ) from exc
-        except (json.JSONDecodeError, TimeoutError) as exc:
+        except (json.JSONDecodeError, TimeoutError, UnicodeDecodeError) as exc:
+            # UnicodeDecodeError (CR cycle-2): some endpoints return
+            # binary or non-UTF-8 payloads on error — wrap them in the
+            # same friendly EmbeddingError instead of letting the raw
+            # decode failure bubble up as a stack trace.
             raise EmbeddingError(
                 f"embedding endpoint returned malformed response: {exc}. "
                 f"The provider may be wrong (set provider: openai or "
@@ -537,6 +555,22 @@ def search(project_root: str, args: Dict[str, Any]) -> Dict[str, Any]:
                      "works with Ollama in compatible mode, vLLM, etc.) or "
                      "\"ollama-native\" (older Ollama versions) in "
                      ".sdd/config.md.",
+            "config_shape": _CONFIG_SHAPE,
+            "query": query,
+        }
+    # CR cycle-2 finding: reject unsupported providers HERE in config
+    # resolution, not later inside _embed_one. Earlier rejection means
+    # the user gets a clean config error before any chunking / file
+    # walking / network call happens, instead of a misleading
+    # mid-pipeline EmbeddingError.
+    if provider_raw not in _SUPPORTED_PROVIDERS:
+        supported = ", ".join(sorted(_SUPPORTED_PROVIDERS))
+        return {
+            "error": (
+                f"parameters.mcp.semantic_search.provider {provider_raw!r} is "
+                f"not supported. Supported values: {supported}. Set provider "
+                f"in .sdd/config.md."
+            ),
             "config_shape": _CONFIG_SHAPE,
             "query": query,
         }
