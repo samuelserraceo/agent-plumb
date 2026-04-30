@@ -96,6 +96,8 @@ mkproj_v08() {
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/settings.sh"             "$d/.sdd/scripts/settings.sh" 2>/dev/null || true
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/resolve-active.sh"       "$d/.sdd/scripts/resolve-active.sh" 2>/dev/null || true
   chmod +x "$d/.sdd/scripts/resolve-active.sh" 2>/dev/null || true
+  cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/status-banner.sh"        "$d/.sdd/scripts/status-banner.sh" 2>/dev/null || true
+  chmod +x "$d/.sdd/scripts/status-banner.sh" 2>/dev/null || true
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/revert-phase.sh"         "$d/.sdd/scripts/revert-phase.sh" 2>/dev/null || true
   chmod +x "$d/.sdd/scripts/revert-phase.sh" 2>/dev/null || true
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/check-setup-answer.sh"   "$d/.sdd/scripts/check-setup-answer.sh" 2>/dev/null || true
@@ -5878,79 +5880,59 @@ else
 fi
 
 # ============================================================
-# T121k — /status banner correctly handles all 5 source/ambiguous
-#         combos. Regression test for the `IFS=$'\t' read` whitespace-
-#         collapse bug (CR cycle-4): when active was empty, the
-#         leading tab got eaten and every variable shifted left by
-#         one. Pipe-separated parse fixes it; this test pins the fix.
+# T121k — /status banner is rendered by the SHIPPED status-banner.sh
+#         helper. CR cycle-7 MAJOR: earlier T121k/T121m duplicated
+#         the parsing + case-split logic inline, so the slash-command
+#         body could drift and the tests would silently still pass.
+#         Now the test pipes synthetic resolver JSON into the real
+#         shipped helper and asserts the rendered banner.
 # ============================================================
-note "T121k: /status field parser preserves empty active correctly"
-# Embed the exact parse logic from status.md so a regression in the
-# slash-command body would be caught here. Drift between this and
-# status.md = test failure (intended).
-parse_status() {
-  local json="$1"
-  local active source branch index_active ambiguous
-  IFS='|' read -r active source branch index_active ambiguous < <(
-    echo "$json" | python3 -c '
-import json, sys
-try: d = json.load(sys.stdin)
-except: d = {}
-fields = [d.get(k) or "" for k in ("active", "source", "branch", "index_active")]
-amb = "1" if d.get("ambiguous") else "0"
-print("|".join(fields + [amb]))
-')
-  echo "active=[$active] source=[$source] branch=[$branch] index_active=[$index_active] ambiguous=[$ambiguous]"
-}
-# Case 1: branch source, active populated (the common path).
-out1=$(parse_status '{"active":"features/001-x","ambiguous":false,"branch":"sdd/001-x","index_active":"features/001-x","source":"branch"}')
-# Case 2: source=none with broken INDEX pointer (active=null, index_active set).
-# This is the case the IFS=tab bug broke: active was empty, so the leading
-# tab got collapsed and "none" landed in $active instead of $source.
-out2=$(parse_status '{"active":null,"ambiguous":false,"branch":"main","index_active":"features/999-broken","source":"none"}')
-# Case 3: ambiguous (source=none, ambiguous=true, active=null).
-out3=$(parse_status '{"active":null,"ambiguous":true,"branch":"sdd/001-collide","index_active":null,"source":"none"}')
+note "T121k: status-banner.sh renders the right banner for 6 source/ambiguous combos"
+STATUS_BANNER="$FRAMEWORK_ROOT/templates/.sdd/scripts/status-banner.sh"
 ok_count=0
-echo "$out1" | grep -q "active=\[features/001-x\] source=\[branch\]" && ok_count=$((ok_count+1))
-echo "$out2" | grep -q "active=\[\] source=\[none\] branch=\[main\] index_active=\[features/999-broken\]" && ok_count=$((ok_count+1))
-echo "$out3" | grep -q "active=\[\] source=\[none\] branch=\[sdd/001-collide\] index_active=\[\] ambiguous=\[1\]" && ok_count=$((ok_count+1))
-if [ "$ok_count" -eq 3 ]; then
-  ok "T121k status.md parse handles empty active without field-shift (3/3 cases)"
+# 1. branch source — happy path
+out=$(echo '{"active":"features/001-x","ambiguous":false,"branch":"sdd/001-x","index_active":"features/001-x","source":"branch"}' | bash "$STATUS_BANNER")
+echo "$out" | grep -q "Active source: branch (sdd/001-x) → features/001-x" && ok_count=$((ok_count+1))
+# 2. branch source with drift — extra "Note:" line
+out=$(echo '{"active":"features/001-x","ambiguous":false,"branch":"sdd/001-x","index_active":"features/002-other","source":"branch"}' | bash "$STATUS_BANNER")
+echo "$out" | grep -q "Note: INDEX.md \*\*Active:\*\* points at features/002-other" && ok_count=$((ok_count+1))
+# 3. ambiguous slug — fail-closed banner
+out=$(echo '{"active":null,"ambiguous":true,"branch":"sdd/001-collide","index_active":null,"source":"none"}' | bash "$STATUS_BANNER")
+echo "$out" | grep -q "matched 2+ work-item folders" && ok_count=$((ok_count+1))
+# 4. broken INDEX pointer
+out=$(echo '{"active":null,"ambiguous":false,"branch":"main","index_active":"features/999-broken","source":"none"}' | bash "$STATUS_BANNER")
+echo "$out" | grep -q "INDEX.md \*\*Active:\*\* points at \`features/999-broken\`" && ok_count=$((ok_count+1))
+# 5. SDD-shape branch, scaffold not done
+out=$(echo '{"active":null,"ambiguous":false,"branch":"sdd/042-pending","index_active":null,"source":"none"}' | bash "$STATUS_BANNER")
+echo "$out" | grep -q "is SDD-shaped, but" && ok_count=$((ok_count+1))
+# 6. non-SDD branch, no INDEX, no folders
+out=$(echo '{"active":null,"ambiguous":false,"branch":"feature/foo","index_active":null,"source":"none"}' | bash "$STATUS_BANNER")
+echo "$out" | grep -q "isn't an SDD-shape" && ok_count=$((ok_count+1))
+if [ "$ok_count" -eq 6 ]; then
+  ok "T121k status-banner.sh rendered correctly for 6/6 cases"
 else
-  bad "T121k status.md parse field-shift on empty active" "ok=$ok_count/3 case2='$out2'"
+  bad "T121k status-banner.sh rendered wrong output" "ok_count=$ok_count/6"
 fi
 
 # ============================================================
-# T121m — /status banner case-splits SDD-shaped vs non-SDD-shaped
-#         branches when source=none. Pins CR cycle-6 fix:
-#         a valid sdd/<id>-<slug> branch with no scaffolded folder
-#         must say "scaffold not done", NOT "branch isn't SDD-shape".
+# T121m — status-banner.sh deterministic across invocations.
+#         The helper has no $RANDOM, no timestamps; same input must
+#         produce byte-identical output. Pin against regressions.
 # ============================================================
-note "T121m: /status banner distinguishes scaffold-pending from non-SDD branches"
-# Mirror of the case statement from status.md. If the slash command's
-# banner drifts away from this, the test fails (intended).
-render_branch_banner() {
-  local branch="$1"
-  case "$branch" in
-    sdd/[0-9]*-*)
-      echo "scaffold-pending"
-      ;;
-    *)
-      echo "non-SDD"
-      ;;
-  esac
-}
-ok_count=0
-[ "$(render_branch_banner sdd/001-not-yet)" = "scaffold-pending" ] && ok_count=$((ok_count+1))
-[ "$(render_branch_banner sdd/042-foo-bar)" = "scaffold-pending" ] && ok_count=$((ok_count+1))
-[ "$(render_branch_banner sdd/release)" = "non-SDD" ] && ok_count=$((ok_count+1))
-[ "$(render_branch_banner sdd/main)" = "non-SDD" ] && ok_count=$((ok_count+1))
-[ "$(render_branch_banner main)" = "non-SDD" ] && ok_count=$((ok_count+1))
-[ "$(render_branch_banner feature/foo)" = "non-SDD" ] && ok_count=$((ok_count+1))
-if [ "$ok_count" -eq 6 ]; then
-  ok "T121m banner case-split: 6/6 (scaffold-pending vs non-SDD)"
+note "T121m: status-banner.sh deterministic across 3 invocations"
+input='{"active":null,"ambiguous":true,"branch":"sdd/001-collide","index_active":null,"source":"none"}'
+runs=()
+for i in 1 2 3; do
+  runs+=("$(echo "$input" | bash "$STATUS_BANNER")")
+done
+all_same=1
+for r in "${runs[@]}"; do
+  [ "$r" != "${runs[0]}" ] && all_same=0
+done
+if [ "$all_same" -eq 1 ]; then
+  ok "T121m status-banner.sh deterministic (3/3 identical)"
 else
-  bad "T121m banner case-split mismatched on some inputs" "ok_count=$ok_count/6"
+  bad "T121m status-banner.sh non-deterministic" "first='${runs[0]}' last='${runs[2]}'"
 fi
 
 # ============================================================

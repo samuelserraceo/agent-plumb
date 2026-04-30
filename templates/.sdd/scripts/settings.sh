@@ -324,16 +324,18 @@ def _infer_active_context(proj):
         if not m:
             return None, None, None
         raw = m.group(1).strip()
-        # Try the four canonical shapes in priority order. First one that
-        # resolves to an existing spec.md wins.
-        if os.path.isabs(raw):
-            candidates = [raw if raw.endswith("spec.md") else os.path.join(raw, "spec.md")]
-        else:
-            candidates = [
-                os.path.join(proj, ".sdd", raw, "spec.md"),     # work-item-rel (canonical)
-                os.path.join(proj, raw),                         # already-relative-to-proj (legacy)
-                os.path.join(proj, raw, "spec.md"),              # bare folder under proj
-            ]
+        # Same trust boundary as resolve-active.sh: never accept an
+        # absolute path or a path-traversal segment from INDEX.md
+        # project data, even on the legacy fallback path.
+        if os.path.isabs(raw) or ".." in raw.split("/"):
+            return None, None, None
+        # Try the three canonical relative shapes in priority order.
+        # First one that resolves to an existing spec.md wins.
+        candidates = [
+            os.path.join(proj, ".sdd", raw, "spec.md"),     # work-item-rel (canonical)
+            os.path.join(proj, raw),                         # already-relative-to-proj (legacy)
+            os.path.join(proj, raw, "spec.md"),              # bare folder under proj
+        ]
         spec_path = next((p for p in candidates if os.path.isfile(p)), None)
         if not spec_path:
             return None, None, None
