@@ -136,18 +136,19 @@ This file is your one knob for telling SDD what's available in this project. The
 
 ## What each switch means (plain English)
 
-### `sdd_version: 0.11.2` (or current ship)
+### `sdd_version: 0.13.6` (or current ship)
 
 Which version of the SDD framework this project was created against. The framework warns on mismatch so you can re-run a migration if you upgrade.
 
-### `playbooks_available: [feature, project]`
+### `playbooks_available: [feature, project, bug]`
 
-Which workflows you can pick from when you run `/start`. As of v0.11, two playbooks ship:
+Which workflows you can pick from when you run `/start`. As of v1.0, three playbooks ship:
 
 - **`feature`** — the "build something new" journey. Use for a single shippable feature (~10-15 BUILD tasks). The default; what you get when you run `/start "<title>"` without a `--playbook=` flag.
 - **`project`** — the "plan a multi-feature initiative" journey. Use when the work is bigger than one feature (a CRM, a marketplace, a full new app). Produces a roadmap + queues 3-12 features into INDEX.md backlog, auto-starts the first one. Run via `/start --playbook=project "<initiative title>"`.
+- **`bug`** — the "fix something broken" journey. 5-section SPEC: problem → repro → root cause → minimal-diff fix → regression test. Run via `/start [BUG] "<title>"` (auto-routes) or `/start --playbook=bug "<title>"`. Skips the parts of `feature.md` that don't fit a bug fix (user stories, data contract, UX brief, ACs).
 
-Future playbooks (`bug`, `idea`, `question`) ship later; they'll appear here automatically when you upgrade and pick "yes, install the new playbook" during migration.
+Future playbooks (`idea`, `question`) ship later; they'll appear here automatically when you upgrade and pick "yes, install the new playbook" during migration.
 
 ### `default_playbook: feature`
 

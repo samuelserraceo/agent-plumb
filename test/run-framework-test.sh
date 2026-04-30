@@ -1647,9 +1647,9 @@ rm -rf "$d"
 # ============================================================
 note "T51: /start rejects unknown playbook with plain-English error"
 d=$(mkproj_v08)
-cd "$d"
+cd "$d" || { bad "T51 cannot cd into mkproj output" "$d"; rm -rf "$d"; }
 out=$(bash "$START_SH" --playbook=idea "scratch a thought" 2>&1) && ec=0 || ec=$?
-cd - >/dev/null
+cd - >/dev/null || true
 rm -rf "$d"
 # Expect non-zero exit AND plain-English message mentioning idea + future
 if [ "$ec" -ne 0 ] && echo "$out" | grep -qiE 'future|coming|use.*feature'; then
@@ -1665,9 +1665,9 @@ fi
 # ============================================================
 note "T130: bug.md playbook scaffolds correctly via --playbook=bug"
 d=$(mkproj_v08)
-cd "$d"
+cd "$d" || { bad "T130 cannot cd into mkproj output" "$d"; rm -rf "$d"; }
 out=$(bash "$START_SH" --playbook=bug "magic-link 500" 2>&1) && ec=0 || ec=$?
-cd - >/dev/null
+cd - >/dev/null || true
 if [ "$ec" -eq 0 ] \
    && [ -d "$d/.sdd/bugs/001-magic-link-500" ] \
    && [ -f "$d/.sdd/bugs/001-magic-link-500/spec.md" ] \
@@ -1690,15 +1690,33 @@ rm -rf "$d"
 # ============================================================
 note "T131: /start [BUG] prefix auto-routes to bug playbook"
 d=$(mkproj_v08)
-cd "$d"
+cd "$d" || { bad "T131 cannot cd into mkproj output" "$d"; rm -rf "$d"; }
 out=$(bash "$START_SH" "[BUG] confirm-link typo" 2>&1) && ec=0 || ec=$?
-cd - >/dev/null
+cd - >/dev/null || true
 if [ "$ec" -eq 0 ] \
    && [ -d "$d/.sdd/bugs/001-confirm-link-typo" ] \
    && grep -q "playbook = bug" <<< "$out"; then
   ok "T131 [BUG] prefix auto-routes + strips prefix from slug"
 else
   bad "T131 [BUG] auto-route failed" "exit=$ec; out='$out'; expected dir bugs/001-confirm-link-typo/"
+fi
+rm -rf "$d"
+
+# ============================================================
+# T131b — lowercase `[bug]` prefix is also case-insensitively routed
+#   The doctrine says case-insensitive; pin it as a regression test.
+# ============================================================
+note "T131b: /start [bug] (lowercase) prefix also auto-routes"
+d=$(mkproj_v08)
+cd "$d" || { bad "T131b cannot cd into mkproj output" "$d"; rm -rf "$d"; }
+out=$(bash "$START_SH" "[bug] another typo" 2>&1) && ec=0 || ec=$?
+cd - >/dev/null || true
+if [ "$ec" -eq 0 ] \
+   && [ -d "$d/.sdd/bugs/001-another-typo" ] \
+   && grep -q "playbook = bug" <<< "$out"; then
+  ok "T131b lowercase [bug] prefix also auto-routes"
+else
+  bad "T131b lowercase [bug] auto-route failed" "exit=$ec; out='$out'"
 fi
 rm -rf "$d"
 

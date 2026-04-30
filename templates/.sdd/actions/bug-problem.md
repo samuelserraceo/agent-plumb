@@ -27,6 +27,6 @@ Single USER-LED step: capture what's broken in one sentence. Bug fixes don't nee
 
 > *"That description sounds like a new behaviour rather than a fix to existing behaviour. Shall we switch to `feature.md`? Reply `switch` to re-scaffold, or describe how the shipped behaviour is wrong (vs what's missing)."*
 
-**Output:** fill `spec.md` under `### §1.what` with one short paragraph or 2-3 bullets. No assumptions; if the description is vague, push back once.
+**Output:** replace the `- [ ] what: …` step row under `### action: bug-problem` with `- [x] what: <one-line summary of the answer>`. Long-form content (the paragraph or 2-3 bullets) goes under the action heading after the step row. No assumptions; if the description is vague, push back once.
 
 **End the turn with:** *"Run `/next` when you're ready to capture the repro steps in §2."*

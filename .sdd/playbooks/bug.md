@@ -15,9 +15,10 @@ stages:
       - bug-fix
       - bug-regression-test
     exit_checks:
-      - { id: C-spec-repro,  check: "repro steps captured in §2" }
-      - { id: C-spec-cause,  check: "root cause captured in §3" }
-      - { id: C-spec-fix,    check: "proposed fix recorded in §4" }
+      - { id: C-spec-repro,        check: "repro steps captured in §2" }
+      - { id: C-spec-cause,        check: "root cause captured in §3" }
+      - { id: C-spec-fix,          check: "proposed fix recorded in §4" }
+      - { id: C-spec-regression,   check: "regression test drafted in §5" }
   - id: BUILD
     actions:
       - run-mode-chosen

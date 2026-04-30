@@ -21,7 +21,7 @@ Find why the bug happens and write it as one plain-English sentence the user can
 
 **Investigation is YOUR job.** Read the relevant code, trace the repro through it, find where reality diverges from expectation. Don't ask the user to debug — they reported a symptom; you find the cause.
 
-**The output is one sentence**, not a detailed analysis. Future-you reads §3 to remember "what was wrong"; the fix in §4 captures "what we did about it." Examples:
+**The output is 1-3 sentences max**, not a detailed analysis. One sentence is best when it fits; up to three is fine if the cause needs both the technical mechanism AND the user-visible consequence in plain English. Future-you reads §3 to remember "what was wrong"; the fix in §4 captures "what we did about it." Examples:
 
 - *"`session.user_id` was set to `null` for users who signed up via magic-link because the auth callback didn't await the user-creation Promise before redirecting."*
 - *"The Resend webhook handler treated `bounced` events as `delivered` because the event-type switch was missing the `bounced` case (default: 'delivered')."*
@@ -36,6 +36,6 @@ Find why the bug happens and write it as one plain-English sentence the user can
 
 **On confirmation.** The user replies with a one-line ack ("yes, that's the cause" / "no, the cause is X"). Update §3 with the agreed wording. This step does NOT use `requires_user_approval: true` — the *fix* is the load-bearing decision (locked in §4); root cause is a working hypothesis.
 
-**Output:** one paragraph (1-3 sentences) under `### §3.cause`.
+**Output:** replace the `- [ ] cause: …` step row under `### action: bug-root-cause` with `- [x] cause: <the 1-3 sentences>` (or a one-line summary with the full cause prose under the action heading if the sentences are long).
 
 **End the turn with:** *"Reply `confirmed` if that's the right cause, or correct it. Then `/next` to draft the fix in §4."*

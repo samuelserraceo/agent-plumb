@@ -36,6 +36,6 @@ Capture an exact, deterministic sequence that reproduces the bug. Without a reli
 
 > *"§2 needs a deterministic repro. If you can't reproduce it on demand, options: (A) add logging/instrumentation and reproduce in production, (B) ship as a `feature.md` to harden the area, or (C) close as 'cannot reproduce' and re-open if it recurs. Reply A / B / C."*
 
-**Output:** numbered steps + expected vs actual under `### §2.steps`.
+**Output:** replace the `- [ ] steps: …` step row under `### action: bug-repro` with `- [x] steps: <one-line summary>`. The numbered steps + expected vs actual go under the action heading after the step row.
 
 **End the turn with:** *"Run `/next` to capture root cause in §3."*

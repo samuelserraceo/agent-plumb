@@ -14,7 +14,7 @@
     "bug": {
       "path": ".sdd/playbooks/bug.md",
       "trust": "framework",
-      "expected_sha256": "c63c648876651c006df9346e21ef0f7d28366138a18e923f522648146fac5814"
+      "expected_sha256": "70944088aeaddfad61b7219da5b29cb1c446806dbaabc76a3f9d3358b33d6f4c"
     }
   },
   "scripts": {
@@ -39,7 +39,7 @@
       "trust": "framework"
     },
     "start.sh": {
-      "expected_sha256": "be61f81b004ee3d611e66edf808b63fd5c4aa78366481037e5b6bfc108cf270a",
+      "expected_sha256": "774f824f72cee35bf0f3030efe2bd5f0eb724c145971b74210322d063d0dc759",
       "path": ".sdd/scripts/start.sh",
       "trust": "framework"
     },
@@ -253,17 +253,17 @@
     "bug-problem": {
       "path": ".sdd/actions/bug-problem.md",
       "trust": "framework",
-      "expected_sha256": "9eb3e6d55807117e899963b9b05953a76d55cc9b5695d070846641582f0154e5"
+      "expected_sha256": "af1d0ac0157bc2b861c6801ba4a6ad2615efaf9174554476688fa8b62727d076"
     },
     "bug-repro": {
       "path": ".sdd/actions/bug-repro.md",
       "trust": "framework",
-      "expected_sha256": "2b16dd672bbfc892404f09a32515a9a88e369e2a8af7abeeff15c84693d32bec"
+      "expected_sha256": "0d5032535a3202fa50d7f35a5b0512eb81053e992d155a2837a2874afea24364"
     },
     "bug-root-cause": {
       "path": ".sdd/actions/bug-root-cause.md",
       "trust": "framework",
-      "expected_sha256": "3b235e03f84882d5dadbbf9886d5708d25ffa3415d95f7716feff3e7a605fffa"
+      "expected_sha256": "c219e53d2874be62613006b36b8ee68d5c2860e62279b92dae334b43092457db"
     },
     "bug-fix": {
       "path": ".sdd/actions/bug-fix.md",
