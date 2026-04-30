@@ -5524,7 +5524,7 @@ fi
 # ============================================================
 note "T121e: resolve-active.sh deterministic across 5 invocations"
 d=$(mktemp -d) || exit 1
-cd "$d"
+cd "$d" || { bad "T121e cd failed" "d=$d"; rm -rf "$d"; exit 1; }
 git init -q
 git config user.email t@t.com && git config user.name T
 git commit --allow-empty -q -m "init"
@@ -5533,19 +5533,34 @@ touch .sdd/features/001-determinism-test/spec.md
 echo '**Active:** features/001-determinism-test' > .sdd/INDEX.md
 git checkout -q -b sdd/001-determinism-test
 runs=()
+exits=()
+# Capture stderr + exit code per invocation. CR cycle-11 minor: a
+# silent-fail (stable empty stdout + noisy stderr) would have passed
+# the "all 5 identical" check; assert exit=0 + non-empty + parses-as-
+# JSON before declaring determinism.
 for i in 1 2 3 4 5; do
-  runs+=("$(bash "$RESOLVE_ACTIVE")")
+  out=$(bash "$RESOLVE_ACTIVE" 2>&1)
+  ec=$?
+  runs+=("$out")
+  exits+=("$ec")
 done
-cd - >/dev/null
+cd - >/dev/null || true
 rm -rf "$d"
 all_same=1
+all_ok=1
+all_parse=1
 for r in "${runs[@]}"; do
   [ "$r" != "${runs[0]}" ] && all_same=0
+  [ -z "$r" ] && all_ok=0
+  echo "$r" | python3 -c 'import json,sys; json.load(sys.stdin)' 2>/dev/null || all_parse=0
 done
-if [ "$all_same" -eq 1 ]; then
-  ok "T121e resolve-active.sh deterministic (5/5 identical)"
+for ec in "${exits[@]}"; do
+  [ "$ec" -ne 0 ] && all_ok=0
+done
+if [ "$all_same" -eq 1 ] && [ "$all_ok" -eq 1 ] && [ "$all_parse" -eq 1 ]; then
+  ok "T121e resolve-active.sh deterministic + ec=0 + parses (5/5)"
 else
-  bad "T121e resolve-active.sh non-deterministic across runs" "first='${runs[0]}' last='${runs[4]}'"
+  bad "T121e resolve-active.sh broken" "same=$all_same ok=$all_ok parse=$all_parse first='${runs[0]}' last='${runs[4]}'"
 fi
 
 # ============================================================
@@ -5928,17 +5943,28 @@ fi
 note "T121m: status-banner.sh deterministic across 3 invocations"
 input='{"active":null,"ambiguous":true,"branch":"sdd/001-collide","index_active":null,"source":"none"}'
 runs=()
+exits=()
+# Capture stderr + exit code per invocation. Same hardening as T121e:
+# silent-fail (stable empty stdout + noisy stderr) would otherwise pass.
 for i in 1 2 3; do
-  runs+=("$(echo "$input" | bash "$STATUS_BANNER")")
+  out=$(echo "$input" | bash "$STATUS_BANNER" 2>&1)
+  ec=$?
+  runs+=("$out")
+  exits+=("$ec")
 done
 all_same=1
+all_ok=1
 for r in "${runs[@]}"; do
   [ "$r" != "${runs[0]}" ] && all_same=0
+  [ -z "$r" ] && all_ok=0
 done
-if [ "$all_same" -eq 1 ]; then
-  ok "T121m status-banner.sh deterministic (3/3 identical)"
+for ec in "${exits[@]}"; do
+  [ "$ec" -ne 0 ] && all_ok=0
+done
+if [ "$all_same" -eq 1 ] && [ "$all_ok" -eq 1 ]; then
+  ok "T121m status-banner.sh deterministic + ec=0 + non-empty (3/3)"
 else
-  bad "T121m status-banner.sh non-deterministic" "first='${runs[0]}' last='${runs[2]}'"
+  bad "T121m status-banner.sh broken" "same=$all_same ok=$all_ok first='${runs[0]}' last='${runs[2]}'"
 fi
 
 # ============================================================
