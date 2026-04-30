@@ -63,6 +63,31 @@ class NormaliseProbeTests(unittest.TestCase):
         for known in ("fill", "click", "goto", "wait", "eval", "noop"):
             self.assertIn(known, PROBE_ACTIONS)
 
+    def test_synonym_type_maps_to_fill(self):
+        # Real-world LLMs (Gemma, Llama, Qwen, GPT) often return "type"
+        # instead of "fill" since both are Playwright-native names.
+        # Without the synonym map, every such probe collapses to noop
+        # and the loop produces zero findings.
+        probe = _normalise_probe({"action": "type", "target": "#email", "value": "x"})
+        self.assertEqual(probe["action"], "fill")
+        self.assertEqual(probe["target"], "#email")
+
+    def test_synonym_navigate_maps_to_goto(self):
+        probe = _normalise_probe({"action": "navigate", "target": "https://example.com"})
+        self.assertEqual(probe["action"], "goto")
+
+    def test_synonym_tap_maps_to_click(self):
+        probe = _normalise_probe({"action": "tap", "target": ".submit"})
+        self.assertEqual(probe["action"], "click")
+
+    def test_synonym_javascript_maps_to_eval(self):
+        probe = _normalise_probe({"action": "javascript", "target": "window.x"})
+        self.assertEqual(probe["action"], "eval")
+
+    def test_synonym_uppercase_normalised(self):
+        probe = _normalise_probe({"action": "TYPE", "target": "#x"})
+        self.assertEqual(probe["action"], "fill")
+
 
 class MockLLMDriverTests(unittest.TestCase):
     def test_pulls_from_per_category_queue_first(self):
@@ -126,6 +151,30 @@ class HttpLLMDriverConstructionTests(unittest.TestCase):
             probe = driver.propose_probe(category="empty", state={}, spec_acs=[], history=[])
         self.assertEqual(probe["action"], "noop")
         self.assertIn("error", probe["rationale"].lower())
+
+    def test_socket_timeout_returns_noop_probe_not_raise(self):
+        # Python 3.9 raises socket.timeout (not TimeoutError) on read timeout.
+        # The first cycle of the explorer commonly hits this while a slow
+        # local LLM (Ollama gemma4:e4b cold-loading JSON-mode) is still
+        # warming up. Confirmed live; fix lands the catch.
+        import socket
+        driver = HttpLLMDriver(endpoint="http://example.com/v1/chat/completions", model="m")
+        with mock.patch(
+            "urllib.request.urlopen",
+            side_effect=socket.timeout("timed out"),
+        ):
+            probe = driver.propose_probe(category="empty", state={}, spec_acs=[], history=[])
+        self.assertEqual(probe["action"], "noop")
+        self.assertIn("timeout", probe["rationale"].lower())
+
+    def test_connection_error_returns_noop_probe_not_raise(self):
+        driver = HttpLLMDriver(endpoint="http://example.com/v1/chat/completions", model="m")
+        with mock.patch(
+            "urllib.request.urlopen",
+            side_effect=ConnectionError("connection reset"),
+        ):
+            probe = driver.propose_probe(category="empty", state={}, spec_acs=[], history=[])
+        self.assertEqual(probe["action"], "noop")
 
     def test_malformed_response_returns_noop(self):
         # Construct a fake response that returns invalid JSON in the message content.

@@ -251,7 +251,16 @@ class PlaywrightBrowserDriver(BrowserDriver):
         try:
             state["url"] = self._page.url
             state["title"] = self._page.title()
-            state["text"] = (self._page.content() or "")[:8000]
+            # Use the rendered body text (no HTML markup) so the explorer's
+            # token-overlap heuristics aren't dominated by tag names like
+            # "form" / "html" / "submit" that appear on every page. Falls
+            # back to content() if inner_text fails (e.g., body absent on
+            # an error page).
+            try:
+                visible = self._page.inner_text("body")
+            except Exception:
+                visible = self._page.content() or ""
+            state["text"] = (visible or "")[:8000]
         except Exception as exc:
             state["last_error"] = f"snapshot failed: {exc}"
             return state
