@@ -74,6 +74,14 @@ def search_within(project_root: str, args: Dict[str, Any]) -> Dict[str, Any]:
     edges = graph.get("edges", [])
     by_slug = {n["slug"]: n for n in graph.get("nodes", [])}
 
+    # CR cycle-9 — read `edge["from_slug"]` (populated at build time via
+    # heading-aware resolution) instead of computing a synthetic file-level
+    # slug. The synthetic `_file:<basename>` placeholder never appeared in
+    # by_slug, so the BFS silently failed to expand from any notebook
+    # heading seed: search_within(pattern:a, ...) and search_within(pattern:b, ...)
+    # both returned the same allowlist (just the seed file). With the
+    # heading-aware from_slug, sibling pattern headings now produce
+    # different neighbourhoods.
     visited_slugs: Set[str] = {root["slug"]}
     frontier_slugs: Set[str] = {root["slug"]}
     for _ in range(depth):
@@ -81,14 +89,14 @@ def search_within(project_root: str, args: Dict[str, Any]) -> Dict[str, Any]:
         for edge in edges:
             if not edge.get("resolved") or edge.get("kind") != "wiki-link":
                 continue
-            from_slug = _slug_for_from_path(graph, edge["from_path"])
+            from_slug = edge.get("from_slug")
             to_slug = edge.get("to_slug")
-            if not to_slug:
+            if not to_slug or from_slug is None:
                 continue
             if from_slug in frontier_slugs and to_slug not in visited_slugs:
                 visited_slugs.add(to_slug)
                 next_frontier.add(to_slug)
-            elif to_slug in frontier_slugs and from_slug and from_slug not in visited_slugs:
+            elif to_slug in frontier_slugs and from_slug not in visited_slugs:
                 visited_slugs.add(from_slug)
                 next_frontier.add(from_slug)
         frontier_slugs = next_frontier
@@ -141,12 +149,6 @@ def search_within(project_root: str, args: Dict[str, Any]) -> Dict[str, Any]:
     return result
 
 
-def _slug_for_from_path(graph: Dict[str, Any], path: str) -> str:
-    """Reverse-lookup: which feature owns `path`? Notebook files have many
-    headings but no single owning slug — use a prefixed `_file:<basename>`
-    fallback so the synthetic notebook handle can never collide with a real
-    feature slug (CR cycle-7 Major; mirrors the same fix in get_neighbours.py)."""
-    for n in graph.get("nodes", []):
-        if n.get("path") == path and n.get("kind") == "feature":
-            return n["slug"]
-    return f"_file:{os.path.splitext(os.path.basename(path))[0]}"
+# CR cycle-9 — `_slug_for_from_path` removed for the same reason
+# `_slug_for_path` was removed from get_neighbours.py: edges now carry
+# `from_slug` populated at build time via heading-aware resolution.

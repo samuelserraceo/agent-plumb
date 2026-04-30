@@ -158,7 +158,9 @@ def _build_nodes_and_edges(project_root: str, paths: List[str]) -> Tuple[List[Di
         try:
             with open(nb_path, encoding="utf-8") as f:
                 lines = f.read().split("\n")
-        except OSError:
+        except (OSError, UnicodeDecodeError):
+            # CR cycle-9 — corrupted / non-UTF-8 notebook files are skipped
+            # rather than crashing the whole graph build.
             continue
         for i, line in enumerate(lines, start=1):
             m = _H_RE.match(line)
@@ -216,12 +218,48 @@ def _build_nodes_and_edges(project_root: str, paths: List[str]) -> Tuple[List[Di
     for key in ambiguous:
         by_slug[key] = None
 
+    # CR cycle-9 — pre-compute per-path indices so each edge can carry a
+    # stable `from_slug` (the heading-aware slug of the node that owns the
+    # source line, NOT a synthetic file-level placeholder). This stops BFS
+    # in get_neighbours / search_within from polluting the frontier with
+    # `_file:patterns`-style synthetic tokens.
+    _feature_path_to_slug: Dict[str, str] = {
+        n["path"]: n["slug"] for n in nodes if n.get("kind") == "feature"
+    }
+    _headings_by_path: Dict[str, List[Tuple[int, str, str]]] = {}
+    for n in nodes:
+        if "line" not in n:
+            continue
+        _headings_by_path.setdefault(n["path"], []).append(
+            (n["line"], n["slug"], n["kind"])
+        )
+    for _p in _headings_by_path:
+        _headings_by_path[_p].sort()
+
+    def _resolve_from(rel_path: str, line_no: int) -> Tuple[Optional[str], str]:
+        """Return (slug, kind) of the node that owns this (path, line),
+        or (None, 'file') for orphan content (text before the first heading
+        in a notebook file, or a non-feature/non-notebook file)."""
+        if rel_path in _feature_path_to_slug:
+            return (_feature_path_to_slug[rel_path], "feature")
+        headings = _headings_by_path.get(rel_path, [])
+        best: Optional[Tuple[str, str]] = None
+        for h_line, h_slug, h_kind in headings:
+            if h_line <= line_no:
+                best = (h_slug, h_kind)
+            else:
+                break
+        if best is None:
+            return (None, "file")
+        return best
+
     # Walk every markdown file for outgoing edges.
     for src_path in paths:
         try:
             with open(src_path, encoding="utf-8") as f:
                 content = f.read()
-        except OSError:
+        except (OSError, UnicodeDecodeError):
+            # CR cycle-9 — same defensive skip as notebook reads above.
             continue
         rel_src = os.path.relpath(src_path, project_root)
         # Wiki-link edges. Normalise to lowercase for lookup so `[[Entity:User]]`
@@ -230,9 +268,12 @@ def _build_nodes_and_edges(project_root: str, paths: List[str]) -> Tuple[List[Di
             slug = m.group(1).lower()
             target = by_slug.get(slug)  # may be None if slug is ambiguous
             line_no = content[:m.start()].count("\n") + 1
+            from_slug, from_kind = _resolve_from(rel_src, line_no)
             edge = {
                 "from_path": rel_src,
                 "from_line": line_no,
+                "from_slug": from_slug,
+                "from_kind": from_kind,
                 "raw": slug,
                 "kind": "wiki-link",
             }

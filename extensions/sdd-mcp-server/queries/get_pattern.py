@@ -29,13 +29,15 @@ from typing import Any, Dict, List
 
 _SOURCE_RE = re.compile(
     # Accept EITHER fully-paired wiki-link form `[[slug]]` OR bare slug.
-    # Earlier this used optional brackets `\[?\[?...\]?\]?` which silently
-    # accepted unbalanced inputs (`Source: [[001-waitlist`, single bracket,
-    # etc.) — CR cycle-8 flagged that as malformed-input acceptance.
-    # Alternation rejects unbalanced brackets by construction.
+    # Earlier iterations let unbalanced brackets through (`Source: [[001-x`,
+    # single bracket, trailing `]`). CR cycle-9 flagged that the bare-slug
+    # branch still matched `Source: 001-x]]` because it consumed before the
+    # alternation could reject. Negative lookahead `(?!\])` forbids the
+    # bare-slug capture from being followed by `]` — only fully-paired
+    # `[[slug]]` or a truly bare slug match.
     # Group 1 captures the wrapped slug; group 2 captures the bare slug.
     r"(?:Source|From feature|Where it came from)\s*[:=]?\s*"
-    r"(?:\[\[([A-Za-z0-9_/-]+)\]\]|([A-Za-z0-9_/-]+))",
+    r"(?:\[\[([A-Za-z0-9_/-]+)\]\]|([A-Za-z0-9_/-]+)(?!\]))",
     re.IGNORECASE,
 )
 

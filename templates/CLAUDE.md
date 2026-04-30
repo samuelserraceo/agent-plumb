@@ -306,7 +306,7 @@ If your turn's natural output doesn't fit one of these emit-points, don't invent
 Three rules to operationalise this:
 
 1. **When you cite a pattern / entity / shipped feature in prose, wrap the slug in `[[…]]`.** Plain `001-waitlist` works as text, but `[[001-waitlist]]` becomes a graph edge that future sessions can query. Both are correct text; the wiki-link is the v1.0 default.
-2. **Before you emit a link, verify the target exists.** Use `get_pattern(slug)` / `get_references(slug)` for cheap existence checks. If you're proposing a NEW pattern (one that doesn't exist yet), prose-only is correct — the link gets added at `learn` time when the pattern lands.
+2. **Before you emit a link, verify the target exists.** Use `get_backlinks(slug)` or `get_neighbours(slug)` for the cheapest pre-emit check — they hit the graph cache directly and the slug-not-found error includes an `available` list, so a typo surfaces with suggestions. (`get_pattern(slug)` is still useful when you need a pattern's prose body, but for "does this node exist?" the graph queries are the right tool.) If you're proposing a NEW pattern (one that doesn't exist yet), prose-only is correct — the link gets added at `learn` time when the pattern lands.
 3. **Don't emit links in `[FRAMEWORK INSTRUCTIONS]` blocks.** Wiki-links live in user-edited content (spec.md, patterns.md, INDEX.md, decisions.md). Framework files reference each other via plain paths.
 
 ---

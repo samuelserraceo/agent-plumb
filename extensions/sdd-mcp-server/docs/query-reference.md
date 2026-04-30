@@ -411,14 +411,17 @@ Requires the same `parameters.mcp.semantic_search` config as the plain `search` 
 }
 ```
 
-**Sample response:** the `search` query's standard result shape, with the search restricted to the seed slug's neighbourhood. The result is augmented with a `subgraph` block:
+**Sample response:** the `search` query's standard result shape, with the search restricted to the seed slug's neighbourhood. The full simplified envelope (matching the rest of this page) wraps the data in `{"result": ...}`; an excerpt of the augmenting `subgraph` block looks like:
 
 ```json
 {
-  "subgraph": {
-    "files_searched": [".sdd/features/001-waitlist/spec.md", ".sdd/patterns.md"],
-    "slugs_visited": ["001-waitlist", "auth-retry-logic"],
-    "depth": 2
+  "result": {
+    "matches": [/* …standard search shape… */],
+    "subgraph": {
+      "files_searched": [".sdd/features/001-waitlist/spec.md", ".sdd/patterns.md"],
+      "slugs_visited": ["001-waitlist", "auth-retry-logic"],
+      "depth": 2
+    }
   }
 }
 ```

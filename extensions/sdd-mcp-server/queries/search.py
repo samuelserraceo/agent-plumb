@@ -718,12 +718,26 @@ def search(project_root: str, args: Dict[str, Any]) -> Dict[str, Any]:
     allowlist = (args or {}).get("_path_allowlist")
     if isinstance(allowlist, list) and allowlist:
         # CR cycle-6 Minor — defensive: only accept hashable string paths.
-        # _path_allowlist is internal-only (passed by search_within), but a
-        # malformed call site could put a nested list/dict in here and
-        # crash with TypeError. Filter to strings.
-        allowed = {p for p in allowlist if isinstance(p, str)}
-        files = [(rel, content) for (rel, content) in files
-                 if os.path.normpath(os.path.join(project_root, rel)) in allowed]
+        # CR cycle-9 — also canonicalise via realpath and enforce a project-
+        # root boundary. The allowlist comes from search_within (internal),
+        # but realpath defends against any future caller passing symlinked
+        # paths that point outside the project root, and the boundary check
+        # makes a path-traversal foothold a no-op rather than relying on
+        # .normpath alone.
+        proj_root_real = os.path.realpath(os.path.normpath(project_root))
+        allowed_real = {
+            os.path.realpath(os.path.normpath(os.path.join(project_root, p)))
+            for p in allowlist if isinstance(p, str)
+        }
+        # Re-narrow the allowlist to entries inside the project root.
+        allowed_real = {
+            p for p in allowed_real
+            if p == proj_root_real or p.startswith(proj_root_real + os.sep)
+        }
+        def _in_allowlist(rel: str) -> bool:
+            file_real = os.path.realpath(os.path.normpath(os.path.join(project_root, rel)))
+            return file_real in allowed_real
+        files = [(rel, content) for (rel, content) in files if _in_allowlist(rel)]
     if not files:
         return {
             "matches": [],

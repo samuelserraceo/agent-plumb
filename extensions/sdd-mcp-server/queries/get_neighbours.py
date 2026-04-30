@@ -22,7 +22,6 @@ Returns on success:
 
 from __future__ import annotations
 
-import os as _os
 from typing import Any, Dict, List, Set
 
 from . import _graph_cache
@@ -64,6 +63,13 @@ def get_neighbours(project_root: str, args: Dict[str, Any]) -> Dict[str, Any]:
     # appear adjacent to that synthetic node. Md-links are still surfaced
     # at depth 1 below as a separate `file_links` array — they're useful
     # context but don't compose into multi-hop traversal.
+    #
+    # CR cycle-9 — read `edge["from_slug"]` (populated by _build_nodes_and_edges
+    # via heading-aware resolution) instead of computing a synthetic file-level
+    # slug. The synthetic `_file:<basename>` token never appeared in the real
+    # node namespace, so BFS expansion silently failed for any edge inside a
+    # notebook file. With heading-aware from_slug, an edge inside the body of
+    # `### Auth retry logic` correctly carries `from_slug = "auth-retry-logic"`.
     frontier = {root["slug"]}
     for _ in range(depth):
         next_frontier: Set[str] = set()
@@ -75,7 +81,11 @@ def get_neighbours(project_root: str, args: Dict[str, Any]) -> Dict[str, Any]:
             to_slug = edge.get("to_slug")
             if not to_slug:
                 continue  # defensive: a malformed wiki-link with no slug
-            from_slug = _slug_for_path(graph, edge["from_path"])
+            from_slug = edge.get("from_slug")
+            if from_slug is None:
+                # Edge sits before the first heading in a notebook file (orphan).
+                # Skip — no real owning node to attribute the edge to.
+                continue
             # Outgoing: edges whose source is in the current frontier.
             if from_slug in frontier and to_slug not in seen_out and to_slug != root["slug"]:
                 out_edges.append({
@@ -142,18 +152,8 @@ def get_neighbours(project_root: str, args: Dict[str, Any]) -> Dict[str, Any]:
     return result
 
 
-def _slug_for_path(graph: Dict[str, Any], path: str) -> str:
-    """Reverse-lookup: given a markdown file path, find which feature/notebook
-    node 'owns' it. For feature spec.md files, that's the feature folder slug.
-    For notebook files (patterns.md / data-model.md / decisions.md), use a
-    prefixed filename token so the fallback can never collide with a real
-    feature slug (CR cycle-7 Major — bare `patterns` would have collided with
-    a hypothetical `001-patterns` feature folder)."""
-    for n in graph.get("nodes", []):
-        if n.get("path") == path and n.get("kind") == "feature":
-            return n["slug"]
-    # Notebook files don't have a single owning slug — they have many headings.
-    # Use `_file:<basename>` as a stable identifier; the leading underscore +
-    # colon are not produced by `_slugify`, so the result lies outside the
-    # feature-slug namespace by construction.
-    return f"_file:{_os.path.splitext(_os.path.basename(path))[0]}"
+# CR cycle-9 — `_slug_for_path` removed. The reverse-path-lookup approach
+# couldn't distinguish between multiple headings inside the same notebook
+# file (it returned a synthetic file-level slug for ALL of them). Edges
+# now carry `from_slug` populated at build time via heading-aware
+# resolution, so this helper isn't needed.

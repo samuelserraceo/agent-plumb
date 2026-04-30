@@ -9,7 +9,7 @@ auto-detect by inspecting the inbound message.
    methods are implemented:
 
    - `initialize` — handshake; returns server name/version/capabilities.
-   - `tools/list` — returns the 6 query names + arg schemas.
+   - `tools/list` — returns the 9 query names + arg schemas (6 originals + v1.0 graph queries).
    - `tools/call` — `{name, arguments}` invokes the query and returns
      `{content: [{type: "text", text: <json-encoded result>}]}` per the
      MCP tool-result convention.
@@ -108,6 +108,61 @@ _TOOL_SCHEMAS: Dict[str, Dict[str, Any]] = {
             "type": "object",
             "properties": {"query": {"type": "string"}},
             "required": ["query"],
+        },
+    },
+    # v1.0 graph layer — three queries that walk wiki-link edges. Reading from
+    # `.sdd/.cache/graph.json` (rebuilt on demand from a content-hash signature
+    # over every .sdd/ markdown file). Edge schema documented in
+    # `extensions/sdd-mcp-server/queries/_graph_cache.py`.
+    "get_backlinks": {
+        "description": "List files that cite the given wiki-link slug. Tier 1 graph traversal.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "slug": {
+                    "type": "string",
+                    "description": "Bare slug (e.g. 'auth-retry-logic') or qualified form (e.g. 'pattern:auth-retry-logic'). Case-insensitive.",
+                },
+            },
+            "required": ["slug"],
+        },
+    },
+    "get_neighbours": {
+        "description": "Return outgoing + incoming wiki-link edges for a slug. BFS up to depth 3.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "slug": {"type": "string", "description": "Bare or qualified slug."},
+                "depth": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 3,
+                    "description": "BFS depth (silently capped at 3). Default 1.",
+                },
+            },
+            "required": ["slug"],
+        },
+    },
+    "search_within": {
+        "description": "Semantic search bounded to the slug's graph neighbourhood. Tier 2b — combines get_neighbours with the embedding pipeline.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "slug": {"type": "string", "description": "Seed node — bare or qualified."},
+                "query": {"type": "string", "description": "Natural-language query."},
+                "depth": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 3,
+                    "description": "Neighbourhood depth. Default 1.",
+                },
+                "top_k": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "Max results. Defaults to .sdd/config.md value (typically 5).",
+                },
+            },
+            "required": ["slug", "query"],
         },
     },
 }
