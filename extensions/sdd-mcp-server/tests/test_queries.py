@@ -30,7 +30,7 @@ from queries import (  # noqa: E402
     get_decisions_since,
     search,
 )
-from queries.search import _chunk_text  # noqa: E402  — internal but tested
+from queries.search import _chunk_text, _normalize_endpoint  # noqa: E402
 from server import handle_message  # noqa: E402
 
 from tests.conftest import make_temp_project  # noqa: E402
@@ -225,6 +225,72 @@ class ChunkerLineTrackingTests(unittest.TestCase):
             self.assertLessEqual(c["start_line"], c["end_line"])
             self.assertGreaterEqual(c["start_line"], prev_end)
             prev_end = c["end_line"]
+
+    def test_consecutive_blank_lines_dont_drift_line_numbers(self):
+        # CR cycle-3 finding: split("\n\n") collapses runs of 3+ newlines
+        # into empty strings whose count("\n")+1 = 1, over-advancing the
+        # source-line counter. With the re.finditer + offset approach,
+        # line numbers stay accurate regardless of blank-line run length.
+        content = "A line\n\n\n\nB line"  # 4 newlines = 3 blank lines between
+        chunks = _chunk_text(content, max_chars=100)
+        self.assertEqual(len(chunks), 2)
+        self.assertEqual(chunks[0]["start_line"], 1)
+        self.assertEqual(chunks[0]["content"], "A line")
+        self.assertEqual(chunks[1]["start_line"], 5)  # not 7 (the old buggy answer)
+        self.assertEqual(chunks[1]["content"], "B line")
+
+
+# -- endpoint normalization (avoids double-appended paths) --------------------
+
+class NormalizeEndpointTests(unittest.TestCase):
+    """Pin the contract: users may paste any of these endpoint shapes
+    in their config.md, and search.py won't mangle the URL into
+    /v1/v1/embeddings or /api/api/embeddings. CR cycle-3 finding."""
+
+    def test_openai_bare_base(self):
+        self.assertEqual(
+            _normalize_endpoint("openai", "http://localhost:11434"),
+            "http://localhost:11434/v1/embeddings",
+        )
+
+    def test_openai_versioned_base(self):
+        # User pasted /v1 but no /embeddings — no double-append.
+        self.assertEqual(
+            _normalize_endpoint("openai", "http://localhost:11434/v1"),
+            "http://localhost:11434/v1/embeddings",
+        )
+
+    def test_openai_full_path_left_alone(self):
+        self.assertEqual(
+            _normalize_endpoint("openai", "http://localhost:11434/v1/embeddings"),
+            "http://localhost:11434/v1/embeddings",
+        )
+
+    def test_ollama_native_bare_base(self):
+        self.assertEqual(
+            _normalize_endpoint("ollama-native", "http://localhost:11434"),
+            "http://localhost:11434/api/embeddings",
+        )
+
+    def test_ollama_native_versioned_base(self):
+        # User pasted /api but no /embeddings — no double-append.
+        self.assertEqual(
+            _normalize_endpoint("ollama-native", "http://localhost:11434/api"),
+            "http://localhost:11434/api/embeddings",
+        )
+
+    def test_ollama_native_full_path_left_alone(self):
+        self.assertEqual(
+            _normalize_endpoint("ollama-native", "http://localhost:11434/api/embeddings"),
+            "http://localhost:11434/api/embeddings",
+        )
+
+    def test_trailing_slash_stripped(self):
+        # Cosmetic: trailing slashes don't affect the normalized output.
+        self.assertEqual(
+            _normalize_endpoint("openai", "http://localhost:11434/"),
+            "http://localhost:11434/v1/embeddings",
+        )
 
 
 # -- search (opt-in stub) -----------------------------------------------------

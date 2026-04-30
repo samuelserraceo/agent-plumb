@@ -27,7 +27,7 @@ parameters:
     enabled: false       # populated by /sdd-setup brick 007 — true if user wants the SDD MCP server (40-60% across-session token saving)
     semantic_search:     # opt-in semantic search over .sdd/ — embeds notebooks once, ranks chunks by cosine similarity. See extensions/sdd-mcp-server/README.md.
       enabled: false
-      provider: ""              # "openai" (default OpenAI-compatible shape — works with Ollama in compatible mode, vLLM, etc.) | "ollama-native"
+      provider: ""              # REQUIRED — set to "openai" (OpenAI-compatible shape — works with Ollama in compatible mode, vLLM, etc.) or "ollama-native" (older Ollama). No silent default; search() rejects an unset provider per the framework's "no baked-in defaults for external services" doctrine.
       endpoint: ""              # http(s)://host:port — base URL, the path is appended per provider
       model: ""                 # embedding model name (e.g. "nomic-embed-text" or "bge-small-en-v1.5")
       top_k: 5                  # how many results to return per search

@@ -228,14 +228,23 @@ def _chunk_text(content: str, max_chars: int = _DEFAULT_CHUNK_CHARS) -> List[Dic
     if not content:
         return []
     chunks: List[Dict[str, Any]] = []
-    current_line = 1
-    paragraphs = content.split("\n\n")
     chunk_idx = 0
-    for para in paragraphs:
-        para_lines = para.count("\n") + 1
+    # Walk paragraphs as offset spans into the ORIGINAL content so line
+    # accounting is exact even for runs of 3+ consecutive newlines (CR
+    # cycle-3 finding). Earlier logic used content.split("\n\n") and a
+    # running counter advanced by `para_lines + 1`, but that miscounted
+    # whenever the separator between paragraphs had more than two
+    # newlines: an empty para's count('\n')+1 = 1 (it's actually 0
+    # source lines), so each extra blank line over-advanced by 1.
+    para_re = re.compile(r"[^\n]+(?:\n[^\n]+)*", re.DOTALL)
+    for m in para_re.finditer(content):
+        para = m.group()
         if not para.strip():
-            current_line += para_lines + 1  # +1 for the splitter blank line
             continue
+        para_start_off = m.start()
+        # Source line where this paragraph begins (1-based).
+        current_line = content.count("\n", 0, para_start_off) + 1
+        para_lines = para.count("\n") + 1
         if len(para) <= max_chars:
             chunks.append({
                 "chunk_index": chunk_idx,
@@ -305,7 +314,6 @@ def _chunk_text(content: str, max_chars: int = _DEFAULT_CHUNK_CHARS) -> List[Dic
                     buf_end_off = sent_end
             if buf_end_off > chunk_start_off:
                 _emit(chunk_start_off, buf_end_off)
-        current_line += para_lines + 1  # +1 for the splitter blank line
     return chunks
 
 
@@ -334,16 +342,30 @@ def _endpoint_signature(provider: str, endpoint: str, model: str) -> str:
 
 def _normalize_endpoint(provider: str, endpoint: str) -> str:
     """If the user's endpoint is just the base URL (e.g. http://host:11434),
-    auto-append the right path for the provider. If they wrote the full
-    path themselves, leave it alone."""
+    auto-append the right path for the provider. If they wrote any of
+    the canonical paths themselves, leave them alone.
+
+    CR cycle-3 finding: if the user pastes a versioned base like
+    `http://host/v1` or `http://host/api`, the earlier version of this
+    function would double-append (`/v1/v1/embeddings`,
+    `/api/api/embeddings`). Now: detect the versioned-base shapes and
+    only append the missing tail.
+    """
     endpoint = endpoint.rstrip("/")
     if provider == "openai":
-        if endpoint.endswith("/embeddings") or endpoint.endswith("/v1/embeddings"):
+        # Already a full path — leave alone.
+        if endpoint.endswith("/v1/embeddings") or endpoint.endswith("/embeddings"):
             return endpoint
+        # User pasted the versioned base — append only the trailing piece.
+        if endpoint.endswith("/v1"):
+            return endpoint + "/embeddings"
+        # Bare base URL — full append.
         return endpoint + "/v1/embeddings"
     if provider == "ollama-native":
-        if endpoint.endswith("/api/embeddings"):
+        if endpoint.endswith("/api/embeddings") or endpoint.endswith("/embeddings"):
             return endpoint
+        if endpoint.endswith("/api"):
+            return endpoint + "/embeddings"
         return endpoint + "/api/embeddings"
     # Unknown provider — let the user's URL stand as-is and let the
     # network error path catch the failure.
