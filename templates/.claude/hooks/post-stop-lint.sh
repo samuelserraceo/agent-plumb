@@ -468,9 +468,33 @@ check_no_nul_bytes() {
   # corrupt file before committing it.
   if [ ! -d .sdd ]; then return 0; fi
   local hits
-  hits=$(LC_ALL=C grep -rlP '\x00' .sdd/ 2>/dev/null \
-         --include='*.md' --include='*.json' --include='*.yaml' --include='*.yml' \
-         --exclude-dir='.cache' --exclude-dir='archive' --exclude-dir='ideas' || true)
+  # CR cycle-5 Major — `grep -P` (PCRE) isn't portable. macOS / BSD grep
+  # rejects -P; even a `grep '\x00'` literal-mode invocation isn't
+  # guaranteed to handle NUL bytes consistently across grep flavours.
+  # Use a small Python walker instead — already a framework-required
+  # dependency (the rest of this hook shells to python3 too), and it
+  # gives us deterministic behaviour on every platform.
+  hits=$(PROJECT_DIR="$PROJECT_DIR" python3 <<'PYEOF' 2>/dev/null
+import os, sys
+root = os.path.join(os.environ["PROJECT_DIR"], ".sdd")
+exts = (".md", ".json", ".yaml", ".yml")
+exclude = {".cache", "archive", "ideas"}
+hits = []
+for dirpath, dirnames, filenames in os.walk(root):
+    dirnames[:] = [d for d in dirnames if d not in exclude]
+    for fn in filenames:
+        if not fn.lower().endswith(exts):
+            continue
+        p = os.path.join(dirpath, fn)
+        try:
+            with open(p, "rb") as f:
+                if b"\x00" in f.read():
+                    hits.append(os.path.relpath(p, os.environ["PROJECT_DIR"]))
+        except OSError:
+            continue
+print("\n".join(hits))
+PYEOF
+)
   if [ -n "$hits" ]; then
     # CR Minor #6 fix — quote $hits via newline-IFS read so paths with
     # spaces don't get word-split into garbage args (SC2086).
