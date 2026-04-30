@@ -28,13 +28,14 @@ from typing import Any, Dict, List
 
 
 _SOURCE_RE = re.compile(
-    # Allow optional `[[…]]` wiki-link wrapping around the slug — v1.0
-    # graph layer encourages writing `Source: [[<id>-<slug>]]` so the
-    # pattern → feature edge gets indexed by the graph cache.
-    # `[A-Za-z0-9_/-]+` captures the slug regardless of whether it's
-    # wrapped, so `Source: [[001-waitlist]]` and `Source: 001-waitlist`
-    # both yield `feature_source: "001-waitlist"`.
-    r"(?:Source|From feature|Where it came from)\s*[:=]?\s*\[?\[?([A-Za-z0-9_/-]+)\]?\]?",
+    # Accept EITHER fully-paired wiki-link form `[[slug]]` OR bare slug.
+    # Earlier this used optional brackets `\[?\[?...\]?\]?` which silently
+    # accepted unbalanced inputs (`Source: [[001-waitlist`, single bracket,
+    # etc.) — CR cycle-8 flagged that as malformed-input acceptance.
+    # Alternation rejects unbalanced brackets by construction.
+    # Group 1 captures the wrapped slug; group 2 captures the bare slug.
+    r"(?:Source|From feature|Where it came from)\s*[:=]?\s*"
+    r"(?:\[\[([A-Za-z0-9_/-]+)\]\]|([A-Za-z0-9_/-]+))",
     re.IGNORECASE,
 )
 
@@ -124,7 +125,9 @@ def get_pattern(project_root: str, args: Dict[str, Any]) -> Dict[str, Any]:
     feature_source = None
     sm = _SOURCE_RE.search(content)
     if sm:
-        feature_source = sm.group(1)
+        # Group 1 = wrapped form `[[slug]]`; group 2 = bare slug.
+        # The alternation guarantees exactly one of the two matched.
+        feature_source = sm.group(1) or sm.group(2)
 
     return {
         "slug": _slugify(name),

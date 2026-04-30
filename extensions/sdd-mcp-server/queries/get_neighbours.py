@@ -22,6 +22,7 @@ Returns on success:
 
 from __future__ import annotations
 
+import os as _os
 from typing import Any, Dict, List, Set
 
 from . import _graph_cache
@@ -139,9 +140,6 @@ def get_neighbours(project_root: str, args: Dict[str, Any]) -> Dict[str, Any]:
     if capped:
         result["warning"] = f"depth capped at {_MAX_DEPTH} to bound output size"
     return result
-
-
-import os as _os
 
 
 def _slug_for_path(graph: Dict[str, Any], path: str) -> str:

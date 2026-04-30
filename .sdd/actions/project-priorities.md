@@ -6,7 +6,7 @@ title: "Project priorities"
 short_label: "§5 Priorities"
 steps:
   - { id: priority-tiers, action: "draft with alternatives", field: "§5.priorities" }
-  - { id: dependency-graph, action: draft, field: "§5.dependencies" }
+  - { id: dependency-graph, action: "draft the dependency graph", field: "§5.dependencies" }
 used_by: [project]
 references: [project-capabilities, project-queue-features]
 touches: [".sdd/<work-item>/spec.md"]

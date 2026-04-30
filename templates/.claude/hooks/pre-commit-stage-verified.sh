@@ -263,7 +263,7 @@ if staged_manifest_path:
     # possibly-compound shell command (e.g. `tool -m "[SDD] ..." && git
     # commit -m unrelated`). Without this, an upstream segment's -m/-F
     # could smuggle the marker into the gate.
-    import shlex
+    # (shlex already imported at module level — CR cycle-8 nitpick)
     try:
         cmd_argv = shlex.split(git_commit_cmd) if git_commit_cmd else []
     except ValueError:

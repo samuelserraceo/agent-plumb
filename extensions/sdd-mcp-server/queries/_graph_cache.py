@@ -316,10 +316,17 @@ def _save(project_root: str, graph: Dict[str, Any]) -> None:
 
 
 def find_node(graph: Dict[str, Any], slug: str) -> Optional[Dict[str, Any]]:
-    """Return the highest-priority node matching `slug`, or None.
+    """Return the unique highest-priority node matching `slug`, or None.
 
-    Accepts both bare (`auth-retry-logic`) and qualified (`pattern:auth-retry-logic`)
-    forms. Case-insensitive."""
+    Accepts both bare (`auth-retry-logic`) and qualified
+    (`pattern:auth-retry-logic`) forms. Case-insensitive.
+
+    CR cycle-8 — when MULTIPLE candidates tie at the same lowest priority,
+    return None (ambiguous) rather than picking one at parse-order whim.
+    Mirrors the same-priority collision rule that `_build_nodes_and_edges`
+    enforces in its `by_slug` map: the doctrine says these are ambiguous,
+    and lookups should surface that to the caller (which surfaces it to
+    invariant 8) rather than silently binding."""
     needle = slug.lower()
     candidates = [
         n for n in graph.get("nodes", [])
@@ -327,7 +334,11 @@ def find_node(graph: Dict[str, Any], slug: str) -> Optional[Dict[str, Any]]:
     ]
     if not candidates:
         return None
-    return min(candidates, key=lambda n: n.get("priority", 99))
+    min_priority = min(n.get("priority", 99) for n in candidates)
+    top = [n for n in candidates if n.get("priority", 99) == min_priority]
+    if len(top) > 1:
+        return None  # ambiguous — multiple same-priority candidates
+    return top[0]
 
 
 def _qualified(node: Dict[str, Any]) -> str:

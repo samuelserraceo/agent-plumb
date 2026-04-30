@@ -221,7 +221,7 @@
       "trust": "framework"
     },
     "project-priorities": {
-      "expected_sha256": "6fb338e4f8169582dc9018d2951771cb26c01e573f7278404ed7f887d5c438f0",
+      "expected_sha256": "58a7f2e6f04b5962d63c7225d0effa389fd3fefe09774eca20071c025308f7b5",
       "path": ".sdd/actions/project-priorities.md",
       "trust": "framework"
     },
