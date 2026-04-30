@@ -70,6 +70,6 @@ Same 4-step inner loop as feature.md (LOCATE → EXECUTE → SYNC → ADVANCE). 
 
 ## Why no §user-stories / §UX brief / §data-contract / §acceptance-criteria
 
-Refactors don't introduce new behaviour, new entities, new user-facing capability. The "acceptance criterion" is implicit: **the regression tests stay GREEN before and after the refactor**. §2 captures which tests prove that; §5 captures that the diff actually shrank.
+Refactors don't introduce new behaviour, new entities, new user-facing capability. The "acceptance criterion" is implicit: **the regression tests stay GREEN before and after the refactor**. §2 captures which tests prove that; §4 captures that the diff actually shrank.
 
 If a refactor reveals a missing entity or a behaviour gap, you've found a feature-shaped problem hiding inside a refactor. Switch playbooks; come back to the refactor after the feature ships.

@@ -29,7 +29,7 @@ git diff --shortstat $(git merge-base HEAD origin/main)...HEAD -- '*.py' '*.sh' 
 
 **Expected output shape:**
 
-```
+```text
 N files changed, X insertions(+), Y deletions(-)
 ```
 

@@ -36,7 +36,7 @@ Walk every file in §1's scope. For each, list the tests that already exercise i
 
 **Output format:**
 
-```
+```text
 - tests/path/to/test_X.py — covers <one-line behaviour>
 - test/run-framework-test.sh:T42 — covers <one-line behaviour>
 - ⚠️ no test covers <specific behaviour> — gap; new test needed (capture in §2.new-tests below)

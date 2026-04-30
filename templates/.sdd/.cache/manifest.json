@@ -19,7 +19,7 @@
     "refactor": {
       "path": ".sdd/playbooks/refactor.md",
       "trust": "framework",
-      "expected_sha256": "9654f35767897dd0dd290f6d8e52124ca393f3f8e460e94dd5526b2492c3920d"
+      "expected_sha256": "4e9ec025183e1520e8621a5648e1478c3e1b82fde94f0a90de84532e8c56571f"
     }
   },
   "scripts": {
@@ -283,12 +283,12 @@
     "refactor-scope": {
       "path": ".sdd/actions/refactor-scope.md",
       "trust": "framework",
-      "expected_sha256": "466e5de10fb18cee64254a2e9c8de6f66873302dacaee8e7eff3c562c5d1aaa2"
+      "expected_sha256": "9259836a231d65795773bc7eb21f91a15f4895571bb33f4bd2c8b5fdd22ace65"
     },
     "regression-coverage": {
       "path": ".sdd/actions/regression-coverage.md",
       "trust": "framework",
-      "expected_sha256": "64de93643ed2c9a471491fe95208795fe582425edf57403239b7420007acc7fa"
+      "expected_sha256": "64e0c7a742e32f1c4dac68d2e62dcca2d08cf7a620406c3229320370a0ca2651"
     },
     "refactor-approach": {
       "path": ".sdd/actions/refactor-approach.md",
@@ -298,7 +298,7 @@
     "minimal-diff-verify": {
       "path": ".sdd/actions/minimal-diff-verify.md",
       "trust": "framework",
-      "expected_sha256": "f930d3c9f741049448e4ce0bcc9da151da0d9896ab98caee4837435f1b176215"
+      "expected_sha256": "e6cf5f86302625711931405be829e3d74d582824e4d3e4b08cbff5d10c7700ee"
     }
   }
 }

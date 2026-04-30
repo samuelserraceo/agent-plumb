@@ -25,7 +25,7 @@ Capture exactly what code is in scope for this refactor. The narrower the scope,
 - **What stays the same** — call out the user-visible behaviour that MUST be preserved through the refactor. *"Both subcommands still create the temp file under `.sdd/.tmp/`, still rename atomically, still emit the same stderr message on failure."*
 - **What's NOT in scope** — list anything you considered touching but deliberately left for a later refactor. *"Considered also extracting the YAML-frontmatter parser duplicated across 4 scripts — too much for this refactor; will file a separate item."*
 
-**Push for narrowness.** If the scope description includes the word "while we're there" or "also clean up", flag it. Refactors that grow during scoping become refactors that fail during minimal-diff-verify in §5. The smaller the scope, the higher the chance of a clean ship.
+**Push for narrowness.** If the scope description includes the word "while we're there" or "also clean up", flag it. Refactors that grow during scoping become refactors that fail during minimal-diff-verify in §4. The smaller the scope, the higher the chance of a clean ship.
 
 **Halt-on-feature-shaped-refactor.** If the scope description reveals new behaviour (new return values, new side effects, new error cases), this is a feature, not a refactor. Surface that politely:
 
