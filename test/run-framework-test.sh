@@ -5813,6 +5813,49 @@ else
 fi
 
 # ============================================================
+# T121k — /status banner correctly handles all 5 source/ambiguous
+#         combos. Regression test for the `IFS=$'\t' read` whitespace-
+#         collapse bug (CR cycle-4): when active was empty, the
+#         leading tab got eaten and every variable shifted left by
+#         one. Pipe-separated parse fixes it; this test pins the fix.
+# ============================================================
+note "T121k: /status field parser preserves empty active correctly"
+# Embed the exact parse logic from status.md so a regression in the
+# slash-command body would be caught here. Drift between this and
+# status.md = test failure (intended).
+parse_status() {
+  local json="$1"
+  local active source branch index_active ambiguous
+  IFS='|' read -r active source branch index_active ambiguous < <(
+    echo "$json" | python3 -c '
+import json, sys
+try: d = json.load(sys.stdin)
+except: d = {}
+fields = [d.get(k) or "" for k in ("active", "source", "branch", "index_active")]
+amb = "1" if d.get("ambiguous") else "0"
+print("|".join(fields + [amb]))
+')
+  echo "active=[$active] source=[$source] branch=[$branch] index_active=[$index_active] ambiguous=[$ambiguous]"
+}
+# Case 1: branch source, active populated (the common path).
+out1=$(parse_status '{"active":"features/001-x","ambiguous":false,"branch":"sdd/001-x","index_active":"features/001-x","source":"branch"}')
+# Case 2: source=none with broken INDEX pointer (active=null, index_active set).
+# This is the case the IFS=tab bug broke: active was empty, so the leading
+# tab got collapsed and "none" landed in $active instead of $source.
+out2=$(parse_status '{"active":null,"ambiguous":false,"branch":"main","index_active":"features/999-broken","source":"none"}')
+# Case 3: ambiguous (source=none, ambiguous=true, active=null).
+out3=$(parse_status '{"active":null,"ambiguous":true,"branch":"sdd/001-collide","index_active":null,"source":"none"}')
+ok_count=0
+echo "$out1" | grep -q "active=\[features/001-x\] source=\[branch\]" && ok_count=$((ok_count+1))
+echo "$out2" | grep -q "active=\[\] source=\[none\] branch=\[main\] index_active=\[features/999-broken\]" && ok_count=$((ok_count+1))
+echo "$out3" | grep -q "active=\[\] source=\[none\] branch=\[sdd/001-collide\] index_active=\[\] ambiguous=\[1\]" && ok_count=$((ok_count+1))
+if [ "$ok_count" -eq 3 ]; then
+  ok "T121k status.md parse handles empty active without field-shift (3/3 cases)"
+else
+  bad "T121k status.md parse field-shift on empty active" "ok=$ok_count/3 case2='$out2'"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'

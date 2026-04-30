@@ -10,20 +10,27 @@ echo ""
 echo "---"
 # Resolve the active work item via resolve-active.sh (branch-aware,
 # falls back to INDEX.md **Active:** when not on an SDD branch).
-# Single Python parse → 5 tab-separated values; one process, no
+# Single Python parse → 5 pipe-separated values; one process, no
 # repeat JSON parsing. The `ambiguous` field is "1" when the branch
 # slug matched 2+ work-item folders (resolver fails closed).
+#
+# Why `|` not `\t`: bash's `read` with IFS containing only whitespace
+# characters collapses runs of leading/trailing delimiters, so a
+# leading empty field (when `active` is null) gets eaten and every
+# subsequent variable shifts left by one. `|` is a non-whitespace
+# delimiter that preserves empty fields exactly. No work-item path
+# or source-enum value contains a pipe character.
 resolve_json=$(bash .sdd/scripts/resolve-active.sh 2>/dev/null || echo '{}')
-IFS=$'\t' read -r active source branch index_active ambiguous < <(
+IFS='|' read -r active source branch index_active ambiguous < <(
   echo "$resolve_json" | python3 -c '
 import json, sys
 try:
     d = json.load(sys.stdin)
 except Exception:
     d = {}
-fields = (d.get(k) or "" for k in ("active", "source", "branch", "index_active"))
+fields = [d.get(k) or "" for k in ("active", "source", "branch", "index_active")]
 amb = "1" if d.get("ambiguous") else "0"
-print("\t".join(list(fields) + [amb]))
+print("|".join(fields + [amb]))
 ' 2>/dev/null)
 # Branch-aware status banner — explains where the active value came
 # from + flags drift between branch and INDEX.md so the user sees
@@ -45,6 +52,26 @@ elif [ "$source" = "index" ]; then
     echo "Active source: INDEX.md (branch '$branch' is not an SDD branch) → $active"
   else
     echo "Active source: INDEX.md → $active"
+  fi
+else
+  # source = "none" (and ambiguous already handled above). Surface
+  # WHY there's no active so the user doesn't see a silent /status.
+  # Three plausible causes: broken INDEX pointer, branch with a
+  # non-SDD shape and no INDEX, or a brand-new project.
+  if [ -n "$index_active" ] && [ "$active" = "" ]; then
+    # INDEX has a value but the folder is missing or has no spec.md.
+    echo "Active source: NONE — INDEX.md **Active:** points at \`$index_active\` but"
+    echo "  the folder doesn't exist (or has no spec.md inside). Either:"
+    echo "  - run /start to scaffold a new work item, or"
+    echo "  - edit INDEX.md to point at a real folder, or"
+    echo "  - check out an SDD-style branch (sdd/<id>-<slug>) whose folder exists."
+  elif [ -n "$branch" ]; then
+    echo "Active source: NONE — current branch '$branch' isn't an SDD-shape"
+    echo "  branch (sdd/<id>-<slug>) and INDEX.md doesn't point at any work item."
+    echo "  Run /start <one-line title> to scaffold a new feature."
+  else
+    echo "Active source: NONE — no active work item."
+    echo "  Run /start <one-line title> to scaffold one."
   fi
 fi
 if [ -n "$active" ] && [ -f ".sdd/$active/spec.md" ]; then
