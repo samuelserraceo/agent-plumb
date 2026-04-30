@@ -4702,6 +4702,453 @@ else
 fi
 
 # ============================================================
+# T119 — post-stop-lint refuses INDEX.md with two **Active:** lines
+#        (closes #86: tier-3 stop-hook lint pass — invariant 1)
+# ============================================================
+note "T119: post-stop-lint refuses two **Active:** lines in INDEX.md"
+d=$(mkproj_v08)
+cd "$d"
+cat > .sdd/INDEX.md <<'IDX'
+# Project Index
+
+**Active:** features/001-test
+**Active:** features/002-other
+
+## In flight
+- features/001-test
+
+## Shipped
+IDX
+ec=0
+err=$(echo '{"hook_event_name":"Stop"}' | bash .claude/hooks/post-stop-lint.sh 2>&1 1>/dev/null) || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 2 ] && echo "$err" | grep -q "2 \*\*Active:\*\* lines"; then
+  ok "T119 hook refused two **Active:** lines (INDEX.md invariant)"
+else
+  bad "T119 hook missed double-Active drift" "ec=$ec; err='$err'"
+fi
+
+# ============================================================
+# T119-zero — post-stop-lint refuses INDEX.md with NO **Active:**
+#             line (closes the zero-match branch on invariant 1;
+#             CR finding on PR #93 cycle-1).
+# ============================================================
+note "T119-zero: post-stop-lint refuses INDEX.md with no **Active:** line"
+d=$(mkproj_v08)
+ec=0
+err=""
+if cd "$d"; then
+  cat > .sdd/INDEX.md <<'IDX'
+# Project Index
+
+## In flight
+
+## Shipped
+IDX
+  err=$(echo '{"hook_event_name":"Stop"}' | bash .claude/hooks/post-stop-lint.sh 2>&1 1>/dev/null) || ec=$?
+  cd - >/dev/null
+fi
+rm -rf "$d"
+if [ "$ec" -eq 2 ] && echo "$err" | grep -q "no \*\*Active:\*\* line"; then
+  ok "T119-zero hook refused INDEX.md with missing Active invariant"
+else
+  bad "T119-zero hook missed missing-Active drift" "ec=$ec; err='$err'"
+fi
+
+# ============================================================
+# T119b — post-stop-lint refuses ## In flight rows pointing at
+#         folders that don't exist (invariant 2).
+# ============================================================
+note "T119b: post-stop-lint refuses ## In flight orphan paths"
+d=$(mkproj_v08)
+cd "$d"
+cat > .sdd/INDEX.md <<'IDX'
+# Project Index
+
+**Active:** features/001-test
+
+## In flight
+- features/001-test
+- features/999-ghost
+
+## Shipped
+IDX
+ec=0
+err=$(echo '{"hook_event_name":"Stop"}' | bash .claude/hooks/post-stop-lint.sh 2>&1 1>/dev/null) || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 2 ] && echo "$err" | grep -q "999-ghost"; then
+  ok "T119b hook refused In-flight row pointing at missing folder"
+else
+  bad "T119b hook missed orphan In-flight reference" "ec=$ec; err='$err'"
+fi
+
+# ============================================================
+# T119c — post-stop-lint refuses spec.md with two [PHASE: X] lines
+#         (invariant 3).
+# ============================================================
+note "T119c: post-stop-lint refuses two [PHASE: X] lines in active spec.md"
+d=$(mkproj_v08)
+cd "$d"
+cat > .sdd/INDEX.md <<'IDX'
+# Project Index
+
+**Active:** features/001-test
+
+## In flight
+- features/001-test
+
+## Shipped
+IDX
+cat > .sdd/features/001-test/spec.md <<'SPEC'
+# 001-test
+[PHASE: SPEC]
+[PHASE: BUILD]
+## PHASE: SPEC
+SPEC
+ec=0
+err=$(echo '{"hook_event_name":"Stop"}' | bash .claude/hooks/post-stop-lint.sh 2>&1 1>/dev/null) || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 2 ] && echo "$err" | grep -q "2 \[PHASE: X\] lines"; then
+  ok "T119c hook refused two [PHASE: X] lines in active spec.md"
+else
+  bad "T119c hook missed double-PHASE drift" "ec=$ec; err='$err'"
+fi
+
+# ============================================================
+# T119c-zero — post-stop-lint refuses active spec.md with NO
+#              [PHASE: X] line (closes the zero-match branch on
+#              invariant 3; CR finding on PR #93 cycle-1).
+# ============================================================
+note "T119c-zero: post-stop-lint refuses active spec.md with no [PHASE: X] line"
+d=$(mkproj_v08)
+ec=0
+err=""
+if cd "$d"; then
+  cat > .sdd/INDEX.md <<'IDX'
+# Project Index
+
+**Active:** features/001-test
+
+## In flight
+- features/001-test
+
+## Shipped
+IDX
+  cat > .sdd/features/001-test/spec.md <<'SPEC'
+# 001-test
+## PHASE: SPEC
+SPEC
+  err=$(echo '{"hook_event_name":"Stop"}' | bash .claude/hooks/post-stop-lint.sh 2>&1 1>/dev/null) || ec=$?
+  cd - >/dev/null
+fi
+rm -rf "$d"
+if [ "$ec" -eq 2 ] && echo "$err" | grep -q "no \[PHASE: X\] line"; then
+  ok "T119c-zero hook refused spec.md with missing PHASE invariant"
+else
+  bad "T119c-zero hook missed missing-PHASE drift" "ec=$ec; err='$err'"
+fi
+
+# ============================================================
+# T119-broken-active — post-stop-lint surfaces broken **Active:**
+#                      pointer (folder doesn't exist) instead of
+#                      silently skipping invariants 3-7. CR finding
+#                      on PR #93 cycle-1.
+# ============================================================
+note "T119-broken-active: post-stop-lint surfaces broken Active pointer"
+d=$(mkproj_v08)
+ec=0
+err=""
+if cd "$d"; then
+  cat > .sdd/INDEX.md <<'IDX'
+# Project Index
+
+**Active:** features/999-deleted
+
+## In flight
+- features/999-deleted
+
+## Shipped
+IDX
+  # Note: 999-deleted folder is NOT created — the test exercises the
+  # "Active points at non-existent folder" drift case.
+  err=$(echo '{"hook_event_name":"Stop"}' | bash .claude/hooks/post-stop-lint.sh 2>&1 1>/dev/null) || ec=$?
+  cd - >/dev/null
+fi
+rm -rf "$d"
+if [ "$ec" -eq 2 ] && echo "$err" | grep -q "Active:.*points at.*999-deleted"; then
+  ok "T119-broken-active hook surfaced broken Active pointer"
+else
+  bad "T119-broken-active hook silently swallowed broken Active drift" "ec=$ec; err='$err'"
+fi
+
+# ============================================================
+# T119d — post-stop-lint refuses spec.md with duplicate task / AC IDs
+#         (invariant 4).
+# ============================================================
+note "T119d: post-stop-lint refuses duplicate AC / task IDs in active spec.md"
+d=$(mkproj_v08)
+cd "$d"
+cat > .sdd/INDEX.md <<'IDX'
+# Project Index
+
+**Active:** features/001-test
+
+## In flight
+- features/001-test
+
+## Shipped
+IDX
+cat > .sdd/features/001-test/spec.md <<'SPEC'
+# 001-test
+[PHASE: SPEC]
+## PHASE: SPEC
+- [ ] AC1: form submits
+- [ ] AC1: form rejects empty input
+- [x] T001: write test
+- [x] T001: same id again
+SPEC
+ec=0
+err=$(echo '{"hook_event_name":"Stop"}' | bash .claude/hooks/post-stop-lint.sh 2>&1 1>/dev/null) || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 2 ] \
+   && echo "$err" | grep -q "AC1" \
+   && echo "$err" | grep -q "T001"; then
+  ok "T119d hook refused duplicate AC / task IDs"
+else
+  bad "T119d hook missed duplicate-ID drift" "ec=$ec; err='$err'"
+fi
+
+# ============================================================
+# T119e — post-stop-lint refuses mutated decisions.md (invariant 5).
+#         Existing entries must never be edited; new entries append only.
+# ============================================================
+note "T119e: post-stop-lint refuses mutation of an existing decisions.md entry"
+d=$(mkproj_v08)
+cd "$d"
+cat > .sdd/INDEX.md <<'IDX'
+# Project Index
+
+**Active:** _(none)_
+
+## In flight
+
+_(none yet)_
+
+## Shipped
+IDX
+# Stage decisions.md with one historical entry, commit, then mutate it.
+cat > .sdd/decisions.md <<'DEC'
+# SDD Decisions Log
+## 2026-04-01T00:00Z [001-test] feature/problem
+First entry — original wording.
+DEC
+git add .sdd/decisions.md .sdd/INDEX.md
+git commit -q -m "scaffold decisions" >/dev/null 2>&1
+# Now rewrite the existing entry's body in the working tree.
+cat > .sdd/decisions.md <<'DEC'
+# SDD Decisions Log
+## 2026-04-01T00:00Z [001-test] feature/problem
+First entry — MUTATED wording.
+DEC
+ec=0
+err=$(echo '{"hook_event_name":"Stop"}' | bash .claude/hooks/post-stop-lint.sh 2>&1 1>/dev/null) || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 2 ] && echo "$err" | grep -q "decisions.md was edited"; then
+  ok "T119e hook refused mutated decisions.md entry"
+else
+  bad "T119e hook missed decisions.md mutation" "ec=$ec; err='$err'"
+fi
+
+# ============================================================
+# T119f — post-stop-lint refuses corrupt manifest.json (invariant 6).
+# ============================================================
+note "T119f: post-stop-lint refuses corrupt .sdd/.cache/manifest.json"
+d=$(mkproj_v08)
+cd "$d"
+cat > .sdd/INDEX.md <<'IDX'
+# Project Index
+
+**Active:** _(none)_
+
+## In flight
+
+_(none yet)_
+
+## Shipped
+IDX
+echo "this is not json {{{" > .sdd/.cache/manifest.json
+ec=0
+err=$(echo '{"hook_event_name":"Stop"}' | bash .claude/hooks/post-stop-lint.sh 2>&1 1>/dev/null) || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 2 ] && echo "$err" | grep -q "manifest.json is not valid JSON"; then
+  ok "T119f hook refused corrupt manifest.json"
+else
+  bad "T119f hook missed corrupt-manifest drift" "ec=$ec; err='$err'"
+fi
+
+# ============================================================
+# T119g — post-stop-lint refuses ticked-but-blank rows in spec.md
+#         (invariant 7).
+# ============================================================
+note "T119g: post-stop-lint refuses [x] rows with empty answer after the colon"
+d=$(mkproj_v08)
+cd "$d"
+cat > .sdd/INDEX.md <<'IDX'
+# Project Index
+
+**Active:** features/001-test
+
+## In flight
+- features/001-test
+
+## Shipped
+IDX
+cat > .sdd/features/001-test/spec.md <<'SPEC'
+# 001-test
+[PHASE: SPEC]
+## PHASE: SPEC
+- [x] who:
+- [x] when-broken:
+- [x] frequency: at every page load
+SPEC
+ec=0
+err=$(echo '{"hook_event_name":"Stop"}' | bash .claude/hooks/post-stop-lint.sh 2>&1 1>/dev/null) || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 2 ] && echo "$err" | grep -q "ticked-but-blank rows"; then
+  ok "T119g hook refused ticked-but-blank rows"
+else
+  bad "T119g hook missed ticked-but-blank drift" "ec=$ec; err='$err'"
+fi
+
+# ============================================================
+# T119h — post-stop-lint exits 0 silently on a clean SDD project
+#         (happy path, invariants intact).
+# ============================================================
+note "T119h: post-stop-lint exits 0 silently when all invariants hold"
+d=$(mkproj_v08)
+cd "$d"
+cat > .sdd/INDEX.md <<'IDX'
+# Project Index
+
+**Active:** features/001-test
+
+## In flight
+- features/001-test
+
+## Shipped
+IDX
+cat > .sdd/features/001-test/spec.md <<'SPEC'
+# 001-test
+[PHASE: SPEC]
+## PHASE: SPEC
+- [x] who: small business owners running an Etsy store
+SPEC
+ec=0
+out=$(echo '{"hook_event_name":"Stop"}' | bash .claude/hooks/post-stop-lint.sh 2>&1) || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 0 ] && [ -z "$(echo "$out" | tr -d '[:space:]')" ]; then
+  ok "T119h hook exited 0 silently on clean SDD project (happy path)"
+else
+  bad "T119h hook noisy or non-zero on clean state" "ec=$ec; out='$out'"
+fi
+
+# ============================================================
+# T119i — templates/.claude/settings.json registers the post-stop-lint
+#         hook under the Stop event. CR finding on PR #93 cycle-2:
+#         a coverage gap that would let someone silently delete the
+#         registration without any test failing — locking in the
+#         contract that the hook is wired up.
+# ============================================================
+note "T119i: settings.json registers post-stop-lint.sh under the Stop event"
+settings_path="$FRAMEWORK_ROOT/templates/.claude/settings.json"
+if [ ! -f "$settings_path" ]; then
+  bad "T119i settings.json missing" "expected at $settings_path"
+else
+  ok_count=0
+  # Must parse as valid JSON.
+  if python3 -c "import json,sys;json.load(open(sys.argv[1]))" "$settings_path" 2>/dev/null; then
+    ok_count=$((ok_count + 1))
+  fi
+  # Must have a Stop event entry. Walk the JSON in Python so a structural
+  # change (e.g. moving Stop into a different shape) is also caught.
+  # CR cycle-3 finding: substring match would also accept commands like
+  # "do-not-run-post-stop-lint.sh-anymore.sh" which is wrong. Parse the
+  # command and check the executable token's basename precisely.
+  py_out=$(python3 - "$settings_path" <<'PY' 2>&1
+import json, shlex, sys
+with open(sys.argv[1]) as f: cfg = json.load(f)
+hooks = cfg.get("hooks") or {}
+stops = hooks.get("Stop") or []
+found = False
+for entry in stops:
+    for hook in (entry.get("hooks") or []):
+        cmd = (hook.get("command") or "").strip()
+        if not cmd:
+            continue
+        # Parse as a shell command — the executable is the first token.
+        try:
+            tokens = shlex.split(cmd)
+        except ValueError:
+            continue
+        if not tokens:
+            continue
+        # Match the basename (so "./.claude/hooks/post-stop-lint.sh" or
+        # ".claude/hooks/post-stop-lint.sh" both qualify) but require an
+        # exact filename match — no substring shenanigans.
+        exe = tokens[0]
+        if exe.split("/")[-1] == "post-stop-lint.sh":
+            found = True
+            break
+    if found:
+        break
+print("FOUND" if found else "MISSING")
+PY
+  )
+  if [ "$py_out" = "FOUND" ]; then
+    ok_count=$((ok_count + 1))
+  fi
+  if [ "$ok_count" -eq 2 ]; then
+    ok "T119i settings.json registers post-stop-lint under Stop (2/2 assertions)"
+  else
+    bad "T119i settings.json doesn't register post-stop-lint under Stop" "ok_count=$ok_count py_out='$py_out'"
+  fi
+fi
+
+# ============================================================
+# T119j — post-stop-lint exits 0 silently in a project that has NO
+#         .sdd/ directory. The hook fires on EVERY Claude turn,
+#         including in projects that aren't SDD-bootstrapped — it
+#         must not false-fail or print noise in that common case.
+#         CR cycle-3 finding on PR #93.
+# ============================================================
+note "T119j: post-stop-lint silent + ec=0 in a project with no .sdd/"
+d=$(mktemp -d) || exit 1
+# Copy ONLY the hook file in (no .sdd/ scaffolding).
+mkdir -p "$d/.claude/hooks"
+cp "$FRAMEWORK_ROOT/templates/.claude/hooks/post-stop-lint.sh" "$d/.claude/hooks/post-stop-lint.sh"
+chmod +x "$d/.claude/hooks/post-stop-lint.sh"
+ec=0
+out=""
+if cd "$d"; then
+  out=$(echo '{"hook_event_name":"Stop"}' | bash .claude/hooks/post-stop-lint.sh 2>&1) || ec=$?
+  cd - >/dev/null
+fi
+rm -rf "$d"
+if [ "$ec" -eq 0 ] && [ -z "$(echo "$out" | tr -d '[:space:]')" ]; then
+  ok "T119j hook exited 0 silently in non-SDD project (no false-fail)"
+else
+  bad "T119j hook noisy or non-zero in non-SDD project" "ec=$ec; out='$out'"
+fi
+
+# ============================================================
 # T117 — Obsidian Tier 1 vault config: every JSON file in
 #        templates/.obsidian/ parses as valid JSON (closes #83).
 # ============================================================
