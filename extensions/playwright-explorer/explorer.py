@@ -94,10 +94,15 @@ def _tokens(s: str) -> set:
 
 def _covered_by_acs(expected: str, actual: str, acs: List[str]) -> Optional[int]:
     """Return the 1-based AC index whose tokens overlap ≥3 with the
-    finding's expected/actual, or None.
+    finding's OBSERVED behaviour (actual), or None.
+
+    Coverage is "did the observed result already match an AC?" — so the
+    comparison is against `actual` only. Mixing `expected` in produces
+    false positives because the LLM's expected sentence often overlaps
+    AC vocabulary even when the actual finding describes a different
+    failure mode (e.g., XSS-rendered-content matching an empty-email AC).
     """
-    finding_tokens = _tokens(expected) | _tokens(actual)
-    finding_tokens -= _STOPWORDS
+    finding_tokens = _tokens(actual) - _STOPWORDS
     if not finding_tokens:
         return None
     for idx, ac in enumerate(acs, start=1):

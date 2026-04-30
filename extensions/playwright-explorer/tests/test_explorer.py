@@ -34,18 +34,24 @@ from explorer import (  # noqa: E402
 # -- fixtures -----------------------------------------------------------------
 
 # Pages: a tiny "signup form" that the explorer can hammer.
+def _email_fill_overrides(v):
+    # Different "buggy" responses depending on the value, so different
+    # probe shapes can elicit different `actual` strings — exercises both
+    # the uncovered (no AC overlap) and covered (≥3-token AC overlap)
+    # paths from the same fixture.
+    if not v:
+        return {"console_errors": ["validate(): missing required field"]}
+    if "@" not in v:
+        return {"console_errors": ["invalid email format — inline error required"]}
+    return {}
+
+
 _PAGES = {
     "https://example.test/signup": {
         "title": "Signup",
         "text": "Welcome — enter your email to join the waitlist",
         "selectors": {"#email": "fillable", ".submit": "clickable"},
-        # Filling the email field with an empty string surfaces a console error.
-        "on_fill": {
-            "#email": lambda v: (
-                {"console_errors": ["validate(): email is required"]} if not v
-                else {}
-            ),
-        },
+        "on_fill": {"#email": _email_fill_overrides},
         # Clicking submit while #email is empty surfaces a network error and
         # leaves the user on /signup; with a value it navigates to /welcome.
         "on_click": {
@@ -157,12 +163,14 @@ class HelperTests(unittest.TestCase):
     def test_slugify_empty_falls_back(self):
         self.assertEqual(_slugify("!!!"), "edge-case")
 
-    def test_covered_by_acs_finds_overlap(self):
+    def test_covered_by_acs_finds_overlap_on_actual(self):
+        # Coverage now uses `actual` only (the observed behaviour), not
+        # `expected`. The actual must carry ≥3 meaningful tokens that
+        # match AC vocabulary.
         acs = ["AC2: invalid email shows inline error message"]
-        # 'invalid', 'email', 'error', 'message' should overlap.
         idx = _covered_by_acs(
-            expected="invalid email triggers an error message",
-            actual="error visible on page",
+            expected="ignored",
+            actual="invalid email shows inline error message displayed",
             acs=acs,
         )
         self.assertEqual(idx, 1)
@@ -170,6 +178,21 @@ class HelperTests(unittest.TestCase):
     def test_covered_by_acs_returns_none_when_no_overlap(self):
         acs = ["AC1: form renders"]
         idx = _covered_by_acs(expected="network timeout", actual="connection refused", acs=acs)
+        self.assertIsNone(idx)
+
+    def test_covered_by_acs_ignores_expected_when_actual_diverges(self):
+        # Real-world bug surfaced by the live smoke: an XSS finding's
+        # `expected` ("submit empty email shows inline error") falsely
+        # matched AC2 ("empty email submission rejected with inline
+        # error") because both share email/inline/error tokens — even
+        # though the `actual` was about XSS, not empty submission. With
+        # the actual-only check, the false positive is gone.
+        acs = ["AC2: empty email submission is rejected with inline error"]
+        idx = _covered_by_acs(
+            expected="submit with empty email should show inline validation error",
+            actual="console error appeared: XSS payload accepted unsafely",
+            acs=acs,
+        )
         self.assertIsNone(idx)
 
 
@@ -235,18 +258,21 @@ class ExploreLoopTests(unittest.TestCase):
         self.assertTrue(finding["ac_link"].startswith("[[ac:"))
 
     def test_finding_marked_covered_when_ac_overlaps(self):
-        # The fixture's AC2 is "invalid email shows inline error message".
-        # Build a probe whose `expected` overlaps that AC.
+        # The fixture's AC2 is "invalid email shows inline error".
+        # Filling with a value that lacks @ triggers a console error
+        # whose tokens overlap AC2 by ≥3 — coverage must match.
+        # Coverage now uses `actual` only, so the probe's `expected`
+        # vocabulary is irrelevant.
         probe = {
-            "action": "fill", "target": "#email", "value": "",
-            "expected": "invalid email shows error message inline",
-            "rationale": "AC2 says so",
+            "action": "fill", "target": "#email", "value": "wrongformat",
+            "expected": "ignored by coverage",
+            "rationale": "exercise the covered path",
         }
-        llm = MockLLMDriver(probes_by_category={"empty": [probe]})
+        llm = MockLLMDriver(probes_by_category={"bad-input": [probe]})
         result = explore(
             url="https://example.test/signup", spec_path=self.spec_path,
             llm=llm, browser=self._make_browser(),
-            attempts_per_category=1, categories=["empty"],
+            attempts_per_category=1, categories=["bad-input"],
         )
         finding = result["items"][0]
         self.assertEqual(finding["covered_by_ac"], 2)

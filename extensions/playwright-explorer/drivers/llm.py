@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import json
 import os
+import socket
 import urllib.error
 import urllib.request
 from abc import ABC, abstractmethod
@@ -39,6 +40,32 @@ from typing import Any, Dict, List, Optional
 # -- contract -----------------------------------------------------------------
 
 PROBE_ACTIONS = ("fill", "click", "goto", "wait", "eval", "noop")
+
+# LLMs reach for these synonyms even when the prompt enumerates the
+# canonical actions (especially smaller / open-weights models). Map
+# them to the framework's vocabulary instead of collapsing to noop —
+# silently dropping every "type" probe makes the loop produce zero
+# findings against most LLMs in the wild.
+_PROBE_SYNONYMS = {
+    "type": "fill",
+    "input": "fill",
+    "set": "fill",
+    "enter": "fill",
+    "tap": "click",
+    "press": "click",
+    "submit": "click",
+    "navigate": "goto",
+    "open": "goto",
+    "visit": "goto",
+    "load": "goto",
+    "sleep": "wait",
+    "pause": "wait",
+    "delay": "wait",
+    "javascript": "eval",
+    "js": "eval",
+    "evaluate": "eval",
+    "exec": "eval",
+}
 
 
 def _normalise_probe(raw: Any) -> Dict[str, Any]:
@@ -52,6 +79,7 @@ def _normalise_probe(raw: Any) -> Dict[str, Any]:
             "rationale": f"llm returned non-dict: {type(raw).__name__}",
         }
     action = str(raw.get("action") or "noop").strip().lower()
+    action = _PROBE_SYNONYMS.get(action, action)
     if action not in PROBE_ACTIONS:
         action = "noop"
     return {
@@ -225,7 +253,16 @@ class HttpLLMDriver(LLMDriver):
         try:
             with urllib.request.urlopen(req, timeout=self.timeout) as resp:
                 payload = json.loads(resp.read().decode("utf-8"))
-        except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError) as exc:
+        except (
+            urllib.error.URLError,
+            urllib.error.HTTPError,
+            TimeoutError,
+            # socket.timeout is a separate class on Python 3.9 — only
+            # aliased to TimeoutError from 3.10. Catch both so slow LLMs
+            # graceful-degrade to a noop probe instead of crashing.
+            socket.timeout,
+            ConnectionError,
+        ) as exc:
             return _normalise_probe({
                 "action": "noop",
                 "rationale": f"http error: {exc.__class__.__name__}: {exc}",
