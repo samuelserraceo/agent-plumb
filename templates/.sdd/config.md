@@ -25,12 +25,14 @@ parameters:
     manual: false        # true = wait for human review only; agent doesn't poll for bots
   mcp:
     enabled: false       # populated by /sdd-setup brick 007 — true if user wants the SDD MCP server (40-60% across-session token saving)
-    semantic_search:     # opt-in semantic search over .sdd/ (deferred — see queries/search.py for the schema and provider opt-in path)
+    semantic_search:     # opt-in semantic search over .sdd/ — embeds notebooks once, ranks chunks by cosine similarity. See extensions/sdd-mcp-server/README.md.
       enabled: false
-      provider: ""       # "openai" | "anthropic" | "ollama" | "local-gemma" | etc.
-      endpoint: ""       # https://... or http://localhost:port
-      model: ""          # embedding model name
-      top_k: 5
+      provider: ""              # REQUIRED — set to "openai" (OpenAI-compatible shape — works with Ollama in compatible mode, vLLM, etc.) or "ollama-native" (older Ollama). No silent default; search() rejects an unset provider per the framework's "no baked-in defaults for external services" doctrine.
+      endpoint: ""              # http(s)://host:port — base URL, the path is appended per provider
+      model: ""                 # embedding model name (e.g. "nomic-embed-text" or "bge-small-en-v1.5")
+      top_k: 5                  # how many results to return per search
+      max_chunks_per_run: 1000  # cost ceiling — refuses to embed more chunks than this in one call
+      auth_header: ""           # optional. To keep tokens OUT of tracked config, use ${ENV_VAR_NAME} indirection (e.g. "${SDD_MCP_AUTH}") and put the literal token in the env var. Literal values still work. Empty = no auth header sent.
 file_classes:
   CLAIM:
     - '(^|/)verification\.json$'

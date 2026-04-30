@@ -30,6 +30,7 @@ from queries import (  # noqa: E402
     get_decisions_since,
     search,
 )
+from queries.search import _chunk_text, _normalize_endpoint, _resolve_auth_header  # noqa: E402
 from server import handle_message  # noqa: E402
 
 from tests.conftest import make_temp_project  # noqa: E402
@@ -175,6 +176,175 @@ class GetDecisionsSinceTests(_FixtureBase):
         self.assertIn("error", result)
 
 
+# -- chunker (internal — line-tracking correctness) ---------------------------
+
+class ChunkerLineTrackingTests(unittest.TestCase):
+    """Pin the line-tracking contract for `_chunk_text`. CR cycle-2
+    flagged that an earlier implementation drifted line numbers when
+    the sentence-fallback or hard-split paths fired. These tests
+    document the expected semantics."""
+
+    def test_short_paragraphs_one_chunk_each(self):
+        content = "First.\n\nSecond.\n\nThird."
+        chunks = _chunk_text(content, max_chars=100)
+        # 3 paragraphs separated by blank lines.
+        self.assertEqual(len(chunks), 3)
+        self.assertEqual(chunks[0]["start_line"], 1)
+        self.assertEqual(chunks[1]["start_line"], 3)
+        self.assertEqual(chunks[2]["start_line"], 5)
+
+    def test_sentence_split_keeps_source_line_for_inline_sentences(self):
+        # Long single-line paragraph → sentence-split. All emitted
+        # chunks must point at the SAME source line (they're all on
+        # line 1) — not drift down because of the rebuilt buffer.
+        para = (" ".join([f"Sentence {i}." for i in range(20)]))
+        chunks = _chunk_text(para, max_chars=80)
+        self.assertGreater(len(chunks), 1, "expected multiple chunks")
+        for c in chunks:
+            self.assertEqual(c["start_line"], 1, f"unexpected drift in {c}")
+            self.assertEqual(c["end_line"], 1, f"unexpected drift in {c}")
+
+    def test_hard_split_long_run_on_sentence_keeps_source_line(self):
+        # Single sentence longer than max_chars on one source line →
+        # hard-split into pieces. Every piece stays on line 1.
+        content = "x" * 350  # one long line, no whitespace
+        chunks = _chunk_text(content, max_chars=100)
+        self.assertGreaterEqual(len(chunks), 3)
+        for c in chunks:
+            self.assertEqual(c["start_line"], 1, f"hard-split drifted: {c}")
+            self.assertEqual(c["end_line"], 1, f"hard-split drifted: {c}")
+
+    def test_line_numbers_monotonic_and_in_bounds(self):
+        content = "\n".join([f"Line {i}: some content here." for i in range(1, 11)])
+        chunks = _chunk_text(content, max_chars=80)
+        total_lines = len(content.split("\n"))
+        prev_end = 0
+        for c in chunks:
+            self.assertGreaterEqual(c["start_line"], 1)
+            self.assertLessEqual(c["end_line"], total_lines)
+            self.assertLessEqual(c["start_line"], c["end_line"])
+            self.assertGreaterEqual(c["start_line"], prev_end)
+            prev_end = c["end_line"]
+
+    def test_consecutive_blank_lines_dont_drift_line_numbers(self):
+        # CR cycle-3 finding: split("\n\n") collapses runs of 3+ newlines
+        # into empty strings whose count("\n")+1 = 1, over-advancing the
+        # source-line counter. With the re.finditer + offset approach,
+        # line numbers stay accurate regardless of blank-line run length.
+        content = "A line\n\n\n\nB line"  # 4 newlines = 3 blank lines between
+        chunks = _chunk_text(content, max_chars=100)
+        self.assertEqual(len(chunks), 2)
+        self.assertEqual(chunks[0]["start_line"], 1)
+        self.assertEqual(chunks[0]["content"], "A line")
+        self.assertEqual(chunks[1]["start_line"], 5)  # not 7 (the old buggy answer)
+        self.assertEqual(chunks[1]["content"], "B line")
+
+    def test_whitespace_only_line_is_paragraph_break(self):
+        # CR cycle-5 finding: a line containing only whitespace
+        # (spaces/tabs) used to be treated as content, merging the
+        # paragraphs above and below it into one chunk. The fix:
+        # paragraphs require at least one non-whitespace character.
+        content = "A line\n   \nB line"  # middle line is 3 spaces
+        chunks = _chunk_text(content, max_chars=100)
+        self.assertEqual(len(chunks), 2)
+        self.assertEqual(chunks[0]["content"], "A line")
+        self.assertEqual(chunks[0]["start_line"], 1)
+        self.assertEqual(chunks[1]["content"], "B line")
+        self.assertEqual(chunks[1]["start_line"], 3)
+
+
+# -- auth_header env-var indirection ------------------------------------------
+
+class AuthHeaderResolutionTests(unittest.TestCase):
+    """Verify the framework keeps tokens out of tracked config when the
+    user sets `auth_header: ${ENV_VAR}`. CR cycle-5 finding."""
+
+    def test_empty_returns_none(self):
+        self.assertIsNone(_resolve_auth_header(""))
+        self.assertIsNone(_resolve_auth_header(None))  # type: ignore[arg-type]
+
+    def test_literal_value_returned_as_is(self):
+        # Literal tokens still work for compatibility, even though
+        # they're discouraged in tracked configs.
+        self.assertEqual(_resolve_auth_header("Bearer abc123"), "Bearer abc123")
+
+    def test_env_var_indirection_resolves(self):
+        os.environ["SDD_TEST_AUTH"] = "Bearer secret"
+        try:
+            self.assertEqual(
+                _resolve_auth_header("${SDD_TEST_AUTH}"),
+                "Bearer secret",
+            )
+        finally:
+            del os.environ["SDD_TEST_AUTH"]
+
+    def test_env_var_missing_returns_none(self):
+        # Missing env var → None. The search() caller turns this into
+        # a config error so the user knows to set the var.
+        os.environ.pop("SDD_TEST_AUTH_MISSING", None)
+        self.assertIsNone(_resolve_auth_header("${SDD_TEST_AUTH_MISSING}"))
+
+    def test_env_var_empty_treated_as_missing(self):
+        os.environ["SDD_TEST_AUTH_EMPTY"] = ""
+        try:
+            self.assertIsNone(_resolve_auth_header("${SDD_TEST_AUTH_EMPTY}"))
+        finally:
+            del os.environ["SDD_TEST_AUTH_EMPTY"]
+
+
+# -- endpoint normalization (avoids double-appended paths) --------------------
+
+class NormalizeEndpointTests(unittest.TestCase):
+    """Pin the contract: users may paste any of these endpoint shapes
+    in their config.md, and search.py won't mangle the URL into
+    /v1/v1/embeddings or /api/api/embeddings. CR cycle-3 finding."""
+
+    def test_openai_bare_base(self):
+        self.assertEqual(
+            _normalize_endpoint("openai", "http://localhost:11434"),
+            "http://localhost:11434/v1/embeddings",
+        )
+
+    def test_openai_versioned_base(self):
+        # User pasted /v1 but no /embeddings — no double-append.
+        self.assertEqual(
+            _normalize_endpoint("openai", "http://localhost:11434/v1"),
+            "http://localhost:11434/v1/embeddings",
+        )
+
+    def test_openai_full_path_left_alone(self):
+        self.assertEqual(
+            _normalize_endpoint("openai", "http://localhost:11434/v1/embeddings"),
+            "http://localhost:11434/v1/embeddings",
+        )
+
+    def test_ollama_native_bare_base(self):
+        self.assertEqual(
+            _normalize_endpoint("ollama-native", "http://localhost:11434"),
+            "http://localhost:11434/api/embeddings",
+        )
+
+    def test_ollama_native_versioned_base(self):
+        # User pasted /api but no /embeddings — no double-append.
+        self.assertEqual(
+            _normalize_endpoint("ollama-native", "http://localhost:11434/api"),
+            "http://localhost:11434/api/embeddings",
+        )
+
+    def test_ollama_native_full_path_left_alone(self):
+        self.assertEqual(
+            _normalize_endpoint("ollama-native", "http://localhost:11434/api/embeddings"),
+            "http://localhost:11434/api/embeddings",
+        )
+
+    def test_trailing_slash_stripped(self):
+        # Cosmetic: trailing slashes don't affect the normalized output.
+        self.assertEqual(
+            _normalize_endpoint("openai", "http://localhost:11434/"),
+            "http://localhost:11434/v1/embeddings",
+        )
+
+
 # -- search (opt-in stub) -----------------------------------------------------
 
 class SearchDisabledTests(_FixtureBase):
@@ -191,15 +361,83 @@ class SearchDisabledTests(_FixtureBase):
 class SearchEnabledTests(_FixtureBase):
     with_semantic_search = True
 
-    def test_enabled_returns_deferred_message_with_provider(self):
+    def test_unreachable_endpoint_returns_plain_english_error(self):
+        # Fixture points at http://127.0.0.1:1 — port 1 is reserved, so
+        # the connection fails fast and predictably without needing a
+        # mock server. Verifies the embedding-failure fallback path.
         result = search(self.root, {"query": "auth retry"})
         self.assertIn("error", result)
-        self.assertIn("deferred", result["error"])
-        self.assertEqual(result["configured"]["provider"], "ollama")
+        # The error must be human-readable and not a Python traceback.
+        # The agent reads this and knows what to do next.
+        self.assertNotIn("Traceback", result["error"])
+        # Fallback hint tells the agent what to do when search is broken.
+        self.assertIn("fallback", result)
+        # Query is echoed so the caller can correlate.
+        self.assertEqual(result["query"], "auth retry")
 
     def test_missing_query_arg(self):
         result = search(self.root, {})
         self.assertIn("error", result)
+        self.assertIn("query", result["error"])
+
+    def test_disabled_provider_rejected_with_config_shape(self):
+        # Swap to an unsupported provider mid-test; search must reject
+        # cleanly with a plain-English error and the canonical config_shape.
+        cfg = os.path.join(self.root, ".sdd", "config.md")
+        with open(cfg, encoding="utf-8") as fh:
+            text = fh.read()
+        text = text.replace("provider: openai", "provider: unsupported-provider")
+        with open(cfg, "w", encoding="utf-8") as fh:
+            fh.write(text)
+        result = search(self.root, {"query": "auth retry"})
+        self.assertIn("error", result)
+        # Error names which providers ARE supported.
+        self.assertIn("openai", result["error"])
+        self.assertIn("ollama-native", result["error"])
+        # Must include the canonical config_shape so the agent renders
+        # the user-facing fix path. Without this, an embedding-failure
+        # fallback could pass the substring check above without giving
+        # the user a real config blueprint. CR cycle-2 finding.
+        self.assertIn("config_shape", result)
+        self.assertEqual(
+            result["config_shape"]["parameters"]["mcp"]["semantic_search"]["provider"],
+            "<openai|ollama-native>",
+        )
+
+    def test_missing_provider_rejected_with_config_shape(self):
+        # Per framework doctrine, provider is REQUIRED — no silent
+        # default. Empty value must be rejected with a clear message
+        # naming the supported providers.
+        cfg = os.path.join(self.root, ".sdd", "config.md")
+        with open(cfg, encoding="utf-8") as fh:
+            text = fh.read()
+        text = text.replace("provider: openai", "provider: \"\"")
+        with open(cfg, "w", encoding="utf-8") as fh:
+            fh.write(text)
+        result = search(self.root, {"query": "auth retry"})
+        self.assertIn("error", result)
+        self.assertIn("provider", result["error"])
+        self.assertIn("required", result["error"])
+        self.assertIn("config_shape", result)
+
+    def test_disallowed_url_scheme_rejected(self):
+        # Defence-in-depth: even with a valid provider + model, an
+        # endpoint URL using file:// or another scheme must be refused
+        # before any network call happens. CR cycle-1 finding.
+        cfg = os.path.join(self.root, ".sdd", "config.md")
+        with open(cfg, encoding="utf-8") as fh:
+            text = fh.read()
+        text = text.replace(
+            "endpoint: http://127.0.0.1:1",
+            "endpoint: file:///etc/passwd",
+        )
+        with open(cfg, "w", encoding="utf-8") as fh:
+            fh.write(text)
+        result = search(self.root, {"query": "auth retry"})
+        self.assertIn("error", result)
+        # Error must mention the scheme problem so the user knows what
+        # to fix in config.md, not a Python URLError traceback.
+        self.assertNotIn("Traceback", result["error"])
 
 
 # -- protocol shim (server.handle_message) ------------------------------------
