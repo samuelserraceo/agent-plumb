@@ -107,14 +107,18 @@ branch = None
 try:
     r = subprocess.run(
         ["git", "-C", proj, "rev-parse", "--abbrev-ref", "HEAD"],
-        capture_output=True, text=True, timeout=5,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=5,
     )
     if r.returncode == 0:
         candidate = r.stdout.strip()
         # `HEAD` is what git emits in detached-HEAD state — not a branch.
         if candidate and candidate != "HEAD":
             branch = candidate
-except (subprocess.TimeoutExpired, OSError, FileNotFoundError):
+except (subprocess.TimeoutExpired, OSError, FileNotFoundError, UnicodeError):
     pass
 
 # 2. Read INDEX.md's **Active:** pointer. The raw value is project
@@ -128,9 +132,12 @@ index_active = None
 index_path = os.path.join(proj, ".sdd", "INDEX.md")
 if os.path.isfile(index_path):
     try:
-        with open(index_path, encoding="utf-8") as f:
+        # `errors="replace"` so a stray invalid UTF-8 byte (rare but
+        # possible on Windows checkouts) doesn't crash the script and
+        # break the "always emits JSON" contract.
+        with open(index_path, encoding="utf-8", errors="replace") as f:
             idx_text = f.read()
-    except OSError:
+    except (OSError, UnicodeError):
         idx_text = ""
     m = re.search(r"^\*\*Active:\*\*\s+(\S+)", idx_text, re.MULTILINE)
     if m:

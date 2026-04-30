@@ -293,10 +293,25 @@ def _infer_active_context(proj):
                 if isinstance(resolved, dict):
                     raw_active = resolved.get("active")
                     if isinstance(raw_active, str) and raw_active:
-                        candidate = os.path.join(proj, ".sdd", raw_active, "spec.md")
-                        if os.path.isfile(candidate):
-                            spec_path = candidate
-                            raw = raw_active
+                        # Defence in depth: even though resolve-active.sh
+                        # validates `active` before emitting, never
+                        # trust a subprocess return blindly. Containment-
+                        # check the resolved path stays inside .sdd/
+                        # before joining it into a spec.md path.
+                        sdd_root_real = os.path.realpath(os.path.join(proj, ".sdd"))
+                        candidate_dir = os.path.realpath(os.path.join(sdd_root_real, raw_active))
+                        try:
+                            inside_sdd = (
+                                os.path.commonpath([sdd_root_real, candidate_dir]) == sdd_root_real
+                                and candidate_dir != sdd_root_real
+                            )
+                        except ValueError:
+                            inside_sdd = False
+                        if inside_sdd:
+                            candidate = os.path.join(candidate_dir, "spec.md")
+                            if os.path.isfile(candidate):
+                                spec_path = candidate
+                                raw = raw_active
         except (subprocess.TimeoutExpired, OSError, json.JSONDecodeError):
             pass
 
