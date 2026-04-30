@@ -14,9 +14,10 @@ stages:
       - refactor-approach
       - minimal-diff-verify
     exit_checks:
-      - { id: C-spec-scope,      check: "scope captured in §1 (what's being moved/extracted/renamed)" }
-      - { id: C-spec-coverage,   check: "regression coverage listed in §2 (existing tests + any new T-tests for shared shape)" }
-      - { id: C-spec-approach,   check: "approach approved in §3" }
+      - { id: C-spec-scope,         check: "scope captured in §1 (what's being moved/extracted/renamed)" }
+      - { id: C-spec-coverage,      check: "regression coverage listed in §2 (existing tests + any new T-tests for shared shape)" }
+      - { id: C-spec-approach,      check: "approach approved in §3" }
+      - { id: C-spec-minimal-diff,  check: "minimal-diff verify recorded in §4 (delta computed; non-positive or override accepted)" }
   - id: BUILD
     actions:
       - run-mode-chosen

@@ -1,7 +1,7 @@
 ---
 type: config
 sdd_version: 0.13.6
-playbooks_available: [feature, project, bug, refactor]: refactor.md — minimal-diff refactor workflow (closes #85, v1.0 step 3))
+playbooks_available: [feature, project, bug, refactor]
 default_playbook: feature
 extensions: {}
 parameters:

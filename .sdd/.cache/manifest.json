@@ -19,7 +19,7 @@
     "refactor": {
       "path": ".sdd/playbooks/refactor.md",
       "trust": "framework",
-      "expected_sha256": "4e9ec025183e1520e8621a5648e1478c3e1b82fde94f0a90de84532e8c56571f"
+      "expected_sha256": "2fca5039223de266ddee8007796286fba124f92a8a9b0f20d4990e74098d9c78"
     }
   },
   "scripts": {
