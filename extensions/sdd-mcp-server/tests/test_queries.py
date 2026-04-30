@@ -214,7 +214,7 @@ class SearchEnabledTests(_FixtureBase):
         # Swap to an unsupported provider mid-test; search must reject
         # cleanly with a plain-English error and the canonical config_shape.
         cfg = os.path.join(self.root, ".sdd", "config.md")
-        with open(cfg, "r", encoding="utf-8") as fh:
+        with open(cfg, encoding="utf-8") as fh:
             text = fh.read()
         text = text.replace("provider: openai", "provider: unsupported-provider")
         with open(cfg, "w", encoding="utf-8") as fh:
@@ -224,6 +224,41 @@ class SearchEnabledTests(_FixtureBase):
         # Error names which providers ARE supported.
         self.assertIn("openai", result["error"])
         self.assertIn("ollama-native", result["error"])
+
+    def test_missing_provider_rejected_with_config_shape(self):
+        # Per framework doctrine, provider is REQUIRED — no silent
+        # default. Empty value must be rejected with a clear message
+        # naming the supported providers.
+        cfg = os.path.join(self.root, ".sdd", "config.md")
+        with open(cfg, encoding="utf-8") as fh:
+            text = fh.read()
+        text = text.replace("provider: openai", "provider: \"\"")
+        with open(cfg, "w", encoding="utf-8") as fh:
+            fh.write(text)
+        result = search(self.root, {"query": "auth retry"})
+        self.assertIn("error", result)
+        self.assertIn("provider", result["error"])
+        self.assertIn("required", result["error"])
+        self.assertIn("config_shape", result)
+
+    def test_disallowed_url_scheme_rejected(self):
+        # Defence-in-depth: even with a valid provider + model, an
+        # endpoint URL using file:// or another scheme must be refused
+        # before any network call happens. CR cycle-1 finding.
+        cfg = os.path.join(self.root, ".sdd", "config.md")
+        with open(cfg, encoding="utf-8") as fh:
+            text = fh.read()
+        text = text.replace(
+            "endpoint: http://127.0.0.1:1",
+            "endpoint: file:///etc/passwd",
+        )
+        with open(cfg, "w", encoding="utf-8") as fh:
+            fh.write(text)
+        result = search(self.root, {"query": "auth retry"})
+        self.assertIn("error", result)
+        # Error must mention the scheme problem so the user knows what
+        # to fix in config.md, not a Python URLError traceback.
+        self.assertNotIn("Traceback", result["error"])
 
 
 # -- protocol shim (server.handle_message) ------------------------------------

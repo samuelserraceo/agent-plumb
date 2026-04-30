@@ -48,6 +48,7 @@ import tempfile
 import urllib.error
 import urllib.request
 from typing import Any, Dict, List, Optional, Tuple
+from urllib.parse import urlparse
 
 
 _CONFIG_SHAPE = {
@@ -260,15 +261,23 @@ def _chunk_text(content: str, max_chars: int = _DEFAULT_CHUNK_CHARS) -> List[Dic
                         buf_start = buf_start + buf_lines
                     if len(sent) > max_chars:
                         # Hard split — rare; usually a code block or
-                        # base64 paste.
+                        # base64 paste. Advance buf_start per emitted
+                        # slice so each chunk's start_line/end_line
+                        # reflects its actual position (CR cycle-1 fix:
+                        # before, every hard-split slice reported the
+                        # same buf_start, so search results couldn't
+                        # locate a hit inside a long block).
                         for i in range(0, len(sent), max_chars):
+                            piece = sent[i:i + max_chars]
+                            piece_lines = piece.count("\n") + 1
                             chunks.append({
                                 "chunk_index": chunk_idx,
                                 "start_line": buf_start,
-                                "end_line": buf_start,
-                                "content": sent[i:i + max_chars].strip(),
+                                "end_line": buf_start + piece_lines - 1,
+                                "content": piece.strip(),
                             })
                             chunk_idx += 1
+                            buf_start = buf_start + piece_lines
                         buf = ""
                         buf_lines = 0
                     else:
@@ -348,6 +357,18 @@ def _embed_one(
             f"Set parameters.mcp.semantic_search.provider in .sdd/config.md."
         )
 
+    # Validate URL scheme before any network call. Without this, a malformed
+    # endpoint like `file:///etc/passwd` would happily be opened by urlopen
+    # — defence-in-depth even though the endpoint comes from project-trusted
+    # config.md. CR cycle-1 finding.
+    parsed_url = urlparse(endpoint)
+    if parsed_url.scheme.lower() not in ("http", "https"):
+        raise EmbeddingError(
+            f"endpoint URL scheme must be http or https; got "
+            f"{parsed_url.scheme!r} for endpoint {endpoint!r}. "
+            f"Fix parameters.mcp.semantic_search.endpoint in .sdd/config.md."
+        )
+
     data = json.dumps(body).encode("utf-8")
     req = urllib.request.Request(
         url=endpoint,
@@ -369,10 +390,12 @@ def _embed_one(
             if 500 <= exc.code < 600 and attempt == 0:
                 last_error = exc
                 continue
+            # `from exc` preserves the original traceback for debugging
+            # while keeping a clean user-facing message. CR cycle-1.
             raise EmbeddingError(
                 f"embedding endpoint returned HTTP {exc.code} ({exc.reason}). "
                 f"Check parameters.mcp.semantic_search.endpoint and credentials."
-            )
+            ) from exc
         except urllib.error.URLError as exc:
             # Network unreachable. Retry once.
             if attempt == 0:
@@ -381,13 +404,13 @@ def _embed_one(
             raise EmbeddingError(
                 f"embedding endpoint not reachable: {exc.reason}. "
                 f"Check the endpoint URL or the SSH tunnel/network connection."
-            )
+            ) from exc
         except (json.JSONDecodeError, TimeoutError) as exc:
             raise EmbeddingError(
                 f"embedding endpoint returned malformed response: {exc}. "
                 f"The provider may be wrong (set provider: openai or "
                 f"ollama-native in .sdd/config.md)."
-            )
+            ) from exc
         # Parse response shape per provider.
         if provider == "openai":
             if not isinstance(parsed, dict) or "data" not in parsed:
@@ -500,9 +523,24 @@ def search(project_root: str, args: Dict[str, Any]) -> Dict[str, Any]:
             "query": query,
         }
 
-    # Resolve config + apply defaults.
+    # Resolve config — provider, endpoint, model are all REQUIRED. Per the
+    # framework's foundation 3 doctrine ("Never assume — always check") and
+    # CLAUDE.md's "external dependencies must be explicit customisation
+    # blocks, never baked-in defaults", we refuse to silently default the
+    # provider. The user must commit to one in .sdd/config.md.
+    # CR cycle-1 finding.
     provider_raw = sem.get("provider")
-    provider = provider_raw if isinstance(provider_raw, str) and provider_raw else "openai"
+    if not isinstance(provider_raw, str) or not provider_raw:
+        return {
+            "error": "parameters.mcp.semantic_search.provider is required. "
+                     "Set it to \"openai\" (default OpenAI-compatible shape — "
+                     "works with Ollama in compatible mode, vLLM, etc.) or "
+                     "\"ollama-native\" (older Ollama versions) in "
+                     ".sdd/config.md.",
+            "config_shape": _CONFIG_SHAPE,
+            "query": query,
+        }
+    provider = provider_raw
     endpoint_raw = sem.get("endpoint")
     if not isinstance(endpoint_raw, str) or not endpoint_raw:
         return {
