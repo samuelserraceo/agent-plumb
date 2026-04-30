@@ -457,28 +457,9 @@ $samples
 }
 
 # ============================================================
-# Invariant 8 — every wiki-link in .sdd/ markdown resolves to a real node.
-#
-# v1.0 graph layer: cross-references between markdown atoms become
-# first-class via `[[slug]]` syntax. A broken link means a node was
-# renamed/deleted without updating its citers, OR a citer assumed a
-# pattern/entity exists that doesn't.
-#
-# Foundation 3 ("never assume — always check") applied to retrieval:
-# don't trust that wiki-links are honest; verify each resolves at
-# turn-boundary so drift surfaces before commit-time.
-#
-# Wiki-link grammar accepted (refused if extended):
-#   - [[001-waitlist]]            (feature folder)
-#   - [[entity:User]]             (data-model.md heading)
-#   - [[pattern:auth-retry]]      (patterns.md heading)
-# NO section anchors (#section), NO display aliases (|alias).
-#
-# Implementation: shells out to a Python helper that uses the MCP
-# server's _graph_cache module — same path the queries use, so the
-# stop-hook's view of "broken" is exactly what `get_backlinks` sees.
-# Falls back to silent pass if the MCP server isn't available
-# (extension is optional; this hook is mandatory).
+# Invariant 9 — no NUL bytes in tracked .sdd/ files (binary contamination).
+# (Function body lives here; numbering note: invariant 8 is wiki-link
+# resolution, defined further below.)
 # ============================================================
 check_no_nul_bytes() {
   # D4 (stress-test) — NUL bytes (0x00) in any tracked .sdd/ markdown file
@@ -504,6 +485,30 @@ ${formatted}  Fix: open the file in your editor and save again as UTF-8 (text). 
   fi
 }
 
+# ============================================================
+# Invariant 8 — every wiki-link in .sdd/ markdown resolves to a real node.
+#
+# v1.0 graph layer: cross-references between markdown atoms become
+# first-class via `[[slug]]` syntax. A broken link means a node was
+# renamed/deleted without updating its citers, OR a citer assumed a
+# pattern/entity exists that doesn't.
+#
+# Foundation 3 ("never assume — always check") applied to retrieval:
+# don't trust that wiki-links are honest; verify each resolves at
+# turn-boundary so drift surfaces before commit-time.
+#
+# Wiki-link grammar accepted (refused if extended):
+#   - [[001-waitlist]]            (feature folder)
+#   - [[entity:User]]             (data-model.md heading)
+#   - [[pattern:auth-retry]]      (patterns.md heading)
+# NO section anchors (#section), NO display aliases (|alias).
+#
+# Implementation: shells out to a Python helper that uses the MCP
+# server's _graph_cache module — same path the queries use, so the
+# stop-hook's view of "broken" is exactly what `get_backlinks` sees.
+# Falls back to silent pass if the MCP server isn't available
+# (extension is optional; this hook is mandatory).
+# ============================================================
 check_wiki_links_resolve() {
   local mcp_root="$PROJECT_DIR/extensions/sdd-mcp-server"
   # When running on a downstream user's project, the MCP server lives at the
