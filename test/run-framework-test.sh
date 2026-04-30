@@ -4659,14 +4659,19 @@ else
 fi
 
 # ============================================================
-# T118 — SDD self-host parity (closes #74). When the framework
+# T120 — SDD self-host parity (closes #74). When the framework
 #        repo is its own consumer, framework-shipped files in
 #        root `.sdd/` (playbooks, actions, scripts) must be
 #        byte-identical to `templates/.sdd/`. Catches drift
 #        between the template source and the framework's own
 #        dogfooded copy.
+#
+# Renamed from T118 in cycle-3 — T118 was already taken by the
+# cp-R nesting regression test that landed via PR #90. Two tests
+# sharing an ID makes failures ambiguous in the report; CR cycle-2
+# flagged the collision.
 # ============================================================
-note "T118: framework's root .sdd/ stays in sync with templates/.sdd/"
+note "T120: framework's root .sdd/ stays in sync with templates/.sdd/"
 if [ -d "$FRAMEWORK_ROOT/.sdd/playbooks" ] && [ -d "$FRAMEWORK_ROOT/.sdd/actions" ] && [ -d "$FRAMEWORK_ROOT/.sdd/scripts" ]; then
   drift=""
   for sub in playbooks actions scripts; do
@@ -4686,14 +4691,14 @@ if [ -d "$FRAMEWORK_ROOT/.sdd/playbooks" ] && [ -d "$FRAMEWORK_ROOT/.sdd/actions
     done < <(find "$FRAMEWORK_ROOT/templates/.sdd/$sub" -type f \( -name '*.md' -o -name '*.sh' \) 2>/dev/null)
   done
   if [ -z "$drift" ]; then
-    ok "T118 root .sdd/ stays in sync with templates/.sdd/ (playbooks + actions + scripts)"
+    ok "T120 root .sdd/ stays in sync with templates/.sdd/ (playbooks + actions + scripts)"
   else
-    bad "T118 framework self-host drift detected" "$drift"
+    bad "T120 framework self-host drift detected" "$drift"
   fi
 else
   # Self-host hasn't bootstrapped yet (fresh contributor clone before
   # init.sh has been run) — skip cleanly so this doesn't false-fail.
-  ok "T118 root .sdd/ not bootstrapped yet — skipping (run scripts/init.sh to enable)"
+  ok "T120 root .sdd/ not bootstrapped yet — skipping (run scripts/init.sh to enable)"
 fi
 
 # ============================================================
