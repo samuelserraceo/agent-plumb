@@ -2,3 +2,8 @@
 *.bak
 node_modules/
 /.claude/
+
+# Local Obsidian vault state (templates/.obsidian/ is shipped; root .obsidian/ is per-user)
+/.obsidian/
+# Stale per-project graph caches in extension dirs (test artefact protection)
+/extensions/sdd-mcp-server/.sdd/

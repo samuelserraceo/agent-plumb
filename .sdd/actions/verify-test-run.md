@@ -5,7 +5,7 @@ tag: AGENT-LED
 title: "verify-test-run"
 short_label: "Test run"
 steps:
-  - { id: full-suite, action: run_full_test_suite_mark_all_acs_pass_or_open_bug, field: "§verify-test-run" }
+  - { id: full-suite, action: "run the full test suite, mark all ACs as passing, or open a bug", field: "§verify-test-run" }
 used_by: [feature]
 references: [acceptance-criteria, plan-decompose]
 touches: []

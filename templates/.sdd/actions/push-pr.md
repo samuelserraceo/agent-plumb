@@ -5,7 +5,7 @@ tag: AGENT-LED
 title: "push-pr"
 short_label: "Push PR"
 steps:
-  - { id: push, action: push_branch_open_pr_with_spec_md_body, field: "spec.md" }
+  - { id: push, action: "push the branch and open a PR with spec.md as the body", field: "spec.md" }
 used_by: [feature]
 references: [problem, success, learn, plan-decompose]
 touches: []

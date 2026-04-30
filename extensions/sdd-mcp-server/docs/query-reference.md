@@ -1,6 +1,6 @@
 # Query Reference
 
-The SDD MCP server exposes 6 named queries. Each is invoked over stdio in one of two protocol shapes:
+The SDD MCP server exposes 9 named queries (six original + three v1.0 graph-traversal queries). Each is invoked over stdio in one of two protocol shapes:
 
 - **Simplified SDD** (one JSON object per line): `{"query": "<name>", "args": {...}}` → `{"result": <data>}` or `{"error": "<reason>"}`
 - **MCP-compatible JSON-RPC over stdio (simplified for SDD)**: `{"jsonrpc":"2.0","id":<n>,"method":"tools/call","params":{"name":"<query>","arguments":{...}}}` → standard MCP `tools/call` result with `content[0].type == "text"` carrying the JSON-encoded query result.
@@ -284,6 +284,135 @@ When enabled, the real implementation will embed the query against the configure
   }
 }
 ```
+
+---
+
+## get_backlinks (v1.0 graph layer)
+
+**Which files cite the wiki-link `[[slug]]`?**
+
+Resolves `slug` against the project's wiki-link graph (the derived index at `.sdd/.cache/graph.json`, which the server rebuilds on demand from a content-hash signature). Returns every file that contains a wiki-link or markdown-link pointing at this node, with line numbers. The graph parses three target shapes:
+
+- `[[001-waitlist]]` — feature folder
+- `[[entity:User]]` — H2/H3 in `data-model.md`
+- `[[pattern:auth-retry-logic]]` — H3 in `patterns.md`
+
+**Args:** `{"slug": "<slug>"}`. Bare or qualified (e.g. `pattern:auth-retry-logic`). Case-insensitive.
+
+**Sample request:**
+
+```json
+{"query": "get_backlinks", "args": {"slug": "auth-retry-logic"}}
+```
+
+**Sample response:**
+
+```json
+{
+  "result": {
+    "slug": "auth-retry-logic",
+    "node": {
+      "slug": "auth-retry-logic",
+      "kind": "pattern",
+      "path": ".sdd/patterns.md"
+    },
+    "backlinks": [
+      {
+        "from_path": ".sdd/features/002-login/spec.md",
+        "from_line": 42,
+        "kind": "wiki-link"
+      }
+    ],
+    "stats": {"total_edges": 1, "broken": 0}
+  }
+}
+```
+
+**Error shapes:**
+
+- `{"error": "missing arg 'slug'"}`
+- `{"error": "node not found", "available": [{"slug": "...", "kind": "..."}, ...]}` — slug doesn't resolve; list shows what's in the graph.
+
+---
+
+## get_neighbours (v1.0 graph layer)
+
+**What's adjacent to `[[slug]]`?**
+
+Returns the slug's outgoing edges (links it emits) and incoming edges (links pointing at it). Optional `depth` walks the graph BFS-style; capped at 3 to keep responses small.
+
+**Args:**
+- `{"slug": "<slug>"}` — required.
+- `"depth": <int>` — optional, default `1`, silently capped at `3`.
+
+**Sample request:**
+
+```json
+{"query": "get_neighbours", "args": {"slug": "001-waitlist", "depth": 2}}
+```
+
+**Sample response (truncated):**
+
+```json
+{
+  "result": {
+    "slug": "001-waitlist",
+    "node": {"slug": "001-waitlist", "kind": "feature", "path": ".sdd/features/001-waitlist/spec.md"},
+    "depth_requested": 2,
+    "depth_used": 2,
+    "outgoing": [
+      {"to_slug": "pattern:auth-retry-logic", "to_path": ".sdd/patterns.md", "from_line": 42, "kind": "wiki-link"}
+    ],
+    "incoming": [
+      {"from_path": ".sdd/INDEX.md", "from_line": 18, "kind": "wiki-link"}
+    ],
+    "warnings": []
+  }
+}
+```
+
+When `depth > 3` the request is capped and `warnings` includes a note.
+
+**Error shapes:** same as `get_backlinks` — missing slug, unknown slug.
+
+---
+
+## search_within (v1.0 graph layer + Tier 2)
+
+**Bounded semantic search inside a slug's neighbourhood.**
+
+Combines `get_neighbours` with `search`: compute the path allowlist for the slug's graph neighbourhood, then run a semantic search over only those files. Saves embedding cost (and improves precision) by not searching the whole `.sdd/` tree when you already know the relevant slug.
+
+Requires the same `parameters.mcp.semantic_search` config as the plain `search` query.
+
+**Args:**
+- `{"slug": "<slug>"}` — seed node — required.
+- `{"query": "<natural-language>"}` — required.
+- `"depth": <int>` — optional, default `1`, capped at `3`. Wider depth = more files in the allowlist.
+- `"top_k": <int>` — optional, defaults to the value in `.sdd/config.md`.
+
+**Sample request:**
+
+```json
+{
+  "query": "search_within",
+  "args": {
+    "slug": "001-waitlist",
+    "query": "what's the rate limit on Resend?",
+    "depth": 2,
+    "top_k": 3
+  }
+}
+```
+
+**Sample response:** the `search` query's standard result shape, with the search restricted to the seed slug's neighbourhood. The `_path_allowlist` hint is computed internally — clients don't pass it.
+
+**Error shapes:**
+
+- `{"error": "missing arg 'slug'"}`
+- `{"error": "missing arg 'query'"}`
+- `{"error": "node not found", "available": [...]}` — same as `get_backlinks`.
+- Plus all the standard `search` errors when the seed resolves but semantic search isn't configured / unreachable.
 
 ---
 

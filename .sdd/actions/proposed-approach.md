@@ -5,7 +5,7 @@ tag: AGENT-LED
 title: "§5 Proposed approach"
 short_label: "Approach"
 steps:
-  - { id: approval, action: draft_iterate_approve_with_2_alternatives_and_tradeoffs, field: "§5", triggers: [section_approved] }
+  - { id: approval, action: "draft the approach with 2 alternatives and tradeoffs, iterate with the user, get approval", field: "§5", triggers: [section_approved] }
 used_by: [feature]
 references: [problem, success, user-stories, ux-brief]
 touches: []
@@ -24,6 +24,8 @@ Propose a concrete approach with reasoning, alternatives, and what's traded off.
 - **Alternatives considered (≥2)** — for each, one line on what it is and one line on why it's not the recommendation. Don't strawman — the alternative should be a real plausible choice.
 - **What we trade off** — be honest about cost, complexity, time-to-ship, debt. Plain English.
 - **Key technical choices for sign-off** — list each library / service / pattern the user needs to be aware of (paying for, configuring, or whose limits matter). One short paragraph each: what it does for the user, what it costs, what could go wrong.
+
+**Wiki-link emission (v1.0 graph layer).** When the recommended approach reuses a known pattern from `.sdd/patterns.md` (e.g., the team has already chosen "auth-retry-logic"), name the pattern with a wiki-link in §5 prose: `[[pattern:auth-retry-logic]]`. The framework's stop-hook (invariant 8) verifies the link resolves; the MCP server's `get_backlinks` query lets future sessions see which features cite the pattern. Don't invent links — only emit them for patterns that already exist in `patterns.md`. If you propose a *new* pattern that doesn't exist yet, prose-only is fine; the link gets added at `learn` time when the pattern lands in `patterns.md`.
 
 **Iteration discipline.** This is AGENT-LED — propose first, then iterate with the user. Common feedback: "simpler", "swap X for Y", "show me what could go wrong with Z." Update the spec section, ask again until the user types **approve**.
 

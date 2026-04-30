@@ -589,7 +589,37 @@ def search(project_root: str, args: Dict[str, Any]) -> Dict[str, Any]:
     sem = (((cfg.get("parameters") or {}).get("mcp") or {}).get("semantic_search") or {})
     if not isinstance(sem, dict):
         sem = {}
-    enabled = bool(sem.get("enabled"))
+
+    # D6 (stress-test) — schema validation up front. Strings-as-bools
+    # ("enabled: true" as a string), negative top_k, and non-numeric
+    # max_chunks were previously silently accepted then exploded at
+    # runtime with confusing tracebacks. Refuse them here with a plain-
+    # English error so the user fixes config.md before any work happens.
+    enabled_raw = sem.get("enabled")
+    if enabled_raw is not None and not isinstance(enabled_raw, bool):
+        return {
+            "error": (
+                f"parameters.mcp.semantic_search.enabled must be true or false "
+                f"(YAML boolean), got {enabled_raw!r}. In YAML, write "
+                f"`enabled: true` (no quotes); strings like \"true\" or \"yes\" "
+                f"are not booleans."
+            ),
+            "config_shape": _CONFIG_SHAPE,
+            "query": query,
+        }
+    for k in ("top_k", "max_chunks_per_run"):
+        v = sem.get(k)
+        if v is not None and (not isinstance(v, int) or isinstance(v, bool) or v <= 0):
+            return {
+                "error": (
+                    f"parameters.mcp.semantic_search.{k} must be a positive "
+                    f"integer, got {v!r}. Set it to a number like "
+                    f"`{k}: {5 if k == 'top_k' else 1000}` in .sdd/config.md."
+                ),
+                "config_shape": _CONFIG_SHAPE,
+                "query": query,
+            }
+    enabled = bool(enabled_raw)
 
     if not enabled:
         return {

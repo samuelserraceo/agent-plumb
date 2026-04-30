@@ -5,7 +5,7 @@ tag: AGENT-LED
 title: "§6 Data contract"
 short_label: "Data contract"
 steps:
-  - { id: approval, action: draft_iterate_approve_data_contract_sync_data_model_md, field: "§6", triggers: [section_approved] }
+  - { id: approval, action: "draft the data contract, iterate with the user, sync data-model.md, get approval", field: "§6", triggers: [section_approved] }
 used_by: [feature]
 references: [problem, success, user-stories, proposed-approach]
 touches: [.sdd/data-model.md]
@@ -31,6 +31,8 @@ Every entity, field, transition, and edge case must be named before code. The da
 **Push hard on edge cases.** Ask: *"What if a user signs up twice? What if they try to delete their account while a transaction is pending? What if two writers race to update the same row?"* If you can't articulate what happens, the design is incomplete.
 
 **Sync requirement (enforced by F1 generic enforcer (`pre-commit-rules.sh`)'s `touches:` enforcement):** when this section is committed, `.sdd/data-model.md` MUST be staged in the same commit. Never duplicate schema definitions in spec.md — reference by name.
+
+**Wiki-link emission (v1.0 graph layer).** When §6 references an entity that lives in `.sdd/data-model.md`, name the entity with a wiki-link in §6 prose: `[[entity:User]]` (case-insensitive, slug from the entity's H2/H3 heading in data-model.md). This makes the feature → entity edge mechanically queryable: the MCP server's `get_backlinks` query reveals which features touch a given entity, so future schema changes can find their downstream consumers without grep. Only emit links for entities that already exist in data-model.md after this commit lands; if you're adding a brand-new entity, the link is correct because data-model.md is staged in the same commit.
 
 **On approval.** Hash recorded in `verification.json.approved_sections.data-contract`. Future edits require `/re-approve §6`.
 

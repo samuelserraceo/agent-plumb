@@ -102,6 +102,20 @@ cp "$TEMPLATE_CLAUDE_MD" CLAUDE.md || {
   exit 1
 }
 
+# D9 (stress-test) — copy the Obsidian vault config from templates/.obsidian
+# if it ships with this version of the framework. Item 3 (#90) added this
+# in v1.0 but only via the legacy scripts/init.sh path; the plugin-path
+# install (this script) was missed. Plugin-path users were getting an SDD
+# project with no Obsidian configuration.
+TEMPLATE_OBSIDIAN="$PLUGIN_ROOT/templates/.obsidian"
+if [ -d "$TEMPLATE_OBSIDIAN" ] && [ ! -d ".obsidian" ]; then
+  cp -r "$TEMPLATE_OBSIDIAN" .obsidian || {
+    # Non-fatal — the project still works without Obsidian. Tell the user.
+    echo "[SDD init] note: failed to copy templates/.obsidian/ (Obsidian vault config)." >&2
+    echo "[SDD init]       The project still works; you just lose the graph view." >&2
+  }
+fi
+
 # Wire git hooksPath if a git repo is present and no conflicting setup
 # is in place. Same conflict-aware logic as start.sh — refuse to
 # silently override an existing Husky/lefthook setup.

@@ -5,7 +5,7 @@ tag: AGENT-LED
 title: "Project capabilities"
 short_label: "§4 Capabilities"
 steps:
-  - { id: capability-list, action: draft_with_alternatives, field: "§4.capabilities" }
+  - { id: capability-list, action: "draft with alternatives", field: "§4.capabilities" }
 used_by: [project]
 references: [project-problem, project-success, project-priorities]
 touches: [".sdd/<work-item>/spec.md"]

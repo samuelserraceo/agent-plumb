@@ -5,8 +5,8 @@ tag: AGENT-LED
 title: "learn"
 short_label: "Learn"
 steps:
-  - { id: summary, action: one_paragraph_recap_of_what_shipped, field: "§learn.summary" }
-  - { id: lessons, action: extract_1_to_2_cross_feature_lessons_sync_patterns_md, field: "§learn.lessons" }
+  - { id: summary, action: "write a one-paragraph recap of what shipped", field: "§learn.summary" }
+  - { id: lessons, action: "extract 1 to 2 cross-feature lessons and sync patterns.md", field: "§learn.lessons" }
 used_by: [feature]
 references: [problem, success, acceptance-criteria, build-task, verify-test-run, non-functional, data-contract]
 touches: [.sdd/patterns.md]
@@ -60,6 +60,16 @@ The distilled value of the feature. **One or two cross-feature lessons** — pat
 **Format:** one paragraph per lesson. No jargon. Actionable. Each lesson should answer *"if you read this in 6 months, what would you do differently?"*
 
 **Sync requirement (F1 generic enforcer (`pre-commit-rules.sh`)'s `touches:` enforcement):** stage `.sdd/patterns.md` in this commit. If `patterns.md` doesn't exist yet, create it. Append the new lessons under a `## Feature: <id>-<slug>` heading.
+
+**Wiki-link emission (v1.0 graph layer).** At the bottom of the appended pattern block, add a `Source: [[<id>-<slug>]]` line — wraps the source-feature reference in a wiki-link. This is the back-edge from pattern → feature: the MCP server's `get_backlinks` query against the pattern slug finds every feature whose `learn` step cited it, plus this Source line. Example:
+```markdown
+## Feature: 003-auth-retry
+
+### Auth retry logic
+When an auth provider returns 5xx, retry with exponential backoff up to 3 times...
+Source: [[003-auth-retry]]
+```
+Bare slug form (no `pattern:` / `entity:` prefix) is correct here — the slug resolves to the feature folder via priority 1 (filename match).
 
 **Topic-page lifecycle (Phase C+ deferred):**
 

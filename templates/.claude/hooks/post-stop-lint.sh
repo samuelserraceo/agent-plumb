@@ -13,7 +13,7 @@
 # English fix path if any drifted. Foundation 3 (never assume — always
 # check) applied at turn boundary, not just commit boundary.
 #
-# The 7 invariants checked:
+# The 9 invariants checked:
 #   1. .sdd/INDEX.md has exactly one **Active:** line
 #   2. .sdd/INDEX.md ## In flight lines all point at existing feature folders
 #   3. Active feature's spec.md has a single [PHASE: X] line
@@ -22,6 +22,9 @@
 #      entries mutated)
 #   6. .sdd/.cache/manifest.json parses as JSON
 #   7. Every [x] row in spec.md has a non-empty answer after the colon
+#   8. Wiki-links [[slug]] in .sdd/ markdown all resolve to known nodes
+#      (v1.0 graph layer; opt-in via the MCP server extension)
+#   9. No NUL bytes in any tracked .sdd/ file (binary contamination)
 #
 # Wires up as a Claude Code Stop hook in settings.json. Stop hooks
 # receive a JSON payload on stdin describing the session state, but
@@ -477,6 +480,25 @@ $samples
 # Falls back to silent pass if the MCP server isn't available
 # (extension is optional; this hook is mandatory).
 # ============================================================
+check_no_nul_bytes() {
+  # D4 (stress-test) — NUL bytes (0x00) in any tracked .sdd/ markdown file
+  # signal binary contamination (corrupt save, half-written file, byte-flip
+  # on a flaky disk). Catches them at turn boundary so the user fixes the
+  # corrupt file before committing it.
+  if [ ! -d .sdd ]; then return 0; fi
+  local hits
+  hits=$(LC_ALL=C grep -rlP '\x00' .sdd/ 2>/dev/null \
+         --include='*.md' --include='*.json' --include='*.yaml' --include='*.yml' \
+         --exclude-dir='.cache' --exclude-dir='archive' --exclude-dir='ideas' || true)
+  if [ -n "$hits" ]; then
+    add_violation "[stop-lint] NUL bytes found in framework files (binary contamination):
+$(printf "  %s\n" $hits)
+  Fix: open the file in your editor and save again as UTF-8 (text). NUL
+       bytes usually mean a half-written save or filesystem corruption.
+       If the file is unrecoverable, restore it: \`git checkout HEAD -- <path>\`."
+  fi
+}
+
 check_wiki_links_resolve() {
   local mcp_root="$PROJECT_DIR/extensions/sdd-mcp-server"
   # When running on a downstream user's project, the MCP server lives at the
@@ -543,6 +565,7 @@ check_decisions_append_only
 check_manifest_json
 check_ticked_rows_have_answers
 check_wiki_links_resolve
+check_no_nul_bytes
 
 # Happy path: no violations → silent allow.
 [ -z "$violations" ] && exit 0

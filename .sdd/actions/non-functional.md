@@ -5,7 +5,7 @@ tag: AGENT-LED
 title: "§10 Non-functional"
 short_label: "Non-functional"
 steps:
-  - { id: constraints, action: draft_performance_security_compliance_constraints, field: "§10" }
+  - { id: constraints, action: "draft performance, security, and compliance constraints", field: "§10" }
 used_by: [feature]
 references: [problem, success, user-stories, proposed-approach]
 touches: []

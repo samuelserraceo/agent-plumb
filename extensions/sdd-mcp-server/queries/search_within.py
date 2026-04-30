@@ -29,7 +29,12 @@ import os
 from typing import Any, Dict, List, Set
 
 from . import _graph_cache
-from . import search as _search_module
+# NOTE: cannot use `from . import search as _search_module` here because
+# __init__.py re-exports the `search` function under the same name as the
+# submodule, shadowing the module in the package namespace. importlib gets
+# the underlying module reliably regardless of __init__.py re-exports.
+import importlib
+_search_module = importlib.import_module(__package__ + ".search")
 
 
 def search_within(project_root: str, args: Dict[str, Any]) -> Dict[str, Any]:

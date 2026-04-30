@@ -581,25 +581,42 @@ for section in ("playbooks", "actions", "extensions", "scripts"):
                 head_actual, expected))
 
 if mismatches:
-    print("[moat] manifest hash-pin failed — file(s) tampered or out of date.",
-          file=sys.stderr)
+    # B1 (stress-test) — plain-English first, technical detail below.
+    # Most users hitting this haven't tampered; they've edited a framework
+    # file by accident (find-and-replace across the repo, IDE auto-format)
+    # or are upgrading SDD on purpose. Both cases need different actions;
+    # spell them out instead of dumping hex hashes.
+    print("[moat] One or more SDD framework files have changed since SDD's", file=sys.stderr)
+    print("       last sealed version. The commit is refused until that's resolved.", file=sys.stderr)
     print("", file=sys.stderr)
-    print("This catches the cross-commit attack: tamper in one commit (no",
-          file=sys.stderr)
-    print("claim staged), then verification.json in a separate commit. Either",
-          file=sys.stderr)
-    print("revert the tamper, or regenerate the manifest if the change is a",
-          file=sys.stderr)
-    print("legitimate framework upgrade (admin repin in a policy-only commit).",
-          file=sys.stderr)
+    file_list = "\n".join(f"         {rel}" for rel, _kind, _a, _e in mismatches)
+    print(f"  Files that changed:\n{file_list}", file=sys.stderr)
     print("", file=sys.stderr)
+    print("  If you didn't change these on purpose (e.g. an editor auto-formatted", file=sys.stderr)
+    print("  them, or a find-and-replace ran across the repo), restore them:", file=sys.stderr)
+    print("", file=sys.stderr)
+    for rel, _kind, _a, _e in mismatches:
+        print(f"      git checkout HEAD -- {rel}", file=sys.stderr)
+    print("", file=sys.stderr)
+    print("  If you DID change them on purpose (e.g. upgrading SDD or applying", file=sys.stderr)
+    print("  a framework patch), ask the agent to re-seal the manifest before", file=sys.stderr)
+    print("  committing — the commit message must include the marker", file=sys.stderr)
+    print("  '[SDD] manifest: repin — <reason>'.", file=sys.stderr)
+    print("", file=sys.stderr)
+    print("  Why this fires: the framework hashes its own files into a manifest", file=sys.stderr)
+    print("  and re-checks them at commit time. This catches accidental edits,", file=sys.stderr)
+    print("  IDE auto-formats, and a class of attack where one commit tampers", file=sys.stderr)
+    print("  with a framework file and a later commit uses the tamper to slip", file=sys.stderr)
+    print("  past safety checks. (Technical: hash mismatch detail below.)", file=sys.stderr)
+    print("", file=sys.stderr)
+    print("  Technical detail (for debugging):", file=sys.stderr)
     for rel, kind, actual_h, expected_h in mismatches:
         a = (actual_h[:12] + "...") if len(actual_h) > 12 else actual_h or "(none)"
         e = (expected_h[:12] + "...") if len(expected_h) > 12 else expected_h or "(none)"
-        print(f"  {rel}", file=sys.stderr)
-        print(f"    kind:     {kind}", file=sys.stderr)
-        print(f"    expected: {e}", file=sys.stderr)
-        print(f"    actual:   {a}", file=sys.stderr)
+        print(f"    {rel}", file=sys.stderr)
+        print(f"      kind:     {kind}", file=sys.stderr)
+        print(f"      expected: {e}", file=sys.stderr)
+        print(f"      actual:   {a}", file=sys.stderr)
     sys.exit(1)
 
 sys.exit(0)

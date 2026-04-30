@@ -44,6 +44,8 @@ SPEC_MD = """# 001-waitlist — Public waitlist
 
 **Active blocker:** §11 acceptance-criteria
 
+Cross-refs: see [[pattern:auth-retry-logic]] and the sibling feature [[002-login]].
+
 ## PHASE: SPEC
 
 ### action: problem
@@ -77,6 +79,22 @@ SPEC_MD = """# 001-waitlist — Public waitlist
 """
 
 
+SPEC_MD_002 = """# 002-login — Member login
+
+[PHASE: SPEC]
+
+Reuses [[pattern:auth-retry-logic]] from this feature's earlier work.
+Coordinated with [[001-waitlist]] for shared session handling.
+
+## PHASE: SPEC
+
+### action: problem
+
+- [x] who: returning members
+- [x] why-now: sign-ups are landing; we need re-entry
+"""
+
+
 DECISIONS_MD = """# SDD Decisions Log
 
 > Append-only event log.
@@ -106,6 +124,7 @@ PATTERNS_MD = """# Patterns & Cross-Feature Learnings
 
 ### Auth retry logic
 When an auth provider returns 5xx, retry with exponential backoff up to 3 times, then surface the failure to the user with a "try again" CTA. Do NOT retry on 4xx.
+Used by: [[001-waitlist]]
 Source: 002-login
 
 ### Email delivery batching
@@ -176,6 +195,7 @@ def build_fixture_tree(root: str, *, with_semantic_search: bool = False) -> None
     sdd = os.path.join(root, ".sdd")
     os.makedirs(sdd, exist_ok=True)
     os.makedirs(os.path.join(sdd, "features", "001-waitlist"), exist_ok=True)
+    os.makedirs(os.path.join(sdd, "features", "002-login"), exist_ok=True)
 
     with open(os.path.join(sdd, "INDEX.md"), "w", encoding="utf-8") as fh:
         fh.write(INDEX_MD)
@@ -190,6 +210,8 @@ def build_fixture_tree(root: str, *, with_semantic_search: bool = False) -> None
         fh.write(SPEC_MD)
     with open(os.path.join(sdd, "features", "001-waitlist", "README.md"), "w", encoding="utf-8") as fh:
         fh.write(FEATURE_001_README)
+    with open(os.path.join(sdd, "features", "002-login", "spec.md"), "w", encoding="utf-8") as fh:
+        fh.write(SPEC_MD_002)
 
 
 def make_temp_project(*, with_semantic_search: bool = False) -> "tuple[str, callable]":
