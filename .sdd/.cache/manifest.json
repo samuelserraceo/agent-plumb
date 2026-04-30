@@ -73,11 +73,6 @@
       "path": ".sdd/scripts/check-setup-answer.sh",
       "trust": "framework"
     },
-    "post-stop-lint.sh": {
-      "expected_sha256": "d35ceb3b1fcca53863e64a5852e6156bc14e4dc2ed54255cfa7cf48bfc24eaba",
-      "path": ".claude/hooks/post-stop-lint.sh",
-      "trust": "framework"
-    },
     "scope-guard-config.sh": {
       "expected_sha256": "6002764546209d4b07fa1ec140abdbd129f0be98182061aafa0d013bcc33ac8b",
       "path": ".sdd/scripts/scope-guard-config.sh",

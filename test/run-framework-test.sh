@@ -4659,6 +4659,49 @@ else
 fi
 
 # ============================================================
+# T120 — SDD self-host parity (closes #74). When the framework
+#        repo is its own consumer, framework-shipped files in
+#        root `.sdd/` (playbooks, actions, scripts) must be
+#        byte-identical to `templates/.sdd/`. Catches drift
+#        between the template source and the framework's own
+#        dogfooded copy.
+#
+# Renamed from T118 in cycle-3 — T118 was already taken by the
+# cp-R nesting regression test that landed via PR #90. Two tests
+# sharing an ID makes failures ambiguous in the report; CR cycle-2
+# flagged the collision.
+# ============================================================
+note "T120: framework's root .sdd/ stays in sync with templates/.sdd/"
+if [ -d "$FRAMEWORK_ROOT/.sdd/playbooks" ] && [ -d "$FRAMEWORK_ROOT/.sdd/actions" ] && [ -d "$FRAMEWORK_ROOT/.sdd/scripts" ]; then
+  drift=""
+  for sub in playbooks actions scripts; do
+    while IFS= read -r tpl_file; do
+      [ -z "$tpl_file" ] && continue
+      rel="${tpl_file#$FRAMEWORK_ROOT/templates/.sdd/$sub/}"
+      root_file="$FRAMEWORK_ROOT/.sdd/$sub/$rel"
+      if [ ! -f "$root_file" ]; then
+        drift="${drift}MISSING: .sdd/$sub/$rel
+"
+        continue
+      fi
+      if ! diff -q "$tpl_file" "$root_file" >/dev/null 2>&1; then
+        drift="${drift}DIFF: .sdd/$sub/$rel
+"
+      fi
+    done < <(find "$FRAMEWORK_ROOT/templates/.sdd/$sub" -type f \( -name '*.md' -o -name '*.sh' \) 2>/dev/null)
+  done
+  if [ -z "$drift" ]; then
+    ok "T120 root .sdd/ stays in sync with templates/.sdd/ (playbooks + actions + scripts)"
+  else
+    bad "T120 framework self-host drift detected" "$drift"
+  fi
+else
+  # Self-host hasn't bootstrapped yet (fresh contributor clone before
+  # init.sh has been run) — skip cleanly so this doesn't false-fail.
+  ok "T120 root .sdd/ not bootstrapped yet — skipping (run scripts/init.sh to enable)"
+fi
+
+# ============================================================
 # T119 — post-stop-lint refuses INDEX.md with two **Active:** lines
 #        (closes #86: tier-3 stop-hook lint pass — invariant 1)
 # ============================================================

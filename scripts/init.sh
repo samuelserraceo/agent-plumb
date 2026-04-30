@@ -19,6 +19,18 @@ if [ ! -d "$TEMPLATES" ]; then
   exit 1
 fi
 
+# Self-host detection (closes #74). When the SDD framework repo is
+# itself the install target, the framework dogfoods itself: copy
+# templates/.sdd/ into root .sdd/ so /start, /next, etc. work on the
+# framework's own work-items. Existing root-level files (like
+# decisions.md from the framework's own history) are preserved by
+# copy_if_absent.
+SELF_HOST=0
+if [ "$TARGET" = "$REPO_ROOT" ] && [ -d "$TEMPLATES/.sdd" ]; then
+  SELF_HOST=1
+  echo "  (self-host mode: framework repo is its own consumer)"
+fi
+
 if [ ! -f "$TEMPLATES/.sdd/rubric.md" ]; then
   echo "ERROR: rubric not found at $TEMPLATES/.sdd/rubric.md. The SDD repo is missing its rubric." >&2
   exit 1
