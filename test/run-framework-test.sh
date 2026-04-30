@@ -5630,14 +5630,15 @@ IDX
 git add . && git commit -q -m "scaffold"
 git checkout -q -b sdd/001-on-branch
 out=$(bash .sdd/scripts/settings.sh get voice.plain_english 2>&1)
+rc=$?
 cd - >/dev/null
 rm -rf "$d"
 # If branch wins, the cascade reads the override (False).
 # If INDEX wins, the cascade reads the project default (True).
-if echo "$out" | grep -q 'voice.plain_english = False'; then
+if [ "$rc" -eq 0 ] && echo "$out" | grep -q 'voice.plain_english = False'; then
   ok "T121f /settings get followed branch-derived active to spec.md override"
 else
-  bad "T121f /settings get used INDEX.md value instead of branch's spec" "out='$out'"
+  bad "T121f /settings get failed (rc=$rc) or used INDEX.md value" "out='$out'"
 fi
 
 # ============================================================
@@ -5767,6 +5768,7 @@ exec "$real_git" "\$@"
 GITSTUB
 chmod +x fake-bin/git
 out=$(PATH="$PWD/fake-bin:$PATH" bash "$RESOLVE_ACTIVE" 2>&1)
+rc=$?
 cd - >/dev/null
 rm -rf "$d"
 if [ "$rc" -eq 0 ] && echo "$out" | python3 -c '
@@ -5912,14 +5914,15 @@ IDX
 git add . && git commit -q -m "scaffold" --no-verify
 git checkout -q -b sdd/001-collide
 out=$(bash .sdd/scripts/settings.sh get voice.plain_english 2>&1)
+rc=$?
 cd - >/dev/null || true
 rm -rf "$d"
 # Resolver returns ambiguous=true → settings.sh treats as no active
 # context → falls back to project default (True, NOT False).
-if echo "$out" | grep -q 'voice.plain_english = True' && echo "$out" | grep -q '\[project\]'; then
+if [ "$rc" -eq 0 ] && echo "$out" | grep -q 'voice.plain_english = True' && echo "$out" | grep -q '\[project\]'; then
   ok "T121l /settings honored resolver fail-closed (no legacy bypass)"
 else
-  bad "T121l /settings bypassed resolver and walked cascade against ambiguous match" "out='$out'"
+  bad "T121l /settings failed (rc=$rc) or bypassed resolver" "out='$out'"
 fi
 
 # ============================================================

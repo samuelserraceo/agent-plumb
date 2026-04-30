@@ -49,6 +49,13 @@ command -v python3 >/dev/null 2>&1 || {
 printf '%s' "$json" | python3 -c '
 import json, re, sys
 
+# Anchored SDD branch shape — must match BRANCH_SLUG_RE in
+# resolve-active.sh end-to-end, otherwise "is SDD-shaped" claims
+# would diverge from what the resolver actually accepts. Closes
+# CR cycle-16 minor: an unanchored `^sdd/[0-9]+-` would call
+# `sdd/001-foo/extra` SDD-shaped while the resolver rejects it.
+SDD_BRANCH_RE = re.compile(r"^sdd/[0-9]+-[A-Za-z0-9][A-Za-z0-9._-]*$")
+
 try:
     d = json.load(sys.stdin)
 except Exception:
@@ -72,7 +79,18 @@ elif source == "branch":
         print("        multi-worktree work. The branch wins. Switch branches to")
         print("        switch features, no manual INDEX.md edit needed.")
 elif source == "index":
-    if branch:
+    # Three sub-cases on branch:
+    #  - SDD-shaped branch but no matching folder → INDEX kicked in,
+    #    but the user is on a real SDD branch with a missing folder
+    #    (not "wrong branch naming"). Tell them the truth.
+    #  - non-SDD branch present → "not an SDD branch" is correct.
+    #  - no branch (e.g. detached HEAD) → keep it terse.
+    if branch and SDD_BRANCH_RE.match(branch):
+        print(f"Active source: INDEX.md → {active}")
+        print(f"  Note: current branch \x27{branch}\x27 is SDD-shaped, but no matching")
+        print("        work-item folder exists yet. Run /start <one-line title>")
+        print("        to scaffold it, or switch branches.")
+    elif branch:
         print(f"Active source: INDEX.md (branch \x27{branch}\x27 is not an SDD branch) → {active}")
     else:
         print(f"Active source: INDEX.md → {active}")
@@ -87,7 +105,7 @@ else:
         print("  - edit INDEX.md to point at a real folder, or")
         print("  - check out an SDD-style branch (sdd/<id>-<slug>) whose folder exists.")
     elif branch:
-        if re.match(r"^sdd/[0-9]+-", branch):
+        if SDD_BRANCH_RE.match(branch):
             print(f"Active source: NONE — current branch \x27{branch}\x27 is SDD-shaped, but")
             print("  no matching work-item folder with spec.md exists yet.")
             print("  Run /start <one-line title> to scaffold it, or switch branches.")

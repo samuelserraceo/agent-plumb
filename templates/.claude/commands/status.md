@@ -5,7 +5,14 @@ description: Print the current SDD workflow state — phase, open blockers, and 
 Show the user the current workflow state. Run these Bash commands and present the output cleanly:
 
 ```bash
-cat .sdd/INDEX.md
+# Print the catalog if INDEX.md exists; emit a deterministic
+# placeholder otherwise so a fresh project doesn't leak a "cat:
+# No such file" shell error before the banner.
+if [ -f .sdd/INDEX.md ]; then
+  cat .sdd/INDEX.md
+else
+  echo "(INDEX.md missing — run /start to scaffold the first work item)"
+fi
 echo ""
 echo "---"
 # Render the active-source banner via the shared helper (single
@@ -13,17 +20,30 @@ echo "---"
 # harness exercises the same script, so drift can't hide behind
 # copy-pasted shell here).
 bash .sdd/scripts/status-banner.sh --from-resolver
-# Re-parse the resolver output once for the spec-details section
-# below. Cheap (filesystem + git rev-parse) and keeps /status simple.
+# Resolve the spec path with a containment check. The resolver
+# already validates `active`, but defense-in-depth: re-validate
+# here so a tampered resolver can't redirect /status outside .sdd/.
+# Python computes the realpath, checks `.sdd/` containment, and
+# emits the spec path only when it passes. Empty stdout = no spec.
 resolve_json=$(bash .sdd/scripts/resolve-active.sh 2>/dev/null || echo '{}')
-active=$(echo "$resolve_json" | python3 -c '
-import json, sys
+spec=$(echo "$resolve_json" | python3 -c '
+import json, os, sys
 try: d = json.load(sys.stdin)
 except: d = {}
-print(d.get("active") or "")
+active = d.get("active") or ""
+if not active:
+    print(""); sys.exit(0)
+sdd_root = os.path.realpath(".sdd")
+candidate = os.path.realpath(os.path.join(sdd_root, active, "spec.md"))
+try:
+    inside = os.path.commonpath([sdd_root, candidate]) == sdd_root
+except ValueError:
+    inside = False
+print(candidate if inside and os.path.isfile(candidate) else "")
 ' 2>/dev/null)
-if [ -n "$active" ] && [ -f ".sdd/$active/spec.md" ]; then
-  spec=".sdd/$active/spec.md"
+if [ -n "$spec" ]; then
+  active="${spec#*/.sdd/}"
+  active="${active%/spec.md}"
   echo "Active spec: $spec"
   echo ""
   phase=$(grep -m1 -oE '\[PHASE: [A-Z]+\]' "$spec" | grep -oE '[A-Z]+' | tail -1)

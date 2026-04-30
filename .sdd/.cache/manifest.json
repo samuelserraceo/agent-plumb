@@ -89,7 +89,7 @@
       "trust": "framework"
     },
     "status-banner.sh": {
-      "expected_sha256": "b883cd20b533dbe57f8bd8914ea02a68a5b4d6224ea6d8153100fc93e823d08f",
+      "expected_sha256": "b475b61258a7b760779a58b53f0e557ec5eb739a21b25bcd3ceab4fd09305cb5",
       "path": ".sdd/scripts/status-banner.sh",
       "trust": "framework"
     }
