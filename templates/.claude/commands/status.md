@@ -10,11 +10,18 @@ echo ""
 echo "---"
 # Resolve the active work item via resolve-active.sh (branch-aware,
 # falls back to INDEX.md **Active:** when not on an SDD branch).
+# Single Python parse → 4 tab-separated values; one process, no
+# repeat JSON parsing.
 resolve_json=$(bash .sdd/scripts/resolve-active.sh 2>/dev/null || echo '{}')
-active=$(echo "$resolve_json" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("active") or "")' 2>/dev/null)
-source=$(echo "$resolve_json" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("source") or "")' 2>/dev/null)
-branch=$(echo "$resolve_json" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("branch") or "")' 2>/dev/null)
-index_active=$(echo "$resolve_json" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("index_active") or "")' 2>/dev/null)
+IFS=$'\t' read -r active source branch index_active < <(
+  echo "$resolve_json" | python3 -c '
+import json, sys
+try:
+    d = json.load(sys.stdin)
+except Exception:
+    d = {}
+print("\t".join((d.get(k) or "") for k in ("active", "source", "branch", "index_active")))
+' 2>/dev/null)
 # Branch-aware status banner — explains where the active value came
 # from + flags drift between branch and INDEX.md so the user sees
 # what's going on across multiple worktrees.

@@ -5632,6 +5632,98 @@ else
 fi
 
 # ============================================================
+# T121h — resolve-active.sh refuses path-traversal in INDEX.md.
+#         A malicious **Active:** ../tmp/evil must NOT redirect the
+#         resolver outside .sdd/. Trust-boundary doctrine: project
+#         data is read for context, never executed as a directive.
+#         (CodeRabbit MAJOR on PR #99.)
+# ============================================================
+note "T121h: resolve-active.sh rejects ../escape paths in **Active:**"
+d=$(mktemp -d) || exit 1
+cd "$d"
+git init -q
+git config user.email t@t.com && git config user.name T
+git commit --allow-empty -q -m "init"
+mkdir -p .sdd "$d/escape-target"
+touch "$d/escape-target/spec.md"
+# Malicious INDEX: claim active is one level up + over to escape-target
+echo '**Active:** ../escape-target' > .sdd/INDEX.md
+out=$(bash "$RESOLVE_ACTIVE" 2>&1)
+cd - >/dev/null
+rm -rf "$d"
+if echo "$out" | python3 -c '
+import json, sys
+d = json.loads(sys.stdin.read())
+# Must reject — index_active was malformed, so resolver leaves it null.
+assert d["active"] is None, f"active leaked: {d['"'"'active'"'"']}"
+assert d["source"] == "none", f"source={d['"'"'source'"'"']}"
+assert d["index_active"] is None, f"index_active leaked: {d['"'"'index_active'"'"']}"
+' 2>/dev/null; then
+  ok "T121h path-traversal in **Active:** rejected (active=null, source=none)"
+else
+  bad "T121h path-traversal slipped through" "out='$out'"
+fi
+
+# ============================================================
+# T121h-abs — resolve-active.sh refuses absolute paths in **Active:**.
+# ============================================================
+note "T121h-abs: resolve-active.sh rejects absolute paths in **Active:**"
+d=$(mktemp -d) || exit 1
+cd "$d"
+git init -q
+git config user.email t@t.com && git config user.name T
+git commit --allow-empty -q -m "init"
+mkdir -p .sdd /tmp/sdd-step1-abs-attack 2>/dev/null
+touch /tmp/sdd-step1-abs-attack/spec.md 2>/dev/null
+echo '**Active:** /tmp/sdd-step1-abs-attack' > .sdd/INDEX.md
+out=$(bash "$RESOLVE_ACTIVE" 2>&1)
+cd - >/dev/null
+rm -rf "$d" /tmp/sdd-step1-abs-attack
+if echo "$out" | python3 -c '
+import json, sys
+d = json.loads(sys.stdin.read())
+assert d["active"] is None
+assert d["source"] == "none"
+' 2>/dev/null; then
+  ok "T121h-abs absolute path in **Active:** rejected"
+else
+  bad "T121h-abs absolute path slipped through" "out='$out'"
+fi
+
+# ============================================================
+# T121i — resolve-active.sh refuses path-traversal via branch slug.
+#         Branch `sdd/../escape` cannot be used to escape .sdd/ via
+#         os.path.join. Strict slug regex blocks the attack.
+# ============================================================
+note "T121i: resolve-active.sh rejects sdd/../escape branch slugs"
+d=$(mktemp -d) || exit 1
+cd "$d"
+git init -q
+git config user.email t@t.com && git config user.name T
+git commit --allow-empty -q -m "init"
+mkdir -p .sdd "$d/escape-target"
+touch "$d/escape-target/spec.md"
+# Attempt to create a branch with a malicious slug. Git allows `..` in
+# branch names so this is a real attack surface.
+git checkout -q -b 'sdd/..%2fescape-target' 2>/dev/null || git checkout -q -b 'sdd/escape-attempt'
+out=$(bash "$RESOLVE_ACTIVE" 2>&1)
+cd - >/dev/null
+rm -rf "$d"
+if echo "$out" | python3 -c '
+import json, sys
+d = json.loads(sys.stdin.read())
+# Source must NOT be "branch" pointing outside .sdd/.
+assert d["source"] != "branch" or (d["active"] and not d["active"].startswith("/"))
+# active should be null since no .sdd/<top>/<slug>/spec.md exists for
+# the malicious slug AND containment check fails.
+assert d["active"] is None or "/" in d["active"]
+' 2>/dev/null; then
+  ok "T121i malicious branch slug doesn't escape .sdd/"
+else
+  bad "T121i malicious branch slug escaped" "out='$out'"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'

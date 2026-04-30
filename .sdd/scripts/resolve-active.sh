@@ -49,6 +49,31 @@ PROJECT_DIR="$PROJECT_DIR" python3 <<'PYEOF'
 import json, os, re, subprocess, sys
 
 proj = os.environ["PROJECT_DIR"]
+sdd_root_real = os.path.realpath(os.path.join(proj, ".sdd"))
+
+# Shape of a legitimate work-item path RELATIVE to .sdd/ —
+# `<lowercase-folder>/<slug>` with no parent-up segments, no leading
+# slash, no embedded `..`. Same shape post-stop-lint invariant 2 uses
+# for `## In flight` row validation. We trust this shape; everything
+# else gets rejected before `os.path.join` ever runs.
+WORK_ITEM_PATH_RE = re.compile(r"^[a-z][a-z0-9_-]*/[a-zA-Z0-9][a-zA-Z0-9._-]*$")
+# Shape of the slug after the `sdd/` prefix in a branch name. Must
+# match a legitimate folder-name component of the path above so a
+# malicious branch like `sdd/../etc` can't escape `.sdd/`.
+BRANCH_SLUG_RE = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9._-]*$")
+
+def is_inside_sdd(rel_path):
+    """True iff joining `rel_path` to .sdd/ lands inside .sdd/ on the
+    real filesystem. Guards against `..`, absolute paths, and symlink
+    escapes — anyone can put text in INDEX.md, so we check before
+    we trust the path. Trust-boundary doctrine: project data never
+    becomes a directive."""
+    full_real = os.path.realpath(os.path.join(sdd_root_real, rel_path))
+    try:
+        common = os.path.commonpath([sdd_root_real, full_real])
+    except ValueError:
+        return False  # different drives on Windows etc.
+    return common == sdd_root_real and full_real != sdd_root_real
 
 def emit(active, source, branch, index_active):
     out = {
@@ -75,7 +100,13 @@ try:
 except (subprocess.TimeoutExpired, OSError, FileNotFoundError):
     pass
 
-# 2. Read INDEX.md's **Active:** pointer.
+# 2. Read INDEX.md's **Active:** pointer. The raw value is project
+# data (anyone can write it), so we shape-check + containment-check
+# before trusting it. Reject anything that's:
+#   - absolute (/etc/passwd)
+#   - path-traversal (../../tmp/evil)
+#   - non-canonical (Foo/Bar — mixed case in folder segment)
+#   - malformed in any way that doesn't match WORK_ITEM_PATH_RE
 index_active = None
 index_path = os.path.join(proj, ".sdd", "INDEX.md")
 if os.path.isfile(index_path):
@@ -90,29 +121,32 @@ if os.path.isfile(index_path):
         # Skip placeholders: "_(none)_", "_none_", "(none)" — anything
         # that's parens / underscores / "none" with no real path.
         is_placeholder = bool(re.match(r"^[_()\s]*none[_()\s]*$", raw, re.IGNORECASE))
-        if raw and not is_placeholder and "/" in raw:
+        if (raw and not is_placeholder
+                and WORK_ITEM_PATH_RE.match(raw)
+                and is_inside_sdd(raw)):
             index_active = raw
 
 # 3. Branch-derived active. Branch shape `sdd/<slug>` maps to a folder
 # `<work-item-folder>/<slug>/` under .sdd/. Scan all top-level subdirs
 # of .sdd/ for one matching `<slug>` with a spec.md inside.
+# Slug validated against BRANCH_SLUG_RE so `sdd/../escape` can't be
+# used to escape .sdd/ via os.path.join.
 branch_active = None
 if branch:
     m = re.match(r"^sdd/(.+)$", branch)
     if m:
         slug = m.group(1)
-        sdd_root = os.path.join(proj, ".sdd")
-        if os.path.isdir(sdd_root):
+        if BRANCH_SLUG_RE.match(slug) and os.path.isdir(sdd_root_real):
             try:
-                tops = sorted(os.listdir(sdd_root))
+                tops = sorted(os.listdir(sdd_root_real))
             except OSError:
                 tops = []
             for top in tops:
                 if top.startswith(".") or top.startswith("_"):
                     continue
-                candidate_dir = os.path.join(sdd_root, top, slug)
+                candidate_dir = os.path.join(sdd_root_real, top, slug)
                 spec_md = os.path.join(candidate_dir, "spec.md")
-                if os.path.isfile(spec_md):
+                if os.path.isfile(spec_md) and is_inside_sdd(f"{top}/{slug}"):
                     branch_active = f"{top}/{slug}"
                     break  # first match wins (deterministic by sort order)
 
@@ -120,9 +154,13 @@ if branch:
 if branch_active:
     emit(branch_active, "branch", branch, index_active)
 elif index_active:
-    # Validate that the INDEX pointer actually exists on disk.
-    full = os.path.join(proj, ".sdd", index_active)
-    if os.path.isdir(full):
+    # Validate that the INDEX pointer actually exists on disk AND has
+    # a spec.md inside. We already shape-checked + containment-checked
+    # above, but a non-folder path or a folder without spec.md is
+    # still treated as a broken pointer.
+    full = os.path.realpath(os.path.join(sdd_root_real, index_active))
+    spec_md = os.path.join(full, "spec.md")
+    if os.path.isdir(full) and os.path.isfile(spec_md):
         emit(index_active, "index", branch, index_active)
     else:
         # Pointer is broken — surface as none, but keep index_active
