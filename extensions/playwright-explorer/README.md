@@ -140,7 +140,7 @@ cd extensions/playwright-explorer
 python3 -m unittest discover tests/
 ```
 
-67 tests cover: driver contracts (mock + real construction + error paths), the explore loop (8-category sweep, all 3 budget halts, AC4 finding shape, AC coverage heuristic, the add/drop/later triage), and the MCP server's protocol + dispatch.
+68 tests cover: driver contracts (mock + real construction + error paths, including the SSRF defence on unsafe URL schemes), the explore loop (8-category sweep, all 3 budget halts, AC4 finding shape, AC coverage heuristic, the add/drop/later triage), and the MCP server's protocol + dispatch.
 
 ## Disable
 

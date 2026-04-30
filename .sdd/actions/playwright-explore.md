@@ -68,7 +68,7 @@ The user walks each finding `add` / `drop` / `later` — the same shape `edge-ca
 
 ### `add` (the default for uncovered findings)
 
-This is a real edge case the spec missed. The agent does three things in order, mirroring `adversarial-review`'s `fix now` flow:
+This is a real edge case the spec missed. The agent does four things in order, mirroring `adversarial-review`'s `fix now` flow:
 
 1. Appends the proposed AC to §11 of `spec.md` (verbatim from the finding's `proposed_ac` text, with `AC<n>` resolved to the next free number).
 2. Appends a `[BUG]` task to `plan-decompose` quoting the finding's `repro_steps` so the BUILD task has a deterministic acceptance criterion.

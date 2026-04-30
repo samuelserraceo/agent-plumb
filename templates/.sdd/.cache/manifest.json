@@ -241,7 +241,7 @@
       "trust": "framework"
     },
     "playwright-explore": {
-      "expected_sha256": "4b9b1dbe5630a841161955c5f42eeb2f27cf9686f169987213c58eea3dead258",
+      "expected_sha256": "0da8716f3f5b80679886a3a4fee2bcfc69c0eaf7e95459a97e359d46800389e5",
       "path": ".sdd/actions/playwright-explore.md",
       "trust": "framework"
     }
