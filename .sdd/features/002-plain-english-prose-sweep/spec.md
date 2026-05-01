@@ -82,7 +82,20 @@ Approval row left [ ] — same flow as §5; Sam ticks at approval-pass time.
 
 ### action: flows
 
-- [ ] flows: draft 1-3 critical flows, each referencing the user story it implements
+- [x] flows: One critical flow.
+
+  **Flow A — Agent encounters a USER-LED action mid-session.** (Implements all 3 stories.)
+
+  ```text
+  1. Agent runs next-action.sh → returns next [ ] step + the action file path
+  2. Agent reads templates/.sdd/actions/<slug>.md
+  3. Agent's first paragraph (≤2 sentences, ≤200 chars) sets the tone
+  4. Agent finds the **What it looks like:** block — concrete plain-English example
+  5. Agent drafts its user-facing turn mirroring the example block, NOT the technical prose around it
+  6. User answers in 30 seconds (Story 2 + 3) → agent fills spec.md → commit
+  ```
+
+  No other flows — this feature has no UI, no async work, no external integrations. The lint runs in CI and either passes (silent) or fails (one error message per violating file).
 
 ### action: dependencies
 
