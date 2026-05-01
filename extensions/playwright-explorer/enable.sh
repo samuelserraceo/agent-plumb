@@ -4,7 +4,8 @@
 # Idempotent — safe to re-run. Asks before overwriting any existing config.
 # Status: v1.0 (full agentic logic). The MCP server registers and the
 # `explore` tool runs the cost-bounded agentic exploration loop. Findings
-# emit `[[ac:slug]]` cross-refs that the framework's graph cache picks up.
+# emit ac:<slug> wiki-link cross-refs into spec.md so the framework's
+# graph cache picks them up.
 
 set -euo pipefail
 

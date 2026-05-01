@@ -6441,6 +6441,60 @@ else
 fi
 
 # ============================================================
+# T135b — moat refuses commit when ONLY a manifest-tracked framework file
+#   is DELETED (no spec.md / verification.json / manifest.json staged).
+#   CR cycle-1 finding on PR #106: the original Phase B fix used an
+#   ACM-filtered staged-files pull, missing deletions. Now ACMD-filtered
+#   for the framework-files check, so deleting .sdd/playbooks/feature.md
+#   in isolation fires the manifest-pin "missing on disk" error.
+# ============================================================
+note "T135b: moat blocks isolated framework-file deletion (CR cycle-1, PR #106)"
+d=$(mkproj_v08)
+cd "$d" || { bad "T135b cannot cd" "d=$d"; rm -rf "$d"; }
+git init -q
+git config user.email t@t.com && git config user.name T
+git add -A 2>/dev/null
+git commit -q -m "init" 2>/dev/null
+# Stage a deletion of a manifest-tracked playbook.
+git rm -q .sdd/playbooks/feature.md 2>/dev/null
+hook_out=$(echo '{"tool_name":"Bash","tool_input":{"command":"git commit -m fake"}}' \
+  | CLAUDE_PROJECT_DIR="$d" bash .claude/hooks/pre-commit-stage-verified.sh 2>&1) && hook_ec=0 || hook_ec=$?
+cd - >/dev/null || true
+rm -rf "$d"
+if [ "$hook_ec" -eq 2 ] && echo "$hook_out" | grep -qiE 'missing on disk|framework files have changed'; then
+  ok "T135b moat refused framework-file deletion (exit 2)"
+else
+  bad "T135b moat let framework deletion through" "ec=$hook_ec; out=${hook_out:0:300}"
+fi
+
+# ============================================================
+# T135c — moat refuses commit when ONLY a manifest-tracked framework file
+#   is RENAMED (moved out of its expected path). CR cycle-2 finding on
+#   PR #106: ACMD-filtered detection missed renames; staged_status now
+#   uses --name-status with ACMRDT and checks BOTH old + new paths
+#   against the manifest's tracked set, so moving a tracked file fires
+#   the gate (manifest-pin "missing on disk" surfaces afterwards).
+# ============================================================
+note "T135c: moat blocks isolated framework-file rename (CR cycle-2, PR #106)"
+d=$(mkproj_v08)
+cd "$d" || { bad "T135c cannot cd" "d=$d"; rm -rf "$d"; }
+git init -q
+git config user.email t@t.com && git config user.name T
+git add -A 2>/dev/null
+git commit -q -m "init" 2>/dev/null
+# Stage a rename of a manifest-tracked playbook to a sibling path.
+git mv .sdd/playbooks/feature.md .sdd/playbooks/feature-renamed.md 2>/dev/null
+hook_out=$(echo '{"tool_name":"Bash","tool_input":{"command":"git commit -m fake"}}' \
+  | CLAUDE_PROJECT_DIR="$d" bash .claude/hooks/pre-commit-stage-verified.sh 2>&1) && hook_ec=0 || hook_ec=$?
+cd - >/dev/null || true
+rm -rf "$d"
+if [ "$hook_ec" -eq 2 ] && echo "$hook_out" | grep -qiE 'missing on disk|framework files have changed'; then
+  ok "T135c moat refused framework-file rename (exit 2)"
+else
+  bad "T135c moat let framework rename through" "ec=$hook_ec; out=${hook_out:0:300}"
+fi
+
+# ============================================================
 # T136 — invariant 8 warns when wiki-links exist in user content but the
 #   MCP server queries are missing. Closes Phase B finding: the hook
 #   used to silently `return 0` when the MCP server wasn't present, so

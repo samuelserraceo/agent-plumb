@@ -84,7 +84,7 @@
       "trust": "framework"
     },
     "post-stop-lint.sh": {
-      "expected_sha256": "100ab1cf3395fc45b285859dd55660ec3c43579468b0dfcbfd278ca17cba70fb",
+      "expected_sha256": "f625fafecd82cd8615718a28e5163b505c4d1714626f46cdbfaf2b359adbac29",
       "path": ".claude/hooks/post-stop-lint.sh",
       "trust": "framework"
     },
