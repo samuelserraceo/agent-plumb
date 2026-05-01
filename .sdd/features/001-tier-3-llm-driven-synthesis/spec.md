@@ -2,7 +2,7 @@
 
 [PHASE: SPEC]
 
-**Active blocker:** §8 (dependencies)
+**Active blocker:** §9 (out-of-scope — AGENT-LED, requires user approval)
 
 ## PHASE: SPEC
 
@@ -193,7 +193,34 @@ USD cost guidance lives in §5 §6 informational block, NOT here — the framewo
 
 ### action: dependencies
 
-- [ ] deps: draft external services + pricing math scaled to success-volume targets
+- [x] deps: ONE new thing you set up — a chat AI of your choice (your laptop, OpenAI, Anthropic, etc.); zero new tools the framework needs; everything else Tier 3 reads is already shipped in v1.0
+
+**ONE new thing you set up.** Tier 3 needs a chat AI it can ask questions. You pick where it runs:
+
+- *On your laptop* using Ollama. Operates at $0.
+- *In your account* at OpenAI, Anthropic, or any compatible chat provider. Paid by usage, roughly $0.02–0.03 per week scaled to ~20 questions/week. (Numbers from §5 — guidance, not enforced.)
+
+You configure it once in `config.md` — the framework reads where the AI lives, what model to use, and how big a question to send. Same shape as the v1.0 semantic search setup: if you've done that, this feels familiar.
+
+**Zero new tools the framework needs.** SDD still runs on its same five tools (bash, Python, a YAML reader, git, the GitHub CLI). The small connector for your chosen AI provider — for example, the `openai` library if you pick OpenAI — is something **you** install when you pick the provider. Exactly like v1.0's optional semantic search.
+
+**What Tier 3 borrows from v1.0 — no rebuilds, no schema changes:**
+
+- Your `[[…]]` links between specs, patterns, decisions, and data-model entries — these are the structure Tier 3 navigates.
+- The graph cache — the file the framework already keeps to make those links fast to look up.
+- The corpus fingerprint — what v1.0 uses to know when something in your `.sdd/` folder changed. Tier 3 uses the same fingerprint to know when a cached answer is stale.
+- *Optional* — if you turned on v1.0's semantic search, Tier 3 uses it to widen the pool of relevant chunks. If you didn't, Tier 3 still works using just the `[[…]]` links.
+
+All four already ship and have their own tests. Tier 3 doesn't rewrite or change any of them.
+
+**How we'll prove this works (plain-English verification paths):**
+
+- A test that confirms Tier 3 reads your config correctly when you've turned it on.
+- A test that confirms Tier 3 returns a clear *"Tier 3 not enabled"* message — instead of crashing — if you haven't turned it on yet.
+- A test that confirms the cite-check (the bit that catches invented `[[…]]` references) uses the live v1.0 graph and not a hidden copy.
+- The token-cap tests already named in §7 Flow 1 cover the cost-cap claims — same tests, no duplication.
+
+**Cost reminder, restated for clarity.** The framework counts the calls you make and the tokens you send. It does NOT calculate dollar amounts — that would need a per-provider pricing table the framework doesn't have, and prices change. The dollar numbers in §5 are guidance for picking a provider, not framework SLAs.
 
 ### action: out-of-scope
 
