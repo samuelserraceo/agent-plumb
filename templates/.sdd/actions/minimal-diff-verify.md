@@ -19,13 +19,39 @@ requires_user_approval: false
 
 Mechanical check at the end of SPEC: did we actually shrink the codebase, or did we accidentally grow it?
 
-**Run this command** in the project root:
+**Run this command** in the project root. Detect the base branch first — `main` is the most common but some projects use `master`, `develop`, or a release-line branch — and HALT if neither the base ref nor the merge-base resolves (silent failure here would defeat the safety gate by reporting an empty diff):
 
 ```bash
-git diff --shortstat $(git merge-base HEAD origin/main)...HEAD -- '*.py' '*.sh' '*.ts' '*.tsx' '*.js' '*.jsx' '*.go' '*.rb' '*.rs' 2>/dev/null
+# 1. Detect the base branch. Most teams use main; some still use master.
+base="$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null \
+        | sed 's@^refs/remotes/origin/@@')"
+if [ -z "$base" ]; then
+  for candidate in main master develop trunk; do
+    if git rev-parse --verify --quiet "origin/$candidate" >/dev/null; then
+      base="$candidate"; break
+    fi
+  done
+fi
+if [ -z "$base" ]; then
+  echo "ERROR: cannot detect base branch (no origin/HEAD, no main/master/develop/trunk)." >&2
+  echo "       Set it explicitly: git remote set-head origin <branch>" >&2
+  exit 1
+fi
+
+# 2. Compute the merge-base. If this fails, HALT — don't advance with no signal.
+mb="$(git merge-base HEAD "origin/$base")" || {
+  echo "ERROR: cannot compute merge-base against origin/$base." >&2
+  echo "       Branch may not be tracking the right base, or origin/$base may be missing." >&2
+  exit 1
+}
+
+# 3. Run the shortstat with the language globs you care about.
+git diff --shortstat "$mb...HEAD" -- '*.py' '*.sh' '*.ts' '*.tsx' '*.js' '*.jsx' '*.go' '*.rb' '*.rs'
 ```
 
 (Adjust the file globs to match the project's primary language. The default list above is broad; if your refactor only touches `.sh`, narrow accordingly.)
+
+**If the command exits non-zero:** stop and surface the error to the user. Don't paste an empty `### §4.delta` and advance — that would silently disable the gate, which is exactly the load-bearing safety this section provides.
 
 **Expected output shape:**
 

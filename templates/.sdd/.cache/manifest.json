@@ -298,7 +298,7 @@
     "minimal-diff-verify": {
       "path": ".sdd/actions/minimal-diff-verify.md",
       "trust": "framework",
-      "expected_sha256": "e6cf5f86302625711931405be829e3d74d582824e4d3e4b08cbff5d10c7700ee"
+      "expected_sha256": "8d3f364bce5751e61d47ac2943becc889e8608050611dc7f260cb9e0b563ffcb"
     }
   }
 }
