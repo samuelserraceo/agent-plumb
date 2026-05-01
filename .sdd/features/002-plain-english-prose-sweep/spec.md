@@ -42,6 +42,34 @@ Source: GitHub [#110](https://github.com/samuelserraceo/spec-driven-dev-workflow
 
 - [ ] approval: draft the approach with 2 alternatives and tradeoffs, iterate with the user, get approval
 
+**Approach: Audit + sweep + mechanical lint, two passes.**
+
+**Pass 1 — content sweep (manual, BUILD task).**
+For every file in `templates/.sdd/actions/*.md` whose frontmatter has `tag: USER-LED` or `tag: AGENT-LED`:
+
+1. Read the body. Identify the *first* user-facing sentence the agent would mirror.
+2. If it leads with technical framing ("infer the UX direction from problem, success, and user stories"), rewrite to lead with plain-English first ("What does this need to look and feel like to the person using it? Read what we already know about the problem and the user, then propose a direction.").
+3. Add a `**What it looks like:**` block with a concrete plain-English example of how the agent should phrase its question to the user. Keep technical phrasing as a *secondary* label if useful, never as the primary.
+
+**Pass 2 — mechanical lint (BUILD task).**
+New script `.sdd/scripts/lint-action-prose.sh` that scans every `templates/.sdd/actions/*.md`. For files where the frontmatter `tag:` is `USER-LED` or `AGENT-LED`:
+
+- **Check 1:** body contains a literal `**What it looks like:**` heading (ASCII heuristic, deterministic — no jargon denylists).
+- **Check 2:** body's first non-frontmatter paragraph is ≤2 sentences AND ≤200 characters total. (The opening line is what shapes the agent's draft; long technical preambles are the failure mode we're catching.)
+
+The script exits non-zero with a plain-English error naming each violating file + which check failed. Hook into `test/run-framework-test.sh` as a new T-numbered gate; CI then catches future drift on every PR.
+
+**Pass 3 — wire CLAUDE.md doctrine update.**
+Add a one-line rule under "Code-quality doctrine" pointing at the lint: *"Action prose ships plain-English-first. Verified by `lint-action-prose.sh` on every PR."*
+
+**Approach: 2 alternatives considered + rejected.**
+
+- **Alternative B — Heuristic jargon denylist.** Instead of asserting `**What it looks like:**` exists, the lint scans for a denylist of jargon tokens (`infer`, `derive`, `compute`, etc.) and warns if any appear in the *first* paragraph. Rejected: every denylist either has false positives ("derive a name" is fine) or false negatives (jargon-loaded technical writing using only Anglo-Saxon roots). Foundation 3 ("never assume, always check") prefers a *positive* assertion (the file ships the example block) over a *negative* heuristic (no jargon detected).
+
+- **Alternative C — Structured frontmatter `plain_english_question:`.** Each action file's frontmatter gains a new field that the agent reads INSTEAD of the technical `prompt:`. The technical `prompt:` becomes implementation-internal. Rejected: doubles the maintenance surface (every action edit now updates both fields), forces a schema migration across 22 existing action files in one shot, and the existing `prompt:` is ALREADY in the user-shown chat — making it redundant. Foundation 1 (simplicity) prefers fixing the existing prose to *be* plain English over adding parallel fields.
+
+**Pattern reused:** [[pattern:never-assume-always-check]] — the lint enforces a *positive* deterministic check, not a heuristic guess.
+
 ### action: data-contract
 
 - [ ] approval: draft the data contract, iterate with the user, sync data-model.md, get approval
