@@ -169,9 +169,9 @@ Approval row left [ ] — same flow as §5; Sam ticks at approval-pass time.
   2. **Live ceremony test.** Start a throwaway feature: `bash .sdd/scripts/start.sh "throwaway test feature"`. Walk one USER-LED action via `/next` (problem step is a good first one). Confirm the agent's draft mirrors plain-English voice, NOT the technical wording it would have used pre-sweep.
   3. **Lint negative-fixture sanity.** Manually edit one swept action file to remove its `**What it looks like:**` block. Run `bash .sdd/scripts/lint-action-prose.sh`. Confirm it exits non-zero with a clear plain-English error naming the file. Restore the file before commit.
 
-### action: wireframe
+### action: wireframe [SKIPPED]
 
-- [ ] wireframe: draft wireframe.html — one screen per user story
+- ⏭ skipped — non-UI feature. Same reason as §4 ux-brief skip. The wireframe action redesign tracked in #112 will eventually require non-UI features to ship a flow/architecture diagram instead of a UI mockup; v1.2 work-item that lands AFTER #112 ships will adopt that. For now, the SPEC text + §7 flow diagram covers the visualisation need.
 
 ### action: plan-decompose
 
