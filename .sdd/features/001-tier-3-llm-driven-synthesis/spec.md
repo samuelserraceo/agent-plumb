@@ -503,7 +503,7 @@ All §4 constraints have a mapped AC. Plan-decompose coverage check passes pre-e
 - [x] T16 GREEN: literal-token warning fires on common patterns (AC11) → `extensions/sdd-mcp-server/tests/test_synthesise_literal_warning.py`
 
 **Failure modes:**
-- [ ] T17 RED: four failure cases produce clean errors (AC12) → `extensions/sdd-mcp-server/tests/test_synthesise_failure_modes.py`
+- [x] T17 GREEN: four failure cases produce clean errors (AC12) → `extensions/sdd-mcp-server/tests/test_synthesise_failure_modes.py`
 
 **Length cap + injection:**
 - [ ] T18 RED: ≤1024 bytes; longer trimmed at boundary with "want me to expand?" (AC13) → `extensions/sdd-mcp-server/tests/test_synthesise_length_cap.py`
