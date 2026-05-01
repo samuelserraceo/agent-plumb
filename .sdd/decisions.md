@@ -134,3 +134,8 @@ Patching the AC#11 re-approval row + theatre re-check count to reflect the sweep
 
 Hash: ac5848a852dc814d3c8f313722c15ff821753a86821d1e2e36fa0433d92b303a
 Reason: prose count drift after §15 sweep — fixing for audit-trail honesty.
+
+## 2026-05-01T17:55:38Z  [[001-tier-3-llm-driven-synthesis]]  feature/phase-advance SPEC → BUILD
+
+SPEC complete. 23 acceptance criteria · 30 tasks (28 BUILD + 2 PROD-ONLY). All 5 requires_user_approval sections approved with refreshed hashes (proposed-approach · data-contract · out-of-scope · acceptance-criteria · edge-case-sweep). Both SPEC exit checks pass — ≥1 AC and ≥1 task. Run mode: full autonomous (Sam's stated preference, recorded under ## PHASE: BUILD). Active blocker advances to T1 (scaffold synthesise.py stub).
+

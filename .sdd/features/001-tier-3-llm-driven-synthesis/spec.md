@@ -1,8 +1,10 @@
 # Tier 3 LLM-driven synthesis
 
-[PHASE: SPEC]
+[PHASE: BUILD]
 
-**Active blocker:** SPEC complete · ready for SPEC→BUILD transition (run-mode-chosen.md asks Sam to confirm full-autonomous before BUILD starts; defaulted from §14)
+**Run mode:** full autonomous (Sam confirmed 2026-05-01 — saved in `feedback_full_autonomous_build.md`). Halt-triggers per CLAUDE.md: test stays RED after 3 attempts · pre-commit blocked · real design gap surfaces in §5/§6 · credential/infra step needs Sam.
+
+**Active blocker:** T1 — scaffold `synthesise.py` stub returning `{ok:false, reason:"not implemented"}`
 
 ## PHASE: SPEC
 
@@ -465,5 +467,71 @@ All §4 constraints have a mapped AC. Plan-decompose coverage check passes pre-e
 **Categories swept:** empty / max-state / bad-input / network / concurrency / authorisation / mobile / time-based / cost / resource / LLM-specific / setup-state / compatibility. Most produced nothing real for Tier 3 (e.g. mobile-specific is N/A — no UI; authorisation is N/A — local-only). Drops not padded.
 
 ### Exit checks
-- [ ] C-spec-acs: ≥1 acceptance criterion exists in §11
-- [ ] C-spec-tasks: ≥1 task in plan-decompose section
+- [x] C-spec-acs: ≥1 acceptance criterion exists in §11 — verified 23 ACs across Groups 1-11.5
+- [x] C-spec-tasks: ≥1 task in plan-decompose section — verified 30 tasks T1-T30 (28 BUILD + 2 PROD-ONLY)
+
+## PHASE: BUILD
+
+### Build tasks (30 total — 28 BUILD + 2 PROD-ONLY · run mode: full autonomous)
+
+**Foundation:**
+- [ ] T1 RED: scaffold `synthesise.py` stub + register in MCP REGISTRY → `extensions/sdd-mcp-server/tests/test_synthesise_scaffold.py`
+- [ ] T2 RED: `parameters.mcp.tier3` schema in `templates/.sdd/config.md` → `extensions/sdd-mcp-server/tests/test_tier3_config_schema.py`
+- [ ] T3 RED: confirm `data-model.md` Tier3Config + SynthesisCache entries → `extensions/sdd-mcp-server/tests/test_data_model_tier3_entries.py`
+- [ ] T4 RED: brick 007 extension scaffolded with placeholder Tier 3 sub-questions → `extensions/sdd-mcp-server/tests/test_brick_007_tier3_scaffold.py`
+
+**Honesty floor (load-bearing):**
+- [ ] T5 RED: clean answer flow — synthesise() with valid config returns answer with all `[[…]]` resolving (AC1) → `extensions/sdd-mcp-server/tests/test_synthesise_clean_answer.py`
+- [ ] T6 RED: cite-check rejects invented `[[fake-slug]]` and falls back to raw chunks (AC2) → `extensions/sdd-mcp-server/tests/test_synthesise_citecheck_reject.py`
+- [ ] T7 RED: rejected answer NOT cached (AC3) → `extensions/sdd-mcp-server/tests/test_synthesise_no_cache_on_reject.py`
+
+**Cache mechanics:**
+- [ ] T8 RED: cache miss → write → hit returns identical answer without firing AI; <50ms (AC4) → `extensions/sdd-mcp-server/tests/test_synthesise_cache_hit.py`
+- [ ] T9 RED: corpus-signature flip on cited file edit invalidates cache (AC5) → `extensions/sdd-mcp-server/tests/test_synthesise_cache_invalidate.py`
+
+**Caps:**
+- [ ] T10 RED: three call/token caps refuse past threshold (AC6) → `extensions/sdd-mcp-server/tests/test_synthesise_caps.py`
+
+**Renderers:**
+- [ ] T11 RED: structured format returns valid JSON shape (AC7 part 1) → `extensions/sdd-mcp-server/tests/test_synthesise_structured_shape.py`
+- [ ] T12 RED: prose format renders inline `[[…]]` cites; structured + prose match cite_chunks (AC7) → `extensions/sdd-mcp-server/tests/test_synthesise_renderer_parity.py`
+
+**Setup + disabled:**
+- [ ] T13 RED: synthesise() reads provider/endpoint/model from config (AC8) → `extensions/sdd-mcp-server/tests/test_synthesise_config_load.py`
+- [ ] T14 RED: `enabled: false` returns clean error (AC9) → `extensions/sdd-mcp-server/tests/test_synthesise_disabled.py`
+- [ ] T15 RED: `${ENV_VAR}` indirection in `auth_header` resolves (AC10) → `extensions/sdd-mcp-server/tests/test_synthesise_envvar.py`
+- [ ] T16 RED: literal-token warning fires on common patterns (AC11) → `extensions/sdd-mcp-server/tests/test_synthesise_literal_warning.py`
+
+**Failure modes:**
+- [ ] T17 RED: four failure cases produce clean errors (AC12) → `extensions/sdd-mcp-server/tests/test_synthesise_failure_modes.py`
+
+**Length cap + injection:**
+- [ ] T18 RED: ≤1024 bytes; longer trimmed at boundary with "want me to expand?" (AC13) → `extensions/sdd-mcp-server/tests/test_synthesise_length_cap.py`
+- [ ] T19 RED: prompt-injection floor: cite-check pass OR fallback (AC14) → `extensions/sdd-mcp-server/tests/test_synthesise_injection.py`
+
+**Best-effort:**
+- [ ] T20 RED: ambiguity surfaced — 5 representative test cases (AC15) → `extensions/sdd-mcp-server/tests/test_synthesise_ambiguity.py`
+- [ ] T21 RED: empty corpus — 5 representative test cases (AC16) → `extensions/sdd-mcp-server/tests/test_synthesise_empty_corpus.py`
+
+**Observability:**
+- [ ] T22 RED: counters report correctly (AC17) → `extensions/sdd-mcp-server/tests/test_synthesise_observability.py`
+
+**Wizard E2E:**
+- [ ] T23 RED: brick 007 Tier 3 sub-questions filled; non-interactive E2E (AC20) → `test/run-framework-test.sh::T138-tier3-wizard`
+
+**Live integration:**
+- [ ] T24 RED: live Ollama+Gemma integration → `extensions/sdd-mcp-server/tests/test_synthesise_ollama_live.py`
+- [ ] T25 RED: `/ask` slash command body wraps synthesise() with format="prose" → `test/run-framework-test.sh::T139-ask-slash`
+
+**§15 sweep additions:**
+- [ ] T28 RED: cache eviction policy LRU at 1000 entries (AC21) → `extensions/sdd-mcp-server/tests/test_synthesise_cache_eviction.py`
+- [ ] T29 RED: question validation (AC22) → `extensions/sdd-mcp-server/tests/test_synthesise_question_validation.py`
+- [ ] T30 RED: slug sanitisation (AC23) → `extensions/sdd-mcp-server/tests/test_synthesise_slug_validation.py`
+
+**PROD-ONLY (deferred to first prod walk):**
+- [ ] T26 [PROD-ONLY]: real-provider naturalness check (AC18) → manual smoke per §12
+- [ ] T27 [PROD-ONLY]: real-provider rate-limit shape (AC19) → manual smoke per §12
+
+### Exit checks (BUILD)
+
+- [ ] C-build-tasks-green: every BUILD task is GREEN (test passing, code committed)
