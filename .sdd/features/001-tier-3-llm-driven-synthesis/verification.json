@@ -2,9 +2,9 @@
   "playbook": "feature",
   "phase": "SPEC",
   "approved_sections": {
-    "proposed-approach": "b183047ce7bfa28e134bfc35f81efc30712a8aa5142b8dd2303de28a59d8b705",
-    "data-contract": "876b2c0739f8c1d268db95c165c9f61813795008094392206812e40b69ef06b8",
+    "proposed-approach": "838708dd6d79cb9274aeabe4bb7ce4a07828e71f8ca92769ebc15f0ef54341fb",
+    "data-contract": "71b8144aedad168e51e015adcd21d9bb311283db72e92f21235b664a510d140c",
     "out-of-scope": "1904d0cf44b19a75aab3085f4f59d2a25782295f540ae4a19b754a8dce3b9114",
-    "acceptance-criteria": "42367fee42e68abcb8c8385142be2de7b3a361ba77aa148529fbc93022072c17"
+    "acceptance-criteria": "bead2b07ddff2739bbd457dc5c3df38c82e6417e264292c2d1df50075b2e0197"
   }
 }

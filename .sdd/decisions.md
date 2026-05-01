@@ -84,3 +84,26 @@ Correcting the previous §11 approval entry — the spec.md edit that wrote the 
 
 Hash: 42367fee42e68abcb8c8385142be2de7b3a361ba77aa148529fbc93022072c17
 Reason: spec.md content recovered after the previous commit's first Edit silently no-op'd; same approval, correct content this time.
+
+## 2026-05-01T17:08:55Z  [[001-tier-3-llm-driven-synthesis]]  feature/proposed-approach (re-approved — Ollama+Gemma scope)
+
+Sam caught (during §12 walk) that I'd drifted into multi-provider language across §5/§6/§8/§11 — drafted "user-configured provider, OpenAI / Anthropic / Ollama" when v1.1's actual scope per the existing PRD is Ollama+Gemma running locally only. SDD ships as a Claude Code plugin; the agent itself IS Claude. Tier 3's separate synthesis layer is what needs Ollama+Gemma. Provider-agnostic wizard support is a v1.2+ work-item.
+
+§5 narrowed: schema stays provider-agnostic (foundation 3) but v1.1 wizard + end-to-end tests cover Ollama+Gemma only. Cost guidance reframed: /bin/zsh default (Ollama), with OpenAI/Anthropic numbers tagged "if you manually configure later (v1.2+ scope)". Same anti-theatre cycle shape as the cost_limit_usd fix earlier.
+
+Hash: 838708dd6d79cb9274aeabe4bb7ce4a07828e71f8ca92769ebc15f0ef54341fb
+Reason: drifted multi-provider scope corrected to Ollama+Gemma v1.1 plan (Sam, 2026-05-01).
+
+## 2026-05-01T17:08:55Z  [[001-tier-3-llm-driven-synthesis]]  feature/data-contract (re-approved — Ollama+Gemma scope)
+
+YAML schema's provider field comment narrowed: v1.1 wizard configures ollama-chat (Gemma); manual config opens openai/anthropic/etc. for v1.2+ wizard widening. Schema itself unchanged (still provider-agnostic per foundation 3). data-model.md Tier3Config description synced with the v1.1-wizard-Ollama-only note.
+
+Hash: 71b8144aedad168e51e015adcd21d9bb311283db72e92f21235b664a510d140c
+Reason: same as proposed-approach above — drifted scope corrected.
+
+## 2026-05-01T17:08:55Z  [[001-tier-3-llm-driven-synthesis]]  feature/acceptance-criteria (re-approved — Ollama+Gemma scope)
+
+AC#11 (literal-key warning) narrowed to v1.2+ manual-configuration use case — Ollama doesn't use API keys so the warning is forward-loaded, becomes load-bearing when the wizard widens. AC#20 (setup wizard) narrowed: configures Ollama+Gemma only; doesn't ask "which provider"; v1.2+ wizard widening is the ticket for OpenAI/Anthropic/etc. coverage.
+
+Hash: bead2b07ddff2739bbd457dc5c3df38c82e6417e264292c2d1df50075b2e0197
+Reason: same as the two above.

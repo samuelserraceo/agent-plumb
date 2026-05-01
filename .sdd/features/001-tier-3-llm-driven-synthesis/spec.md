@@ -61,7 +61,7 @@
 
 ### action: proposed-approach
 
-- [x] approval: APPROVED 2026-05-01 — Approach A (single-shot RAG) + exact-match cache; user-configured provider (no baked-in defaults); recursion deferred to v1.2+
+- [x] approval: APPROVED 2026-05-01 — Approach A (single-shot RAG) + exact-match cache; **Ollama+Gemma is the v1.1 wizard-supported provider** (per the existing PRD); schema is provider-agnostic per foundation 3 (other providers settable via manual config edit) but full provider-agnostic wizard support is v1.2+; recursion deferred to v1.2+
 
 **The locked design — Approach A + exact-match cache.**
 
@@ -91,14 +91,14 @@ Step 4 — CACHE WRITE         on success (instant, $0)
 - **Length cap < 1 KB** *(mechanically enforced)* — exact byte count check before return.
 - **Freshness** *(mechanically enforced)* — synthesis cache keyed by content-hash corpus signature (inherits v1.0 graph cache mechanism); ANY relevant `.sdd/` change → cache miss → fresh call.
 
-**5. Provider story — no baked-in defaults.** New `parameters.mcp.tier3` block in `templates/.sdd/config.md`, opt-in, off by default. Required fields when enabled: `provider` (`openai` / `anthropic` / `ollama-chat` / etc.), `endpoint`, `model`. **Enforced cost caps (provider-agnostic, mechanically counted):** `max_calls_per_run` (integer counter), `max_input_tokens_per_call` (refuses to send larger context), `max_total_tokens_per_run` (running total across calls). Same shape as v1.0 Playwright explorer + v1.0 semantic_search — foundation 3 ("we never assume an external service").
+**5. Provider story — Ollama+Gemma in v1.1; schema provider-agnostic for v1.2+ wizard widening.** New `parameters.mcp.tier3` block in `templates/.sdd/config.md`, opt-in, off by default. Required fields when enabled: `provider`, `endpoint`, `model`. The schema itself is provider-agnostic (foundation 3 — no baked-in defaults at the schema layer), but **v1.1 ships with end-to-end testing and wizard support for Ollama+Gemma running locally only.** Other providers (OpenAI, Anthropic, any OpenAI-compatible endpoint) can be set manually in `config.md` but aren't wizard-supported and aren't end-to-end tested in v1.1; widening wizard support to provider-agnostic is a v1.2+ work-item. **Enforced cost caps (mechanically counted):** `max_calls_per_run` (integer counter), `max_input_tokens_per_call`, `max_total_tokens_per_run`. Same shape as v1.0 Playwright explorer + v1.0 semantic_search.
 
-**6. Cost guidance (informational only — NOT enforced by the framework).** The framework counts calls and tokens; it does not price external services. The numbers below are reader guidance for picking a provider, not SLAs:
+**6. Cost guidance (informational only — NOT enforced by the framework).** The framework counts calls and tokens; it does not price external services. The numbers below are reader guidance, not SLAs:
 
 > *Approximate weekly cost on a project firing ~20 questions/week with ~30% cache-hit rate (no corpus changes between repeat asks):*
-> *• OpenAI gpt-4o-mini: ~$0.02/week (~$0.08/month)*
-> *• Anthropic Haiku 4.5: ~$0.03/week (~$0.12/month)*
-> *• Self-hosted Ollama: $0*
+>
+> *• **v1.1 default — local Ollama+Gemma: $0** (operating cost; one-time disk + memory cost on your machine to host the model)*
+> *• If you later manually configure a paid provider (v1.2+ wizard scope): ~$0.02–0.03/week at typical 2025 rates for OpenAI gpt-4o-mini / Anthropic Haiku 4.5*
 >
 > *Rates accurate at time of writing; providers change pricing — verify before relying on these numbers. The framework will refuse to call past your `max_calls_per_run` and `max_total_tokens_per_run` caps regardless of cost.*
 
@@ -141,7 +141,7 @@ parameters:
   mcp:
     tier3:
       enabled: false
-      provider: ""                       # openai | anthropic | ollama-chat
+      provider: ""                       # v1.1 wizard: ollama-chat (Gemma); manual config: openai | anthropic | etc. (v1.2+ widens wizard)
       endpoint: ""                       # http(s)://host:port
       model: ""                          # chat model name
       max_calls_per_run: 10              # exact integer counter
@@ -193,16 +193,13 @@ USD cost guidance lives in §5 §6 informational block, NOT here — the framewo
 
 ### action: dependencies
 
-- [x] deps: ONE new thing you set up — a chat AI of your choice (your laptop, OpenAI, Anthropic, etc.); zero new tools the framework needs; everything else Tier 3 reads is already shipped in v1.0
+- [x] deps: ONE new thing you set up — Ollama+Gemma running locally (the v1.1-supported provider); zero new tools the framework needs; everything else Tier 3 reads is already shipped in v1.0; provider-agnosticism is a v1.2+ work-item
 
-**ONE new thing you set up.** Tier 3 needs a chat AI it can ask questions. You pick where it runs:
+**ONE new thing you set up — Ollama with Gemma running locally on your machine.** Tier 3's chat brain runs on your own machine. Operating cost: $0. Privacy: nothing leaves your laptop. The wizard walks you through it on `/sdd-setup` (a one-time install of Ollama + a model pull for Gemma).
 
-- *On your laptop* using Ollama. Operates at $0.
-- *In your account* at OpenAI, Anthropic, or any compatible chat provider. Paid by usage, roughly $0.02–0.03 per week scaled to ~20 questions/week. (Numbers from §5 — guidance, not enforced.)
+You CAN manually configure other providers (OpenAI, Anthropic, any OpenAI-compatible endpoint) by editing `parameters.mcp.tier3` directly in `config.md`, but **those aren't end-to-end tested or wizard-supported in v1.1** — widening the wizard to other providers is a v1.2+ work-item.
 
-You configure it once in `config.md` — the framework reads where the AI lives, what model to use, and how big a question to send. Same shape as the v1.0 semantic search setup: if you've done that, this feels familiar.
-
-**Zero new tools the framework needs.** SDD still runs on its same five tools (bash, Python, a YAML reader, git, the GitHub CLI). The small connector for your chosen AI provider — for example, the `openai` library if you pick OpenAI — is something **you** install when you pick the provider. Exactly like v1.0's optional semantic search.
+**Zero new tools the framework itself needs.** SDD still runs on its same five tools (bash, Python, a YAML reader, git, the GitHub CLI). For Tier 3, you install Ollama on your machine (one-time, the wizard walks you through it) and pull the Gemma model. Same opt-in shape as v1.0's optional semantic search — you set it up once, the framework reads from there.
 
 **What Tier 3 borrows from v1.0 — no rebuilds, no schema changes:**
 
@@ -243,7 +240,7 @@ All four already ship and have their own tests. Tier 3 doesn't rewrite or change
 
 **Speed.** Cache miss returns in about 1.5 seconds end-to-end (most of it the AI call). Cache hit under 50ms (just a file read). Token-cap refusal is faster still — happens before talking to the provider at all. *Verified by:* test that times the cache-miss path on a small test project; test confirming cache-hit is under the limit; test confirming token-cap refusal happens before any network call.
 
-**Privacy — what leaves your machine.** When you ask a question, Tier 3 sends retrieved `.sdd/` chunks + your question to the AI provider you configured. With OpenAI / Anthropic / etc., they see those chunks; their privacy terms apply. With Ollama on your laptop, nothing leaves your machine. Same shape as v1.0's optional semantic search — the framework can't make this safer, it's downstream of which provider you picked. *Verified by:* docs in the README that spell this out plainly enough you pick a provider knowing what you agree to. (Doc gate at SHIP, not code gate.)
+**Privacy — what leaves your machine.** v1.1 default: local Ollama+Gemma — nothing leaves your laptop. If you manually configure a paid provider in v1.2+ (OpenAI / Anthropic / etc.), retrieved `.sdd/` chunks + question go to that provider; their privacy terms apply at that point. Same shape as v1.0's optional semantic search. *Verified by:* README explicitly notes v1.1 default is local-only + the privacy implication of any later manually-configured provider choice. (Doc gate at SHIP, not code gate.)
 
 **Token / API-key handling.** Framework supports `${ENV_VAR}` indirection in the `auth_header` field — your real token stays in environment variables, not in git-tracked files. *Verified by:* test that `auth_header: "${MY_TOKEN}"` is correctly resolved from the environment at runtime; second test that a literal-looking token in `auth_header` triggers a *"looks like you committed a real token"* warning.
 
@@ -281,7 +278,7 @@ All four already ship and have their own tests. Tier 3 doesn't rewrite or change
 8. **Tier 3 reads where the AI lives + which model + your access key from your config.** Test sets up config, confirms the call goes to the configured place.
 9. **If you haven't enabled Tier 3, asking a question returns `"Tier 3 not enabled"` instead of crashing.** Test runs disabled.
 10. **Your real access key stays in environment variables.** Writing `${MY_TOKEN}` makes the framework read the actual value at runtime; the literal key never lives in a git-tracked file. Test confirms substitution.
-11. **A literal key matching common provider patterns (`sk-…`, `sk_live_…`, `Bearer eyJ…`) pasted directly into config triggers a warning** so you don't commit it. Pattern list pinned in `templates/.sdd/setup/setup-tier3.md`. Test confirms warning fires.
+11. **For v1.2+ users who manually configure a paid provider:** if a literal key matching common patterns (`sk-…`, `sk_live_…`, `Bearer eyJ…`) is pasted directly into config, the framework triggers a warning so you don't commit it. Pattern list pinned in `templates/.sdd/setup/setup-tier3.md`. Test confirms warning fires. *Note: v1.1 wizard configures Ollama+Gemma which doesn't use API keys — this AC primarily protects manual-configuration users, becomes load-bearing when v1.2+ widens wizard support.*
 
 **Group 6 — When things go wrong.**
 
@@ -308,7 +305,7 @@ All four already ship and have their own tests. Tier 3 doesn't rewrite or change
 
 **Group 11 — Setup-wizard integration (added on Sam's catch).**
 
-20. **Running `/sdd-setup` on a fresh project (or `/sdd-config` to update) walks plain-English questions about Tier 3 — *do you want it? which provider? where does it live? how to handle your access key?* — and writes the answers into `parameters.mcp.tier3` correctly.** Implementation: extension of existing brick 007 (`007-mcp-server.md`) — adds Tier 3 sub-questions when the user enables the MCP server. Verified by end-to-end test that runs the wizard non-interactively against a known answer set and asserts the resulting config values.
+20. **Running `/sdd-setup` on a fresh project (or `/sdd-config` to update) walks plain-English questions about Tier 3 — *do you want it? where is your local Ollama running? which Gemma model size?* — and writes the answers into `parameters.mcp.tier3` correctly.** v1.1 wizard configures **Ollama+Gemma only**; other providers (OpenAI / Anthropic / etc.) require a manual `config.md` edit and are out of v1.1 wizard scope. Implementation: extension of existing brick 007 (`007-mcp-server.md`) — adds Tier 3 sub-questions when the user enables the MCP server. Verified by end-to-end test that runs the wizard non-interactively against a known answer set and asserts the resulting config values.
 
 **Coverage check vs §4 UX brief constraints (Plan-decompose pre-check):**
 
