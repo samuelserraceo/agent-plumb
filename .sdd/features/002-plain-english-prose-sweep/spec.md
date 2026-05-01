@@ -189,6 +189,9 @@ Approval row left [ ] — same flow as §5; Sam ticks at approval-pass time.
   - [ ] T10: assert all action-file frontmatter parses with PyYAML and contains the original 11 fields. Test: `tests/task-010.sh` runs Python via `python3 -c` to parse each action file's frontmatter, fails if any field is missing or new.
   - [ ] T11: assert frontmatter `prompt:` strings byte-identical to pre-sweep. Test: `tests/task-011.sh` snapshots the prompt strings before T05 and diffs after.
   - [ ] T12: full framework regression. Test: `tests/task-012.sh` runs `bash test/run-framework-test.sh` and asserts exit 0.
+  - [ ] T13: lint refuses ambiguous `tag: USER-LED, AGENT-LED`. Test: `tests/task-013.sh` runs lint against a fixture with both tags + asserts exit 1 + stderr contains `ambiguous tag`.
+  - [ ] T14: first-paragraph counter handles blockquote + continuation. Test: `tests/task-014.sh` runs lint against 2 fixtures (blockquote opener; indented-continuation opener) at the 200-char threshold and asserts both classified correctly.
+  - [ ] T15: cross-platform — POSIX-only commands; verified on macOS dev + Linux CI. Test: `tests/task-015.sh` runs the full lint via `bash` (no specific shell features), verifies portability on the framework's CI matrix.
 
   **Run mode:** *(asked at SPEC→BUILD entry per `run-mode-chosen.md`)*. For this feature: probably `full autonomous` — the work is highly mechanical (regex-find + structured-rewrite + bash lint), low risk per task, hits a halt-trigger only on real prose-design questions.
 
