@@ -23,7 +23,16 @@ Source: GitHub [#110](https://github.com/samuelserraceo/spec-driven-dev-workflow
 
 ### action: user-stories
 
-- [ ] stories: Which personas matter? For each: 'As <persona>, I want <action>, so that <outcome>.' 2-5 stories total.
+- [x] stories: Three personas — the SDD agent, Sam (current owner), and a future plugin-marketplace user (non-technical first-time SDD adopter).
+
+  **Story 1 — Agent draft fidelity.**
+  *As the SDD agent, I want every USER-LED / AGENT-LED action file to lead with plain-English question wording, so that when I draft my first turn for the user I mirror that voice instead of slipping into technical jargon I'd otherwise default to.*
+
+  **Story 2 — Sam answers in 30 seconds.**
+  *As Sam (non-technical owner walking a SPEC), I want every framework-shipped question to read like a smart non-coder asked it, so that I can answer in 30 seconds instead of 5-10 minutes lost to "what does that even mean" mental rephrase.*
+
+  **Story 3 — Marketplace adopter doesn't bounce.**
+  *As a non-technical plugin-marketplace user trying SDD for the first time, I want the framework's first SPEC ceremony to feel like a smart conversation, so that I don't bounce off after question #2 thinking "this is for engineers, not me."*
 
 ### action: ux-brief
 
