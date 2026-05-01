@@ -2,7 +2,7 @@
 
 [PHASE: SPEC]
 
-**Active blocker:** §3 (user-stories)
+**Active blocker:** §4 (ux-brief — likely SKIPPABLE for this backend feature)
 
 ## PHASE: SPEC
 
@@ -18,7 +18,21 @@
 
 ### action: user-stories
 
-- [ ] stories: Which personas matter? For each: 'As <persona>, I want <action>, so that <outcome>.' 2-5 stories total.
+- [x] stories: 5 stories — agent (mid-SPEC pattern lookup, /ship learn synthesis) + Sam (decision recall, milestone sweep, health review); freshness routed to §10 non-functional
+
+**The 5 stories:**
+
+1. **Agent — mid-SPEC pattern lookup.** As the SDD agent walking §5 proposed-approach, I want to ask *"is there already a pattern for X in this project?"* and get a synthesised answer with cited corpus chunks, so that I lock onto an existing pattern instead of inventing a duplicate and don't burn 20 KB re-reading every related spec.
+
+2. **Agent — /ship lessons synthesis.** As the SDD agent at /ship time running the `learn` action, I want to ask *"what should this feature contribute to patterns.md, given what we shipped vs what already exists?"* and get a synthesised proposal with cited support, so that the lessons-learned block is a corpus-aware diff rather than a hand-typed guess.
+
+3. **Sam — decision recall.** As the project owner days or weeks after a decision was made, I want to ask *"why did we pick X for project Y?"* and get the matching decisions.md entry quoted with a citation, so that I don't have to grep decisions.md by hand or re-read context I'll have forgotten.
+
+4. **Sam — milestone sweep.** As the project owner planning the next milestone, I want to ask *"list every [PROD-ONLY] AC across all shipped features"* and get a synthesised list with citations, so that I can sweep the deferred prod-verifications without manually walking each feature folder.
+
+5. **Sam — health review.** As the project owner reviewing project health, I want to ask *"what TODOs / deferred items have piled up across all in-flight features?"* and get a synthesised list with citations, so that nothing gets lost in the in-flight tier and I can triage them in one sitting.
+
+**Cross-cutting (carried to §10 non-functional):** every synthesised answer must reflect the latest corpus state at retrieval time, not a stale cache. The graph cache is already content-hash invalidated at v1.0; Tier 3 must inherit that freshness guarantee. The spec must verify in SHIP that synthesis cannot serve stale answers.
 
 ### action: ux-brief
 
