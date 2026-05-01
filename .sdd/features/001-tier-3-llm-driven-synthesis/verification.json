@@ -4,7 +4,8 @@
   "approved_sections": {
     "proposed-approach": "838708dd6d79cb9274aeabe4bb7ce4a07828e71f8ca92769ebc15f0ef54341fb",
     "data-contract": "71b8144aedad168e51e015adcd21d9bb311283db72e92f21235b664a510d140c",
-    "out-of-scope": "1904d0cf44b19a75aab3085f4f59d2a25782295f540ae4a19b754a8dce3b9114",
-    "acceptance-criteria": "bead2b07ddff2739bbd457dc5c3df38c82e6417e264292c2d1df50075b2e0197"
+    "out-of-scope": "eefc34f7b8e2472e4ab03429e9048de6d80b6401eee260dba138129371a66716",
+    "acceptance-criteria": "f8333e6372362b8f56081be9abc5546861eb4152c72636d8f84eb340ac3cc281",
+    "edge-case-sweep": "72107fd9a5903cfb29270ade6b184f1fa590be52dd183331ba6d25400669d7e7"
   }
 }

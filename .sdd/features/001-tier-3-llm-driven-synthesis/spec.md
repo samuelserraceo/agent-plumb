@@ -2,7 +2,7 @@
 
 [PHASE: SPEC]
 
-**Active blocker:** §15 (edge-case-sweep — final SPEC step before BUILD)
+**Active blocker:** SPEC complete · ready for SPEC→BUILD transition (run-mode-chosen.md asks Sam to confirm full-autonomous before BUILD starts; defaulted from §14)
 
 ## PHASE: SPEC
 
@@ -234,6 +234,8 @@ All four already ship and have their own tests. Tier 3 doesn't rewrite or change
 
 **5. Dollar-denominated cost limits.** The framework counts calls and tokens; it does NOT enforce dollar amounts. *Why deferred:* real dollar enforcement needs a per-provider pricing table someone has to maintain (prices change), plus a live spending ledger across runs — neither exists. Token caps are the mechanical enforcement; the dollar numbers in §5 are picking-a-provider guidance, not promised limits. Anti-theatre fix from earlier in this walk.
 
+**6. Cache TTL / forced refresh (added 2026-05-01 from §15 edge-case sweep).** Tier 3's cache only invalidates when the corpus signature flips. There's no way for the user to force a fresh AI call when the corpus is unchanged but they want a new perspective (e.g. they've tweaked their prompt template and want the model re-asked). *Why deferred:* low real-world need until users actually report friction. v1.2+ could add an optional `--fresh` flag to `/ask` or a TTL field to Tier3Config.
+
 ### action: non-functional
 
 - [x] constraints: speed budgets (1.5s miss / <50ms hit), privacy (provider-dependent), `${ENV_VAR}` token handling, four failure modes, prompt-injection floor (cite-check), observability counters — each declares its verification path
@@ -302,6 +304,12 @@ All four already ship and have their own tests. Tier 3 doesn't rewrite or change
 
 18. `[PROD-ONLY]` Against your actual configured provider, a real question against a small test project produces an answer that passes the cite-check and reads naturally to you. **Naturalness is your judgment as the human reviewer; the cite-check is mechanical.** Manual walk once after first deploy.
 19. `[PROD-ONLY]` Real provider's "you've used your allowance" response matches what AC #12 mocks. Manual confirmation, once.
+
+**Group 11.5 — Edge-case sweep additions (added 2026-05-01 from §15).**
+
+21. **Cache file is bounded.** When `synthesis.json` reaches 1000 entries, the least-recently-used entries are evicted. Test fires 1500 unique synthesise calls against a fixture project and asserts the resulting cache file has ≤1010 entries (small buffer for batch eviction). Eviction threshold hardcoded for v1.1; configurable in v1.2+ if friction surfaces.
+22. **Question text is validated before being sent to the AI.** Empty strings, strings with control characters or null bytes, and strings longer than 2000 characters are rejected with `{ok: false, reason: "question invalid: <why>"}`. Test fires 4 invalid question shapes (empty, 10000-char, control-char, null-byte) and confirms each rejection.
+23. **Slug argument is sanitised before any file read** — must match `[a-z0-9][a-z0-9._\-]*` (the same shape v1.0 uses for graph nodes). Path-traversal attempts (`../../etc/passwd`), spaces, slashes, and any character outside that pattern are rejected with `{ok: false, reason: "invalid slug: <slug>"}`. Test fires 5 malicious slug shapes and confirms each refusal.
 
 **Group 11 — Setup-wizard integration (added on Sam's catch).**
 
@@ -413,6 +421,17 @@ All §4 constraints have a mapped AC. Plan-decompose coverage check passes pre-e
 - T24 — Live Ollama+Gemma integration; replaces mock provider with real local Ollama HTTP calls. Test: `tests/test_synthesise_ollama_live.py`.
 - T25 — `/ask` slash command body wraps synthesise() with format="prose". Test: `tests/test_ask_slash_command.py`.
 
+**§15 edge-case-sweep additions (3 tasks, added 2026-05-01):**
+- T28 — Cache eviction policy: LRU when entry count >1000. Hardcoded threshold for v1.1. Test: `tests/test_synthesise_cache_eviction.py`. → AC21.
+- T29 — Question validation (length cap 2000 chars, no control / null bytes, no empty). Test: `tests/test_synthesise_question_validation.py`. → AC22.
+- T30 — Slug sanitisation (regex match before any file read; path-traversal rejected). Test: `tests/test_synthesise_slug_validation.py`. → AC23.
+
+**Sub-test notes folded into existing tasks (no new test files; assertions added to existing tests, added 2026-05-01 from §15 sweep):**
+- T5 / T6 — also assert: question containing `[[…]]` syntax in itself (e.g. *"what does [[001-waitlist]] §5 say?"*) doesn't confuse cite-check on the answer.
+- T6 — also assert: AI's answer with `[[link]]` inside fenced or inline code spans is correctly skipped (consistent with v1.0 graph cache fence-aware logic, issue #105).
+- T8 / T9 — also assert: two concurrent synthesise() calls with the same key don't corrupt `synthesis.json` (cache write must be atomic — reuse v1.0 tempfile+os.replace pattern from `_graph_cache._save`).
+- T14 — also assert: a config that has NO `parameters.mcp.tier3` block at all (e.g. an old project upgraded without re-running `/sdd-config`) returns the same clean *"Tier 3 not enabled"* shape as `enabled: false`.
+
 **PROD-ONLY (deferred to first prod walk; manual at SHIP per §12):**
 - T26 `[PROD-ONLY]` — Real-provider naturalness check (AC18). Manual smoke from §12.
 - T27 `[PROD-ONLY]` — Real-provider rate-limit shape matches AC#12 mock (AC19). Manual smoke from §12.
@@ -423,8 +442,27 @@ All §4 constraints have a mapped AC. Plan-decompose coverage check passes pre-e
 
 ### action: edge-case-sweep
 
-- [ ] ec-sweep: draft
-- [ ] ec-pick: ask
+- [x] ec-sweep: 10 candidates surfaced across 5 categories (max-state, bad-input, concurrency, time-based, compatibility); details below
+- [x] ec-pick: APPROVED 2026-05-01 — 3 new ACs added to §11 (cache eviction, question validation, slug sanitisation); 4 sub-tests folded into existing T-tasks; 3 deferrals (one to §9 as new bullet 6, one to external issue #113, one already in §9 item 5)
+
+**The 10 surfaced candidates and decisions:**
+
+| # | Candidate | Decision | Where it lands |
+|---|---|---|---|
+| 1 | Cache file grows unbounded | **NEW AC #21** | LRU eviction at 1000 entries; T28 in §14 |
+| 2 | Empty / huge / hostile question text | **NEW AC #22** | Validate length, control chars, null bytes; T29 in §14 |
+| 3 | Slug arg with path traversal | **NEW AC #23** | Regex sanitisation before file read; T30 in §14 |
+| 4 | Concurrent synthesise() calls — cache write race | **Sub-test in T8/T9** | Atomic write via tempfile+os.replace (reuse v1.0 pattern) |
+| 5 | Question itself contains `[[…]]` syntax | **Sub-test in T5/T6** | Confirm cite-check operates on answer only, not question |
+| 6 | AI's `[[link]]` inside code blocks | **Sub-test in T6** | Reuse v1.0 fence-aware cite extraction (issue #105) |
+| 7 | Old project upgraded without `/sdd-config` | **Sub-test in T14** | Missing `tier3` block = same as `enabled: false` |
+| 8 | Cache TTL / forced refresh | **DEFER to v1.2+** | Added as §9 bullet 6 |
+| 9 | Concurrent corpus edit during signature read | **DEFER to v1.0.x maintenance** | Filed as issue [#113](https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/113) (not Tier 3-specific — corpus signature is a v1.0 concern) |
+| 10 | Cost-cap defaults too generous for paid providers | **Already covered** | §9 item 5 (dollar-denominated cost limits) — same family |
+
+**Net addition: 3 new ACs (#21, #22, #23) + 3 new tasks (T28-T30) + 4 sub-tests (folded into T5/T6/T8/T9/T14) + 1 deferral bullet in §9 + 1 external issue.**
+
+**Categories swept:** empty / max-state / bad-input / network / concurrency / authorisation / mobile / time-based / cost / resource / LLM-specific / setup-state / compatibility. Most produced nothing real for Tier 3 (e.g. mobile-specific is N/A — no UI; authorisation is N/A — local-only). Drops not padded.
 
 ### Exit checks
 - [ ] C-spec-acs: ≥1 acceptance criterion exists in §11

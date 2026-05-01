@@ -58,7 +58,7 @@ A derived index of cached synthesise() answers. Lives at `.sdd/.cache/synthesis.
 
 Shape: JSON dict keyed by `<sha256(question)>:<corpus_signature>` → `{answer, cite_chunks: [{slug, path, line}, ...], format_seen, ambiguity, created_at}`.
 
-Invalidation: any corpus signature flip (any `.sdd/` markdown change) marks all entries from prior signatures stale; new keys use the new signature so old entries can stay readable until eviction. v1.1 adds this when [[001-tier-3-llm-driven-synthesis]] ships.
+Invalidation: any corpus signature flip (any `.sdd/` markdown change) marks all entries from prior signatures stale; new keys use the new signature so old entries can stay readable until eviction. **Eviction policy:** LRU at 1000 entries (hardcoded for v1.1; configurable in v1.2+ if friction surfaces — added by §15 edge-case sweep on 2026-05-01). v1.1 adds this when [[001-tier-3-llm-driven-synthesis]] ships.
 
 ### Tier3Config
 

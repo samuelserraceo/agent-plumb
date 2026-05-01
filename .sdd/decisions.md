@@ -107,3 +107,23 @@ AC#11 (literal-key warning) narrowed to v1.2+ manual-configuration use case — 
 
 Hash: bead2b07ddff2739bbd457dc5c3df38c82e6417e264292c2d1df50075b2e0197
 Reason: same as the two above.
+
+## 2026-05-01T17:48:37Z  [[001-tier-3-llm-driven-synthesis]]  feature/edge-case-sweep
+
+Approved §15 edge-case sweep with 10 candidates surfaced and decisions: 3 new ACs added (#21 cache eviction LRU at 1000 entries · #22 question validation · #23 slug sanitisation); 4 sub-tests folded into existing T-tasks (concurrent cache write atomicity · cite-check on question with embedded [[…]] · code-block fence-aware cite extraction · missing tier3 block = disabled); 3 deferrals (cache TTL → §9 new bullet 6 · concurrent corpus edit during signature read → external issue #113 [v1.0 concern, not Tier 3] · cost-cap defaults too generous → already covered by §9 item 5).
+
+Hash: 72107fd9a5903cfb29270ade6b184f1fa590be52dd183331ba6d25400669d7e7
+
+## 2026-05-01T17:48:37Z  [[001-tier-3-llm-driven-synthesis]]  feature/acceptance-criteria (re-approved — §15 sweep additions)
+
+3 new ACs added from §15 edge-case sweep: #21 (cache eviction policy, LRU at 1000 entries, hardcoded threshold for v1.1), #22 (question validation: length 2000 / no control / no null / no empty), #23 (slug sanitisation: regex match before any file read, refuse path traversal). Theatre re-check still passes — all 3 are mechanical with concrete thresholds. Total ACs: 23 (19 mechanical + 2 best-effort declared + 2 PROD-ONLY).
+
+Hash: f8333e6372362b8f56081be9abc5546861eb4152c72636d8f84eb340ac3cc281
+Reason: §15 edge-case sweep surfaced 3 real gaps Sam approved adding.
+
+## 2026-05-01T17:48:37Z  [[001-tier-3-llm-driven-synthesis]]  feature/out-of-scope (re-approved — §15 sweep deferral)
+
+Added bullet #6 to §9: cache TTL / forced refresh deferred to v1.2+. Surfaced by §15 sweep — low real-world need until users actually report friction. Could land as a --fresh flag to /ask or a TTL field to Tier3Config in v1.2+.
+
+Hash: eefc34f7b8e2472e4ab03429e9048de6d80b6401eee260dba138129371a66716
+Reason: §15 edge-case sweep added one new explicit deferral.
