@@ -6201,15 +6201,25 @@ cat > .sdd/INDEX.md <<'IDX'
 IDX
 git add . && git commit -q -m "scaffold" --no-verify
 # Replace resolve-active.sh with a stub that emits malformed JSON.
-# Three flavours, each should be rejected:
+# Six flavours, each should be rejected. CR cycle-20: cycle-19's
+# 3 dict-with-malformed-fields payloads only exercised the
+# field-type branch of _well_typed; non-dict and parse-error
+# branches were untested. Now covers all 6 rejection paths.
 #   1. wrong type for `active` (number)
 #   2. missing required key (no `ambiguous`)
 #   3. invalid `source` enum
+#   4. JSON null (non-dict) — settings.sh isinstance check
+#   5. JSON array (non-dict) — settings.sh isinstance check
+#   6. invalid JSON syntax — json.loads raises, except catches
 malformed_passes=0
+total_payloads=6
 for payload in \
   '{"active":42,"ambiguous":false,"branch":"sdd/001-malformed","index_active":null,"source":"branch"}' \
   '{"active":"features/001-malformed","branch":null,"index_active":null,"source":"branch"}' \
-  '{"active":"features/001-malformed","ambiguous":false,"branch":null,"index_active":null,"source":"frobnicate"}'
+  '{"active":"features/001-malformed","ambiguous":false,"branch":null,"index_active":null,"source":"frobnicate"}' \
+  'null' \
+  '[]' \
+  'this is not valid json {[}'
 do
   cat > .sdd/scripts/resolve-active.sh <<STUB
 #!/usr/bin/env bash
@@ -6224,10 +6234,10 @@ STUB
 done
 cd - >/dev/null || true
 rm -rf "$d"
-if [ "$malformed_passes" -eq 3 ]; then
-  ok "T121-malformed-resolver settings.sh fails closed on 3/3 malformed payloads"
+if [ "$malformed_passes" -eq "$total_payloads" ]; then
+  ok "T121-malformed-resolver settings.sh fails closed on $total_payloads/$total_payloads malformed payloads"
 else
-  bad "T121-malformed-resolver settings.sh trusted at least one malformed payload" "passes=$malformed_passes/3"
+  bad "T121-malformed-resolver settings.sh trusted at least one malformed payload" "passes=$malformed_passes/$total_payloads"
 fi
 
 # ============================================================
