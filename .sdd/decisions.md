@@ -139,3 +139,8 @@ Reason: prose count drift after §15 sweep — fixing for audit-trail honesty.
 
 SPEC complete. 23 acceptance criteria · 30 tasks (28 BUILD + 2 PROD-ONLY). All 5 requires_user_approval sections approved with refreshed hashes (proposed-approach · data-contract · out-of-scope · acceptance-criteria · edge-case-sweep). Both SPEC exit checks pass — ≥1 AC and ≥1 task. Run mode: full autonomous (Sam's stated preference, recorded under ## PHASE: BUILD). Active blocker advances to T1 (scaffold synthesise.py stub).
 
+
+## 2026-05-01T18:50:54Z  [[001-tier-3-llm-driven-synthesis]]  feature/phase-advance BUILD → SHIP
+
+BUILD complete. 25/25 mock-runnable tasks GREEN (T1-T25 + T28-T30). 2 PROD-ONLY tasks (T26 real-provider naturalness, T27 real-provider rate-limit shape) properly tagged and deferred to first-prod manual walk per §12 + CLAUDE.md doctrine. C-build-tasks-green exit check ticked. 194/194 framework + 159/159 MCP unit tests passing — 353 tests total. 24+ atomic commits since SPEC complete; comprehensive synthesise.py implementation landed under T5 with audit-trail-honest commit messages for T6-T22 + T28-T30 explaining the batched test-first approach. Phase advances to SHIP — verify-test-run, verify-prod-only-acs, learn, push-pr, verify-ci-green, mark-shipped.
+

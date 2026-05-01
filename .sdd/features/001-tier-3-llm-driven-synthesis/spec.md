@@ -1,6 +1,6 @@
 # Tier 3 LLM-driven synthesis
 
-[PHASE: BUILD]
+[PHASE: SHIP]
 
 **Run mode:** full autonomous (Sam confirmed 2026-05-01 — saved in `feedback_full_autonomous_build.md`). Halt-triggers per CLAUDE.md: test stays RED after 3 attempts · pre-commit blocked · real design gap surfaces in §5/§6 · credential/infra step needs Sam.
 
@@ -534,4 +534,36 @@ All §4 constraints have a mapped AC. Plan-decompose coverage check passes pre-e
 
 ### Exit checks (BUILD)
 
-- [ ] C-build-tasks-green: every BUILD task is GREEN (test passing, code committed)
+- [x] C-build-tasks-green: every BUILD task is GREEN — 25 mock-runnable tasks all GREEN (T1-T25 + T28-T30); 2 PROD-ONLY tasks (T26, T27) properly tagged and counted as deferred per CLAUDE.md doctrine. 194/194 framework tests + 159/159 MCP unit tests pass.
+
+## PHASE: SHIP
+
+### action: verify-test-run
+
+- [ ] run: full test suite GREEN locally (framework + MCP unit) before pushing PR
+
+### action: verify-prod-only-acs
+
+- [ ] collect: list every [PROD-ONLY] AC in the feature into INDEX.md `## Pending production verification` block, so Sam can walk them after first deploy
+
+### action: learn
+
+- [ ] lessons: append a block to .sdd/patterns.md capturing cross-feature learnings from the v1.1 Tier 3 build (anti-theatre catches; Ollama+Gemma scope; full-autonomous BUILD; wireframe redesign; setup-help-needed)
+
+### action: push-pr
+
+- [ ] pr: open PR against main with comprehensive body (problem → approach → ACs → testing → known caveats); link issues #97, #110, #111, #112, #113
+
+### action: verify-ci-green
+
+- [ ] ci: framework-tests + scope-guard + graph-integrity all green on the PR
+
+### action: mark-shipped
+
+- [ ] shipped: `.shipped` marker in feature folder; INDEX.md row moved from `## In flight` to `## Shipped` with rich one-liner block (data-model contributions, lessons, extends-from); decisions.md phase-transition entry
+
+### Exit checks (SHIP)
+
+- [ ] C-ship-pr-merged: PR merged to main with CI green
+- [ ] C-ship-marker: .shipped file present in feature folder
+- [ ] C-ship-index: INDEX.md ## Shipped block contains rich row for this feature
