@@ -179,8 +179,8 @@ Approval row left [ ] — same flow as §5; Sam ticks at approval-pass time.
 
 - [x] tasks: 12 BUILD tasks, mapped 1-1 to AC1-12, ordered to keep BUILD test-runs green at each step.
 
-  - [ ] T01: write `lint-action-prose.sh` v0 (just the inventory pass — list qualifying files + their compliance state). Test: `tests/task-001.sh` asserts `bash .sdd/scripts/lint-action-prose.sh --inventory` lists ≥10 qualifying files. *RED → code → GREEN.*
-  - [ ] T02: extend `lint-action-prose.sh` to assert `**What it looks like:**` block in each qualifying file. Test: `tests/task-002.sh` runs the lint against a temp tree of 2 files (one with the block, one without) and asserts only the second is flagged.
+  - [x] T01 GREEN: `lint-action-prose.sh` v0 with `--inventory` mode landed. 41 qualifying files identified.
+  - [x] T02 GREEN: example-block check landed. Lint flags files missing `**What it looks like:**` with file path + check name in stderr.
   - [ ] T03: extend `lint-action-prose.sh` to assert first paragraph ≤2 sentences AND ≤200 chars. Test: `tests/task-003.sh` runs against 2 fixtures (one short, one long) and asserts only the long one is flagged.
   - [ ] T04: chmod +x the script + place under `.sdd/scripts/`. Test: `tests/task-004.sh` checks `[ -x .sdd/scripts/lint-action-prose.sh ]`.
   - [ ] T05: sweep ALL `templates/.sdd/actions/*.md` files (the actual prose-rewrite). Each file gets the `**What it looks like:**` block + a tightened first paragraph. Test: `tests/task-005.sh` runs the full lint and asserts exit 0 + silent stderr.

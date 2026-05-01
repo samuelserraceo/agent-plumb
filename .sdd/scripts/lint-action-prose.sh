@@ -86,11 +86,21 @@ if [ "$MODE" = "inventory" ]; then
   exit 0
 fi
 
-# ─── Check mode (placeholder — fleshed out in T02-T03) ───────────────
+# ─── Check mode ──────────────────────────────────────────────────────
 violations=0
 for f in "${TARGETS[@]}"; do
   [ -f "$f" ] || continue
   is_qualifying "$f" || continue
-  # T02 + T03 add real checks; for now, just count qualifying files exist
+
+  # Check 1 (T02): body contains literal "**What it looks like:**" heading
+  if ! grep -qF '**What it looks like:**' "$f"; then
+    echo "[lint-action-prose] $f — missing 'What it looks like:' example block (USER-LED/AGENT-LED actions must ship a plain-English example so the agent has a non-jargon model to mirror)" >&2
+    violations=$((violations + 1))
+  fi
 done
+
+if [ "$violations" -gt 0 ]; then
+  echo "[lint-action-prose] $violations violation(s) — see above" >&2
+  exit 1
+fi
 exit 0
