@@ -85,7 +85,6 @@ folder_rules:
   deferred_paths:
     - ".sdd/topics/"
     - ".sdd/archive/"
-    - ".sdd/bugs/"
   root_allowed:
     - "CLAUDE.md"
     - "README.md"
@@ -230,7 +229,7 @@ Adding a future rule = a new `state_rules:` entry + a new condition recogniser i
 
 Pairs with the "Where things live" doctrine in `CLAUDE.md`. Two soft enforcement rules ship in v0.9, both **warn-only by default** (`default_action: warn` — no commit blocks); project owners can flip to `block` per their tolerance for drift.
 
-- **`deferred_paths:`** — folders that have shapes designed but no Phase-C work yet (`.sdd/topics/`, `.sdd/archive/`, `.sdd/bugs/`). Writing into them today is almost always a sign the agent invented a workaround instead of asking. The framework warns when staged files land here.
+- **`deferred_paths:`** — folders that have shapes designed but no Phase-C work yet (`.sdd/topics/`, `.sdd/archive/`). Writing into them today is almost always a sign the agent invented a workaround instead of asking. The framework warns when staged files land here. (`.sdd/bugs/` was deferred pre-v1.0 and graduated to active in v1.0 with the `bug.md` playbook — it's a normal work-item folder now.)
 - **`root_allowed:`** — explicit allow-list of top-level paths. Anything new at the project root that isn't on this list triggers a warn pointing the user at `.sdd/ideas/` (one-off thoughts) or the relevant per-feature folder (anything scoped to a work item).
 
 This is intentionally light — Phase C ships the *signal* (the warn), not the block. After watching how it lands in real projects, future phases may add `on_violation: block` per-rule and a richer per-folder allow-list (`<NNN>-<slug>/spec.md`, `<NNN>-<slug>/wireframe.html`, etc.).

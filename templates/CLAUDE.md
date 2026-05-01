@@ -216,9 +216,9 @@ Once the feature is identified, hand off to the right slash command:
 │   ├── data-model.md                 ← shared entities/fields across features (single source of truth)
 │   ├── stack.md                      ← tech stack (services, providers, version pins, architecture facts) — agent reads on session start
 │   ├── patterns.md                   ← cross-feature lessons (one block per feature; auto-appended by `learn` action)
-│   ├── playbooks/<slug>.md           ← workflow templates (`feature.md` ships v0.9; `bug.md` etc. arrive later)
-│   ├── actions/<slug>.md             ← 22 action files (problem, success, proposed-approach, etc.)
-│   ├── extensions/<slug>.md          ← optional add-ons (none ship in v0.9)
+│   ├── playbooks/<slug>.md           ← workflow templates (`feature.md`, `project.md`, `bug.md`, `refactor.md` all ship in v1.0)
+│   ├── actions/<slug>.md             ← action files (one per step; per-playbook + cross-cutting actions)
+│   ├── extensions/<slug>.md          ← optional add-ons (Playwright explorer ships v1.0; opt-in via enable.sh)
 │   ├── scripts/<name>.sh             ← framework scripts (start, next-action, advance, resolve-parameters, …)
 │   ├── ideas/                        ← `/idea` captures (loose markdown notes — no commitment)
 │   ├── topics/                       ← (Phase C+) cross-cutting topic pages — DEFERRED, do not create today
@@ -229,7 +229,8 @@ Once the feature is identified, hand off to the right slash command:
 │   │   ├── wireframe.html            ← if §4 UX brief produced one
 │   │   ├── tests/                    ← BUILD task tests
 │   │   └── .shipped                  ← marker = folder is now COLD (don't read)
-│   ├── bugs/                         ← (Phase C+) per-bug folders — DEFERRED, do not create today
+│   ├── bugs/<NNN>-<slug>/            ← per-bug folders (v1.0; uses bug.md playbook)
+│   ├── refactors/<NNN>-<slug>/       ← per-refactor folders (v1.0; uses refactor.md playbook)
 │   └── .cache/manifest.json          ← framework hash pin (do not edit by hand)
 └── .claude/                          ← Claude Code harness config
     ├── settings.json                 ← hook registration
@@ -249,7 +250,7 @@ Once the feature is identified, hand off to the right slash command:
 
 5. **Documentation about the framework itself** (auto-generated walkthroughs, planning docs) → keep out of `.sdd/`. The `.sdd/` tree is sacred to the discipline; planning artifacts go in `~/.claude/plans/` or a separate `docs/` directory if the project has one.
 
-**Hard rule (read this twice):** `.sdd/topics/`, `.sdd/archive/`, and `.sdd/bugs/` are listed above as **DEFERRED**. They have shapes designed but no Phase-C work yet. **Do not create files in them today.** If a need surfaces (e.g., the user asks for a topic page), pause and ask them whether to defer or to upgrade the framework first.
+**Hard rule (read this twice):** `.sdd/topics/` and `.sdd/archive/` are listed above as **DEFERRED**. They have shapes designed but no Phase-C work yet. **Do not create files in them today.** If a need surfaces (e.g., the user asks for a topic page), pause and ask them whether to defer or to upgrade the framework first. (`.sdd/bugs/` and `.sdd/refactors/` were also deferred pre-v1.0; they shipped active in v1.0 with their playbooks.)
 
 **Stale paths to watch for:** if a turn is about to write a path NOT in this map (e.g., `.sdd/notes/`, `.sdd/scratch/`, `MY_NOTES.md` at root, `<feature-folder>/extra/`), **halt and ask the user.** Almost always the right move is one of (a) put it in `.sdd/ideas/`, (b) put it in the feature folder, (c) put it in `data-model.md` / `patterns.md`. Inventing a new folder = a sign the framework needs an extension, not a workaround.
 
