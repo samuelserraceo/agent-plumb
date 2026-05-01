@@ -8,8 +8,13 @@ You are running the SDD workflow. **Do exactly one atomic step — no more, no l
 
 ## What to do
 
-1. **Read state.** Read `.sdd/INDEX.md`. Find the active work item from the `**Active:**` pointer line.
-   - **No active work item** → tell the user, in plain English: *"No active work item. Run `/start <one-line title>` to scaffold a new one (e.g., `/start build a waitlist landing page`)."* Stop here. `/next` does not bootstrap — `/start` is the single entry point for new work.
+1. **Read state.** Run `.sdd/scripts/resolve-active.sh` and parse the JSON. The `active` field is the work-item path relative to `.sdd/` (e.g. `features/001-waitlist`); `source` tells you whether it came from the current branch (`branch`) or the INDEX.md `**Active:**` line (`index`). Branch-derived wins so multi-feature parallel work just works — switching branches switches the active feature without editing INDEX.md.
+   - **`ambiguous: true`** → the branch slug matched 2+ work-item folders (e.g. both `features/001-foo/` AND `bugs/001-foo/` exist). The resolver refuses to pick silently. Tell the user, in plain English: *"Your branch slug matches two folders under `.sdd/` — I can't tell which one you mean. Rename one of them so the slug is unique, or check out a different branch, then run `/next` again."* Stop here.
+   - **`active` is null** with `source: "none"` (and not ambiguous) → use the other resolver fields before answering, because the right next step depends on which subcase applies:
+     - **`index_active` is non-null** → INDEX.md's `**Active:**` line points at a folder that doesn't exist. Tell the user: *"INDEX.md says the active feature is `<index_active>`, but that folder isn't there. Either edit INDEX.md to point at a real folder, or check out an SDD-style branch (`sdd/<id>-<slug>`) whose folder exists, then run `/next` again."* Stop here. **Don't suggest `/start`** — there's already an INDEX entry, just stale.
+     - **`branch` matches `sdd/<id>-<slug>`** → SDD branch exists but the work-item folder isn't scaffolded yet. Tell the user: *"You're on `<branch>` but the work-item folder isn't scaffolded yet. Run `/start <one-line title>` to scaffold it."* Stop here.
+     - **Otherwise** → fresh project, non-SDD branch. Tell the user, in plain English: *"No active work item. Run `/start <one-line title>` to scaffold a new one (e.g., `/start build a waitlist landing page`)."* Stop here. `/next` does not bootstrap — `/start` is the single entry point for new work.
+   - **The active spec lives at** `.sdd/<active>/spec.md`. Use that path everywhere this prose says "active spec".
 
 2. **Resolve the next step.** Run `.sdd/scripts/next-action.sh <active-spec-path>` and parse the JSON output. Fields you care about:
    - `phase` — active phase ID (SPEC / BUILD / SHIP / SHIPPED).

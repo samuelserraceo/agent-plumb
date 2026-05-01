@@ -254,42 +254,160 @@ def _infer_active_context(proj):
     """Return (spec_path, action_slug, step_id) for the active step,
     or (None, None, None) if no in-flight feature is resolvable.
 
-    Reads `**Active:** <path>` from .sdd/INDEX.md, then invokes
-    next-action.sh on that spec to get the active action + step.
-    Used by `get` to walk the F5 cascade and report provenance for
-    the value the agent would currently see (closes #34).
+    Resolution (v1.0): the resolver at `.sdd/scripts/resolve-active.sh`
+    is AUTHORITATIVE. It already handles branch-derived active, the
+    INDEX.md `**Active:**` fallback, path-traversal rejection, and
+    fail-closed on ambiguous branch slugs. /settings inherits all of
+    those guarantees by trusting whatever the resolver returns.
 
-    Path resolution rules — `**Active:**` is written by start.sh as a
-    work-item path RELATIVE TO `.sdd/`, e.g. `features/001-foo` or
-    `bugs/003-confirm-link-typo`. The actual spec lives at
-    `<proj>/.sdd/<work-item-rel>/spec.md`. Older / hand-edited indexes
-    sometimes also use the full path (`.sdd/features/.../spec.md`) or
-    just the directory name; tolerate all three shapes."""
-    index_path = os.path.join(proj, ".sdd", "INDEX.md")
-    if not os.path.isfile(index_path):
+    When the resolver deliberately returns `active: null` (because the
+    slug was ambiguous, the INDEX value was malicious, or there's no
+    work item yet), we MUST NOT re-parse INDEX.md from here — that
+    would silently bypass the resolver's hardening. Returning
+    (None, None, None) makes the caller fall back to the project
+    default, which is the right behaviour: no active context, no
+    cascade override.
+
+    The legacy in-line INDEX.md parser (still below as a last-resort)
+    only fires when the resolver itself is missing or unreadable — a
+    framework-broken state that suggests the user hasn't run /update
+    yet. If you remove the legacy block, /settings still works on a
+    healthy framework."""
+    spec_path = None
+    raw = None
+    resolver_ran = False
+
+    # 1. Resolver is authoritative when present + healthy. Anything it
+    # returns (including null) is final — never re-parse INDEX.md
+    # from here.
+    resolver = os.path.join(proj, ".sdd", "scripts", "resolve-active.sh")
+    if os.path.isfile(resolver):
+        try:
+            r = subprocess.run(
+                ["bash", resolver],
+                capture_output=True, text=True, timeout=5, cwd=proj,
+            )
+            if r.returncode == 0 and r.stdout.strip():
+                # Only mark the resolver authoritative after the JSON
+                # passes the FULL contract — all 5 documented keys
+                # present + `source` is one of the documented enum
+                # values. CR cycle-17: an `isinstance(dict)` check
+                # alone would accept `{}` or other malformed dicts
+                # and flip resolver_ran, skipping the legacy INDEX
+                # fallback during the exact "resolver is present
+                # but broken" window the fallback exists for.
+                resolved = json.loads(r.stdout)
+                required_keys = {"active", "ambiguous", "branch",
+                                 "index_active", "source"}
+                valid_sources = {"branch", "index", "none"}
+                # Validate full contract — keys present AND each field
+                # has the documented type. Without per-key type checks,
+                # something like `{"active": [], "ambiguous": "yes",
+                # "source": "branch", ...}` would still flip
+                # resolver_ran. CR cycle-18 minor.
+                def _well_typed(d):
+                    if not isinstance(d, dict):
+                        return False
+                    if not required_keys.issubset(d):
+                        return False
+                    if d.get("source") not in valid_sources:
+                        return False
+                    if not isinstance(d.get("ambiguous"), bool):
+                        return False
+                    for k in ("active", "branch", "index_active"):
+                        v = d.get(k)
+                        if v is not None and not isinstance(v, str):
+                            return False
+                    return True
+                if _well_typed(resolved):
+                    resolver_ran = True
+                    raw_active = resolved.get("active")
+                    if isinstance(raw_active, str) and raw_active:
+                        # Defence in depth: even though resolve-active.sh
+                        # validates `active` before emitting (folder AND
+                        # spec.md realpath via has_safe_spec), never
+                        # trust a subprocess return blindly. Containment-
+                        # check BOTH the resolved folder AND the spec.md
+                        # file stay inside .sdd/ — mirrors resolve-active
+                        # .sh's has_safe_spec helper. CR cycle-17 MAJOR:
+                        # without the file-level realpath check, a
+                        # symlinked spec.md could redirect /settings
+                        # outside the trust boundary even when the
+                        # folder check passes.
+                        sdd_root_real = os.path.realpath(os.path.join(proj, ".sdd"))
+                        candidate_dir = os.path.realpath(os.path.join(sdd_root_real, raw_active))
+                        candidate = os.path.join(candidate_dir, "spec.md")
+                        candidate_real = os.path.realpath(candidate)
+                        try:
+                            inside_sdd = (
+                                os.path.commonpath([sdd_root_real, candidate_dir]) == sdd_root_real
+                                and candidate_dir != sdd_root_real
+                                and os.path.commonpath([sdd_root_real, candidate_real]) == sdd_root_real
+                            )
+                        except ValueError:
+                            inside_sdd = False
+                        if inside_sdd and os.path.isfile(candidate_real):
+                            spec_path = candidate_real
+                            raw = raw_active
+        except (subprocess.TimeoutExpired, OSError, json.JSONDecodeError):
+            pass
+
+    # 2. Resolver-authoritative: if it ran and returned no usable
+    # active (deliberate fail-closed OR genuinely no work item),
+    # respect that. /settings caller falls back to project source.
+    if resolver_ran and spec_path is None:
         return None, None, None
-    try:
-        with open(index_path, encoding="utf-8") as f:
-            idx_text = f.read()
-    except OSError:
-        return None, None, None
-    m = re.search(r'^\*\*Active:\*\*\s+(\S+)', idx_text, re.MULTILINE)
-    if not m:
-        return None, None, None
-    raw = m.group(1).strip()
-    # Try the four canonical shapes in priority order. First one that
-    # resolves to an existing spec.md wins.
-    if os.path.isabs(raw):
-        candidates = [raw if raw.endswith("spec.md") else os.path.join(raw, "spec.md")]
-    else:
+
+    # 3. Last-resort legacy parse — fires only when the resolver is
+    # missing or broken (manifest-tampered, file unreadable, etc.).
+    # On a healthy framework this branch is dead code. We keep it so
+    # /settings still reports SOMETHING useful when the framework is
+    # mid-update and resolve-active.sh hasn't landed yet.
+    if spec_path is None:
+        index_path = os.path.join(proj, ".sdd", "INDEX.md")
+        if not os.path.isfile(index_path):
+            return None, None, None
+        try:
+            with open(index_path, encoding="utf-8") as f:
+                idx_text = f.read()
+        except OSError:
+            return None, None, None
+        m = re.search(r'^\*\*Active:\*\*\s+(\S+)', idx_text, re.MULTILINE)
+        if not m:
+            return None, None, None
+        raw = m.group(1).strip()
+        # Same trust boundary as resolve-active.sh: never accept an
+        # absolute path or a path-traversal segment from INDEX.md
+        # project data, even on the legacy fallback path.
+        if os.path.isabs(raw) or ".." in raw.split("/"):
+            return None, None, None
+        # Spec-path constraint: only accept paths that resolve to a
+        # *spec.md* file. The legacy already-relative-to-proj shape
+        # is preserved only when the raw value already looks like a
+        # spec.md path.
         candidates = [
             os.path.join(proj, ".sdd", raw, "spec.md"),     # work-item-rel (canonical)
-            os.path.join(proj, raw),                         # already-relative-to-proj (legacy)
             os.path.join(proj, raw, "spec.md"),              # bare folder under proj
         ]
-    spec_path = next((p for p in candidates if os.path.isfile(p)), None)
-    if not spec_path:
-        return None, None, None
+        if raw.startswith(".sdd/") and raw.endswith("/spec.md"):
+            candidates.insert(1, os.path.join(proj, raw))    # legacy shape
+        # Containment: every candidate must resolve INSIDE .sdd/.
+        # Without this, `**Active:** docs` would pick up
+        # `<proj>/docs/spec.md` as the active spec — outside the
+        # framework tree. CR cycle-10 MAJOR.
+        sdd_root_real = os.path.realpath(os.path.join(proj, ".sdd"))
+        def _inside_sdd(candidate):
+            candidate_real = os.path.realpath(candidate)
+            try:
+                return os.path.commonpath([sdd_root_real, candidate_real]) == sdd_root_real
+            except ValueError:
+                return False
+        spec_path = next(
+            (p for p in candidates if os.path.isfile(p) and _inside_sdd(p)),
+            None,
+        )
+        if not spec_path:
+            return None, None, None
     next_action_sh = os.path.join(proj, ".sdd", "scripts", "next-action.sh")
     if not os.path.isfile(next_action_sh):
         return None, None, None

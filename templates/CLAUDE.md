@@ -78,20 +78,33 @@ These eight rules apply across SPEC, BUILD, and SHIP. They are not configurable 
 
 If any of those tradeoffs feel wrong for your project, SDD is the wrong tool. If they feel right, every rule below makes sense in service of them.
 
-## Multi-feature parallel work (v0.10.1)
+## Multi-feature parallel work (v1.0 — branch-aware Active)
 
-INDEX.md's `## In flight` section can hold multiple work items at once — one per branch. The `**Active:**` line at the top of INDEX.md points to whichever is the user's current focus.
+INDEX.md's `## In flight` section can hold multiple work items at once — one per branch. **The active feature is inferred from the current git branch**, not from a manually-edited line. The `**Active:**` line in INDEX.md is now a fallback for when no SDD branch is checked out (e.g., when you're on `main`).
+
+**How resolution works:**
+- Single source of truth: `.sdd/scripts/resolve-active.sh` returns JSON with `active`, `source` (`branch` / `index` / `none`), `ambiguous`, `branch`, `index_active`.
+- If the current branch matches `sdd/<id>-<slug>` AND a work-item folder ending in `<id>-<slug>` exists under `.sdd/`, that wins — `source: "branch"`. Switching branches switches the active feature without any INDEX.md edit.
+- Otherwise the helper reads the `**Active:**` line in INDEX.md — `source: "index"`. This is the legacy path resolution; still useful when you're not on an SDD branch.
+- `/next`, `/status`, and `/settings` all call resolve-active.sh; they no longer parse INDEX.md directly for the active feature.
+
+**Halt before reading the spec when these flags fire** — none of them are bugs; they're cases where the resolver deliberately refuses to pick. Don't try to read `.sdd/<active>/spec.md` if any of:
+- `ambiguous: true` — branch slug matched 2+ work-item folders. Tell the user to rename one of them so the slug is unique. **Don't suggest `/start`.**
+- `active: null` with `source: "none"` — three sub-cases that have different fixes:
+  - `index_active` is set but the folder is missing → INDEX.md has a broken pointer; tell the user to edit INDEX.md or check out an SDD branch.
+  - `branch` matches `sdd/<id>-<slug>` but `active` is null → the SDD branch exists but the work-item folder hasn't been scaffolded; tell the user to run `/start`.
+  - Neither of the above → fresh project; tell the user to run `/start`.
 
 **Typical multi-feature workflow:**
-1. `/start "feature A"` → adds to `## In flight`, sets `**Active:**` to it, creates branch `sdd/001-feature-a`
-2. Work on feature A through SPEC and into BUILD
-3. Need to start feature B before A is done? `git checkout main && git checkout -b sdd/002-feature-b && /start "feature B"` → adds B to `## In flight`, sets `**Active:**` to B
-4. Switch back to A: `git checkout sdd/001-feature-a` and update `**Active:**` line to point at A's path
-5. Both are visible in `## In flight`; only one is `**Active:**` at a time
+1. `/start "feature A"` → adds to `## In flight`, sets `**Active:**` to it, scaffolds `.sdd/features/001-feature-a/spec.md`. You then `git checkout -b sdd/001-feature-a` (or run /next, which does it).
+2. Work on feature A through SPEC and into BUILD.
+3. Need to start feature B before A is done? `git checkout main && git checkout -b sdd/002-feature-b && /start "feature B"` → adds B to `## In flight`, sets `**Active:**` to B.
+4. Switch back to A: just `git checkout sdd/001-feature-a` — resolve-active.sh now returns `features/001-feature-a` as active because the branch slug matches the folder. **No INDEX.md edit needed.**
+5. `/status` shows where the active value came from. If you ever want to override the branch (e.g., demonstrating something on `main` while a `sdd/...` checkout is running elsewhere), edit `**Active:**` and check out a non-SDD branch — the index source kicks in.
 
-**Limitation today:** `**Active:**` is a single line in a shared INDEX.md, so switching branches requires manually updating that line (or `/status` to see what's on each branch). Full per-branch active state (branch-aware lookup) is deferred — see issue #42 for the open SPEC.
+**Drift between branch and INDEX.md is normal:** when you're on `sdd/001-feature-a` but `**Active:**` still points at `features/002-feature-b` (because that's what `/start` last wrote), `/status` shows this and the framework follows the branch. The `**Active:**` line drifts only because nothing rewrites it on checkout — and that's fine: the branch is the truth, INDEX.md is a static fallback.
 
-For Pipelogic-style projects with 3-5 features in flight at once, this scaffold supports the workflow today; the per-branch UX polish lands later.
+**Why the row format didn't change:** the `## In flight` rows could carry an explicit `[branch: sdd/...]` label in theory, but the post-stop-lint invariant 2 path-shape regex would mis-flag the branch as an orphaned work-item path. The mapping between branch slug and folder name is mechanical (`sdd/001-foo` ↔ `<work-item-folder>/001-foo`) so the helper can resolve it without a row label. Future invariant updates may relax this; until then, the row stays minimal.
 
 ## Slash commands available to the user
 
@@ -315,8 +328,8 @@ Three rules to operationalise this:
 
 Every turn:
 
-1. **Read state first.** `.sdd/INDEX.md` tells you which feature is active. `.sdd/features/<active-id>/spec.md` is the current state.
-2. **Find the active step.** Run `.sdd/scripts/next-action.sh <spec-path>` to get the next `[ ]` step row in the current phase plus its action / step / tag / prompt / field info. The `Active blocker` line at the top of `spec.md` should point at the active action — update if stale.
+1. **Read state first.** Run `.sdd/scripts/resolve-active.sh` to learn which feature is active — it returns JSON with `active` (work-item path, e.g. `features/001-foo`), `source` (`branch` / `index` / `none`), and `ambiguous` (`true` when the branch slug matched 2+ work-item folders). Branch-derived `source: "branch"` is the common path; `source: "index"` falls back to the INDEX.md `**Active:**` line. **Halt before reading any spec if `ambiguous: true` or `active: null`** — see the "Multi-feature parallel work" section above for the per-case messages. Otherwise the active spec lives at `.sdd/<active>/spec.md`.
+2. **Find the active step.** Run `.sdd/scripts/next-action.sh <active-spec-path>` to get the next `[ ]` step row in the current phase plus its action / step / tag / prompt / field info. The `Active blocker` line at the top of `spec.md` should point at the active action — update if stale.
 3. **Do exactly one atomic step.** v0.9 atomic-step granularity (F4): each `[ ]` row is one step; one step = one commit. The next-action.sh `tag` field decides what kind of EXECUTE you run (USER-LED ask / AGENT-LED draft+iterate / BUILD-TASK test→code→green).
 4. **Update `spec.md`** by replacing the matched step row `- [ ] <step-id>: <prompt>` with `- [x] <step-id>: <one-line summary of the answer>`. Long-form content goes under the action heading after the step rows.
 5. **Commit** per the convention below — one step per commit, no batching.
@@ -656,10 +669,10 @@ If a feature folder has no `.shipped` marker, treat it as in-flight and read nor
 
 ## Your first move when you start a session
 
-1. Cat `.sdd/INDEX.md`.
+1. Cat `.sdd/INDEX.md` for the project catalog (Shipped + In flight context).
 2. **Cat `.sdd/stack.md`** — refresh on the project's tech stack (running services, providers, version pins, architecture facts). Don't propose alternatives that contradict what's already in stack.md.
-3. Identify the active feature.
-4. Cat `.sdd/features/<active-id>/spec.md`.
+3. Identify the active feature: run `.sdd/scripts/resolve-active.sh`. The `active` field is the work-item path (e.g. `features/001-foo`); `source` tells you whether the current branch chose it (`branch`) or INDEX.md's `**Active:**` line did (`index`). Halt with the right plain-English fix if `ambiguous: true` (rename one of two collide-named folders) or `active: null` (broken INDEX, scaffold-pending SDD branch, or fresh project — see "Multi-feature parallel work" for the per-case wording).
+4. Cat `.sdd/<active>/spec.md` — only when step 3 returned a non-null `active`.
 5. Find the active blocker.
 6. State out loud (one short sentence): "We're on `<feature>`, phase `<phase>`, next blocker is `<section>`. The question is: `<question>`."
 7. Ask or propose.

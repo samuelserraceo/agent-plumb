@@ -94,6 +94,10 @@ mkproj_v08() {
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/read-events.sh"          "$d/.sdd/scripts/read-events.sh"
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/validate-sdd-path.sh"    "$d/.sdd/scripts/validate-sdd-path.sh"
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/settings.sh"             "$d/.sdd/scripts/settings.sh" 2>/dev/null || true
+  cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/resolve-active.sh"       "$d/.sdd/scripts/resolve-active.sh" 2>/dev/null || true
+  chmod +x "$d/.sdd/scripts/resolve-active.sh" 2>/dev/null || true
+  cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/status-banner.sh"        "$d/.sdd/scripts/status-banner.sh" 2>/dev/null || true
+  chmod +x "$d/.sdd/scripts/status-banner.sh" 2>/dev/null || true
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/revert-phase.sh"         "$d/.sdd/scripts/revert-phase.sh" 2>/dev/null || true
   chmod +x "$d/.sdd/scripts/revert-phase.sh" 2>/dev/null || true
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/check-setup-answer.sh"   "$d/.sdd/scripts/check-setup-answer.sh" 2>/dev/null || true
@@ -5467,6 +5471,841 @@ else
 fi
 
 # ============================================================
+# T121 — resolve-active.sh: branch wins when current branch matches
+#        an existing SDD work-item folder (closes #42, v1.0 step 1).
+# ============================================================
+note "T121: resolve-active.sh prefers branch-derived active over INDEX.md"
+RESOLVE_ACTIVE="$FRAMEWORK_ROOT/templates/.sdd/scripts/resolve-active.sh"
+d=$(mktemp -d) || exit 1
+cd "$d" || { bad "T121 cd failed" "d=$d"; rm -rf "$d"; exit 1; }
+git init -q
+git config user.email t@t.com && git config user.name T
+git commit --allow-empty -q -m "init"
+mkdir -p .sdd/features/001-on-branch .sdd/features/002-in-index
+touch .sdd/features/001-on-branch/spec.md .sdd/features/002-in-index/spec.md
+echo '**Active:** features/002-in-index' > .sdd/INDEX.md
+git checkout -q -b sdd/001-on-branch
+out=$(bash "$RESOLVE_ACTIVE" 2>&1)
+rc=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$rc" -eq 0 ] && echo "$out" | python3 -c '
+import json, sys
+d = json.loads(sys.stdin.read())
+assert d["active"] == "features/001-on-branch", f"active={d['"'"'active'"'"']}"
+assert d["source"] == "branch", f"source={d['"'"'source'"'"']}"
+assert d["branch"] == "sdd/001-on-branch", f"branch={d['"'"'branch'"'"']}"
+assert d["index_active"] == "features/002-in-index", f"index_active={d['"'"'index_active'"'"']}"
+' 2>/dev/null; then
+  ok "T121 branch active wins, INDEX value preserved as fallback"
+else
+  bad "T121 branch resolution wrong" "out='$out'"
+fi
+
+# ============================================================
+# T121b — resolve-active.sh: falls back to INDEX.md when not on
+#         an `sdd/...` branch (e.g., on `main`).
+# ============================================================
+note "T121b: resolve-active.sh falls back to INDEX.md off SDD branches"
+d=$(mktemp -d) || exit 1
+cd "$d" || { bad "T121b cd failed" "d=$d"; rm -rf "$d"; exit 1; }
+git init -q
+git config user.email t@t.com && git config user.name T
+git commit --allow-empty -q -m "init"
+# Pin the branch to a known non-SDD name. Without this the test relies
+# on git's `init.defaultBranch` config, which a user could plausibly
+# set to something like `sdd/release` and break the test (CR cycle-10).
+git branch -M main
+mkdir -p .sdd/features/002-in-index
+touch .sdd/features/002-in-index/spec.md
+echo '**Active:** features/002-in-index' > .sdd/INDEX.md
+out=$(bash "$RESOLVE_ACTIVE" 2>&1)
+rc=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$rc" -eq 0 ] && echo "$out" | python3 -c '
+import json, sys
+d = json.loads(sys.stdin.read())
+assert d["active"] == "features/002-in-index", f"active={d['"'"'active'"'"']}"
+assert d["source"] == "index", f"source={d['"'"'source'"'"']}"
+' 2>/dev/null; then
+  ok "T121b INDEX.md fallback hit when not on SDD branch"
+else
+  bad "T121b INDEX.md fallback wrong" "out='$out'"
+fi
+
+# ============================================================
+# T121c — resolve-active.sh: SDD-style branch with no matching
+#         folder falls back to INDEX.md cleanly (the user might
+#         have branched to a name that hasn't been scaffolded yet).
+# ============================================================
+note "T121c: resolve-active.sh tolerates SDD branch with no matching folder"
+d=$(mktemp -d) || exit 1
+cd "$d" || { bad "T121c cd failed" "d=$d"; rm -rf "$d"; exit 1; }
+git init -q
+git config user.email t@t.com && git config user.name T
+git commit --allow-empty -q -m "init"
+mkdir -p .sdd/features/002-in-index
+touch .sdd/features/002-in-index/spec.md
+# Half-scaffolded folder: directory exists but spec.md is missing.
+# The resolver must treat this the same as "no folder" — branch
+# resolution requires spec.md, so this falls back to INDEX. CR
+# cycle-12 nit: without this case, a regression that started
+# accepting bare directories would still go green here.
+mkdir -p .sdd/features/999-not-scaffolded-yet
+echo '**Active:** features/002-in-index' > .sdd/INDEX.md
+git checkout -q -b sdd/999-not-scaffolded-yet
+out=$(bash "$RESOLVE_ACTIVE" 2>&1)
+rc=$?
+cd - >/dev/null || true
+rm -rf "$d"
+if [ "$rc" -eq 0 ] && echo "$out" | python3 -c '
+import json, sys
+d = json.loads(sys.stdin.read())
+assert d["active"] == "features/002-in-index", f"active={d['"'"'active'"'"']}"
+assert d["source"] == "index", f"source={d['"'"'source'"'"']}"
+assert d["branch"] == "sdd/999-not-scaffolded-yet", f"branch={d['"'"'branch'"'"']}"
+' 2>/dev/null; then
+  ok "T121c half-scaffolded SDD branch falls back to INDEX.md cleanly"
+else
+  bad "T121c half-scaffolded SDD branch wrong" "out='$out'"
+fi
+
+# ============================================================
+# T121d — resolve-active.sh: nothing resolvable → emits null active
+#         with source=none. Doesn't crash; emits a parseable JSON.
+# ============================================================
+note "T121d: resolve-active.sh emits null active when nothing resolves"
+d=$(mktemp -d) || exit 1
+cd "$d" || { bad "T121d cd failed" "d=$d"; rm -rf "$d"; exit 1; }
+mkdir -p .sdd
+out=$(bash "$RESOLVE_ACTIVE" 2>&1)
+rc=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$rc" -eq 0 ] && echo "$out" | python3 -c '
+import json, sys
+d = json.loads(sys.stdin.read())
+assert d["active"] is None, f"active={d['"'"'active'"'"']}"
+assert d["source"] == "none", f"source={d['"'"'source'"'"']}"
+' 2>/dev/null; then
+  ok "T121d emits null active + source=none on empty project"
+else
+  bad "T121d empty-project case wrong" "out='$out'"
+fi
+
+# ============================================================
+# T121e — resolve-active.sh deterministic: 5 invocations on the
+#         same project produce byte-identical output.
+# ============================================================
+note "T121e: resolve-active.sh deterministic across 5 invocations"
+d=$(mktemp -d) || exit 1
+cd "$d" || { bad "T121e cd failed" "d=$d"; rm -rf "$d"; exit 1; }
+git init -q
+git config user.email t@t.com && git config user.name T
+git commit --allow-empty -q -m "init"
+mkdir -p .sdd/features/001-determinism-test
+touch .sdd/features/001-determinism-test/spec.md
+echo '**Active:** features/001-determinism-test' > .sdd/INDEX.md
+git checkout -q -b sdd/001-determinism-test
+runs=()
+exits=()
+# Capture stderr + exit code per invocation. CR cycle-11 minor: a
+# silent-fail (stable empty stdout + noisy stderr) would have passed
+# the "all 5 identical" check; assert exit=0 + non-empty + parses-as-
+# JSON before declaring determinism.
+for i in 1 2 3 4 5; do
+  out=$(bash "$RESOLVE_ACTIVE" 2>&1)
+  ec=$?
+  runs+=("$out")
+  exits+=("$ec")
+done
+cd - >/dev/null || true
+rm -rf "$d"
+all_same=1
+all_ok=1
+all_parse=1
+all_keys_sorted=1
+for r in "${runs[@]}"; do
+  [ "$r" != "${runs[0]}" ] && all_same=0
+  [ -z "$r" ] && all_ok=0
+  echo "$r" | python3 -c 'import json,sys; json.load(sys.stdin)' 2>/dev/null || all_parse=0
+  # Contract: keys are sorted (deterministic across emitters). A
+  # stable but unsorted output would pass byte-equality but break
+  # downstream tools that rely on the documented order. CR cycle-12.
+  echo "$r" | python3 -c '
+import json, sys
+pairs = json.loads(sys.stdin.read(), object_pairs_hook=list)
+keys = [k for k, _ in pairs]
+assert keys == sorted(keys), keys
+' 2>/dev/null || all_keys_sorted=0
+done
+for ec in "${exits[@]}"; do
+  [ "$ec" -ne 0 ] && all_ok=0
+done
+if [ "$all_same" -eq 1 ] && [ "$all_ok" -eq 1 ] && [ "$all_parse" -eq 1 ] && [ "$all_keys_sorted" -eq 1 ]; then
+  ok "T121e resolve-active.sh deterministic + ec=0 + parses + keys sorted (5/5)"
+else
+  bad "T121e resolve-active.sh broken" "same=$all_same ok=$all_ok parse=$all_parse sorted=$all_keys_sorted first='${runs[0]}' last='${runs[4]}'"
+fi
+
+# ============================================================
+# T121f — settings.sh inherits branch-aware active. When on
+#         sdd/<id>-<slug>, /settings get walks the cascade against
+#         THE BRANCH'S spec.md, not whatever **Active:** points at.
+# ============================================================
+note "T121f: settings.sh uses branch-derived active for F5 cascade"
+d=$(mktemp -d) || exit 1
+cp -r "$FRAMEWORK_ROOT/templates/.sdd" "$d/"
+cd "$d" || { bad "T121f cd failed" "d=$d"; rm -rf "$d"; exit 1; }
+git init -q
+git config user.email t@t.com && git config user.name T
+# Two work-items: A (which the branch points at) and B (which INDEX
+# points at). The spec for A overrides voice.plain_english=False so
+# the cascade lookup PROVES which one was resolved.
+mkdir -p .sdd/features/001-on-branch .sdd/features/002-in-index
+cat > .sdd/features/001-on-branch/spec.md <<'SPEC'
+---
+overrides:
+  voice:
+    plain_english: false
+---
+# 001 on-branch
+[PHASE: SPEC]
+## PHASE: SPEC
+### action: problem
+- [ ] who: who specifically has the problem?
+SPEC
+cat > .sdd/features/002-in-index/spec.md <<'SPEC'
+# 002 in-index
+[PHASE: SPEC]
+## PHASE: SPEC
+### action: problem
+- [ ] who: who specifically has the problem?
+SPEC
+cat > .sdd/INDEX.md <<'IDX'
+**Playbook:** feature
+**Active:** features/002-in-index
+
+## In flight
+- features/001-on-branch
+- features/002-in-index
+
+## Shipped
+IDX
+git add . && git commit -q -m "scaffold"
+git checkout -q -b sdd/001-on-branch
+out=$(bash .sdd/scripts/settings.sh get voice.plain_english 2>&1)
+rc=$?
+cd - >/dev/null
+rm -rf "$d"
+# If branch wins, the cascade reads the override (False).
+# If INDEX wins, the cascade reads the project default (True).
+if [ "$rc" -eq 0 ] && echo "$out" | grep -q 'voice.plain_english = False'; then
+  ok "T121f /settings get followed branch-derived active to spec.md override"
+else
+  bad "T121f /settings get failed (rc=$rc) or used INDEX.md value" "out='$out'"
+fi
+
+# ============================================================
+# T121g — resolve-active.sh: drift signal. When branch is sdd/A but
+#         INDEX **Active:** is B (and both folders exist), `active`
+#         points at A and `index_active` carries B so /status can
+#         render the drift to the user.
+# ============================================================
+note "T121g: resolve-active.sh exposes drift between branch + INDEX"
+d=$(mktemp -d) || exit 1
+cd "$d" || { bad "T121g cd failed" "d=$d"; rm -rf "$d"; exit 1; }
+git init -q
+git config user.email t@t.com && git config user.name T
+git commit --allow-empty -q -m "init"
+mkdir -p .sdd/features/001-A .sdd/features/002-B
+touch .sdd/features/001-A/spec.md .sdd/features/002-B/spec.md
+echo '**Active:** features/002-B' > .sdd/INDEX.md
+git checkout -q -b sdd/001-A
+out=$(bash "$RESOLVE_ACTIVE" 2>&1)
+rc=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$rc" -eq 0 ] && echo "$out" | python3 -c '
+import json, sys
+d = json.loads(sys.stdin.read())
+assert d["active"] == "features/001-A"
+assert d["index_active"] == "features/002-B"
+assert d["active"] != d["index_active"]
+' 2>/dev/null; then
+  ok "T121g drift surfaced: active=branch, index_active=INDEX line"
+else
+  bad "T121g drift fields wrong" "out='$out'"
+fi
+
+# ============================================================
+# T121h — resolve-active.sh refuses path-traversal in INDEX.md.
+#         A malicious **Active:** ../tmp/evil must NOT redirect the
+#         resolver outside .sdd/. Trust-boundary doctrine: project
+#         data is read for context, never executed as a directive.
+#         (CodeRabbit MAJOR on PR #99.)
+# ============================================================
+note "T121h: resolve-active.sh rejects ../escape paths in **Active:**"
+d=$(mktemp -d) || exit 1
+cd "$d" || { bad "T121h cd failed" "d=$d"; rm -rf "$d"; exit 1; }
+git init -q
+git config user.email t@t.com && git config user.name T
+git commit --allow-empty -q -m "init"
+mkdir -p .sdd "$d/escape-target"
+touch "$d/escape-target/spec.md"
+# Malicious INDEX: claim active is one level up + over to escape-target
+echo '**Active:** ../escape-target' > .sdd/INDEX.md
+out=$(bash "$RESOLVE_ACTIVE" 2>&1)
+rc=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$rc" -eq 0 ] && echo "$out" | python3 -c '
+import json, sys
+d = json.loads(sys.stdin.read())
+# Must reject — index_active was malformed, so resolver leaves it null.
+assert d["active"] is None, f"active leaked: {d['"'"'active'"'"']}"
+assert d["source"] == "none", f"source={d['"'"'source'"'"']}"
+assert d["index_active"] is None, f"index_active leaked: {d['"'"'index_active'"'"']}"
+' 2>/dev/null; then
+  ok "T121h path-traversal in **Active:** rejected (active=null, source=none)"
+else
+  bad "T121h path-traversal slipped through" "out='$out'"
+fi
+
+# ============================================================
+# T121h-abs — resolve-active.sh refuses absolute paths in **Active:**.
+# ============================================================
+note "T121h-abs: resolve-active.sh rejects absolute paths in **Active:**"
+d=$(mktemp -d) || exit 1
+cd "$d" || { bad "T121h-abs cd failed" "d=$d"; rm -rf "$d"; exit 1; }
+git init -q
+git config user.email t@t.com && git config user.name T
+git commit --allow-empty -q -m "init"
+# Per-test absolute-path target under $d so parallel runs don't race
+# on a shared /tmp file. CR cycle-5 minor.
+mkdir -p .sdd "$d/abs-attack"
+touch "$d/abs-attack/spec.md"
+echo "**Active:** $d/abs-attack" > .sdd/INDEX.md
+out=$(bash "$RESOLVE_ACTIVE" 2>&1)
+rc=$?
+cd - >/dev/null || true
+rm -rf "$d"
+if [ "$rc" -eq 0 ] && echo "$out" | python3 -c '
+import json, sys
+d = json.loads(sys.stdin.read())
+assert d["active"] is None
+assert d["source"] == "none"
+' 2>/dev/null; then
+  ok "T121h-abs absolute path in **Active:** rejected"
+else
+  bad "T121h-abs absolute path slipped through" "out='$out'"
+fi
+
+# ============================================================
+# T121i — resolve-active.sh refuses path-traversal via branch slug.
+#         Branch `sdd/../escape` cannot be used to escape .sdd/ via
+#         os.path.join. Strict slug regex blocks the attack.
+# ============================================================
+note "T121i: resolve-active.sh rejects sdd/../escape branch slugs"
+# Git's check-ref-format rejects `sdd/../escape` outright, so we
+# can't actually create that branch. To reach the resolver's slug
+# regex with a malicious value we stub `git` on PATH to lie about
+# the current branch — that simulates the case where, somehow, a
+# malicious branch name reaches the resolver. CR cycle-3 minor:
+# without the stub, this test silently fell through to the benign
+# fallback name and didn't actually exercise BRANCH_SLUG_RE.
+d=$(mktemp -d) || exit 1
+cd "$d" || { bad "T121i cd failed" "d=$d"; rm -rf "$d"; exit 1; }
+mkdir -p .sdd "$d/escape-target" fake-bin
+touch "$d/escape-target/spec.md"
+# Stub git: any `git -C <proj> rev-parse --abbrev-ref HEAD` call
+# returns the malicious branch. Other args get a real-git fallback
+# via /usr/bin/env so the test isn't fragile to other invocations.
+real_git=$(command -v git)
+cat > fake-bin/git <<GITSTUB
+#!/usr/bin/env bash
+# argv: git -C <proj> rev-parse --abbrev-ref HEAD
+if [ "\$3" = "rev-parse" ] && [ "\$5" = "HEAD" ]; then
+  echo "sdd/../escape-target"
+  exit 0
+fi
+exec "$real_git" "\$@"
+GITSTUB
+chmod +x fake-bin/git
+out=$(PATH="$PWD/fake-bin:$PATH" bash "$RESOLVE_ACTIVE" 2>&1)
+rc=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$rc" -eq 0 ] && echo "$out" | python3 -c '
+import json, sys
+d = json.loads(sys.stdin.read())
+# Resolver sees the malicious slug, BRANCH_SLUG_RE rejects it.
+# active must stay null (filesystem scan never runs).
+assert d["active"] is None, f"active leaked: {d['"'"'active'"'"']}"
+assert d["source"] == "none", f"source={d['"'"'source'"'"']}"
+# branch field carries the raw value as-reported (informational).
+assert d["branch"] == "sdd/../escape-target"
+' 2>/dev/null; then
+  ok "T121i malicious slug rejected by BRANCH_SLUG_RE before filesystem scan"
+else
+  bad "T121i malicious branch slug escaped" "out='$out'"
+fi
+
+# ============================================================
+# T121i-non-sdd — resolve-active.sh ignores branches that match
+#                 `sdd/<anything>` but aren't the framework's
+#                 documented `sdd/<id>-<slug>` shape. Catches the
+#                 `sdd/release` / `sdd/main` override flagged by
+#                 CodeRabbit cycle-3 MAJOR — without this, a
+#                 release branch could shadow INDEX.md if a folder
+#                 named `release/` happened to exist.
+# ============================================================
+note "T121i-non-sdd: resolve-active.sh skips non-SDD-shape sdd/<x> branches"
+d=$(mktemp -d) || exit 1
+cd "$d" || { bad "T121i-non-sdd cd failed" "d=$d"; rm -rf "$d"; exit 1; }
+git init -q
+git config user.email t@t.com && git config user.name T
+git commit --allow-empty -q -m "init"
+# Create an INDEX-pointed folder + a folder that would match a
+# bare-name branch like `sdd/release`. If the resolver picked the
+# branch, it'd return release/release; we want it to fall back to
+# INDEX.md instead.
+mkdir -p .sdd/features/001-real-feature .sdd/release/release
+touch .sdd/features/001-real-feature/spec.md .sdd/release/release/spec.md
+echo '**Active:** features/001-real-feature' > .sdd/INDEX.md
+git checkout -q -b sdd/release
+out=$(bash "$RESOLVE_ACTIVE" 2>&1)
+rc=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$rc" -eq 0 ] && echo "$out" | python3 -c '
+import json, sys
+d = json.loads(sys.stdin.read())
+assert d["active"] == "features/001-real-feature", f"active={d['"'"'active'"'"']}"
+assert d["source"] == "index", f"source={d['"'"'source'"'"']} (should fall back to INDEX, not pick sdd/release as branch)"
+assert d["branch"] == "sdd/release"
+' 2>/dev/null; then
+  ok "T121i-non-sdd sdd/release ignored, INDEX fallback used"
+else
+  bad "T121i-non-sdd sdd/release branch overrode INDEX" "out='$out'"
+fi
+
+# ============================================================
+# T121j — resolve-active.sh fails closed on ambiguous branch slug.
+#         When the same `<id>-<slug>` exists under two top-level
+#         folders (e.g. features/001-foo AND bugs/001-foo), the
+#         resolver must NOT pick one silently — it sets active=null,
+#         source=none, ambiguous=true so callers can warn the user.
+#         (CodeRabbit MAJOR cycle-2 PR #99.)
+# ============================================================
+note "T121j: resolve-active.sh fails closed on ambiguous branch slug"
+d=$(mktemp -d) || exit 1
+cd "$d" || { bad "T121j cd failed" "d=$d"; rm -rf "$d"; exit 1; }
+git init -q
+git config user.email t@t.com && git config user.name T
+git commit --allow-empty -q -m "init"
+# Two work-item folders with the SAME slug under different roots —
+# this is the ambiguity case CR cycle-2 flagged.
+mkdir -p .sdd/features/001-collide .sdd/bugs/001-collide
+touch .sdd/features/001-collide/spec.md .sdd/bugs/001-collide/spec.md
+git checkout -q -b sdd/001-collide
+out=$(bash "$RESOLVE_ACTIVE" 2>&1)
+rc=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$rc" -eq 0 ] && echo "$out" | python3 -c '
+import json, sys
+d = json.loads(sys.stdin.read())
+assert d["active"] is None, f"active leaked despite ambiguity: {d['"'"'active'"'"']}"
+assert d["source"] == "none", f"source={d['"'"'source'"'"']}"
+assert d["ambiguous"] is True, f"ambiguous flag missing: {d.get('"'"'ambiguous'"'"')}"
+assert d["branch"] == "sdd/001-collide"
+' 2>/dev/null; then
+  ok "T121j ambiguous branch slug fails closed (active=null, ambiguous=true)"
+else
+  bad "T121j ambiguous slug picked silently or flag missing" "out='$out'"
+fi
+
+# ============================================================
+# T121j-bugs — resolve-active.sh resolves non-features work-item
+#              folders too. The branch resolution shouldn't be
+#              hardcoded to features/ — bugs/, ideas/, and any
+#              other top-level work-item folder added later must
+#              all work. CR cycle-17 nit: T121j only proves the
+#              fail-closed case; positive coverage of bugs/<slug>
+#              proves the resolver isn't features-biased.
+# ============================================================
+note "T121j-bugs: resolve-active.sh resolves bugs/<slug> work-items"
+d=$(mktemp -d) || exit 1
+cd "$d" || { bad "T121j-bugs cd failed" "d=$d"; rm -rf "$d"; exit 1; }
+git init -q
+git config user.email t@t.com && git config user.name T
+git commit --allow-empty -q -m "init"
+mkdir -p .sdd/bugs/001-bug-feature
+touch .sdd/bugs/001-bug-feature/spec.md
+git checkout -q -b sdd/001-bug-feature
+out=$(bash "$RESOLVE_ACTIVE" 2>&1)
+rc=$?
+cd - >/dev/null || true
+rm -rf "$d"
+if [ "$rc" -eq 0 ] && echo "$out" | python3 -c '
+import json, sys
+d = json.loads(sys.stdin.read())
+assert d["active"] == "bugs/001-bug-feature", f"active={d['"'"'active'"'"']}"
+assert d["source"] == "branch", f"source={d['"'"'source'"'"']}"
+assert d["ambiguous"] is False
+' 2>/dev/null; then
+  ok "T121j-bugs resolver returns bugs/<slug> (not features-biased)"
+else
+  bad "T121j-bugs resolver did not resolve bugs/ work-item" "rc=$rc out='$out'"
+fi
+
+# ============================================================
+# T121l — /settings inherits the resolver's fail-closed contract.
+#         When the resolver returns active=null (ambiguous slug,
+#         malicious INDEX, etc.), settings.sh MUST report the
+#         project default — never re-parse INDEX.md from inside
+#         _infer_active_context. Otherwise the resolver's hardening
+#         is bypassed for the cascade lookup. CR cycle-5 MAJOR.
+# ============================================================
+note "T121l: /settings respects resolver fail-closed (no INDEX bypass)"
+d=$(mktemp -d) || exit 1
+cp -r "$FRAMEWORK_ROOT/templates/.sdd" "$d/"
+cd "$d" || { bad "T121l cd failed" "d=$d"; rm -rf "$d"; exit 1; }
+git init -q
+git config user.email t@t.com && git config user.name T
+# Two folders with the same slug — ambiguous case. INDEX points at
+# the second one with an override. If settings.sh respects the
+# resolver's null + ambiguous=true, the cascade walk is skipped and
+# the override is NEVER read. If settings.sh falls through to the
+# legacy parser, it'll find features/001-collide via INDEX and pick
+# up the override — wrong answer.
+mkdir -p .sdd/features/001-collide .sdd/bugs/001-collide
+cat > .sdd/features/001-collide/spec.md <<'SPEC'
+---
+overrides:
+  voice:
+    plain_english: false
+---
+# 001 collide (features) — INDEX target with override
+[PHASE: SPEC]
+## PHASE: SPEC
+### action: problem
+- [ ] who: who specifically has the problem?
+SPEC
+cat > .sdd/bugs/001-collide/spec.md <<'SPEC'
+# 001 collide (bugs) — no override
+[PHASE: SPEC]
+## PHASE: SPEC
+### action: problem
+- [ ] who: who specifically has the problem?
+SPEC
+cat > .sdd/INDEX.md <<'IDX'
+**Playbook:** feature
+**Active:** features/001-collide
+
+## In flight
+- features/001-collide
+- bugs/001-collide
+
+## Shipped
+IDX
+git add . && git commit -q -m "scaffold" --no-verify
+git checkout -q -b sdd/001-collide
+out=$(bash .sdd/scripts/settings.sh get voice.plain_english 2>&1)
+rc=$?
+cd - >/dev/null || true
+rm -rf "$d"
+# Resolver returns ambiguous=true → settings.sh treats as no active
+# context → falls back to project default (True, NOT False).
+if [ "$rc" -eq 0 ] && echo "$out" | grep -q 'voice.plain_english = True' && echo "$out" | grep -q '\[project\]'; then
+  ok "T121l /settings honored resolver fail-closed (no legacy bypass)"
+else
+  bad "T121l /settings failed (rc=$rc) or bypassed resolver" "out='$out'"
+fi
+
+# ============================================================
+# T121k — /status banner is rendered by the SHIPPED status-banner.sh
+#         helper. CR cycle-7 MAJOR: earlier T121k/T121m duplicated
+#         the parsing + case-split logic inline, so the slash-command
+#         body could drift and the tests would silently still pass.
+#         Now the test pipes synthetic resolver JSON into the real
+#         shipped helper and asserts the rendered banner.
+# ============================================================
+note "T121k: status-banner.sh renders the right banner for 7 source/ambiguous combos"
+STATUS_BANNER="$FRAMEWORK_ROOT/templates/.sdd/scripts/status-banner.sh"
+# Per-case helper: pipe JSON, capture stderr + exit code, only count
+# the case as ok if BOTH the grep matches AND the exit code is 0.
+# Without the rc check the test would still pass on a silent-fail
+# helper. CR cycle-14 nit.
+banner_case() {
+  local json="$1" pattern="$2"
+  local out rc
+  out=$(echo "$json" | bash "$STATUS_BANNER" 2>&1)
+  rc=$?
+  if [ "$rc" -eq 0 ] && echo "$out" | grep -q "$pattern"; then
+    return 0
+  fi
+  return 1
+}
+ok_count=0
+# 1. branch source — happy path
+banner_case '{"active":"features/001-x","ambiguous":false,"branch":"sdd/001-x","index_active":"features/001-x","source":"branch"}' \
+  "Active source: branch (sdd/001-x) → features/001-x" && ok_count=$((ok_count+1))
+# 2. branch source with drift — extra "Note:" line
+banner_case '{"active":"features/001-x","ambiguous":false,"branch":"sdd/001-x","index_active":"features/002-other","source":"branch"}' \
+  "Note: INDEX.md \*\*Active:\*\* points at features/002-other" && ok_count=$((ok_count+1))
+# 3. index source — off-SDD-branch fallback (CR cycle-8 added this).
+banner_case '{"active":"features/001-x","ambiguous":false,"branch":"main","index_active":"features/001-x","source":"index"}' \
+  "Active source: INDEX.md (branch 'main' is not an SDD branch) → features/001-x" && ok_count=$((ok_count+1))
+# 4. ambiguous slug — fail-closed banner
+banner_case '{"active":null,"ambiguous":true,"branch":"sdd/001-collide","index_active":null,"source":"none"}' \
+  "matched 2+ work-item folders" && ok_count=$((ok_count+1))
+# 5. broken INDEX pointer
+banner_case '{"active":null,"ambiguous":false,"branch":"main","index_active":"features/999-broken","source":"none"}' \
+  "INDEX.md \*\*Active:\*\* points at \`features/999-broken\`" && ok_count=$((ok_count+1))
+# 6. SDD-shape branch, scaffold not done
+banner_case '{"active":null,"ambiguous":false,"branch":"sdd/042-pending","index_active":null,"source":"none"}' \
+  "is SDD-shaped, but" && ok_count=$((ok_count+1))
+# 7. non-SDD branch, no INDEX, no folders
+banner_case '{"active":null,"ambiguous":false,"branch":"feature/foo","index_active":null,"source":"none"}' \
+  "isn't an SDD-shape" && ok_count=$((ok_count+1))
+if [ "$ok_count" -eq 7 ]; then
+  ok "T121k status-banner.sh rendered correctly + ec=0 for 7/7 cases"
+else
+  bad "T121k status-banner.sh rendered wrong output (or non-zero ec)" "ok_count=$ok_count/7"
+fi
+
+# ============================================================
+# T121m — status-banner.sh deterministic across invocations.
+#         The helper has no $RANDOM, no timestamps; same input must
+#         produce byte-identical output. Pin against regressions.
+# ============================================================
+note "T121m: status-banner.sh deterministic across 3 invocations"
+input='{"active":null,"ambiguous":true,"branch":"sdd/001-collide","index_active":null,"source":"none"}'
+runs=()
+exits=()
+# Capture stderr + exit code per invocation. Same hardening as T121e:
+# silent-fail (stable empty stdout + noisy stderr) would otherwise pass.
+for i in 1 2 3; do
+  out=$(echo "$input" | bash "$STATUS_BANNER" 2>&1)
+  ec=$?
+  runs+=("$out")
+  exits+=("$ec")
+done
+all_same=1
+all_ok=1
+for r in "${runs[@]}"; do
+  [ "$r" != "${runs[0]}" ] && all_same=0
+  [ -z "$r" ] && all_ok=0
+done
+for ec in "${exits[@]}"; do
+  [ "$ec" -ne 0 ] && all_ok=0
+done
+if [ "$all_same" -eq 1 ] && [ "$all_ok" -eq 1 ]; then
+  ok "T121m status-banner.sh deterministic + ec=0 + non-empty (3/3)"
+else
+  bad "T121m status-banner.sh broken" "same=$all_same ok=$all_ok first='${runs[0]}' last='${runs[2]}'"
+fi
+
+# ============================================================
+# T121n — resolve-active.sh refuses spec.md symlink escapes.
+#         A repo can plant `.sdd/features/001-foo/spec.md` as a
+#         symlink to a file outside `.sdd/` (or even a file inside
+#         it that isn't really a spec). Without realpath-checking
+#         spec.md itself, the resolver would emit features/001-foo
+#         as active and downstream tools would follow the symlink
+#         outside the trust boundary. CR cycle-13 MAJOR.
+# ============================================================
+note "T121n: resolve-active.sh rejects spec.md symlinks pointing outside .sdd/"
+d=$(mktemp -d) || exit 1
+cd "$d" || { bad "T121n cd failed" "d=$d"; rm -rf "$d"; exit 1; }
+git init -q
+git config user.email t@t.com && git config user.name T
+git commit --allow-empty -q -m "init"
+git branch -M main
+# Plant a target file outside .sdd/ for the symlink to escape to.
+mkdir -p "$d/escape-target"
+echo "secret content outside .sdd/" > "$d/escape-target/spec.md"
+# Create the work-item folder with a symlinked spec.md.
+mkdir -p .sdd/features/001-symlink-attack
+ln -s "$d/escape-target/spec.md" .sdd/features/001-symlink-attack/spec.md
+# Branch matches the work-item folder; without symlink check, the
+# resolver would emit features/001-symlink-attack as active.
+git checkout -q -b sdd/001-symlink-attack
+out=$(bash "$RESOLVE_ACTIVE" 2>&1)
+rc=$?
+cd - >/dev/null || true
+rm -rf "$d"
+if [ "$rc" -eq 0 ] && echo "$out" | python3 -c '
+import json, sys
+d = json.loads(sys.stdin.read())
+# Resolver must reject the symlink-escaped folder.
+assert d["active"] is None, f"symlink-escape leaked: active={d['"'"'active'"'"']}"
+assert d["source"] == "none", f"source={d['"'"'source'"'"']}"
+' 2>/dev/null; then
+  ok "T121n spec.md symlink to outside .sdd/ rejected (active=null)"
+else
+  bad "T121n spec.md symlink escape was accepted" "out='$out'"
+fi
+
+# ============================================================
+# T121n-dir — resolve-active.sh refuses work-item directory
+#             symlink escapes too. Pair with T121n which covers
+#             spec.md symlinks; this one covers the case where
+#             the WORK-ITEM DIRECTORY itself is a symlink to
+#             outside .sdd/. The folder containment check inside
+#             has_safe_spec catches both. CR cycle-14 nit.
+# ============================================================
+note "T121n-dir: resolve-active.sh rejects work-item directory symlinks"
+d=$(mktemp -d) || exit 1
+cd "$d" || { bad "T121n-dir cd failed" "d=$d"; rm -rf "$d"; exit 1; }
+git init -q
+git config user.email t@t.com && git config user.name T
+git commit --allow-empty -q -m "init"
+git branch -M main
+# Plant a real folder outside .sdd/ with a normal spec.md.
+mkdir -p "$d/escape-target-dir"
+echo "outside spec content" > "$d/escape-target-dir/spec.md"
+# .sdd/features/001-symlink-attack is itself a symlink, not a real
+# folder. Without the FOLDER realpath check, the resolver would
+# follow it into the escape target.
+mkdir -p .sdd/features
+ln -s "$d/escape-target-dir" .sdd/features/001-symlink-attack
+git checkout -q -b sdd/001-symlink-attack
+out=$(bash "$RESOLVE_ACTIVE" 2>&1)
+rc=$?
+cd - >/dev/null || true
+rm -rf "$d"
+if [ "$rc" -eq 0 ] && echo "$out" | python3 -c '
+import json, sys
+d = json.loads(sys.stdin.read())
+assert d["active"] is None, f"dir-symlink-escape leaked: active={d['"'"'active'"'"']}"
+assert d["source"] == "none", f"source={d['"'"'source'"'"']}"
+' 2>/dev/null; then
+  ok "T121n-dir work-item directory symlink to outside .sdd/ rejected"
+else
+  bad "T121n-dir work-item directory symlink escape was accepted" "out='$out'"
+fi
+
+# ============================================================
+# T121-next-doctrine — /next slash-command body uses resolve-active.sh
+#                       as the source of truth for the active feature.
+#                       /next is a markdown-prose-for-the-agent file
+#                       (not an executable), so we can't "invoke" it
+#                       like the other helpers. Instead this test
+#                       grep-asserts the doctrine: the body must call
+#                       resolve-active.sh and must NOT instruct the
+#                       agent to parse INDEX.md directly for active.
+#                       Catches doctrine drift if a future cycle ever
+#                       reverts the consumer back to INDEX-parsing.
+#                       (CR cycle-18 duplicate flagged the missing
+#                       /next coverage; this is the closest test we
+#                       can write for a slash-command-body file.)
+# ============================================================
+note "T121-next-doctrine: /next.md uses resolve-active.sh as active source"
+NEXT_MD="$FRAMEWORK_ROOT/templates/.claude/commands/next.md"
+ok_count=0
+# Must reference resolve-active.sh
+grep -q '\.sdd/scripts/resolve-active\.sh' "$NEXT_MD" && ok_count=$((ok_count+1))
+# Must call out ambiguous halt branch
+grep -q 'ambiguous: true' "$NEXT_MD" && ok_count=$((ok_count+1))
+# Must NOT instruct the agent to parse INDEX.md as the active source
+# directly (the v0.x doctrine — should be replaced by resolver).
+if grep -qE 'Find the active work item from the \*\*Active:\*\* pointer line' "$NEXT_MD"; then
+  drift=1
+else
+  drift=0
+  ok_count=$((ok_count+1))
+fi
+if [ "$ok_count" -eq 3 ]; then
+  ok "T121-next-doctrine /next.md uses resolver, not direct INDEX parse (3/3)"
+else
+  bad "T121-next-doctrine /next.md doctrine drift" "ok=$ok_count/3 drift=$drift"
+fi
+
+# ============================================================
+# T121-malformed-resolver — settings.sh fails closed on malformed
+#   resolver JSON. The resolver could exit 0 but emit `{}`, `null`,
+#   or wrong-typed fields (e.g. `{"active": 42}`). The cycle-18
+#   _well_typed gate in settings.sh::_infer_active_context must
+#   refuse such payloads and fall through to project default.
+#   CR cycle-19: prove the gate works end-to-end.
+# ============================================================
+note "T121-malformed-resolver: settings.sh fails closed on malformed resolver JSON"
+d=$(mktemp -d) || exit 1
+cp -r "$FRAMEWORK_ROOT/templates/.sdd" "$d/"
+cd "$d" || { bad "T121-malformed-resolver cd failed" "d=$d"; rm -rf "$d"; exit 1; }
+git init -q
+git config user.email t@t.com && git config user.name T
+# Real work-item with a voice.plain_english override. If settings.sh
+# trusted a malformed resolver and skipped past _well_typed, it
+# might still find the spec via the resolver's claimed `active`
+# value — or it might hit the legacy fallback. Either way, the test
+# asserts the project default (True) is returned, NOT the override.
+mkdir -p .sdd/features/001-malformed
+cat > .sdd/features/001-malformed/spec.md <<'SPEC'
+---
+overrides:
+  voice:
+    plain_english: false
+---
+# 001 malformed-resolver
+[PHASE: SPEC]
+## PHASE: SPEC
+### action: problem
+- [ ] who: who specifically has the problem?
+SPEC
+cat > .sdd/INDEX.md <<'IDX'
+**Playbook:** feature
+**Active:** _(none)_
+
+## In flight
+
+## Shipped
+IDX
+git add . && git commit -q -m "scaffold" --no-verify
+# Replace resolve-active.sh with a stub that emits malformed JSON.
+# Six flavours, each should be rejected. CR cycle-20: cycle-19's
+# 3 dict-with-malformed-fields payloads only exercised the
+# field-type branch of _well_typed; non-dict and parse-error
+# branches were untested. Now covers all 6 rejection paths.
+#   1. wrong type for `active` (number)
+#   2. missing required key (no `ambiguous`)
+#   3. invalid `source` enum
+#   4. JSON null (non-dict) — settings.sh isinstance check
+#   5. JSON array (non-dict) — settings.sh isinstance check
+#   6. invalid JSON syntax — json.loads raises, except catches
+malformed_passes=0
+total_payloads=6
+for payload in \
+  '{"active":42,"ambiguous":false,"branch":"sdd/001-malformed","index_active":null,"source":"branch"}' \
+  '{"active":"features/001-malformed","branch":null,"index_active":null,"source":"branch"}' \
+  '{"active":"features/001-malformed","ambiguous":false,"branch":null,"index_active":null,"source":"frobnicate"}' \
+  'null' \
+  '[]' \
+  'this is not valid json {[}'
+do
+  cat > .sdd/scripts/resolve-active.sh <<STUB
+#!/usr/bin/env bash
+echo '$payload'
+STUB
+  chmod +x .sdd/scripts/resolve-active.sh
+  out=$(bash .sdd/scripts/settings.sh get voice.plain_english 2>&1)
+  rc=$?
+  if [ "$rc" -eq 0 ] && echo "$out" | grep -q 'voice.plain_english = True' && echo "$out" | grep -q '\[project\]'; then
+    malformed_passes=$((malformed_passes+1))
+  fi
+done
+cd - >/dev/null || true
+rm -rf "$d"
+if [ "$malformed_passes" -eq "$total_payloads" ]; then
+  ok "T121-malformed-resolver settings.sh fails closed on $total_payloads/$total_payloads malformed payloads"
+else
+  bad "T121-malformed-resolver settings.sh trusted at least one malformed payload" "passes=$malformed_passes/$total_payloads"
+fi
+
 # T132 — refactor.md playbook ships in v1.0 (closes #85, step 3)
 #   /start --playbook=refactor "extract atomic-write" scaffolds under
 #   refactors/<NNN>-<slug>/ with the 4-section SPEC: refactor-scope,
