@@ -5467,6 +5467,44 @@ else
 fi
 
 # ============================================================
+# T132 — refactor.md playbook ships in v1.0 (closes #85, step 3)
+#   /start --playbook=refactor "extract atomic-write" scaffolds under
+#   refactors/<NNN>-<slug>/ with the 4-section SPEC: refactor-scope,
+#   regression-coverage, refactor-approach, minimal-diff-verify.
+# ============================================================
+note "T132: refactor.md playbook scaffolds correctly via --playbook=refactor"
+d=$(mkproj_v08)
+cd "$d" || { bad "T132 cannot cd into mkproj output" "$d"; rm -rf "$d"; }
+out=$(bash "$START_SH" --playbook=refactor "extract atomic-write helper" 2>&1) && ec=0 || ec=$?
+cd - >/dev/null || true
+spec="$d/.sdd/refactors/001-extract-atomic-write-helper/spec.md"
+# Assert EXACTLY 4 actions in the SPEC stage AND in the documented
+# order (refactor-scope → regression-coverage → refactor-approach →
+# minimal-diff-verify). The flow is order-sensitive: regression-coverage
+# must happen before approach, minimal-diff-verify must close the
+# section. CR cycle-5/8/9: scoped to SPEC phase only — BUILD/SHIP have
+# their own action: headings that would otherwise trip this assertion.
+expected_order="refactor-scope
+regression-coverage
+refactor-approach
+minimal-diff-verify"
+# Slice spec body between '## PHASE: SPEC' and the next phase boundary.
+# awk emits only lines inside that slice, then we extract action: tokens.
+actual_order=$(awk '
+  /^## PHASE: SPEC[[:space:]]*$/ { in_spec=1; next }
+  /^## PHASE: / && in_spec { exit }
+  in_spec && /^### action: / { sub(/^### action: /, ""); print }
+' "$spec" 2>/dev/null || echo "")
+if [ "$ec" -eq 0 ] \
+   && [ -f "$spec" ] \
+   && [ "$actual_order" = "$expected_order" ]; then
+  ok "T132 refactor.md scaffolded with exactly 4 SPEC actions in correct order"
+else
+  bad "T132 refactor.md scaffold order mismatch" "exit=$ec; expected=[$expected_order]; actual=[$actual_order]"
+fi
+rm -rf "$d"
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
