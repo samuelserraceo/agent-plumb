@@ -229,8 +229,9 @@ jobs:
           # silently drops via `|| true`, masking scope-guard failures.
           # grep exits 2 for "invalid regex" and 1 for "valid but no
           # match" — that's the distinguisher.
-          grep -E "$ui_path_re" </dev/null >/dev/null 2>&1
-          grep_rc=$?
+          # The `&& rc=0 || rc=$?` chain is exempt from `set -e`, which
+          # would otherwise abort on grep's expected rc=1 (no match).
+          grep -E "$ui_path_re" </dev/null >/dev/null 2>&1 && grep_rc=0 || grep_rc=$?
           if [ "$grep_rc" -eq 2 ]; then
             echo "::error::[SDD scope-guard] ui_path_re from scope_guard config does not compile as a POSIX-ERE regex: '$ui_path_re'"
             echo "::error::Fix: check .sdd/config.md scope_guard.file_extensions / ui_dirs for invalid characters."
