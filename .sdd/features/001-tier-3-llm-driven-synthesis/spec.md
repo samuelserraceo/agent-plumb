@@ -493,7 +493,7 @@ All §4 constraints have a mapped AC. Plan-decompose coverage check passes pre-e
 - [x] T10 GREEN: three call/token caps refuse past threshold (AC6) → `extensions/sdd-mcp-server/tests/test_synthesise_caps.py`
 
 **Renderers:**
-- [ ] T11 RED: structured format returns valid JSON shape (AC7 part 1) → `extensions/sdd-mcp-server/tests/test_synthesise_structured_shape.py`
+- [x] T11 GREEN: structured format returns valid JSON shape (AC7 part 1) → `extensions/sdd-mcp-server/tests/test_synthesise_structured_shape.py`
 - [ ] T12 RED: prose format renders inline `[[…]]` cites; structured + prose match cite_chunks (AC7) → `extensions/sdd-mcp-server/tests/test_synthesise_renderer_parity.py`
 
 **Setup + disabled:**
