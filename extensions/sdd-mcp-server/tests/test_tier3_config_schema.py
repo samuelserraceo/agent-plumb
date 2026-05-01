@@ -1,0 +1,127 @@
+"""T2 — Schema test for `parameters.mcp.tier3` block in templates/.sdd/config.md.
+
+Asserts the §6 data-contract schema landed in the consumer-facing
+template config so init.sh ships it to new projects:
+
+  parameters.mcp.tier3:
+    enabled: false
+    provider: ""
+    endpoint: ""
+    model: ""
+    max_calls_per_run: 10
+    max_input_tokens_per_call: 8000
+    max_total_tokens_per_run: 100000
+    auth_header: ""
+
+Run from extensions/sdd-mcp-server/:
+
+    python3 -m unittest tests.test_tier3_config_schema
+"""
+
+from __future__ import annotations
+
+import os
+import re
+import unittest
+
+
+class TestTier3ConfigSchema(unittest.TestCase):
+    """The new tier3 block must exist in the template config with the
+    fields the §6 data-contract approved (anti-theatre — no
+    cost_limit_usd; only mechanically-counted caps)."""
+
+    @classmethod
+    def setUpClass(cls):
+        # Walk up from this test file to the repo root, then read
+        # templates/.sdd/config.md. Keeps the test independent of the
+        # cwd it's run from.
+        here = os.path.dirname(os.path.abspath(__file__))
+        repo_root = here
+        for _ in range(8):
+            candidate = os.path.join(repo_root, "templates", ".sdd", "config.md")
+            if os.path.isfile(candidate):
+                cls.config_path = candidate
+                break
+            repo_root = os.path.dirname(repo_root)
+        else:
+            raise FileNotFoundError(
+                "Could not find templates/.sdd/config.md walking up from this test"
+            )
+        with open(cls.config_path, encoding="utf-8") as f:
+            cls.body = f.read()
+
+    def _has_yaml_key_under(self, parent: str, key: str) -> bool:
+        """Loose check: does the YAML block under parent contain key?
+
+        We don't load the whole file as YAML (config.md is markdown
+        wrapping a YAML frontmatter block — loose grep is more
+        forgiving across small format drift).
+        """
+        # Match `parent:` then any number of indented lines then `key:`
+        pattern = rf"(?ms)^{re.escape(parent)}:\s*\n(?:[ \t]+\S.*\n)*?[ \t]+{re.escape(key)}:"
+        return bool(re.search(pattern, self.body))
+
+    def test_tier3_block_exists(self):
+        """The `tier3:` block exists under `parameters.mcp`."""
+        # tier3 sits two levels deep — under parameters → mcp.
+        self.assertIn("tier3:", self.body, msg=(
+            "parameters.mcp.tier3 block missing from templates/.sdd/config.md "
+            "— see §6 data-contract for the approved schema"
+        ))
+
+    def test_tier3_has_required_fields(self):
+        """All §6-approved fields are present in the schema."""
+        required_fields = [
+            "enabled",
+            "provider",
+            "endpoint",
+            "model",
+            "max_calls_per_run",
+            "max_input_tokens_per_call",
+            "max_total_tokens_per_run",
+            "auth_header",
+        ]
+        for field in required_fields:
+            with self.subTest(field=field):
+                # Check field appears AFTER `tier3:` in the file.
+                tier3_idx = self.body.find("tier3:")
+                self.assertGreater(tier3_idx, -1, "tier3 block missing")
+                # Look for the field within ~1500 chars after tier3:
+                tier3_block = self.body[tier3_idx:tier3_idx + 1500]
+                self.assertIn(f"{field}:", tier3_block,
+                              msg=f"tier3.{field} not found in the schema block")
+
+    def test_tier3_off_by_default(self):
+        """`enabled: false` must be the default (foundation 3 — opt-in)."""
+        tier3_idx = self.body.find("tier3:")
+        self.assertGreater(tier3_idx, -1, "tier3 block missing")
+        tier3_block = self.body[tier3_idx:tier3_idx + 1500]
+        # match `enabled: false` (any whitespace before, allow comment after)
+        self.assertRegex(tier3_block, r"enabled:\s*false",
+                         "tier3.enabled must default to false (opt-in)")
+
+    def test_no_cost_limit_usd_field(self):
+        """Anti-theatre — `cost_limit_usd` was deliberately removed.
+
+        Sam's catch on 2026-05-01: the framework can't price external
+        services without a per-provider table or live ledger, so a USD
+        circuit breaker would be theatre. Only call/token caps apply.
+
+        We check for the actual YAML field shape (`cost_limit_usd:` with
+        a colon at start of an indented line) rather than mere
+        substring presence — that way the explanatory comment in the
+        schema (which legitimately mentions the absent field by name)
+        doesn't trip the test.
+        """
+        tier3_idx = self.body.find("tier3:")
+        self.assertGreater(tier3_idx, -1, "tier3 block missing")
+        tier3_block = self.body[tier3_idx:tier3_idx + 1500]
+        # Field would appear at start of a line (after indent) with a
+        # colon and value — not as a word inside a `#` comment.
+        # Match: `^[ \t]+cost_limit_usd:` (multiline)
+        self.assertNotRegex(tier3_block, r"(?m)^[ \t]+cost_limit_usd:", msg=(
+            "cost_limit_usd was removed by 2026-05-01 anti-theatre audit; "
+            "the framework can't enforce dollar amounts. Use "
+            "max_calls_per_run + max_input_tokens_per_call + "
+            "max_total_tokens_per_run instead."
+        ))
