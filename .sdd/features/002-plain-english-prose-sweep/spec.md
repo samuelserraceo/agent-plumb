@@ -1,8 +1,10 @@
 # plain-english prose sweep
 
-[PHASE: SPEC]
+[PHASE: BUILD]
 
-**Active blocker:** §1 (first action: problem)
+**Active blocker:** BUILD — run-mode-chosen → T01 (write lint-action-prose.sh inventory pass)
+
+**Run mode:** full autonomous (Sam's standing preference per `feedback_full_autonomous_build.md`; this feature is mechanical so well-suited to it).
 
 ## PHASE: SPEC
 
@@ -219,5 +221,5 @@ Approval row left [ ] — same flow as §5; Sam ticks at approval-pass time.
   15. **Lint runs on both macOS and Linux.** No GNU-only sed flags; `wc -m` for char count (POSIX); `awk` regex compatible with both BSD-awk and GNU-awk. Test: framework CI runs on Linux runners; local macOS test of the same fixture set passes. → `tests/task-015.sh` (cross-platform sanity check on representative fixtures)
 
 ### Exit checks
-- [ ] C-spec-acs: ≥1 acceptance criterion exists in §11
-- [ ] C-spec-tasks: ≥1 task in plan-decompose section
+- [x] C-spec-acs: ≥1 acceptance criterion exists in §11 — verified 15 ACs (12 from §11 + 3 from §15 edge-case-sweep)
+- [x] C-spec-tasks: ≥1 task in plan-decompose section — verified 15 tasks T01-T15 (1-1 with the ACs)
