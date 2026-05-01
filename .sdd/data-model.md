@@ -62,7 +62,7 @@ Invalidation: any corpus signature flip (any `.sdd/` markdown change) marks all 
 
 ### Tier3Config
 
-A config block under `parameters.mcp.tier3` in `templates/.sdd/config.md`. Off by default; opt-in. Required when `enabled: true`: `provider`, `endpoint`, `model`, plus cost ceiling (`max_calls_per_run`, `cost_limit_usd`) and optional `auth_header` with `${ENV_VAR}` indirection.
+A config block under `parameters.mcp.tier3` in `templates/.sdd/config.md`. Off by default; opt-in. Required when `enabled: true`: `provider`, `endpoint`, `model`, plus mechanically-enforced cost caps (`max_calls_per_run`, `max_input_tokens_per_call`, `max_total_tokens_per_run`) and optional `auth_header` with `${ENV_VAR}` indirection. **No `cost_limit_usd` field** — the framework can't price external services (anti-theatre, post-2026-05-01 audit).
 
 Same shape pattern as v1.0 `parameters.mcp.semantic_search` and Playwright-explorer config — foundation 3 ("never assume an external service"). v1.1 adds this when [[001-tier-3-llm-driven-synthesis]] ships.
 

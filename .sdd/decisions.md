@@ -51,3 +51,17 @@ Hash: 2ba64f7fa326e43093413b1fc53f2acf62b9f01ee9a2339035fe7256fc6b17a0
 Approved the §6 data contract: two new framework-domain entities introduced — SynthesisCache (derived JSON cache at .sdd/.cache/synthesis.json, gitignored, keyed by (question_hash, corpus_signature), invalidated lazily on corpus signature flip) and Tier3Config (parameters.mcp.tier3 config block, opt-in, off by default, no baked-in defaults). data-model.md synced in the same commit with both entities and two new relationships. SQLite-as-cache and question-only-keying alternatives explicitly rejected (foundation 1 and cache-warmth respectively). The contract requires no changes to existing v1.0 graph nodes or query layer — Tier 3 reads them cleanly.
 
 Hash: 5359e2a31bc0b688ca3956cac7625e7e2ff7d6dbf54c55c5b45f66cb1d4864bd
+
+## 2026-05-01T14:54:41Z  [[001-tier-3-llm-driven-synthesis]]  feature/proposed-approach (re-approved)
+
+Re-approved §5 with anti-theatre fixes (issue [#111](https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/111) doctrine applied for the first time): dropped `cost_limit_usd` (framework can't price external services — no per-provider pricing table, no live ledger). Replaced with mechanically-countable caps: `max_calls_per_run`, `max_input_tokens_per_call`, `max_total_tokens_per_run`. Softened "no invention" to "no invented citations" (cite-check catches invented `[[link]]`s; misattributed quotes with real citations are reader-eye check, not mechanical). Softened "must verify in SHIP" on ambiguity-surfacing and empty-corpus handling to "best-effort prompt design, verified on ~5 representative test cases at SHIP" — these depend on prompt + LLM behaviour, can't be enforced over unseen corpora. USD cost projections moved to clearly-labelled informational block, separated from enforced config fields.
+
+Hash: b183047ce7bfa28e134bfc35f81efc30712a8aa5142b8dd2303de28a59d8b705
+Reason: anti-theatre audit (Sam, 2026-05-01) — every claim must declare its verification path or be softened.
+
+## 2026-05-01T14:54:41Z  [[001-tier-3-llm-driven-synthesis]]  feature/data-contract (re-approved)
+
+Re-approved §6 with anti-theatre fixes: Tier3Config schema replaces `cost_limit_usd` with the three mechanically-countable caps (calls, input tokens per call, total tokens per run). Schema explicitly notes the framework cannot enforce USD limits without per-provider pricing tables. data-model.md synced with the new field list and the absent-USD-field rationale.
+
+Hash: 876b2c0739f8c1d268db95c165c9f61813795008094392206812e40b69ef06b8
+Reason: anti-theatre audit (Sam, 2026-05-01) — same as proposed-approach above.

@@ -2,7 +2,7 @@
   "playbook": "feature",
   "phase": "SPEC",
   "approved_sections": {
-    "proposed-approach": "2ba64f7fa326e43093413b1fc53f2acf62b9f01ee9a2339035fe7256fc6b17a0",
-    "data-contract": "5359e2a31bc0b688ca3956cac7625e7e2ff7d6dbf54c55c5b45f66cb1d4864bd"
+    "proposed-approach": "b183047ce7bfa28e134bfc35f81efc30712a8aa5142b8dd2303de28a59d8b705",
+    "data-contract": "876b2c0739f8c1d268db95c165c9f61813795008094392206812e40b69ef06b8"
   }
 }

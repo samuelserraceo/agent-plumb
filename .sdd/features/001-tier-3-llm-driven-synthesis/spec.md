@@ -14,7 +14,7 @@
 
 ### action: success
 
-- [x] metric: dual co-equal — (1) quality: ≥80% of synthesised answers cite-check correctly on framework corpus (baseline: no synthesis exists today); (2) cost: avg synthesised answer <1 KB (baseline: Tier 2 returns ~5–20 KB raw chunks per question)
+- [x] metric: dual co-equal — (1) quality: ≥80% generation success rate on a held-out 20-question test set against the framework's own .sdd/ corpus — the remaining ≤20% trigger raw-chunks fallback rather than ship a broken answer (baseline: no synthesis exists today); (2) cost: avg synthesised answer <1 KB (baseline: Tier 2 returns ~5–20 KB raw chunks per question). Both measurable via T-tests; both enforced by step 3 of the §5 flow (cite-check) and the §5 length cap respectively. Anti-theatre note: "cite-check correctly" was previously ambiguous; now defined as "answer passes mechanical link-resolution gate" — a binary check, not a semantic-correctness judgement.
 
 ### action: user-stories
 
@@ -32,7 +32,7 @@
 
 5. **Sam — health review.** As the project owner reviewing project health, I want to ask *"what TODOs / deferred items have piled up across all in-flight features?"* and get a synthesised list with citations, so that nothing gets lost in the in-flight tier and I can triage them in one sitting.
 
-**Cross-cutting (carried to §10 non-functional):** every synthesised answer must reflect the latest corpus state at retrieval time, not a stale cache. The graph cache is already content-hash invalidated at v1.0; Tier 3 must inherit that freshness guarantee. The spec must verify in SHIP that synthesis cannot serve stale answers.
+**Cross-cutting (carried to §10 non-functional):** every synthesised answer must reflect the latest corpus state at retrieval time, not a stale cache. *(Mechanically enforced — synthesis cache key includes the v1.0 graph cache's content-hash corpus signature; ANY `.sdd/` change flips the signature and invalidates prior entries. Verified at SHIP via T-test that mutates a cited file and asserts cache miss.)*
 
 ### action: ux-brief
 
@@ -52,12 +52,12 @@
 - **Inline `[[wiki-link]]` citations** in the prose path. Reuses v1.0's graph cache. Click to jump in editors that render Obsidian-style links; readable as text otherwise.
 - **Knowledgeable-colleague voice.** Plain English, declarative, no "I think" hedging. Where the corpus is silent, say so explicitly.
 
-**Behavioural guarantees (must verify in SHIP):**
+**Behavioural guarantees (with verification path — anti-theatre, post-2026-05-01 audit):**
 
-- **No invention.** Every claim must point at a real `[[…]]` — graph cache verifies the link resolves, or the answer is rejected.
-- **Ambiguity surfaced, not picked.** Two valid answers → *"two candidates — [[001]] says X, [[005]] says Y. Which do you mean?"*
-- **Empty corpus spelled out.** No silent return. *"Nothing in your project covers that. Closest was [[X]] but tangential. Want me to broaden?"*
-- **Length cap.** Default answer < 1 KB (matches §2 cost target). Expand-on-demand for deeper dives.
+- **No invented citations** *(mechanically enforced)* — every `[[link]]` in an answer must resolve to a real graph node; broken links → answer rejected, raw-chunks fallback shown. **What this does NOT catch:** the case where the citation is real but the claim mischaracterises what the cited chunk actually says (semantic hallucination). That class is best-effort + your-eye check on click-through, not mechanical.
+- **Ambiguity surfaced** *(best-effort prompt design; verified on ~5 representative test cases at SHIP)* — when prompted with chunks containing conflicting answers, the model is instructed to surface both and ask "which do you mean?". The framework verifies the response SHAPE on the test cases (does the `ambiguity` field set when expected? do both candidates appear?). The framework does NOT enforce ambiguity detection on every unseen corpus — that depends on prompt + LLM behaviour.
+- **Empty corpus spelled out** *(best-effort prompt design; verified on ~5 representative test cases at SHIP)* — same shape: prompt instructs explicit no-result framing; framework verifies on test cases, not in general.
+- **Length cap** *(mechanically enforced)* — default answer < 1 KB (matches §2 cost target). Excess is truncated and the response includes `"want me to expand on [[X]]?"`.
 
 ### action: proposed-approach
 
@@ -83,17 +83,24 @@ Step 4 — CACHE WRITE         on success (instant, $0)
 
 **3. Two render formats from one core call.** The agent calls `synthesise(slug, question, format="structured")` and gets a JSON object with fields `answer`, `cite_chunks`, `ambiguity`, `ok`. The slash-command wrapper calls with `format="prose"` and renders inline `[[…]]` citations to chat. Same LLM call, same cite-check, two thin renderers — never two separate model calls.
 
-**4. Behavioural guarantees (must verify in SHIP):**
+**4. Behavioural guarantees (with verification paths — anti-theatre, post-2026-05-01 audit):**
 
-- **No invention** — cite-check rejects any answer with a broken `[[link]]`
-- **Ambiguity surfaced** — multiple valid answers → return both, ask the user to pick (don't silently choose)
-- **Empty corpus spelled out** — *"Nothing in your project covers that. Closest was [[X]] but tangential. Want me to broaden?"* — never silent
-- **Length cap** — default response < 1 KB (matches §2 cost target); expand-on-demand for deeper
-- **Freshness** — synthesis cache keyed by content-hash corpus signature (inherits v1.0 graph cache mechanism); ANY relevant `.sdd/` change invalidates the cached answer
+- **No invented citations** *(mechanically enforced via cite-check at flow step 3)* — broken `[[link]]` → answer rejected. Does NOT catch real-citation-with-wrong-claim (semantic hallucination); that's reader-eye check.
+- **Ambiguity surfaced** *(best-effort prompt design; SHIP verifies SHAPE on ~5 test cases)* — prompt template instructs the model to detect and structure ambiguity; framework verifies response shape on representative cases, not every unseen corpus.
+- **Empty corpus spelled out** *(best-effort prompt design; SHIP verifies SHAPE on ~5 test cases)* — same shape as ambiguity.
+- **Length cap < 1 KB** *(mechanically enforced)* — exact byte count check before return.
+- **Freshness** *(mechanically enforced)* — synthesis cache keyed by content-hash corpus signature (inherits v1.0 graph cache mechanism); ANY relevant `.sdd/` change → cache miss → fresh call.
 
-**5. Provider story — no baked-in defaults.** New `parameters.mcp.tier3` block in `templates/.sdd/config.md`, opt-in, off by default. Required fields when enabled: `provider` (`openai` / `anthropic` / `ollama-chat` / etc.), `endpoint`, `model`. Cost ceiling: `max_calls_per_run` and `cost_limit_usd`. Same shape as v1.0 Playwright explorer + v1.0 semantic_search — foundation 3 ("we never assume an external service").
+**5. Provider story — no baked-in defaults.** New `parameters.mcp.tier3` block in `templates/.sdd/config.md`, opt-in, off by default. Required fields when enabled: `provider` (`openai` / `anthropic` / `ollama-chat` / etc.), `endpoint`, `model`. **Enforced cost caps (provider-agnostic, mechanically counted):** `max_calls_per_run` (integer counter), `max_input_tokens_per_call` (refuses to send larger context), `max_total_tokens_per_run` (running total across calls). Same shape as v1.0 Playwright explorer + v1.0 semantic_search — foundation 3 ("we never assume an external service").
 
-**6. Cost math scaled to expected usage.** ~20 questions/week, ~30% repeats with no corpus changes (cache hits, $0). At OpenAI gpt-4o-mini: ~$0.02/week per project. At Anthropic Haiku 4.5: ~$0.03/week. Self-hosted Ollama: $0. **Per-project per-month ≤ $1** unless using a top-tier model.
+**6. Cost guidance (informational only — NOT enforced by the framework).** The framework counts calls and tokens; it does not price external services. The numbers below are reader guidance for picking a provider, not SLAs:
+
+> *Approximate weekly cost on a project firing ~20 questions/week with ~30% cache-hit rate (no corpus changes between repeat asks):*
+> *• OpenAI gpt-4o-mini: ~$0.02/week (~$0.08/month)*
+> *• Anthropic Haiku 4.5: ~$0.03/week (~$0.12/month)*
+> *• Self-hosted Ollama: $0*
+>
+> *Rates accurate at time of writing; providers change pricing — verify before relying on these numbers. The framework will refuse to call past your `max_calls_per_run` and `max_total_tokens_per_run` caps regardless of cost.*
 
 **7. Two alternatives considered + rejected.**
 
@@ -127,20 +134,23 @@ Step 4 — CACHE WRITE         on success (instant, $0)
 }
 ```
 
-**Tier3Config (config block in `templates/.sdd/config.md`)** — `parameters.mcp.tier3`. Off by default, opt-in. No baked-in defaults. Same shape as v1.0 `parameters.mcp.semantic_search`.
+**Tier3Config (config block in `templates/.sdd/config.md`)** — `parameters.mcp.tier3`. Off by default, opt-in. No baked-in defaults. Same shape as v1.0 `parameters.mcp.semantic_search`. **Anti-theatre:** all caps below are mechanically enforced — the framework counts what it sent, not what it cost.
 
 ```yaml
 parameters:
   mcp:
     tier3:
       enabled: false
-      provider: ""              # openai | anthropic | ollama-chat
-      endpoint: ""              # http(s)://host:port
-      model: ""                 # chat model name
-      max_calls_per_run: 10
-      cost_limit_usd: 0.50
-      auth_header: ""           # ${ENV_VAR} indirection supported
+      provider: ""                       # openai | anthropic | ollama-chat
+      endpoint: ""                       # http(s)://host:port
+      model: ""                          # chat model name
+      max_calls_per_run: 10              # exact integer counter
+      max_input_tokens_per_call: 8000    # exact: refuse to send larger context
+      max_total_tokens_per_run: 100000   # exact: stops once running total crossed
+      auth_header: ""                    # ${ENV_VAR} indirection supported
 ```
+
+USD cost guidance lives in §5 §6 informational block, NOT here — the framework cannot enforce dollar amounts (no per-provider pricing table; would require a live cost ledger we don't have).
 
 **What Tier 3 reads (existing — no schema changes):**
 - Graph-cache nodes (`features/<id>` / `pattern:<slug>` / `entity:<slug>` / `decision:<slug>`) — for cite-check
