@@ -269,6 +269,10 @@ jobs:
     # local commit gets caught here before merge.
     name: Graph integrity (wiki-links resolve)
     runs-on: ubuntu-latest
+    # CR cycle-6 — explicit timeout. The job depends on a networked pip
+    # install + a graph build over .sdd/; in the rare case of a hung
+    # runner, the per-job timeout keeps PR flow unblocked.
+    timeout-minutes: 5
     if: github.event_name == 'pull_request'
     steps:
       # SHA-pinned for supply-chain hygiene — this job gates merge into main,
