@@ -2,7 +2,7 @@
 
 [PHASE: SPEC]
 
-**Active blocker:** §13 (wireframe — SKIPPABLE for non-UI features) AND a parallel sweep of §5/§6/§8/§11 to correct the multi-provider drift to Ollama+Gemma-only (v1.1 wizard scope)
+**Active blocker:** §14 (plan-decompose — turn ACs into ordered build tasks)
 
 ## PHASE: SPEC
 
@@ -345,7 +345,18 @@ All §4 constraints have a mapped AC. Plan-decompose coverage check passes pre-e
 
 ### action: wireframe
 
-- [ ] wireframe: draft wireframe.html — one screen per user story
+- [x] wireframe: APPROVED 2026-05-01 — drafted as a non-UI visual walkthrough per [#112](https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/112)'s redesigned shape (chat examples + flow diagram + architecture diagram + new-vs-existing summary); cite-clicks wired with explanatory modal; lives at `wireframe.html` in this folder
+
+**Dogfood of the redesigned non-UI wireframe shape (issue #112).** Tier 3 has no screen UI surface, so the wireframe was drafted as a visual walkthrough rather than UI mockups:
+
+- **Five chat conversations** (one per §3 story plus the honesty-floor failure case) — concrete examples of what a Sam-side `/ask` and an agent-side `synthesise()` actually look like, with clickable cites that pop a modal showing where each would jump in a real project.
+- **Interactive 5-step flow diagram** (inline SVG) — cache lookup → retrieval → AI call → cite-check → cache write, plus the cache-hit shortcut and the cite-check-failure raw-chunks fallback. Click any step for plain-English detail.
+- **Interactive architecture diagram** (inline SVG) — Tier 3's pieces (synthesise, cache, cite-check, Tier3Config, wizard step) shown explicitly NEW in v1.1; v1.0 reused pieces (graph, graph cache, search queries, corpus signature) shown as existing/reused; v1.2+ items (other providers) shown dashed/violet. Click any box for what's inside.
+- **New vs existing summary** — three side-by-side cards listing what v1.0 already has, what v1.1 adds, and what's deferred to v1.2+ — plain English, no jargon.
+
+**File:** `.sdd/features/001-tier-3-llm-driven-synthesis/wireframe.html` (~620 lines self-contained HTML + Tailwind CDN + inline JS, opens in any browser).
+
+**This is the doc a non-technical reviewer reads to confirm we're building the right thing** — Sam's framing in the §13 walk: *"probably one of only doc we can look at and finally understand whether what we are building is correct."*
 
 ### action: plan-decompose
 
