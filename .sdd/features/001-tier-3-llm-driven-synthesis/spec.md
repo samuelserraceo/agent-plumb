@@ -506,7 +506,7 @@ All §4 constraints have a mapped AC. Plan-decompose coverage check passes pre-e
 - [x] T17 GREEN: four failure cases produce clean errors (AC12) → `extensions/sdd-mcp-server/tests/test_synthesise_failure_modes.py`
 
 **Length cap + injection:**
-- [ ] T18 RED: ≤1024 bytes; longer trimmed at boundary with "want me to expand?" (AC13) → `extensions/sdd-mcp-server/tests/test_synthesise_length_cap.py`
+- [x] T18 GREEN: ≤1024 bytes; longer trimmed at boundary with "want me to expand?" (AC13) → `extensions/sdd-mcp-server/tests/test_synthesise_length_cap.py`
 - [ ] T19 RED: prompt-injection floor: cite-check pass OR fallback (AC14) → `extensions/sdd-mcp-server/tests/test_synthesise_injection.py`
 
 **Best-effort:**
