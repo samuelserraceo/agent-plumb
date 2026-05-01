@@ -517,11 +517,11 @@ All §4 constraints have a mapped AC. Plan-decompose coverage check passes pre-e
 - [x] T22 GREEN: counters report correctly (AC17) → `extensions/sdd-mcp-server/tests/test_synthesise_observability.py`
 
 **Wizard E2E:**
-- [ ] T23 RED: brick 007 Tier 3 sub-questions filled; non-interactive E2E (AC20) → `test/run-framework-test.sh::T138-tier3-wizard`
+- [x] T23 GREEN: brick 007 Tier 3 sub-questions filled; non-interactive E2E (AC20) → `test/run-framework-test.sh::T138-tier3-wizard`
 
 **Live integration:**
 - [ ] T24 RED: live Ollama+Gemma integration → `extensions/sdd-mcp-server/tests/test_synthesise_ollama_live.py`
-- [ ] T25 RED: `/ask` slash command body wraps synthesise() with format="prose" → `test/run-framework-test.sh::T139-ask-slash`
+- [x] T25 GREEN: `/ask` slash command body wraps synthesise() with format="prose" → `test/run-framework-test.sh::T139-ask-slash`
 
 **§15 sweep additions:**
 - [x] T28 GREEN: cache eviction policy LRU at 1000 entries (AC21) → `extensions/sdd-mcp-server/tests/test_synthesise_cache_eviction.py`
