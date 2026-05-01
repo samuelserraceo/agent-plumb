@@ -317,7 +317,8 @@ jobs:
               print(f"  …and {len(broken) - 20} more.", file=sys.stderr)
           print("", file=sys.stderr)
           print("  Fix: rename the link to match an existing node (feature folder,", file=sys.stderr)
-          print("       pattern heading in patterns.md, or entity heading in", file=sys.stderr)
-          print("       data-model.md), or create the target node.", file=sys.stderr)
+          print("       pattern heading in patterns.md, entity heading in", file=sys.stderr)
+          print("       data-model.md, or decision heading in decisions.md), or", file=sys.stderr)
+          print("       create the target node.", file=sys.stderr)
           sys.exit(1)
           PYEOF

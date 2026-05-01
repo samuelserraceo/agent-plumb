@@ -271,10 +271,17 @@ def _build_nodes_and_edges(project_root: str, paths: List[str]) -> Tuple[List[Di
     )
 
     def _strip_inline_code(line: str) -> str:
-        """Remove `inline code` spans (any backtick count) from a line so
-        wiki-link / md-link regex matchers won't pick up examples like
-        `\`[[entity:User]]\`` or ``[[pattern:auth-retry]]``."""
-        return _INLINE_CODE_RE.sub("", line)
+        """Mask `inline code` spans (any backtick count) with same-length
+        whitespace so wiki-link / md-link regex matchers won't pick them
+        up — but won't bridge non-code chars across deletions either.
+
+        CR cycle-4 fix: a naive `.sub("", line)` *deletes* the matched
+        span, which can synthesize a spurious match. Example: the markdown
+        `[[pa\`code\`tt]]` becomes `[[patt]]` after deletion — a wiki-link
+        that never existed in the source. Replacing with same-length
+        whitespace preserves character positions so the wiki-link regex
+        can never match across a stripped span."""
+        return _INLINE_CODE_RE.sub(lambda m: " " * len(m.group()), line)
 
     # Fence delimiter pattern. CR cycle-2/3 — earlier code only tracked
     # the FIRST character (` or ~) so the inner triple-backtick line in
