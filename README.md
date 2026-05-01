@@ -322,7 +322,7 @@ If you want to customize the workflow rules themselves, you can — but bump `CL
 
 ---
 
-## Honest caveats (current as of v0.13.2)
+## Honest caveats (current as of v1.0.0)
 
 - **The playbook is 80% of the product.** If a question is weak, the system is weak. Fork and iterate — it's just markdown.
 - **"Non-technical" has limits.** The agent proposes technical options; you decide what feels right. If you don't know what you *want the feature to do*, no workflow saves you.
@@ -330,17 +330,17 @@ If you want to customize the workflow rules themselves, you can — but bump `CL
 - **Two playbooks shipped (`feature`, `project`).** The multi-playbook engine carries the rest; adding `bug`, `idea`, `question`, etc. is just dropping a new file in `templates/.sdd/playbooks/` (no code changes).
 - **Action prose still carries some JS-stack assumptions** (mentions of `tests/task-NNN.mjs`, Tailwind, `gh pr create`). The Playwright extension (`extensions/playwright/`) shows the Lego pattern for runner-specific scaffolding; non-JS adopters can fork the affected actions or write a sibling extension following the same shape.
 - **Hook error messages keep improving cycle by cycle.** v0.13.x rewrote the moat's "manifest repin refused" output for plain-English readability and added an in-band repair path; older hooks still vary in tone.
-- **Multi-feature parallelism is partial.** `INDEX.md`'s `## In flight` block holds multiple work items (one per branch is the typical pattern), so Pipelogic-style 3-5-features-at-once works today. **Full per-branch active-state lookup is open as #42** — until that lands, switching branches needs a manual `**Active:**` line update.
+- **Multi-feature parallelism: branch-derived active feature.** `INDEX.md`'s `## In flight` block holds multiple work items (one per branch is the typical pattern), and the active feature is now inferred from the current git branch — switching branches switches the active feature with no manual `**Active:**` edit. The `**Active:**` line is the fallback when you're not on an SDD branch (e.g., on `main`). Pipelogic-style 3-5-features-at-once is supported as a first-class flow.
 - **This scales to roughly 50 in-flight features / 500 total.** Beyond that, you want real tooling. The cold-tier + size caps + auto-archival keep working memory bounded forever, but at some scale you'll outgrow plain markdown.
 - **Retrofitting onto an existing project still rough.** `scripts/init.sh` assumes a clean repo. The plugin install (v0.10) makes it easier, but a project with its own conventions (Husky / Drizzle migrations / existing PRDs) needs an "absorb existing" install mode that's still future work.
-- **MCP server semantic-search opt-in is stubbed.** The schema is shipped (`parameters.mcp.semantic_search` in config.md) but the network call is deferred — turning it on returns a "deferred — wire your provider here" config-shape response. Sam's self-hosted Gemma fits as a declared provider when wired up.
+- **MCP server semantic-search is wired (provider-agnostic).** Set `parameters.mcp.semantic_search.enabled: true` in config.md and declare your provider (`ollama`, `openai`, `anthropic`, etc.) — the framework calls the embedding endpoint on demand. Self-hosted Gemma via Ollama is a supported provider; no Anthropic/OpenAI assumption baked in. **Tier 3 LLM-driven synthesis is v1.1** (knowledge-graph queries return cited corpus chunks today; chat-based summarisation lands when there's enough corpus to be worth synthesising).
 - **Not a silver bullet.** It makes drift expensive and deep questioning cheap. It doesn't turn a bad idea into a good one.
 
 ---
 
 ## Status
 
-Currently at **v0.13.6** (5-PR feature sweep on top of v0.13.5: MCP setup brick, CodeRabbit walkthrough, sub-stage triggering, mechanical never-assume, playwright-explorer scaffold). Hardened through:
+Currently at **v1.0.0** — knowledge-graph foundation + 4 doctrine playbooks (`feature` / `project` / `bug` / `refactor`) + branch-derived active resolution + CI graph-integrity gate + cost-bounded Playwright explorer. Hardened through:
 
 - **Phase A (v0.7.5)** — proved the SPEC + BUILD + ship loop on real Next.js + Vercel projects. 26 mutation-verified tests catching catastrophic bug classes.
 - **Phase B-1 (v0.8.0)** — section-locking moat, multi-playbook engine bones, trust-boundary teaching against prompt injection from repo prose, hash-pinned manifest, slim memory layer, append-only audit log. Three rounds of adversarial reviewer council found and closed gaps. 69 tests, all mutation-verified.
@@ -355,10 +355,11 @@ Currently at **v0.13.6** (5-PR feature sweep on top of v0.13.5: MCP setup brick,
 - **v0.13.4** — chore bundle: brick 006 restructured into 5 separate yes/no questions one at a time (#66); Playwright `enable.sh` now offers to install the dependency for you with a `Y/n` prompt detected from your lockfile (#70); doctrine drift cleanup — DEPRECATED.list catches up with 10 retired files from v0.9 phase-c, wireframe.md `<work-item>` substitution claim updated to point at the actually-still-open #42, action prose gets a stack-agnostic note in CLAUDE.md (#73).
 - **v0.13.5** — adversarial-review re-run wiring (closes #65). Fix-now path now runs `revert-phase.sh` to flip `[PHASE: SHIP]` → `[PHASE: BUILD]` AND un-tick all SHIP step rows so they re-fire on the second BUILD→SHIP transition. Without this, the second adversarial-review pass never ran on the new code. New `revert-phase.sh` helper script + T112/T112b/T112c regression tests lock the contract.
 - **v0.13.6** — feature sweep (#77 / #78 / #79 / #80 / #81 landed together): MCP setup brick (asks "want token-saving MCP?" during /sdd-setup, records `parameters.mcp.enabled`); CodeRabbit install walkthrough (step-by-step "open install page → pick repo → authorize → agent verifies via `/user/installations` API"); sub-stage triggering (`check-setup-answer.sh` halts dependent actions like `push-pr` if a setup answer is still deferred — new `requires_setup:` action-frontmatter field); mechanical never-assume (`pre-commit-no-assumed-markers.sh` refuses commits with `(assumed)` / `(TBD)` / `(?)` / `<FILL IN>` placeholders in spec.md); Playwright-explorer scaffold (MCP server + protocol surface + 7 scaffold tests; agentic logic deferred to a follow-up SPEC).
+- **v1.0.0** — graph-first re-sequencing of v0.13 backlog. Seven PRs landed together: **graph foundation** (#98) — wiki-link grammar `[[slug]]` + 4-tier resolution + 3 MCP queries (`get_backlinks` / `get_neighbours` / `search_within`) + stop-hook invariant 8 (every wiki-link must resolve); **branch-derived active feature** (#99) — `resolve-active.sh` returns JSON; switching git branches switches the active feature without INDEX.md edits; **bug.md playbook** (#101) — 5-section dedicated workflow (symptom → root cause → fix → regression test → lesson); **refactor.md playbook** (#103) — 4-section workflow with `minimal-diff-verify` halt on positive line delta; **CI graph-integrity gate** (#104) — `_graph_cache.py` skips wiki-links inside fenced blocks + inline-code spans, broken refs fail PR; **Playwright explorer agentic logic** (#100, #102) — full cost-bounded LLM-driven exploration loop, findings emit `[[ac:slug]]` cross-refs into the graph cache. **Tier 3 LLM-driven synthesis carved out to v1.1** — graph queries return cited corpus chunks today; chat-based summarisation lands when there's enough accumulated corpus to be worth synthesising. **20 cycles of CodeRabbit review converged across the v1.0 run.**
 
-**130 tests passing**, all mutation-verified. **28 MCP server unit tests** + 4 self-verify checks. 11 cycles of CodeRabbit review converged across the v0.13 release run.
+**187 framework tests + 68 MCP unit tests passing**, all mutation-verified.
 
-Next likely: per-branch worktree-aware INDEX.md (#42), `/settings get` provenance lookup (#34), CI moat extension (#26), scope-guard configurability (#16). All substantial enough for SDD ceremony rather than chore commits.
+Next: v1.1 brings Tier 3 LLM-driven synthesis (knowledge-graph queries → chat-based summarisation with cite-check guarantees) and a one-shot migration tool for existing projects to retrofit the graph layer. See [#97](https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/97).
 
 ---
 

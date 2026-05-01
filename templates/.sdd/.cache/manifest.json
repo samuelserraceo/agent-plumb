@@ -84,7 +84,7 @@
       "trust": "framework"
     },
     "post-stop-lint.sh": {
-      "expected_sha256": "c930a4022df733d8425249f09ac4af73bdded0d59cfed0b883389d8476018726",
+      "expected_sha256": "f625fafecd82cd8615718a28e5163b505c4d1714626f46cdbfaf2b359adbac29",
       "path": ".claude/hooks/post-stop-lint.sh",
       "trust": "framework"
     },
@@ -104,7 +104,7 @@
       "trust": "framework"
     }
   },
-  "sdd_version": "0.11.0",
+  "sdd_version": "1.0.0",
   "actions": {
     "acceptance-criteria": {
       "expected_sha256": "72ecddb55208259745786e030aaebfe037470628078a9e9999b5131a28fdb148",
@@ -308,7 +308,7 @@
     "minimal-diff-verify": {
       "path": ".sdd/actions/minimal-diff-verify.md",
       "trust": "framework",
-      "expected_sha256": "4418eb58a6878e0fbd0840ae25a8708c493fa707f7fcf98a004675ac61bb9aa1"
+      "expected_sha256": "50ebbe88686df544cd0f6daf68b7c4bb9037852b5c4a12705440426cf61fc90a"
     }
   }
 }

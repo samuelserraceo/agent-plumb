@@ -2,10 +2,12 @@
 # enable.sh — install the playwright-explorer extension into the current project.
 #
 # Idempotent — safe to re-run. Asks before overwriting any existing config.
-# Status: scaffold (v0.13.x). The MCP server registers; the actual agentic
-# logic ships in a follow-up SPEC. Running this today gets you the protocol
-# surface + the playbook integration point — calling `explore` returns a
-# deferred response until the implementation lands.
+# Status: v1.0 — full agentic logic shipped. The MCP server registers
+# the `explore` tool, which runs the cost-bounded agentic exploration
+# loop when invoked. Each finding includes an `ac_link` suggestion of
+# the form `ac:<slug>` (returned in the findings list for user triage)
+# — the user decides whether to lift it into spec.md §11. Nothing is
+# auto-written; the explorer reports, the human curates.
 
 set -euo pipefail
 
@@ -33,7 +35,7 @@ cd "$PROJECT_DIR" || {
 }
 
 echo "[playwright-explorer] installing into $PROJECT_DIR"
-echo "[playwright-explorer] STATUS: scaffold (v0.13.x). Agentic logic deferred — see README."
+echo "[playwright-explorer] STATUS: v1.0 install — agentic logic shipped, opt-in via config (see below)."
 
 # 1. Register the MCP server in .mcp.json.
 MCP_FILE=".mcp.json"
@@ -73,7 +75,7 @@ if [ -f ".sdd/stack.md" ]; then
 ## AI-driven exploration
 
 - **Tool:** playwright-explorer (extensions/playwright-explorer/)
-- **Status:** scaffold (v0.13.x) — agentic logic deferred to follow-up SPEC
+- **Status:** v1.0 — full agentic logic shipped (cost-bounded LLM-driven exploration)
 - **Purpose:** end-of-cycle exploratory testing; surfaces edge cases the spec author missed
 - **Runs in:** SHIP phase, after verify-test-run, before learn (when impl lands)
 - **Cost-bounded:** declares max_llm_calls + max_browser_actions per run
@@ -90,12 +92,16 @@ echo "[playwright-explorer] add this block to .sdd/config.md frontmatter under p
 echo ""
 cat <<'EOF'
   playwright_explorer:
-    enabled: false                    # flip to true when impl ships
+    # Required before flipping enabled to true: set `provider`, `endpoint`,
+    # `model` below. The `explore` tool refuses to run if any of those is
+    # empty (no implicit hosted-service assumption per CLAUDE.md doctrine
+    # on external dependencies).
+    enabled: false                    # flip to true AFTER setting provider/endpoint/model
     max_llm_calls_per_run: 50
     max_browser_actions_per_session: 200
     provider: ""                      # "openai" | "anthropic" | "ollama" | "local-gemma" — declared, not assumed
-    endpoint: ""
-    model: ""
+    endpoint: ""                      # required if enabled: true (e.g. http://localhost:11434 for ollama)
+    model: ""                         # required if enabled: true (e.g. "gemma4:e4b" for local-gemma)
     cost_limit_usd: 1.00              # circuit breaker
 EOF
 echo ""
@@ -103,30 +109,38 @@ echo ""
 if [ "$mcp_registered" = "true" ]; then
   cat <<'EOF'
 
-[playwright-explorer] enabled (scaffold) — MCP server registered, stack.md updated, config block printed above.
+[playwright-explorer] installed — MCP server registered, stack.md updated, config block printed above. (Not yet active; opt-in below.)
 
 Next steps:
   1. Verify MCP registration: cat .mcp.json | grep playwright-explorer
-  2. The explore queries return {"deferred": ...} today — that's correct.
-     The scaffold proves the protocol surface; the implementation fills
-     in the agentic loop.
-  3. To start the implementation: /start "Playwright-explorer agentic implementation"
-     That kicks off a real SPEC for the follow-up work.
-  4. Read extensions/playwright-explorer/README.md for the full design.
+  2. In .sdd/config.md's playwright_explorer block: set `provider`,
+     `endpoint`, and `model` for your LLM (e.g. "ollama" + "http://localhost:11434"
+     + "gemma4:e4b" for self-hosted; "openai"/"anthropic" + their respective
+     endpoints + a chat model otherwise). The `explore` tool refuses to run
+     while any of those is empty.
+  3. THEN flip `enabled: true` in the same block.
+  4. The `explore` tool returns findings with `ac_link` suggestions
+     (`ac:<slug>` wiki-links you can lift into spec.md §11). Nothing is
+     auto-written.
+  5. Read extensions/playwright-explorer/README.md for the full design.
 EOF
 else
   cat <<'EOF'
 
-[playwright-explorer] partial scaffold installed — stack.md updated and config block printed above, BUT the MCP server stanza was NOT auto-registered (your .mcp.json already existed; see manual instructions above). Add the stanza by hand before the explore queries will reach this server.
+[playwright-explorer] partial install — stack.md updated and config block printed above, BUT the MCP server stanza was NOT auto-registered (your .mcp.json already existed; see manual instructions above). Add the stanza by hand before the explore tool will reach this server. (Not yet active; opt-in below.)
 
 Next steps:
   1. Paste the playwright-explorer stanza into .mcp.json (see instructions above).
   2. Verify MCP registration: cat .mcp.json | grep playwright-explorer
-  3. The explore queries return {"deferred": ...} today — that's correct.
-     The scaffold proves the protocol surface; the implementation fills
-     in the agentic loop.
-  4. To start the implementation: /start "Playwright-explorer agentic implementation"
-     That kicks off a real SPEC for the follow-up work.
-  5. Read extensions/playwright-explorer/README.md for the full design.
+  3. In .sdd/config.md's playwright_explorer block: set `provider`,
+     `endpoint`, and `model` for your LLM (e.g. "ollama" + "http://localhost:11434"
+     + "gemma4:e4b" for self-hosted; "openai"/"anthropic" + their respective
+     endpoints + a chat model otherwise). The `explore` tool refuses to run
+     while any of those is empty.
+  4. THEN flip `enabled: true` in the same block.
+  5. The `explore` tool returns findings with `ac_link` suggestions
+     (`ac:<slug>` wiki-links you can lift into spec.md §11). Nothing is
+     auto-written.
+  6. Read extensions/playwright-explorer/README.md for the full design.
 EOF
 fi

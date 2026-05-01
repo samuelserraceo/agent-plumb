@@ -543,7 +543,109 @@ check_wiki_links_resolve() {
     if [ -n "$plugin_root" ] && [ -d "$plugin_root/extensions/sdd-mcp-server" ]; then
       mcp_root="$plugin_root/extensions/sdd-mcp-server"
     else
-      return 0  # MCP server not present; graph layer is opt-in via extension
+      # MCP server missing. Two cases:
+      #   (a) project doesn't use wiki-links yet (e.g. fresh scaffold,
+      #       all-text specs) → silent pass; nothing to check.
+      #   (b) project DOES use wiki-links → emit a violation so the
+      #       user knows invariant 8 is silently inactive. This is the
+      #       marquee v1.0 promise; silent failure here is exactly what
+      #       Phase B (heavy testing) flagged as the regression risk.
+      # CR cycle-1 (PR #106) — fence-aware + inline-code-aware
+      # detection (was raw `grep '\[\['`). The real graph extractor in
+      # _graph_cache.py skips fenced blocks and masks inline code before
+      # matching wiki-links; this MCP-missing detection must match, or
+      # a project with `[[fake]]` only inside ``` code examples would
+      # trigger a false-positive warning. Inlines a slim fence-walker
+      # that mirrors _graph_cache.py's behaviour at a much smaller
+      # surface (no slug resolution, just "is there at least one real
+      # wiki-link outside code?").
+      #
+      # Scoped to USER content (specs, INDEX, patterns, data-model,
+      # decisions, ideas). NOT actions/ or playbooks/ — those are
+      # framework prose where `[[slug]]` examples are documentation.
+      _has_wikilinks=$(PROJECT_DIR="$PROJECT_DIR" python3 <<'PYEOF' 2>/dev/null || echo 0
+import os, re, sys
+proj = os.environ["PROJECT_DIR"]
+roots_files = [
+    os.path.join(proj, ".sdd", "INDEX.md"),
+    os.path.join(proj, ".sdd", "patterns.md"),
+    os.path.join(proj, ".sdd", "data-model.md"),
+    os.path.join(proj, ".sdd", "decisions.md"),
+]
+roots_dirs = [
+    os.path.join(proj, ".sdd", "features"),
+    os.path.join(proj, ".sdd", "bugs"),
+    os.path.join(proj, ".sdd", "refactors"),
+    os.path.join(proj, ".sdd", "ideas"),
+]
+
+# Strip inline-code spans (1/2/3/4 backtick variants) — match
+# _graph_cache.py:_INLINE_CODE_RE shape; mask, don't delete, so
+# offsets stay stable.
+_INLINE_CODE_RE = re.compile(
+    r"````([^`]|`(?!```))*?````|"
+    r"```([^`]|`(?!``))*?```|"
+    r"``([^`]|`(?!`))*?``|"
+    r"`[^`\n]*?`"
+)
+_FENCE_OPEN_RE = re.compile(r"^[ ]{0,3}(```+|~~~+)(.*)$")
+_WIKI_RE = re.compile(r"\[\[[^\[\]\n#|]+\]\]")
+
+def file_has_real_wikilink(path):
+    try:
+        with open(path, encoding="utf-8", errors="replace") as f:
+            text = f.read()
+    except OSError:
+        return False
+    in_fence = False
+    fence_marker = ""  # full opening delimiter (chars + length)
+    for line in text.split("\n"):
+        if in_fence:
+            # CommonMark §4.5: closer must match opener char + length
+            # AND have whitespace-only suffix (no info string).
+            stripped = line.lstrip(" \t")
+            if stripped.startswith(fence_marker):
+                rest = stripped[len(fence_marker):]
+                # Closer line: must be the marker char (run of more is OK
+                # only as the marker run; trailing must be whitespace).
+                if rest == "" or rest.isspace():
+                    in_fence = False
+                    fence_marker = ""
+            continue
+        m = _FENCE_OPEN_RE.match(line)
+        if m:
+            in_fence = True
+            fence_marker = m.group(1)
+            continue
+        masked = _INLINE_CODE_RE.sub(lambda mm: " " * len(mm.group()), line)
+        if _WIKI_RE.search(masked):
+            return True
+    return False
+
+for f in roots_files:
+    if os.path.isfile(f) and file_has_real_wikilink(f):
+        print(1); sys.exit(0)
+for d in roots_dirs:
+    if not os.path.isdir(d):
+        continue
+    for cur, _subs, files in os.walk(d):
+        for name in files:
+            if name.endswith(".md") and file_has_real_wikilink(os.path.join(cur, name)):
+                print(1); sys.exit(0)
+print(0)
+PYEOF
+)
+      if [ "$_has_wikilinks" = "1" ]; then
+        add_violation "[stop-lint] invariant 8 (wiki-link resolution) is INACTIVE — the
+  MCP server queries aren't on disk at extensions/sdd-mcp-server/ at the
+  project root, and \$CLAUDE_PLUGIN_ROOT isn't set. Wiki-links are NOT
+  being checked this turn (and this project DOES use \`[[slug]]\` references).
+  Fix: re-run \`scripts/init.sh\` from the SDD repo (v1.0 init.sh copies
+       the MCP server into every project alongside .sdd/ and .claude/),
+       or set CLAUDE_PLUGIN_ROOT to the SDD plugin path. Without the MCP
+       server, broken \`[[slug]]\` references will pass silently."
+      fi
+      return 0
     fi
   fi
   local result

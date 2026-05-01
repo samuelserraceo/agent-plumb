@@ -8,7 +8,7 @@
 
 ## In flight
 
-_(no work items in flight via SDD-managed flow yet — Phase A items 1-5 ship as ad-hoc PRs first; Phase B starts once `#74` self-host lands and `#42` worktree-aware INDEX.md follows)_
+_(no work items in flight — v1.0 shipped via 7 graph-first PRs walked through CR convergence; v1.1 work begins under SDD ceremony from this point forward.)_
 
 ## Shipped via ad-hoc PRs (pre-self-host)
 

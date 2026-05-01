@@ -69,8 +69,74 @@ staged_verifications=$(printf '%s\n' "$staged_files" | grep -E '(^|/)verificatio
 staged_specs=$(printf '%s\n' "$staged_files" | grep -E '(^|/)spec\.md$' || true)
 staged_manifest=$(printf '%s\n' "$staged_files" | grep -E '(^|/)\.sdd/\.cache/manifest\.json$' || true)
 
+# Phase B (heavy testing) finding: tampering ANY framework file
+# (e.g. .sdd/playbooks/feature.md, .sdd/scripts/advance.sh) IN ISOLATION
+# previously slipped past the moat because none of {verification.json,
+# spec.md, manifest.json} was staged. The earlier UAT #48 fix only
+# closed the manifest-staging case. Now: detect any staged change
+# (Add/Modify/Delete) whose path matches a manifest-tracked entry and
+# include in the gate. The manifest hash-pin check below then catches
+# the tamper (or surfaces "missing on disk" for the delete case).
+#
+# CR cycle-1 (PR #106): the original Phase B fix re-used the ACM-
+# filtered $staged_files which excludes deletions, AND silently treated
+# manifest-parse failures as "no tracked files" (collapsing to allow).
+# Both shapes reopened the tamper bypass.
+#
+# CR cycle-2 (PR #106): switch to --name-status to capture deletes (D),
+# renames (R*), and copy/type-change (C*, T) — checking BOTH the source
+# AND destination path on R/C against the manifest. Treat manifest-parse
+# failure as triggering the gate (sentinel _PARSE_ERR_) so check_manifest_pins
+# below still runs (and surfaces the parse error there in plain English)
+# instead of allowing past the early-exit.
+staged_framework_files=""
+manifest_path="$PROJECT_DIR/.sdd/.cache/manifest.json"
+if [ -f "$manifest_path" ]; then
+  staged_status=$(git diff --cached --name-status --diff-filter=ACMRDT 2>/dev/null || true)
+  staged_framework_files=$(MANIFEST="$manifest_path" \
+                            STATUS="$staged_status" python3 <<'PYEOF' 2>/dev/null || echo '_PARSE_ERR_'
+import json, os, sys
+mp = os.environ["MANIFEST"]
+status_lines = [ln for ln in os.environ["STATUS"].splitlines() if ln]
+try:
+    m = json.load(open(mp))
+except Exception:
+    # CR cycle-2: manifest-parse failure must NOT be silenced. Emit a
+    # non-empty sentinel so the gate fires and check_manifest_pins
+    # surfaces the parse error in its own (plain-English) flow.
+    print("_PARSE_ERR_")
+    sys.exit(0)
+tracked = set()
+for sec in ("playbooks", "actions", "extensions", "scripts"):
+    for entry in (m.get(sec) or {}).values():
+        p = entry.get("path", "")
+        if p:
+            tracked.add(p)
+# --name-status emits one line per change. Format:
+#   M\tpath                    (modify; 1 path)
+#   A\tpath                    (add)
+#   D\tpath                    (delete)
+#   T\tpath                    (typechange)
+#   C100\tsrc\tdst             (copy with similarity score; 2 paths)
+#   R100\tsrc\tdst             (rename with similarity score; 2 paths)
+# For renames/copies, BOTH paths matter — moving a tracked file out of
+# its expected path is exactly the bypass shape this gate must catch.
+for line in status_lines:
+    parts = line.split("\t")
+    if not parts:
+        continue
+    status = parts[0]
+    paths = parts[1:]
+    for p in paths:
+        if p and p in tracked:
+            print(p)
+            break  # one match per status line is enough to fire the gate
+PYEOF
+)
+fi
+
 # Nothing staged that triggers manifest checks → allow.
-[ -z "$staged_verifications" ] && [ -z "$staged_specs" ] && [ -z "$staged_manifest" ] && exit 0
+[ -z "$staged_verifications" ] && [ -z "$staged_specs" ] && [ -z "$staged_manifest" ] && [ -z "$staged_framework_files" ] && exit 0
 
 # Locate verify-stage.sh. Search project-relative first (real installed
 # project), then framework template (for in-tree tests).
