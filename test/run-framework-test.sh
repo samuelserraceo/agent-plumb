@@ -5478,20 +5478,22 @@ cd "$d" || { bad "T132 cannot cd into mkproj output" "$d"; rm -rf "$d"; }
 out=$(bash "$START_SH" --playbook=refactor "extract atomic-write helper" 2>&1) && ec=0 || ec=$?
 cd - >/dev/null || true
 spec="$d/.sdd/refactors/001-extract-atomic-write-helper/spec.md"
-# Assert EXACTLY 4 actions in the SPEC stage — not "≥4" — so an
-# accidental extra `### action:` block in the scaffold would fail
-# the test instead of slipping through (CR cycle-5 minor).
-action_count=$(grep -c '^### action:' "$spec" 2>/dev/null || echo "0")
+# Assert EXACTLY 4 actions in the SPEC stage AND in the documented
+# order (refactor-scope → regression-coverage → refactor-approach →
+# minimal-diff-verify). The flow is order-sensitive: regression-coverage
+# must happen before approach, minimal-diff-verify must close the
+# section. CR cycle-5/8: prefix-membership wasn't enough.
+expected_order="refactor-scope
+regression-coverage
+refactor-approach
+minimal-diff-verify"
+actual_order=$(grep -E '^### action: ' "$spec" 2>/dev/null | sed 's/^### action: //' || echo "")
 if [ "$ec" -eq 0 ] \
    && [ -f "$spec" ] \
-   && [ "$action_count" -eq 4 ] \
-   && grep -q '^### action: refactor-scope' "$spec" \
-   && grep -q '^### action: regression-coverage' "$spec" \
-   && grep -q '^### action: refactor-approach' "$spec" \
-   && grep -q '^### action: minimal-diff-verify' "$spec"; then
-  ok "T132 refactor.md scaffolded with exactly 4 SPEC actions"
+   && [ "$actual_order" = "$expected_order" ]; then
+  ok "T132 refactor.md scaffolded with exactly 4 SPEC actions in correct order"
 else
-  bad "T132 refactor.md scaffold incomplete" "exit=$ec; action_count=$action_count; spec_head=$(head -25 "$spec" 2>/dev/null)"
+  bad "T132 refactor.md scaffold order mismatch" "exit=$ec; expected=[$expected_order]; actual=[$actual_order]"
 fi
 rm -rf "$d"
 
