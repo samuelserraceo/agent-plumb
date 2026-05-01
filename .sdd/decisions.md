@@ -158,3 +158,19 @@ CI gate fixes for PR #114:
 Hash: 838708dd6d79cb9274aeabe4bb7ce4a07828e71f8ca92769ebc15f0ef54341fb  (proposed-approach re-pinned)
 Hash: ac5848a852dc814d3c8f313722c15ff821753a86821d1e2e36fa0433d92b303a  (acceptance-criteria re-pinned)
 Reason: cosmetic backticking of illustrative slugs to satisfy graph-integrity CI gate.
+
+
+## 2026-05-01T19:30:00Z  [[001-tier-3-llm-driven-synthesis]]  feature/spec-correction (AC21 + AC23 drift)
+
+CR/Qodo review of PR #114 caught two drifts between §11 acceptance-criteria text and the implementation that landed:
+
+(1) **AC21 — eviction tolerance.** Spec said "≤1010 entries (small buffer for batch eviction)" but the implementation strictly cuts back to `_CACHE_MAX_ENTRIES` (1000) on every overflow — the eviction loop deletes `over = len(entries) - cap` keys, leaving exactly cap. The "≤1010" wording overstated the buffer. Updated to reflect the strict cap, noting the test's `≤cap+1` allowance is defensive runtime tolerance for the post-insert/pre-evict moment, not a documented buffer.
+
+(2) **AC23 — slug regex.** Spec said `[a-z0-9][a-z0-9._\-]*` but the actual validator at `synthesise.py:51` is `^[a-z0-9][a-z0-9._:\-]*$` — the colon is required to admit `pattern:auth-retry-logic` and `entity:User` slugs that v1.0 graph nodes use. Updated to match.
+
+Section content unchanged in substance; the corrections bring spec wording into sync with shipped code (foundation 3 — never assume; the spec describes what's actually there, not the rough first draft).
+
+New acceptance-criteria hash pinned to verification.json. The regex-validation bug fix in `.github/workflows/sdd-ci.yml` (CR caught the `python3 -c "..." -- "$ui_path_re"` form passes `--` as `sys.argv[1]` rather than the regex; removed the `--` separator) plus 4 Qodo bugs in synthesise.py (cache-write tmp-init, all-three-caps enforcement, absolute-path read rejection, defensive YAML isinstance guards) shipped in the same review-cycle as code-only fixes — no spec text affected.
+
+Hash: 3414394998207a80bba53ba82c043f8b25690a20df8e38c3146557616451846c  (acceptance-criteria re-pinned)
+Reason: AC21 buffer wording + AC23 slug regex must reflect the actual implementation, not the rough first draft.

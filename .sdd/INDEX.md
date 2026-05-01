@@ -1,7 +1,8 @@
+# SDD framework — INDEX
+
 **Active:** features/001-tier-3-llm-driven-synthesis
 **Playbook:** feature
 **Active blocker:** SHIP (final stretch — push PR + CR cycle + admin-merge)
-# SDD framework — INDEX
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 

@@ -40,6 +40,7 @@ class TestSlugValidation(unittest.TestCase):
             _llm_call=_mock,
         )
         self.assertIs(result.get("ok"), False)
+        self.assertIn("invalid slug", (result.get("reason") or "").lower())
 
     def test_slash_in_slug_rejected(self):
         result = synthesise(
@@ -47,6 +48,7 @@ class TestSlugValidation(unittest.TestCase):
             _llm_call=_mock,
         )
         self.assertIs(result.get("ok"), False)
+        self.assertIn("invalid slug", (result.get("reason") or "").lower())
 
     def test_special_chars_rejected(self):
         for bad in ("$evil", "001;rm -rf", "..\\windows"):
@@ -56,6 +58,11 @@ class TestSlugValidation(unittest.TestCase):
                     _llm_call=_mock,
                 )
                 self.assertIs(result.get("ok"), False, msg=f"slug {bad!r} should be rejected")
+                self.assertIn(
+                    "invalid slug",
+                    (result.get("reason") or "").lower(),
+                    msg=f"slug {bad!r} should be rejected with the 'invalid slug' reason, got {result.get('reason')!r}",
+                )
 
     def test_valid_slugs_pass(self):
         for ok_slug in ("001-waitlist", "pattern:auth-retry", "entity:User"):

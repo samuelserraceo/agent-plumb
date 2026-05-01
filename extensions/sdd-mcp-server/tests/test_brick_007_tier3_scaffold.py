@@ -70,6 +70,13 @@ class TestBrick007Tier3Scaffold(unittest.TestCase):
         # tier3 paths.
         # Simple substring test: the front matter mentions tier3 somewhere.
         front_idx = self.body.find("---", 1)  # end of frontmatter
+        # CR feedback: guard against the find()==-1 case so a stray slice
+        # doesn't silently pass an assertion that depended on the slice.
+        if front_idx == -1:
+            self.fail(
+                "missing frontmatter end delimiter '---' in brick 007 — "
+                "the file is expected to start with a '---' frontmatter block"
+            )
         front = self.body[: front_idx + 3]
         self.assertIn(
             "tier3", front,

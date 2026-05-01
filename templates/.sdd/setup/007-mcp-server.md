@@ -88,7 +88,7 @@ If you turned on the MCP server, the framework can also offer **chat-based answe
 
 1. **Yes — turn it on** *(recommended if your project will run for months)* — the wizard helps you install Ollama if you don't have it, then pulls a Gemma model. Records `parameters.mcp.tier3.enabled: true` plus the provider / endpoint / model you confirm in Q2-Q4.
 2. **No — skip for now** — records `parameters.mcp.tier3.enabled: false`. You can re-enable any time via `/sdd-config tier3`.
-3. **Tell me more** — agent explains in plain English (uses the Tier 3 walkthrough at `.sdd/features/001-tier-3-llm-driven-synthesis/wireframe.html` if available).
+3. **Tell me more** — agent explains in plain English (uses the Tier 3 walkthrough at [[001-tier-3-llm-driven-synthesis]] if available).
 
 ### Q2 — where is your Ollama running? *(only if Q1 = yes)*
 

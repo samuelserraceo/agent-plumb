@@ -6554,8 +6554,14 @@ grep -q "tier3" "$brick" 2>/dev/null && ok_count=$((ok_count + 1))
 config="$d/.sdd/config.md"
 grep -q "tier3:" "$config" 2>/dev/null && ok_count=$((ok_count + 1))
 rm -rf "$d"
-if [ "$ok_count" -eq 6 ]; then
-  ok "T138 wizard step + tier3 schema ship via init.sh (6/6 checks)"
+# CR feedback: include init.sh's exit code in the gate. A non-zero ec
+# with "happens to write the right files anyway" should still fail —
+# init.sh exited non-zero for a reason (partial write, validation
+# error) that future runs may not be tolerant of.
+if [ "$ec" -ne 0 ]; then
+  bad "T138 init.sh exited non-zero" "ec=$ec out=$out"
+elif [ "$ok_count" -eq 6 ]; then
+  ok "T138 wizard step + tier3 schema ship via init.sh (6/6 checks, ec=0)"
 else
   bad "T138 wizard E2E gate broken" "ok=$ok_count/6 ec=$ec"
 fi

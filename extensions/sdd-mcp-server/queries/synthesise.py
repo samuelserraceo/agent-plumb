@@ -151,6 +151,11 @@ def synthesise(
         # 7. Caps — pre-network refusal (T10) — all three caps enforced
         cap_err = _check_caps(chunks, cfg, counters)
         if cap_err is not None:
+            # Persist the bumped cache_misses counter even on cap refusal —
+            # observability honesty: an attempt happened, we just didn't
+            # call the provider. (CR feedback: counters silently lost.)
+            with contextlib.suppress(OSError):
+                _save_synthesis_cache(project_root, cache)
             return _err(cap_err)
 
         # 8. LLM call — dependency-injected for tests
@@ -163,13 +168,21 @@ def synthesise(
         try:
             answer_text = llm(question, chunks, cfg)
         except _ProviderUnreachable as e:
+            with contextlib.suppress(OSError):
+                _save_synthesis_cache(project_root, cache)
             return _err(f"provider unreachable: {e}")
         except _ProviderRateLimited as e:
+            with contextlib.suppress(OSError):
+                _save_synthesis_cache(project_root, cache)
             return _err(f"rate-limited: {e}")
         except Exception as e:  # noqa: BLE001 — defensive default
+            with contextlib.suppress(OSError):
+                _save_synthesis_cache(project_root, cache)
             return _err(f"AI returned malformed response: {type(e).__name__}: {e}")
 
         if not isinstance(answer_text, str):
+            with contextlib.suppress(OSError):
+                _save_synthesis_cache(project_root, cache)
             return _err("AI returned malformed response: not a string")
 
         # 9. Length cap (T18) — trim to 1024 bytes if longer
@@ -193,7 +206,12 @@ def synthesise(
 
         if broken:
             # T6 — cite-check rejection → raw-chunks fallback
-            # T7 — do NOT cache the rejected answer
+            # T7 — do NOT cache the rejected answer (entries[] untouched)
+            # CR feedback: persist the bumped counters (cache_misses,
+            # calls_made, tokens_used) so observability still reflects
+            # the attempt that happened.
+            with contextlib.suppress(OSError):
+                _save_synthesis_cache(project_root, cache)
             return {
                 "ok": False,
                 "reason": f"cite-check failed: invented citations {broken}",
@@ -304,9 +322,9 @@ def _resolve_auth_header(value: str) -> str:
         if pat.match(value):
             import sys
             print(
-                f"[tier3-warning] auth_header looks like a real provider key. "
-                f"To keep tokens out of git-tracked config, use ${{ENV_VAR}} "
-                f"indirection instead of pasting the literal value.",
+                "[tier3-warning] auth_header looks like a real provider key. "
+                "To keep tokens out of git-tracked config, use ${ENV_VAR} "
+                "indirection instead of pasting the literal value.",
                 file=sys.stderr,
             )
             break
@@ -643,6 +661,18 @@ def _real_llm_call(question: str, chunks: List[Dict[str, Any]], cfg: Dict[str, A
     endpoint = (cfg.get("endpoint") or "http://127.0.0.1:11434").rstrip("/")
     model = cfg.get("model") or "gemma2:2b"
     auth = cfg.get("auth_header") or ""
+
+    # Security (CR/Qodo): refuse non-http(s) schemes. The user-edited
+    # config.md value flows here; without this guard a malformed entry
+    # like `file:///etc/passwd` or `gopher://...` would get handed to
+    # urllib.request.urlopen and read whatever urllib decides. Plain
+    # http and https are the only shapes Ollama / OpenAI-compatible
+    # providers ever ship.
+    if not (endpoint.startswith("http://") or endpoint.startswith("https://")):
+        raise _ProviderUnreachable(
+            f"refusing endpoint with unsupported scheme: '{endpoint}' "
+            "(only http:// and https:// are accepted)"
+        )
 
     url = f"{endpoint}/api/chat"
     body = {

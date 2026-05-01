@@ -57,6 +57,10 @@ class TestSynthesiseScaffold(unittest.TestCase):
         a dict — never raises, never returns None, never returns a
         string. That's the lasting scaffold contract.
         """
-        result = queries.synthesise(project_root=".", args={})
+        # Use an isolated temp dir so the test isn't coupled to the
+        # invocation directory or any local .sdd state (CR feedback).
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            result = queries.synthesise(project_root=tmp, args={})
         self.assertIsInstance(result, dict)
         self.assertIn("ok", result, msg="every synthesise() result must carry an `ok` key")

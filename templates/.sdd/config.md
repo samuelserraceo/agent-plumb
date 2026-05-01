@@ -33,7 +33,7 @@ parameters:
       top_k: 5                  # how many results to return per search
       max_chunks_per_run: 1000  # cost ceiling — refuses to embed more chunks than this in one call
       auth_header: ""           # optional. To keep tokens OUT of tracked config, use ${ENV_VAR_NAME} indirection (e.g. "${SDD_MCP_AUTH}") and put the literal token in the env var. Literal values still work. Empty = no auth header sent.
-    tier3:               # opt-in Tier 3 LLM-driven synthesis over .sdd/ corpus — chat-style answers with cite-checked [[link]] citations. v1.1 wizard-supported provider: Ollama+Gemma running locally. Other providers (OpenAI / Anthropic / etc.) settable manually but not wizard-supported until v1.2+. See extensions/sdd-mcp-server/README.md and .sdd/features/001-tier-3-llm-driven-synthesis/spec.md.
+    tier3:               # opt-in Tier 3 LLM-driven synthesis over .sdd/ corpus — chat-style answers with cite-checked wiki-link citations. v1.1 wizard-supported provider: Ollama+Gemma running locally. Other providers (OpenAI / Anthropic / etc.) settable manually but not wizard-supported until v1.2+. See extensions/sdd-mcp-server/README.md and .sdd/features/001-tier-3-llm-driven-synthesis/spec.md.
       enabled: false
       provider: ""                       # v1.1 wizard: "ollama-chat" (Gemma); manual: openai / anthropic / etc. (v1.2+ widens wizard). REQUIRED when enabled — no silent default per foundation 3.
       endpoint: ""                       # http(s)://host:port — base URL the chat AI lives at

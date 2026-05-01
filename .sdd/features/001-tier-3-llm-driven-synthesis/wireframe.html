@@ -596,12 +596,22 @@
   }
 
   document.querySelectorAll('.cite').forEach(el => {
-    el.addEventListener('click', (e) => {
+    // Make .cite spans keyboard-accessible (CR feedback): focusable, with
+    // ARIA role + Enter/Space activation in addition to mouse click.
+    if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '0');
+    if (!el.hasAttribute('role')) el.setAttribute('role', 'button');
+    const activate = (e) => {
       e.preventDefault();
       const text = el.textContent.trim();
       // Match [[…]] within the cite text (covers `[[001-waitlist]] AC6` style)
       const m = text.match(/\[\[[^\]]+\]\]/);
       if (m) showCiteModal(m[0]);
+    };
+    el.addEventListener('click', activate);
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+        activate(e);
+      }
     });
   });
   document.getElementById('citeModalClose').addEventListener('click', closeCiteModal);

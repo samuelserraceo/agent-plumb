@@ -248,6 +248,16 @@ def build_fixture_tree(
       - with_tier3: v1.1 Tier 3 enabled config (Ollama+Gemma)
       - tier3_disabled: v1.1 schema present but tier3.enabled=false
     """
+    # Enforce the mutual-exclusion the docstring claims (CR feedback —
+    # docstring previously said this without a guard).
+    config_flags = sum(bool(x) for x in (with_semantic_search, with_tier3, tier3_disabled))
+    if config_flags > 1:
+        raise AssertionError(
+            "build_fixture_tree: at most one of with_semantic_search / "
+            "with_tier3 / tier3_disabled may be true; got "
+            f"with_semantic_search={with_semantic_search}, "
+            f"with_tier3={with_tier3}, tier3_disabled={tier3_disabled}"
+        )
     sdd = os.path.join(root, ".sdd")
     os.makedirs(sdd, exist_ok=True)
     os.makedirs(os.path.join(sdd, "features", "001-waitlist"), exist_ok=True)

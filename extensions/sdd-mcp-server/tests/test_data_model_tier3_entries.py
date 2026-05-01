@@ -50,11 +50,24 @@ class TestDataModelTier3Entries(unittest.TestCase):
             "entity per §6 data-contract"
         ))
 
+    @staticmethod
+    def _section_block(body: str, heading: str) -> str:
+        """Extract from `heading` to the next H3 (or EOF). Avoids the
+        brittle fixed 2000-byte slice CR flagged."""
+        idx = body.find(heading)
+        if idx == -1:
+            return ""
+        # Find next H3 boundary (start-of-line "### ") after this heading.
+        nxt = body.find("\n### ", idx + len(heading))
+        if nxt == -1:
+            return body[idx:]
+        return body[idx:nxt]
+
     def test_synthesis_cache_describes_corpus_signature_keying(self):
         """The cache description names corpus signature as part of the key."""
         idx = self.body.find("### SynthesisCache")
         self.assertGreater(idx, -1)
-        block = self.body[idx:idx + 2000]
+        block = self._section_block(self.body, "### SynthesisCache")
         self.assertIn("corpus_signature", block,
                       msg="SynthesisCache description should mention corpus_signature in the key shape")
 
@@ -62,7 +75,7 @@ class TestDataModelTier3Entries(unittest.TestCase):
         """Per §15 sweep, the cache LRU-evicts at 1000 entries; documented here."""
         idx = self.body.find("### SynthesisCache")
         self.assertGreater(idx, -1)
-        block = self.body[idx:idx + 2000]
+        block = self._section_block(self.body, "### SynthesisCache")
         self.assertIn("LRU", block, msg=(
             "SynthesisCache description should mention LRU eviction policy "
             "(added by §15 edge-case sweep on 2026-05-01)"
@@ -72,7 +85,7 @@ class TestDataModelTier3Entries(unittest.TestCase):
         """The config description names the v1.1 wizard scope (Ollama+Gemma only)."""
         idx = self.body.find("### Tier3Config")
         self.assertGreater(idx, -1)
-        block = self.body[idx:idx + 2000]
+        block = self._section_block(self.body, "### Tier3Config")
         self.assertIn("v1.1", block,
                       msg="Tier3Config description should reference v1.1 wizard scope")
         self.assertIn("Ollama", block,
@@ -82,7 +95,7 @@ class TestDataModelTier3Entries(unittest.TestCase):
         """Anti-theatre — no cost_limit_usd field is listed for Tier3Config."""
         idx = self.body.find("### Tier3Config")
         self.assertGreater(idx, -1)
-        block = self.body[idx:idx + 2000]
+        block = self._section_block(self.body, "### Tier3Config")
         # The description may legitimately mention the ABSENT field by name
         # (anti-theatre note); it must not list it as a present field.
         # Heuristic: look for `cost_limit_usd:` (with colon) — would be a

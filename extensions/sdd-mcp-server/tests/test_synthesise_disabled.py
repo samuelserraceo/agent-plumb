@@ -43,9 +43,12 @@ class TestDisabled(unittest.TestCase):
             with open(os.path.join(root, ".sdd", "config.md"), "w") as f:
                 f.write("---\ntype: config\nparameters:\n  budget:\n    max_minutes: 5\n---\n")
             result = synthesise(
-                root, {"slug": "x", "question": "x", "format": "structured"},
+                root, {"slug": "001-waitlist", "question": "x", "format": "structured"},
                 _llm_call=_mock,
             )
             self.assertIs(result.get("ok"), False)
+            # Assert the failure is specifically the disabled path, not a
+            # collateral validation error (CR feedback).
+            self.assertIn("not enabled", (result.get("reason") or "").lower())
         finally:
             shutil.rmtree(root, ignore_errors=True)

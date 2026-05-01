@@ -61,10 +61,23 @@ class TestTier3ConfigSchema(unittest.TestCase):
         pattern = rf"(?ms)^{re.escape(parent)}:\s*\n(?:[ \t]+\S.*\n)*?[ \t]+{re.escape(key)}:"
         return bool(re.search(pattern, self.body))
 
+    def _scoped_tier3_idx(self) -> int:
+        """Return the index of `tier3:` *under parameters → mcp* — not
+        any random `tier3:` mention elsewhere (CR feedback).
+        """
+        params_idx = self.body.find("parameters:")
+        if params_idx == -1:
+            return -1
+        mcp_idx = self.body.find("mcp:", params_idx)
+        if mcp_idx == -1:
+            return -1
+        tier3_idx = self.body.find("tier3:", mcp_idx)
+        return tier3_idx
+
     def test_tier3_block_exists(self):
         """The `tier3:` block exists under `parameters.mcp`."""
-        # tier3 sits two levels deep — under parameters → mcp.
-        self.assertIn("tier3:", self.body, msg=(
+        tier3_idx = self._scoped_tier3_idx()
+        self.assertGreater(tier3_idx, -1, msg=(
             "parameters.mcp.tier3 block missing from templates/.sdd/config.md "
             "— see §6 data-contract for the approved schema"
         ))
@@ -81,20 +94,19 @@ class TestTier3ConfigSchema(unittest.TestCase):
             "max_total_tokens_per_run",
             "auth_header",
         ]
+        # Locate the scoped tier3 block once (not in the inner loop).
+        tier3_idx = self._scoped_tier3_idx()
+        self.assertGreater(tier3_idx, -1, "tier3 block missing under parameters.mcp")
+        tier3_block = self.body[tier3_idx:tier3_idx + 1500]
         for field in required_fields:
             with self.subTest(field=field):
-                # Check field appears AFTER `tier3:` in the file.
-                tier3_idx = self.body.find("tier3:")
-                self.assertGreater(tier3_idx, -1, "tier3 block missing")
-                # Look for the field within ~1500 chars after tier3:
-                tier3_block = self.body[tier3_idx:tier3_idx + 1500]
                 self.assertIn(f"{field}:", tier3_block,
                               msg=f"tier3.{field} not found in the schema block")
 
     def test_tier3_off_by_default(self):
         """`enabled: false` must be the default (foundation 3 — opt-in)."""
-        tier3_idx = self.body.find("tier3:")
-        self.assertGreater(tier3_idx, -1, "tier3 block missing")
+        tier3_idx = self._scoped_tier3_idx()
+        self.assertGreater(tier3_idx, -1, "tier3 block missing under parameters.mcp")
         tier3_block = self.body[tier3_idx:tier3_idx + 1500]
         # match `enabled: false` (any whitespace before, allow comment after)
         self.assertRegex(tier3_block, r"enabled:\s*false",
@@ -113,8 +125,8 @@ class TestTier3ConfigSchema(unittest.TestCase):
         schema (which legitimately mentions the absent field by name)
         doesn't trip the test.
         """
-        tier3_idx = self.body.find("tier3:")
-        self.assertGreater(tier3_idx, -1, "tier3 block missing")
+        tier3_idx = self._scoped_tier3_idx()
+        self.assertGreater(tier3_idx, -1, "tier3 block missing under parameters.mcp")
         tier3_block = self.body[tier3_idx:tier3_idx + 1500]
         # Field would appear at start of a line (after indent) with a
         # colon and value — not as a word inside a `#` comment.

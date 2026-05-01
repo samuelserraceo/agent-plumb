@@ -309,9 +309,9 @@ All four already ship and have their own tests. Tier 3 doesn't rewrite or change
 
 **Group 11.5 — Edge-case sweep additions (added 2026-05-01 from §15).**
 
-21. **Cache file is bounded.** When `synthesis.json` reaches 1000 entries, the least-recently-used entries are evicted. Test fires 1500 unique synthesise calls against a fixture project and asserts the resulting cache file has ≤1010 entries (small buffer for batch eviction). Eviction threshold hardcoded for v1.1; configurable in v1.2+ if friction surfaces.
+21. **Cache file is bounded.** When `synthesis.json` reaches 1000 entries, the least-recently-used entries are evicted on the next write. Test fires 20 unique synthesise calls with `_CACHE_MAX_ENTRIES` patched to 5 and asserts the resulting cache has ≤1000 entries in production / ≤cap entries in test-runtime (the implementation cuts strictly back to the cap on every overflow; the cap-aware test allows ≤cap+1 only as defensive tolerance for the brief post-insert/pre-evict window). Eviction threshold hardcoded for v1.1; configurable in v1.2+ if friction surfaces.
 22. **Question text is validated before being sent to the AI.** Empty strings, strings with control characters or null bytes, and strings longer than 2000 characters are rejected with `{ok: false, reason: "question invalid: <why>"}`. Test fires 4 invalid question shapes (empty, 10000-char, control-char, null-byte) and confirms each rejection.
-23. **Slug argument is sanitised before any file read** — must match `[a-z0-9][a-z0-9._\-]*` (the same shape v1.0 uses for graph nodes). Path-traversal attempts (`../../etc/passwd`), spaces, slashes, and any character outside that pattern are rejected with `{ok: false, reason: "invalid slug: <slug>"}`. Test fires 5 malicious slug shapes and confirms each refusal.
+23. **Slug argument is sanitised before any file read** — must match `^[a-z0-9][a-z0-9._:\-]*$` (extends v1.0 graph-node shape with `:` to allow `pattern:` and `entity:` prefixes). Path-traversal attempts (`../../etc/passwd`), spaces, slashes, and any character outside that pattern are rejected with `{ok: false, reason: "invalid slug: <slug>"}`. Test fires 5 malicious slug shapes and confirms each refusal.
 
 **Group 11 — Setup-wizard integration (added on Sam's catch).**
 

@@ -37,14 +37,16 @@ class TestLengthCap(unittest.TestCase):
             self.root, {"slug": "001-waitlist", "question": "x", "format": "structured"},
             _llm_call=_mock_long,
         )
-        # The expand-suffix gets appended after trimming; total response
-        # is bounded but might slightly exceed 1024 due to suffix.
-        # AC13: default answer is ≤ 1024 bytes.
+        # AC13: default answer is ≤ 1024 bytes — strictly enforced.
+        # The implementation reserves bytes for the expand-suffix INSIDE
+        # the 1024 budget (keep = cap - len(suffix) → text + suffix =
+        # cap bytes total), so the cap is hard, not "1024 + suffix budget"
+        # (CR feedback: previous ≤1100 bound weakened the contract).
         self.assertTrue(result.get("ok"))
         answer_bytes = len((result.get("answer") or "").encode("utf-8"))
         self.assertLessEqual(
-            answer_bytes, 1100,  # 1024 cap + ~70 byte suffix budget
-            msg=f"answer exceeds length cap: {answer_bytes} bytes"
+            answer_bytes, 1024,
+            msg=f"answer exceeds 1024-byte cap: {answer_bytes} bytes"
         )
 
     def test_long_answer_signals_truncation_with_suffix(self):

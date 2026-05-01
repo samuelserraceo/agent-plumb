@@ -53,8 +53,12 @@ class TestSynthesiseCacheInvalidate(unittest.TestCase):
         with open(spec_path, "a", encoding="utf-8") as f:
             f.write("\n\n## new section added at " + str(time.time()) + "\n")
 
-        # Force file-mtime granularity to flip — sleep tiny bit if needed.
-        time.sleep(0.02)
+        # Deterministic mtime bump — replaces the flaky time.sleep(0.02)
+        # path that fails on filesystems with coarse (1s) mtime resolution
+        # (CR feedback). os.utime guarantees the file's mtime advances
+        # by ≥2s, ensuring the corpus signature recomputes.
+        st = os.stat(spec_path)
+        os.utime(spec_path, (st.st_atime, st.st_mtime + 2))
 
         # Now ask again — must be a cache miss → LLM called for a 2nd time
         synthesise(self.root, args, _llm_call=_mock_llm_counted)

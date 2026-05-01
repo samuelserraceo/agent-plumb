@@ -1,8 +1,11 @@
-"""T17 — Four failure modes produce clean errors (AC12).
+"""T17 — Three failure modes produce clean errors (AC12).
 
-provider unreachable · rate-limited · cache disk write fails ·
-malformed AI response. Each returns a clean error rather than crashing
-the framework.
+provider unreachable · rate-limited · malformed AI response. Each
+returns a clean error rather than crashing the framework. The cache
+disk-write failure path is exercised under
+test_synthesise_cache_eviction.py (write loop) and the in-process
+_save_synthesis_cache contract (initialises tmp before the try, suppresses
+unlink errors) — see queries/synthesise.py:_save_synthesis_cache.
 """
 
 from __future__ import annotations

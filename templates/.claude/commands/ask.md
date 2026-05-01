@@ -9,7 +9,8 @@ When the user types `/ask "<question>"`:
 1. Reads `parameters.mcp.tier3` from `.sdd/config.md`. If `enabled: false` (or the block is missing), respond *"Tier 3 not enabled — run `/sdd-config tier3` to set it up."*
 2. Resolve the active feature via `.sdd/scripts/resolve-active.sh` to get the `slug` arg.
 3. Call the `synthesise` MCP query with:
-   ```
+
+   ```json
    {
      "slug": "<active-feature-slug>",
      "question": "<user's question>",
@@ -28,7 +29,7 @@ The user's natural-language question is the only argument. Multi-line questions 
 
 ## Example
 
-```
+```text
 > /ask "why did we pick Postgres for the waitlist?"
 
 Postgres was picked because the v1 schema is small enough to colocate with
@@ -52,7 +53,7 @@ to a managed database came up later in [[005-pivot]] §3 but you parked it.
 
 `/status` exposes the v1.1 Tier 3 counters from `synthesise.get_counters()`:
 
-```
+```yaml
 Tier 3:
   Calls made:     <n>
   Tokens used:    <n>
