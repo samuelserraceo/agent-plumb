@@ -4,7 +4,7 @@
 
 **Run mode:** full autonomous (Sam confirmed 2026-05-01 — saved in `feedback_full_autonomous_build.md`). Halt-triggers per CLAUDE.md: test stays RED after 3 attempts · pre-commit blocked · real design gap surfaces in §5/§6 · credential/infra step needs Sam.
 
-**Active blocker:** T6 — cite-check rejects invented `[[fake-slug]]` and falls back to raw chunks (AC2)
+**Active blocker:** SHIP — verify-test-run → verify-prod-only-acs → learn → push-pr → verify-ci-green → mark-shipped
 
 ## PHASE: SPEC
 
