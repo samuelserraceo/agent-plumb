@@ -194,8 +194,26 @@ Approval row left [ ] — same flow as §5; Sam ticks at approval-pass time.
 
 ### action: edge-case-sweep
 
-- [ ] ec-sweep: draft
-- [ ] ec-pick: ask
+- [x] ec-sweep: 8 edge cases considered; triage:
+
+  | Edge case | Triage |
+  |---|---|
+  | Agent file has BOTH USER-LED and AGENT-LED in frontmatter (theoretically impossible but the lint should refuse rather than silently pick one) | **add AC** — see AC13 below |
+  | First-paragraph counter trips on a markdown blockquote `> ` line as if it were body prose | **add AC** — see AC14 below |
+  | A future contributor adds a NEW action file without the example block | **already covered** — AC8 wires the lint into CI; the new file fails the gate before merge |
+  | macOS `sed` vs GNU `sed` quirks in the lint script | **add AC** — see AC15 below; tests must run on both runners |
+  | Multi-paragraph "first paragraph" via continuation indentation | **add AC** — see AC14 below (same fix) |
+  | UTF-8 wide characters (em dashes, smart quotes) inflating the 200-char check | **drop** — characters are characters; if a paragraph is 200 chars, it's 200 chars regardless of glyph width. Anglo-saxon + em dashes are fine. |
+  | `tag: USER-LED` with extra whitespace (e.g. `tag:  USER-LED  `) | **drop** — lint normalises with `tr -d ' '` before compare; defensive without spec change |
+  | Action file with no body at all (just frontmatter) | **drop** — would already fail the example-block check; not worth a separate AC |
+
+- [x] ec-pick: 3 edge-case ACs added below.
+
+  13. **Lint refuses ambiguous tag.** If an action file's frontmatter has `tag:` matching BOTH `USER-LED` and `AGENT-LED` (e.g., `tag: USER-LED, AGENT-LED`), the lint exits 1 with stderr naming the file + the literal phrase `ambiguous tag`. → `tests/task-013.sh`
+
+  14. **First-paragraph counter handles blockquotes + continuation.** A blockquote line (`> ...`) starting the body counts as the first paragraph; an indented continuation (4-space-indent) is part of the same paragraph. Test: 2 fixtures, both with paragraphs at the threshold, both correctly classified. → `tests/task-014.sh`
+
+  15. **Lint runs on both macOS and Linux.** No GNU-only sed flags; `wc -m` for char count (POSIX); `awk` regex compatible with both BSD-awk and GNU-awk. Test: framework CI runs on Linux runners; local macOS test of the same fixture set passes. → `tests/task-015.sh` (cross-platform sanity check on representative fixtures)
 
 ### Exit checks
 - [ ] C-spec-acs: ≥1 acceptance criterion exists in §11
