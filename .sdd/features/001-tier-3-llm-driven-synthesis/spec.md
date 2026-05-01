@@ -2,7 +2,7 @@
 
 [PHASE: SPEC]
 
-**Active blocker:** §4 (ux-brief — likely SKIPPABLE for this backend feature)
+**Active blocker:** §5 (proposed-approach — AGENT-LED, requires user approval)
 
 ## PHASE: SPEC
 
@@ -36,7 +36,28 @@
 
 ### action: ux-brief
 
-- [ ] brief: infer the UX direction from problem, success, and user stories
+- [x] brief: feels like a knowledgeable-colleague you can ask anything about your project, with receipts; one core call with structured/prose views; inline [[…]] citations; ambiguity surfaced; empty results spelled out; <1 KB default length
+
+**The chosen UX direction:** Tier 3 should feel like *a knowledgeable colleague you can ask anything about your project, who always shows their receipts.*
+
+**Three concrete moments it produces (approved verbatim, 2026-05-01):**
+
+1. **Sam asks** — *"Why did we pick Postgres for the waitlist?"* → *"Postgres was picked because the v1 schema is small enough to colocate with the app — you flagged this in [[001-waitlist]] about a month ago. Switching to a managed database came up in [[005-pivot]] but you parked it."*
+2. **Agent asks (mid-SPEC)** — *"Is there already a pattern for retrying failed signups in this project?"* → structured data response (yes/no + citation) the agent reads directly. Same brain, different wrapping for the consumer.
+3. **Sam asks** — *"What's deferred across all my features right now?"* → *"Three things deferred: cookie consent banner ([[002-checkout]]), Stripe webhook retry ([[004-billing]]), import CSV (parked, [[007-onboarding]]). Want me to expand on any of them?"*
+
+**Three design choices that produce that feel:**
+
+- **One core synthesise call, two views.** A single MCP query (likely named `synthesise`) with a `format: "structured" | "prose"` argument. Agent calls it with `format: "structured"` for direct consumption; the slash-command wrapper calls with `format: "prose"` for chat. Same LLM call, same cite-check, two thin renderers.
+- **Inline `[[wiki-link]]` citations** in the prose path. Reuses v1.0's graph cache. Click to jump in editors that render Obsidian-style links; readable as text otherwise.
+- **Knowledgeable-colleague voice.** Plain English, declarative, no "I think" hedging. Where the corpus is silent, say so explicitly.
+
+**Behavioural guarantees (must verify in SHIP):**
+
+- **No invention.** Every claim must point at a real `[[…]]` — graph cache verifies the link resolves, or the answer is rejected.
+- **Ambiguity surfaced, not picked.** Two valid answers → *"two candidates — [[001]] says X, [[005]] says Y. Which do you mean?"*
+- **Empty corpus spelled out.** No silent return. *"Nothing in your project covers that. Closest was [[X]] but tangential. Want me to broaden?"*
+- **Length cap.** Default answer < 1 KB (matches §2 cost target). Expand-on-demand for deeper dives.
 
 ### action: proposed-approach
 
