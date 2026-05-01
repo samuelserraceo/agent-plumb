@@ -148,8 +148,8 @@ def synthesise(
         #    v1.0 graph queries minimally for now)
         chunks = _gather_chunks(project_root, graph, slug, question)
 
-        # 7. Caps — pre-network refusal (T10)
-        cap_err = _check_caps(chunks, cfg)
+        # 7. Caps — pre-network refusal (T10) — all three caps enforced
+        cap_err = _check_caps(chunks, cfg, counters)
         if cap_err is not None:
             return _err(cap_err)
 
@@ -233,7 +233,12 @@ def _err(reason: str, **extras: Any) -> Dict[str, Any]:
 
 
 def _load_tier3_config(project_root: str) -> Dict[str, Any]:
-    """Read parameters.mcp.tier3 from .sdd/config.md frontmatter."""
+    """Read parameters.mcp.tier3 from .sdd/config.md frontmatter.
+
+    Defensive: yaml.safe_load can return non-dict shapes (list, string,
+    None) on malformed input. Other queries (search.py) already guard
+    against this; we mirror the discipline here. (Qodo bug #10.)
+    """
     cfg_path = os.path.join(project_root, ".sdd", "config.md")
     if not os.path.isfile(cfg_path):
         return {"enabled": False}
@@ -251,7 +256,20 @@ def _load_tier3_config(project_root: str) -> Dict[str, Any]:
         fm = yaml.safe_load(text[4:end])
     except yaml.YAMLError:
         return {"enabled": False}
-    return ((fm or {}).get("parameters") or {}).get("mcp", {}).get("tier3") or {"enabled": False}
+    # Guard: YAML may parse to a list / string / None. Treat anything
+    # non-dict as "no tier3 config".
+    if not isinstance(fm, dict):
+        return {"enabled": False}
+    parameters = fm.get("parameters")
+    if not isinstance(parameters, dict):
+        return {"enabled": False}
+    mcp = parameters.get("mcp")
+    if not isinstance(mcp, dict):
+        return {"enabled": False}
+    tier3 = mcp.get("tier3")
+    if not isinstance(tier3, dict):
+        return {"enabled": False}
+    return tier3
 
 
 def _validate_question(question: Any) -> Optional[str]:
@@ -329,13 +347,41 @@ def _gather_chunks(project_root: str, graph: Dict[str, Any], slug: str, question
 
 
 def _read_chunk(project_root: str, node: Dict[str, Any]) -> Dict[str, Any]:
-    """Read a node's content, capped at 2KB for chunk-size discipline."""
+    """Read a node's content, capped at 2KB for chunk-size discipline.
+
+    Security (Qodo bug #9): reject absolute paths; ensure the resolved
+    path stays inside project_root. The graph cache stores
+    project-relative paths during normal graph construction, but a
+    tampered cache file (with a matching corpus signature) could
+    inject an absolute path or `..`-traversal. Defense in depth:
+    refuse to read anything outside project_root.
+    """
     path = node.get("path", "")
     line = node.get("line", 1)
-    abs_path = os.path.join(project_root, path) if not os.path.isabs(path) else path
     text = ""
+    if not isinstance(path, str) or not path:
+        return {
+            "slug": node.get("slug", ""), "path": path, "line": line,
+            "kind": node.get("kind", "unknown"), "text": "",
+        }
+    # Reject absolute paths outright — graph construction never emits them.
+    if os.path.isabs(path):
+        return {
+            "slug": node.get("slug", ""), "path": path, "line": line,
+            "kind": node.get("kind", "unknown"), "text": "",
+        }
+    # Resolve via realpath, then verify the result is inside project_root.
+    project_real = os.path.realpath(project_root)
+    candidate_real = os.path.realpath(os.path.join(project_real, path))
+    # Must be exactly project_real OR a descendant of project_real.
+    rel = os.path.relpath(candidate_real, project_real)
+    if rel == ".." or rel.startswith(".." + os.sep):
+        return {
+            "slug": node.get("slug", ""), "path": path, "line": line,
+            "kind": node.get("kind", "unknown"), "text": "",
+        }
     try:
-        with open(abs_path, encoding="utf-8") as f:
+        with open(candidate_real, encoding="utf-8") as f:
             text = f.read(2048)
     except (OSError, UnicodeDecodeError):
         text = ""
@@ -348,8 +394,17 @@ def _read_chunk(project_root: str, node: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def _check_caps(chunks: List[Dict[str, Any]], cfg: Dict[str, Any]) -> Optional[str]:
-    """Pre-network token-count check (T10 / T29).
+def _check_caps(
+    chunks: List[Dict[str, Any]],
+    cfg: Dict[str, Any],
+    counters: Dict[str, Any],
+) -> Optional[str]:
+    """Pre-network cap check — all three caps (Qodo bug #7 fix).
+
+    Previously only `max_input_tokens_per_call` was enforced, leaving
+    `max_calls_per_run` and `max_total_tokens_per_run` as theatre. Now
+    all three are checked before any LLM call, against the running
+    counters from the synthesis cache.
 
     Approximate token count: bytes / 4 (rough char-to-token ratio for
     English markdown; close enough for cap-enforcement). Real provider
@@ -357,10 +412,29 @@ def _check_caps(chunks: List[Dict[str, Any]], cfg: Dict[str, Any]) -> Optional[s
     earlier rather than later.
     """
     max_input = int(cfg.get("max_input_tokens_per_call", 8000))
+    max_calls = int(cfg.get("max_calls_per_run", 10))
+    max_total = int(cfg.get("max_total_tokens_per_run", 100000))
+
     total_bytes = sum(len(c.get("text", "").encode("utf-8")) for c in chunks)
     approx_tokens = total_bytes // 4
+
+    # 1. Per-call input cap
     if approx_tokens > max_input:
         return f"max_input_tokens_per_call exceeded (~{approx_tokens} > {max_input})"
+
+    # 2. Calls-per-run cap (counters reflect prior calls; this would be the next one)
+    calls_so_far = int(counters.get("calls_made", 0))
+    if calls_so_far + 1 > max_calls:
+        return f"max_calls_per_run exceeded ({calls_so_far + 1} > {max_calls})"
+
+    # 3. Total-tokens-per-run cap (running total + this call's input)
+    tokens_so_far = int(counters.get("tokens_used", 0))
+    if tokens_so_far + approx_tokens > max_total:
+        return (
+            f"max_total_tokens_per_run exceeded "
+            f"({tokens_so_far + approx_tokens} > {max_total})"
+        )
+
     return None
 
 
@@ -453,20 +527,28 @@ def get_counters(project_root: str) -> Dict[str, Any]:
 def _save_synthesis_cache(project_root: str, cache: Dict[str, Any]) -> None:
     """Atomic write — tempfile + os.replace, same pattern as v1.0
     graph cache. Failure is logged but doesn't propagate to the caller
-    (T20 — disk failure shouldn't block returning the answer)."""
+    (T20 — disk failure shouldn't block returning the answer).
+
+    Qodo bug #6 fix: previously the except handler referenced `tmp`
+    even if mkstemp/makedirs failed before `tmp` was assigned, raising
+    NameError and crashing the query. Initialise `tmp = None` upfront;
+    only unlink if it's set; suppress all cleanup errors.
+    """
     p = _cache_path(project_root)
     cache_dir = os.path.dirname(p)
+    tmp: Optional[str] = None
     try:
         os.makedirs(cache_dir, exist_ok=True)
         fd, tmp = tempfile.mkstemp(prefix=".synthesis.tmp.", dir=cache_dir)
         with os.fdopen(fd, "w", encoding="utf-8") as fh:
             json.dump(cache, fh, ensure_ascii=False, separators=(",", ":"))
         os.replace(tmp, p)
-    except OSError as e:
+    except (OSError, Exception) as e:  # noqa: BLE001 — best-effort, never crash
         import sys
         print(f"[tier3-warning] cache write failed: {e}", file=sys.stderr)
-        with contextlib.suppress(OSError):
-            os.unlink(tmp)
+        if tmp is not None:
+            with contextlib.suppress(OSError):
+                os.unlink(tmp)
 
 
 def _evict_lru_if_full(cache: Dict[str, Any]) -> None:
