@@ -5540,7 +5540,7 @@ PYEOF
 rm -rf "$d"
 # Expected: 1 real edge (the [[001-real]] outside code), 0 broken (the
 # fake-pattern inside inline code + fenced block were skipped).
-if echo "$result" | grep -qE 'broken=0 real=1'; then
+if echo "$result" | grep -qE '^broken=0 real=1 '; then
   ok "T133 graph cache correctly skips wiki-links in fenced + inline-code spans"
 else
   bad "T133 graph cache leaked wiki-links from code blocks" "$result"

@@ -253,41 +253,61 @@ def _build_nodes_and_edges(project_root: str, paths: List[str]) -> Tuple[List[Di
             return (None, "file")
         return best
 
-    # Inline-code span pattern: `text` (single backticks). The graph parser
-    # skips wiki-links and md-links inside these spans because they're
-    # documentation examples, not real edges. Multi-backtick fence handling
-    # lives in `_fenced_line_set` below.
-    _INLINE_CODE_RE = re.compile(r"`[^`\n]*`")
+    # Inline-code span pattern. CR cycle-2/3 — the original `[^`\n]*` form
+    # only handled SINGLE-backtick spans, so a multi-backtick form like
+    # ``[[pattern:fake]]`` (used to embed text containing backticks)
+    # leaked wiki-links straight into the graph.
+    #
+    # CommonMark inline code spans use 1-N backticks as delimiter; the
+    # closer must match the opener exactly. Match a run of N backticks,
+    # then any non-newline content that doesn't contain that exact run,
+    # then the same N-backtick closer. Greedy-match all four shapes
+    # (1, 2, 3, 4 backticks) — covers every real-world inline use.
+    _INLINE_CODE_RE = re.compile(
+        r"(`{4})(?:(?!\1).)+\1"
+        r"|(`{3})(?:(?!\2).)+\2"
+        r"|(`{2})(?:(?!\3).)+\3"
+        r"|`[^`\n]+`"
+    )
 
     def _strip_inline_code(line: str) -> str:
-        """Remove `inline code` spans from a line so wiki-link / md-link
-        regex matchers won't pick up examples like `\`[[entity:User]]\``."""
+        """Remove `inline code` spans (any backtick count) from a line so
+        wiki-link / md-link regex matchers won't pick up examples like
+        `\`[[entity:User]]\`` or ``[[pattern:auth-retry]]``."""
         return _INLINE_CODE_RE.sub("", line)
+
+    # Fence delimiter pattern. CR cycle-2/3 — earlier code only tracked
+    # the FIRST character (` or ~) so the inner triple-backtick line in
+    # a 4-backtick fence (a common docs pattern when showing fenced-
+    # markdown examples) closed the outer block prematurely. CommonMark
+    # actually requires the closer to use the same character AND at
+    # least as many of them; we match by the full run length.
+    _FENCE_RE = re.compile(r"^\s*(`{3,}|~{3,})")
 
     def _fenced_line_set(text: str) -> set:
         """Return the set of 1-based line numbers that fall inside a fenced
-        code block (``` … ``` or ~~~ … ~~~). Wiki-links AND md-links inside
-        fenced examples are NOT real graph edges — they're documentation
-        showing what the syntax looks like. Walking them as edges would
-        flag every doc-block example as a broken edge.
+        code block. Tracks the full fence delimiter (character + length)
+        so a ```` outer fence can wrap an inner ``` example without the
+        inner closer cutting the outer block short.
 
         Same fence-tracking discipline `get_pattern.py`'s `_walk_headings`
-        already uses. Only the same fence type closes the block (``` does
-        not close ~~~ and vice versa).
+        already uses, but length-aware.
         """
         inside: set = set()
         in_fence = False
-        fence_char = None  # '`' or '~'
+        fence_delim = None  # the exact delimiter run that opened the block
         for idx, line in enumerate(text.split("\n"), start=1):
-            stripped = line.lstrip()
-            if stripped.startswith("```") or stripped.startswith("~~~"):
-                opener = stripped[0]
+            m = _FENCE_RE.match(line)
+            if m:
+                run = m.group(1)
                 if not in_fence:
                     in_fence = True
-                    fence_char = opener
-                elif opener == fence_char:
+                    fence_delim = run
+                elif run[0] == fence_delim[0] and len(run) >= len(fence_delim):
+                    # Closer must use the same fence char AND be at least
+                    # as long as the opener (CommonMark §4.5).
                     in_fence = False
-                    fence_char = None
+                    fence_delim = None
                 # Fence delimiters themselves aren't "inside the fence" —
                 # but they're not edge content either. Treat them as fence
                 # so wiki-links accidentally on the same line as a fence
