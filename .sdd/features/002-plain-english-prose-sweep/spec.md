@@ -74,6 +74,12 @@ Add a one-line rule under "Code-quality doctrine" pointing at the lint: *"Action
 
 - [ ] approval: draft the data contract, iterate with the user, sync data-model.md, get approval
 
+**No schema changes.** This feature only edits framework-shipped markdown files (`templates/.sdd/actions/*.md`) and adds one bash script (`.sdd/scripts/lint-action-prose.sh`). No new entities, no fields added or modified, no `data-model.md` impact.
+
+The action files' YAML frontmatter shape is untouched (we are not adding a `plain_english_question:` field — see §5 alternative C, rejected). The body prose is rewritten in place.
+
+Approval row left [ ] — same flow as §5; Sam ticks at approval-pass time.
+
 ### action: flows
 
 - [ ] flows: draft 1-3 critical flows, each referencing the user story it implements
