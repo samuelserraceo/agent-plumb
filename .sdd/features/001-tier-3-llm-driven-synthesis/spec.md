@@ -490,7 +490,7 @@ All §4 constraints have a mapped AC. Plan-decompose coverage check passes pre-e
 - [x] T9 GREEN: corpus-signature flip on cited file edit invalidates cache (AC5) → `extensions/sdd-mcp-server/tests/test_synthesise_cache_invalidate.py` (1/1)
 
 **Caps:**
-- [ ] T10 RED: three call/token caps refuse past threshold (AC6) → `extensions/sdd-mcp-server/tests/test_synthesise_caps.py`
+- [x] T10 GREEN: three call/token caps refuse past threshold (AC6) → `extensions/sdd-mcp-server/tests/test_synthesise_caps.py`
 
 **Renderers:**
 - [ ] T11 RED: structured format returns valid JSON shape (AC7 part 1) → `extensions/sdd-mcp-server/tests/test_synthesise_structured_shape.py`
