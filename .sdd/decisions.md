@@ -39,3 +39,9 @@ state surprise. Trust-boundary teaching (S8) and decisions.md append-
 only error UX (S5) flagged as gold-standard examples worth featuring in
 release notes. v0.8.0 approved for ship from a UX standpoint by Sam.
 Full handoff archived at `.uat/2026-04-27-phase-B-1.md`.
+
+## 2026-05-01T14:39:15Z  [[001-tier-3-llm-driven-synthesis]]  feature/proposed-approach
+
+Approved Approach A (single-shot RAG with cite-check) plus an exact-match synthesis cache keyed by (question, corpus signature). The wiki-graph picks the documents to feed the model; the model answers with [[link]] citations; the cite-check rejects any answer whose links don't resolve in the graph cache. User-configured provider with cost ceiling — no baked-in defaults. Two render formats (structured for the agent, prose for chat) come out of one shared LLM call. Lazy escalation and pre-computed-at-ship were explicitly considered and rejected (state-dependent shape and broken §3 stories respectively). RLM-style recursion ([Zhang et al., MIT, Dec 2025](https://arxiv.org/abs/2512.24601)) is deferred to v1.2+ as a layer on top of the v1.1 single-shot foundation.
+
+Hash: 2ba64f7fa326e43093413b1fc53f2acf62b9f01ee9a2339035fe7256fc6b17a0

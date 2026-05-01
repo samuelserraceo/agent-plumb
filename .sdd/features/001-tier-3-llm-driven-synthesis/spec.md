@@ -2,7 +2,7 @@
 
 [PHASE: SPEC]
 
-**Active blocker:** §5 (proposed-approach — AGENT-LED, requires user approval)
+**Active blocker:** §6 (data-contract — AGENT-LED, requires user approval)
 
 ## PHASE: SPEC
 
@@ -61,7 +61,48 @@
 
 ### action: proposed-approach
 
-- [ ] approval: draft the approach with 2 alternatives and tradeoffs, iterate with the user, get approval
+- [x] approval: APPROVED 2026-05-01 — Approach A (single-shot RAG) + exact-match cache; user-configured provider (no baked-in defaults); recursion deferred to v1.2+
+
+**The locked design — Approach A + exact-match cache.**
+
+**1. What Tier 3 actually does, in one sentence.** When you (or the agent) asks a question about your project, Tier 3 takes the relevant pieces of `.sdd/` markdown that v1.0's wiki-graph retrieval already returns, sends them to the language model you've configured with strict cite-only instructions, and returns the answer with `[[…]]` citations that resolve to real graph nodes.
+
+**2. The five-step flow per question.**
+
+```
+Step 0 — CACHE LOOKUP        Key: (question, corpus signature)
+                             Hit  → return cached (instant, $0)
+                             Miss → continue
+Step 1 — v1.0 RETRIEVAL      Graph + semantic search gather ~5 chunks (instant, $0)
+Step 2 — LANGUAGE MODEL      User-configured provider; strict cite-only template
+                             (~1 sec, ~$0.001 — or $0 on local Ollama)
+Step 3 — CITE-CHECK          Every [[link]] resolves to real graph node
+                             Broken → reject; show raw chunks instead
+Step 4 — CACHE WRITE         on success (instant, $0)
+```
+
+**3. Two render formats from one core call.** The agent calls `synthesise(slug, question, format="structured")` and gets a JSON object with fields `answer`, `cite_chunks`, `ambiguity`, `ok`. The slash-command wrapper calls with `format="prose"` and renders inline `[[…]]` citations to chat. Same LLM call, same cite-check, two thin renderers — never two separate model calls.
+
+**4. Behavioural guarantees (must verify in SHIP):**
+
+- **No invention** — cite-check rejects any answer with a broken `[[link]]`
+- **Ambiguity surfaced** — multiple valid answers → return both, ask the user to pick (don't silently choose)
+- **Empty corpus spelled out** — *"Nothing in your project covers that. Closest was [[X]] but tangential. Want me to broaden?"* — never silent
+- **Length cap** — default response < 1 KB (matches §2 cost target); expand-on-demand for deeper
+- **Freshness** — synthesis cache keyed by content-hash corpus signature (inherits v1.0 graph cache mechanism); ANY relevant `.sdd/` change invalidates the cached answer
+
+**5. Provider story — no baked-in defaults.** New `parameters.mcp.tier3` block in `templates/.sdd/config.md`, opt-in, off by default. Required fields when enabled: `provider` (`openai` / `anthropic` / `ollama-chat` / etc.), `endpoint`, `model`. Cost ceiling: `max_calls_per_run` and `cost_limit_usd`. Same shape as v1.0 Playwright explorer + v1.0 semantic_search — foundation 3 ("we never assume an external service").
+
+**6. Cost math scaled to expected usage.** ~20 questions/week, ~30% repeats with no corpus changes (cache hits, $0). At OpenAI gpt-4o-mini: ~$0.02/week per project. At Anthropic Haiku 4.5: ~$0.03/week. Self-hosted Ollama: $0. **Per-project per-month ≤ $1** unless using a top-tier model.
+
+**7. Two alternatives considered + rejected.**
+
+| Alternative | What | Why not |
+|---|---|---|
+| **Lazy escalation** | Only call the LLM when v1.0 retrieval returns >K chunks | State-dependent answer shape; cost rises non-linearly with corpus growth; foundation 1 violation |
+| **Pre-computed at /ship** | Synthesise per-feature summaries up front; no real-time LLM calls | Breaks §3 story 3 (unanticipated questions); breaks §3 stories 4+5 (cross-feature queries); couples Tier 3 to ship cadence |
+
+**8. Future extension — not for v1.1.** `synthesise.py` is single-shot by design. An RLM-style recursive layer ([Zhang/Kraska/Khattab, MIT, Dec 2025](https://arxiv.org/abs/2512.24601)) could call this as its sub-LM in a v1.2+ work-item without rewriting the foundation — each recursive sub-call would still cite-check via the graph. That paper's own listed open problems (no cost guarantees, no async, depth=1 unproven at scale, training gap) are exactly the gaps single-shot v1.1 closes by design. v1.2+ layers recursion on top when corpus growth makes single-shot retrieval insufficient.
 
 ### action: data-contract
 
