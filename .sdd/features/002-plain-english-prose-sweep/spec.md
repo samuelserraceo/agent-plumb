@@ -163,7 +163,11 @@ Approval row left [ ] — same flow as §5; Sam ticks at approval-pass time.
 
 ### action: signoff-steps
 
-- [ ] manual-steps: What manual smoke tests do YOU need to do before SHIP, beyond the automated tests? 1-5 bullets.
+- [x] manual-steps: Three manual smokes Sam walks before SHIP.
+
+  1. **Eyeball spot-check.** Open 3 of the swept action files (pick one heavy-USER-LED like `problem.md`, one heavy-AGENT-LED like `proposed-approach.md`, one originally-flagged like `ux-brief.md`). Read the first paragraph + the **What it looks like:** block. Confirm it reads like a smart non-coder asked it.
+  2. **Live ceremony test.** Start a throwaway feature: `bash .sdd/scripts/start.sh "throwaway test feature"`. Walk one USER-LED action via `/next` (problem step is a good first one). Confirm the agent's draft mirrors plain-English voice, NOT the technical wording it would have used pre-sweep.
+  3. **Lint negative-fixture sanity.** Manually edit one swept action file to remove its `**What it looks like:**` block. Run `bash .sdd/scripts/lint-action-prose.sh`. Confirm it exits non-zero with a clear plain-English error naming the file. Restore the file before commit.
 
 ### action: wireframe
 
