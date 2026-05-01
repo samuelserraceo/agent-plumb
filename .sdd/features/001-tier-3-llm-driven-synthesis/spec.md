@@ -497,7 +497,7 @@ All §4 constraints have a mapped AC. Plan-decompose coverage check passes pre-e
 - [x] T12 GREEN: prose format renders inline `[[…]]` cites; structured + prose match cite_chunks (AC7) → `extensions/sdd-mcp-server/tests/test_synthesise_renderer_parity.py`
 
 **Setup + disabled:**
-- [ ] T13 RED: synthesise() reads provider/endpoint/model from config (AC8) → `extensions/sdd-mcp-server/tests/test_synthesise_config_load.py`
+- [x] T13 GREEN: synthesise() reads provider/endpoint/model from config (AC8) → `extensions/sdd-mcp-server/tests/test_synthesise_config_load.py`
 - [ ] T14 RED: `enabled: false` returns clean error (AC9) → `extensions/sdd-mcp-server/tests/test_synthesise_disabled.py`
 - [ ] T15 RED: `${ENV_VAR}` indirection in `auth_header` resolves (AC10) → `extensions/sdd-mcp-server/tests/test_synthesise_envvar.py`
 - [ ] T16 RED: literal-token warning fires on common patterns (AC11) → `extensions/sdd-mcp-server/tests/test_synthesise_literal_warning.py`
