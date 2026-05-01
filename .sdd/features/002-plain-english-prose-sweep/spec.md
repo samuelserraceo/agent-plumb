@@ -16,7 +16,10 @@ Source: GitHub [#110](https://github.com/samuelserraceo/spec-driven-dev-workflow
 
 ### action: success
 
-- [ ] metric: Pick a metric pattern (volume / speed / quality / engagement) or describe your own. Give a target number AND the current baseline if known.
+- [x] metric: **Quality, dual co-equal measures.**
+  - **(1) Backward-facing — pushback count.** Across the next 3 feature SHIP cycles after this one ships, count Sam's "far too technical" / "use plain English" pushbacks during USER-LED or AGENT-LED drafts. **Target: 0.** Baseline (Tier 3 v1.1, the last cycle before this fix): 4 in one feature.
+  - **(2) Forward-facing — coverage.** Every USER-LED or AGENT-LED action file under `templates/.sdd/actions/` ships with: a plain-English version of its main question first, the technical label (if any) second, and at least one "what it looks like" concrete example. **Target: 100% of qualifying files.** Baseline: TBD via the §11 plan-decompose audit pass — Tier 3's catches were §4, §8, §11, §15, so at minimum 4 files are known-failing today; the sweep counts them all.
+  - Both measures together: pushback-count is the *outcome*, coverage is the *mechanism*. We need both to confirm the fix worked AND was applied systematically, not just at the spots Sam happened to push back on.
 
 ### action: user-stories
 
