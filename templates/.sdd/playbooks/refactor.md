@@ -67,10 +67,10 @@ Same 4-step inner loop as feature.md (LOCATE → EXECUTE → SYNC → ADVANCE). 
 
 - Section order is fixed (scope → regression-coverage → approach → minimal-diff-verify). Refusal to advance phase while any `[ ]` remains in the current phase.
 - `refactor-approach` defaults to `requires_user_approval: true`. The shape of the new code is the load-bearing decision; the user signs off before BUILD starts.
-- `minimal-diff-verify` is **mechanical**: at the end of SPEC the agent runs `git diff --shortstat` against the branch base and halts if the line-count delta is positive (additions > deletions). Refactors should shrink the codebase or hold it steady; if a refactor adds lines, that's a hint it's actually a feature.
+- `minimal-diff-verify` is **mechanical**: at the end of SPEC the agent runs `git diff --shortstat` against the branch base and halts if the line-count delta is positive (additions > deletions). Refactors should shrink the codebase or hold it steady; if a refactor adds lines, three escape paths are documented in `.sdd/actions/minimal-diff-verify.md`: (a) trim the §3 approach to the smallest helper that achieves the goal, (b) switch to `feature.md` if the new lines are genuine new behaviour, (c) record an explicit override with a reason — hash-locked, rare. The exit_check accepts non-positive delta OR a recorded override.
 
 ## Why no §user-stories / §UX brief / §data-contract / §acceptance-criteria
 
-Refactors don't introduce new behaviour, new entities, new user-facing capability. The "acceptance criterion" is implicit: **the regression tests stay GREEN before and after the refactor**. §2 captures which tests prove that; §4 captures that the diff actually shrank.
+Refactors don't introduce new behaviour, new entities, new user-facing capability. The "acceptance criterion" is implicit: **the regression tests stay GREEN before and after the refactor**. §2 captures which tests prove that; §4 captures that the diff didn't grow (delta ≤ 0, or override recorded).
 
 If a refactor reveals a missing entity or a behaviour gap, you've found a feature-shaped problem hiding inside a refactor. Switch playbooks; come back to the refactor after the feature ships.

@@ -19,7 +19,7 @@
     "refactor": {
       "path": ".sdd/playbooks/refactor.md",
       "trust": "framework",
-      "expected_sha256": "bd85dffad7e7df48fb9b4360dfba63f34cd59c4ba024548924b08fb172f41e7c"
+      "expected_sha256": "41cd992e33d853301254390b63ef1c10adcc0e473e48a6f67667866ddccd5cff"
     }
   },
   "scripts": {
@@ -298,7 +298,7 @@
     "minimal-diff-verify": {
       "path": ".sdd/actions/minimal-diff-verify.md",
       "trust": "framework",
-      "expected_sha256": "8d3f364bce5751e61d47ac2943becc889e8608050611dc7f260cb9e0b563ffcb"
+      "expected_sha256": "4418eb58a6878e0fbd0840ae25a8708c493fa707f7fcf98a004675ac61bb9aa1"
     }
   }
 }

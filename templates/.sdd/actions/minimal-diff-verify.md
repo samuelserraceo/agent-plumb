@@ -46,7 +46,23 @@ mb="$(git merge-base HEAD "origin/$base")" || {
 }
 
 # 3. Run the shortstat with the language globs you care about.
-git diff --shortstat "$mb...HEAD" -- '*.py' '*.sh' '*.ts' '*.tsx' '*.js' '*.jsx' '*.go' '*.rb' '*.rs'
+shortstat="$(git diff --shortstat "$mb...HEAD" -- '*.py' '*.sh' '*.ts' '*.tsx' '*.js' '*.jsx' '*.go' '*.rb' '*.rs')"
+
+# 4. HALT on empty output. `git diff --shortstat` exits 0 with NO
+# output when no files match the globs — that gives the agent no
+# delta signal, which would silently disable the gate. Treat empty
+# as a halt: the refactor either matches none of the listed file
+# types (narrow the globs to your stack) or didn't actually touch
+# any tracked files (this isn't a refactor — switch to feature.md).
+if [ -z "$shortstat" ]; then
+  echo "ERROR: git diff --shortstat produced no output." >&2
+  echo "       Either no files match the language globs (narrow them" >&2
+  echo "       to your stack), or this branch hasn't actually modified" >&2
+  echo "       any tracked source files yet." >&2
+  exit 1
+fi
+
+echo "$shortstat"
 ```
 
 (Adjust the file globs to match the project's primary language. The default list above is broad; if your refactor only touches `.sh`, narrow accordingly.)
