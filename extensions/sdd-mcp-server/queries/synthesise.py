@@ -133,11 +133,16 @@ def synthesise(
         cache_key = _make_cache_key(question, corpus_signature)
         hit = cache.get("entries", {}).get(cache_key)
         if hit is not None:
-            # Update LRU touch time + return cached answer
+            # Update LRU touch time + counters + return cached answer
             now_fn = _now or time.time
             hit["touched_at"] = now_fn()
+            counters = cache.setdefault("counters", {})
+            counters["cache_hits"] = counters.get("cache_hits", 0) + 1
             _save_synthesis_cache(project_root, cache)
             return _render(hit, fmt)
+        # Cache miss — bump counter for the upcoming LLM call
+        counters = cache.setdefault("counters", {})
+        counters["cache_misses"] = counters.get("cache_misses", 0) + 1
 
         # 6. Retrieval — gather candidate chunks (T5 path; reuses
         #    v1.0 graph queries minimally for now)
@@ -150,6 +155,11 @@ def synthesise(
 
         # 8. LLM call — dependency-injected for tests
         llm = _llm_call or _real_llm_call
+        # Bump counters BEFORE the call (so a crash mid-call still
+        # reflects the attempt — observability honesty).
+        counters["calls_made"] = counters.get("calls_made", 0) + 1
+        approx_input_tokens = sum(len(c.get("text", "")) for c in chunks) // 4
+        counters["tokens_used"] = counters.get("tokens_used", 0) + approx_input_tokens
         try:
             answer_text = llm(question, chunks, cfg)
         except _ProviderUnreachable as e:
@@ -398,10 +408,46 @@ def _load_synthesis_cache(project_root: str) -> Dict[str, Any]:
             with open(p, encoding="utf-8") as f:
                 data = json.load(f)
             if data.get("version") == _CACHE_VERSION:
+                # Migration: ensure counters block exists for older caches
+                data.setdefault("counters", {
+                    "calls_made": 0,
+                    "tokens_used": 0,
+                    "cache_hits": 0,
+                    "cache_misses": 0,
+                })
                 return data
         except (OSError, json.JSONDecodeError, UnicodeDecodeError):
             pass
-    return {"version": _CACHE_VERSION, "entries": {}}
+    return {
+        "version": _CACHE_VERSION,
+        "entries": {},
+        "counters": {
+            "calls_made": 0,
+            "tokens_used": 0,
+            "cache_hits": 0,
+            "cache_misses": 0,
+        },
+    }
+
+
+def get_counters(project_root: str) -> Dict[str, Any]:
+    """Public — read the observability counters (T22). Returns
+    `{calls_made, tokens_used, cache_hits, cache_misses, cache_hit_rate}`.
+    cache_hit_rate is computed as hits / (hits+misses), or 0.0 if neither.
+    """
+    cache = _load_synthesis_cache(project_root)
+    c = cache.get("counters", {})
+    hits = c.get("cache_hits", 0)
+    misses = c.get("cache_misses", 0)
+    total = hits + misses
+    rate = (hits / total) if total > 0 else 0.0
+    return {
+        "calls_made": c.get("calls_made", 0),
+        "tokens_used": c.get("tokens_used", 0),
+        "cache_hits": hits,
+        "cache_misses": misses,
+        "cache_hit_rate": rate,
+    }
 
 
 def _save_synthesis_cache(project_root: str, cache: Dict[str, Any]) -> None:
