@@ -6386,6 +6386,100 @@ else
 fi
 
 # ============================================================
+# T134 — scripts/init.sh succeeds on a fresh project + scaffolds the MCP
+#   server extension (so invariant 8 has the queries it needs). Closes
+#   #94 (rubric.md preflight that referenced files deleted in v0.8) AND
+#   the Phase B v1.0 finding that init.sh did not wire the graph layer.
+# ============================================================
+note "T134: init.sh succeeds + copies MCP server queries"
+d=$(mktemp -d) || { bad "T134 cannot mktemp" ""; }
+cd "$d" || { bad "T134 cannot cd" "d=$d"; rm -rf "$d"; }
+out=$(bash "$FRAMEWORK_ROOT/scripts/init.sh" 2>&1) && ec=0 || ec=$?
+cd - >/dev/null || true
+ok_count=0
+[ "$ec" -eq 0 ] && ok_count=$((ok_count + 1))
+[ -d "$d/.sdd" ] && ok_count=$((ok_count + 1))
+[ -d "$d/.claude" ] && ok_count=$((ok_count + 1))
+[ -f "$d/CLAUDE.md" ] && ok_count=$((ok_count + 1))
+[ -d "$d/extensions/sdd-mcp-server/queries" ] && ok_count=$((ok_count + 1))
+[ -f "$d/extensions/sdd-mcp-server/queries/_graph_cache.py" ] && ok_count=$((ok_count + 1))
+rm -rf "$d"
+if [ "$ok_count" -eq 6 ]; then
+  ok "T134 init.sh fresh-install scaffolded all 6 expected paths"
+else
+  bad "T134 init.sh fresh-install missing scaffolds" "exit=$ec; ok=$ok_count/6; out=${out:0:300}"
+fi
+
+# ============================================================
+# T135 — moat refuses commit when ONLY a tampered framework file is
+#   staged (no spec.md, no verification.json, no manifest.json). Phase B
+#   heavy-test finding: the early-exit at the top of pre-commit-stage-
+#   verified.sh missed this case, so a one-file framework tamper would
+#   slip past. The fix: detect manifest-tracked staged files and include
+#   them in the gate.
+# ============================================================
+note "T135: moat blocks isolated framework-file tamper (closes Phase B finding)"
+d=$(mkproj_v08)
+cd "$d" || { bad "T135 cannot cd" "d=$d"; rm -rf "$d"; }
+git init -q
+git config user.email t@t.com && git config user.name T
+git add -A 2>/dev/null
+git commit -q -m "init" 2>/dev/null
+# Tamper: append an unrelated comment to a manifest-tracked playbook.
+echo "# tampered $(date +%s)" >> .sdd/playbooks/feature.md
+git add .sdd/playbooks/feature.md 2>/dev/null
+# Pipe a synthetic Bash hook event to the moat. Hook should refuse with
+# exit 2 and complain about the hash mismatch.
+hook_out=$(echo '{"tool_name":"Bash","tool_input":{"command":"git commit -m fake"}}' \
+  | CLAUDE_PROJECT_DIR="$d" bash .claude/hooks/pre-commit-stage-verified.sh 2>&1) && hook_ec=0 || hook_ec=$?
+cd - >/dev/null || true
+rm -rf "$d"
+if [ "$hook_ec" -eq 2 ] && echo "$hook_out" | grep -qiE 'hash|tamper|manifest|framework files have changed'; then
+  ok "T135 moat refused isolated framework tamper (exit 2, plain-English error)"
+else
+  bad "T135 moat let framework tamper through" "ec=$hook_ec; out=${hook_out:0:300}"
+fi
+
+# ============================================================
+# T136 — invariant 8 warns when wiki-links exist in user content but the
+#   MCP server queries are missing. Closes Phase B finding: the hook
+#   used to silently `return 0` when the MCP server wasn't present, so
+#   broken `[[slug]]` refs would slip through unchecked. Now: silent
+#   only when no wiki-links exist; warns loudly when wiki-links exist
+#   but the checker is gone.
+# ============================================================
+note "T136: invariant 8 warns when wiki-links exist + MCP server missing"
+d=$(mktemp -d) || { bad "T136 cannot mktemp" ""; }
+mkdir -p "$d/.sdd/features/001-test" "$d/.claude/hooks" 2>/dev/null
+cp "$FRAMEWORK_ROOT/templates/.claude/hooks/post-stop-lint.sh" "$d/.claude/hooks/post-stop-lint.sh"
+chmod +x "$d/.claude/hooks/post-stop-lint.sh"
+# Spec WITH wiki-links — but no MCP server scaffolded.
+cat > "$d/.sdd/features/001-test/spec.md" <<'EOF'
+# 001-test
+[PHASE: SPEC]
+## PHASE: SPEC
+- [x] who: signed-up users — see [[002-onboarding]] for predecessor.
+EOF
+cat > "$d/.sdd/INDEX.md" <<'EOF'
+# Project Index
+**Active:** features/001-test
+EOF
+out_with=$(echo '{"hook_event_name":"Stop"}' | CLAUDE_PROJECT_DIR="$d" bash "$d/.claude/hooks/post-stop-lint.sh" 2>&1) || true
+# Now strip the wiki-link and re-run — should be silent.
+sed -i.bak 's@\[\[002-onboarding\]\]@002-onboarding (no link)@' "$d/.sdd/features/001-test/spec.md"
+rm -f "$d/.sdd/features/001-test/spec.md.bak"
+out_without=$(echo '{"hook_event_name":"Stop"}' | CLAUDE_PROJECT_DIR="$d" bash "$d/.claude/hooks/post-stop-lint.sh" 2>&1) || true
+rm -rf "$d"
+ok_count=0
+echo "$out_with" | grep -qE 'invariant 8.*INACTIVE' && ok_count=$((ok_count + 1))
+[ -z "$(echo "$out_without" | tr -d '[:space:]')" ] && ok_count=$((ok_count + 1))
+if [ "$ok_count" -eq 2 ]; then
+  ok "T136 invariant 8 warns when wiki-links present + silent when absent"
+else
+  bad "T136 invariant 8 conditional warning broken" "with-links=${out_with:0:200}; without=${out_without:0:100}"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'

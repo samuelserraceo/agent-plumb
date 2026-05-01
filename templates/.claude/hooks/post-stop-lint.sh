@@ -543,7 +543,49 @@ check_wiki_links_resolve() {
     if [ -n "$plugin_root" ] && [ -d "$plugin_root/extensions/sdd-mcp-server" ]; then
       mcp_root="$plugin_root/extensions/sdd-mcp-server"
     else
-      return 0  # MCP server not present; graph layer is opt-in via extension
+      # MCP server missing. Two cases:
+      #   (a) project doesn't use wiki-links yet (e.g. fresh scaffold,
+      #       all-text specs) → silent pass; nothing to check.
+      #   (b) project DOES use wiki-links → emit a violation so the
+      #       user knows invariant 8 is silently inactive. This is the
+      #       marquee v1.0 promise; silent failure here is exactly what
+      #       Phase B (heavy testing) flagged as the regression risk.
+      # Cheap detection: grep for `[[` in USER content (specs, INDEX,
+      # patterns, data-model, decisions, ideas). NOT actions/ or
+      # playbooks/ — those are framework prose where `[[slug]]`
+      # examples are documentation, not real graph edges.
+      _user_content_dirs=(
+        "$PROJECT_DIR/.sdd/features"
+        "$PROJECT_DIR/.sdd/bugs"
+        "$PROJECT_DIR/.sdd/refactors"
+        "$PROJECT_DIR/.sdd/ideas"
+      )
+      _user_content_files=(
+        "$PROJECT_DIR/.sdd/INDEX.md"
+        "$PROJECT_DIR/.sdd/patterns.md"
+        "$PROJECT_DIR/.sdd/data-model.md"
+        "$PROJECT_DIR/.sdd/decisions.md"
+      )
+      _has_wikilinks=0
+      for _f in "${_user_content_files[@]}"; do
+        [ -f "$_f" ] && grep -q '\[\[' "$_f" 2>/dev/null && { _has_wikilinks=1; break; }
+      done
+      if [ "$_has_wikilinks" = "0" ]; then
+        for _d in "${_user_content_dirs[@]}"; do
+          [ -d "$_d" ] && find "$_d" -name "*.md" -exec grep -l '\[\[' {} + 2>/dev/null | head -1 | grep -q . && { _has_wikilinks=1; break; }
+        done
+      fi
+      if [ "$_has_wikilinks" = "1" ]; then
+        add_violation "[stop-lint] invariant 8 (wiki-link resolution) is INACTIVE — the
+  MCP server queries aren't on disk at extensions/sdd-mcp-server/ at the
+  project root, and \$CLAUDE_PLUGIN_ROOT isn't set. Wiki-links are NOT
+  being checked this turn (and this project DOES use \`[[slug]]\` references).
+  Fix: re-run \`scripts/init.sh\` from the SDD repo (v1.0 init.sh copies
+       the MCP server into every project alongside .sdd/ and .claude/),
+       or set CLAUDE_PLUGIN_ROOT to the SDD plugin path. Without the MCP
+       server, broken \`[[slug]]\` references will pass silently."
+      fi
+      return 0
     fi
   fi
   local result
