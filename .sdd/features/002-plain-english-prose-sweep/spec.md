@@ -34,9 +34,9 @@ Source: GitHub [#110](https://github.com/samuelserraceo/spec-driven-dev-workflow
   **Story 3 — Marketplace adopter doesn't bounce.**
   *As a non-technical plugin-marketplace user trying SDD for the first time, I want the framework's first SPEC ceremony to feel like a smart conversation, so that I don't bounce off after question #2 thinking "this is for engineers, not me."*
 
-### action: ux-brief
+### action: ux-brief [SKIPPED]
 
-- [ ] brief: infer the UX direction from problem, success, and user stories
+- ⏭ skipped — non-UI feature. This work-item only edits framework-shipped markdown files (`templates/.sdd/actions/*.md`); there's no user-visible UI surface. The agent's chat output is the closest thing to a "UX surface" — and the prose-sweep IS the UX brief, just expressed as the §11 acceptance criteria below.
 
 ### action: proposed-approach
 
