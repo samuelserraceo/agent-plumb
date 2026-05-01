@@ -1,15 +1,24 @@
 # SDD framework — INDEX
 
-**Active:** features/001-tier-3-llm-driven-synthesis
+**Active:** (none)
 **Playbook:** feature
-**Active blocker:** SHIP (final stretch — CR cycle + admin-merge)
+**Active blocker:** (none — last shipped: 001-tier-3-llm-driven-synthesis on 2026-05-01)
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
 
 ## In flight
 
-- features/001-tier-3-llm-driven-synthesis — Tier 3 LLM-driven synthesis (PHASE: SHIP — PR open)
+(none)
+
+## Shipped
+
+- **[[001-tier-3-llm-driven-synthesis]]** — v1.1 Tier 3 LLM-driven synthesis: chat-style answers over `.sdd/` corpus with cite-checked `[[…]]` citations.
+  - Shipped: 2026-05-01 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/114
+  - Data-model: [[entity:Tier3Config]] + [[entity:SynthesisCache]] (added)
+  - Extends: (root)
+  - Lesson: [[pattern:anti-theatre-is-a-layer-of-foundation-3-not-just-a-one-liner]] — every numerical / enforcement / quality claim in a spec must declare its verification path or be softened
+  - First SDD-ceremony work-item the framework dogfooded on itself
 
 ## Pending production verification
 

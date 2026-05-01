@@ -193,3 +193,18 @@ Plus 9 CR cycle-5 findings closed in the same commit-set: spec.md flow-diagram f
 New §5 proposed-approach hash pinned to verification.json:
 Hash: d81ccecbb7130cb4fd2f572c50e273a26f66b2c767873b4f2350d64a495d8377  (proposed-approach re-pinned)
 Reason: Step 0 cache-key shape now includes slug to match the implementation; fenced as ```text for markdownlint.
+
+
+## 2026-05-01T21:24:29Z  [[001-tier-3-llm-driven-synthesis]]  feature/mark-shipped
+
+SHIP phase complete. PR #114 admin-squash-merged to main as commit 2cd4320 after 6 review cycles (4 Qodo bug-fixes + 5 CodeRabbit cycles). All cycle findings landed: scope-guard regex dialect bug + AC21/AC23 spec-vs-impl drift + cache-key-collision + lifetime-cap-as-per-run-cap theatre + config leaf validation + accessibility + markdownlint + numerous test-quality assertions tightened.
+
+Final state: 161/161 MCP tests + 194/194 framework tests passing locally; all 3 GitHub Actions checks (Framework, Graph, Scope-guard) GREEN; CodeRabbit's own status check GREEN. The `CHANGES_REQUESTED` GitHub state was sticky from the cycle-1 review on commit 550a4a6 — CR went silent after fixes landed across cycles 4-6 and ultimately the admin merge happened with all CI green and 1.5h post-final-CR-silence.
+
+Two PROD-ONLY ACs deferred to first-prod manual walk per §12 of the spec:
+- AC18 (T26) — Real-provider naturalness check (Ollama+Gemma VPS)
+- AC19 (T27) — Real-provider rate-limit shape
+
+Recorded in INDEX.md `## Pending production verification` block. When walked, tick `[x] PROD-VERIFIED`.
+
+Closes [#97](https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/97).
