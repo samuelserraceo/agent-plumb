@@ -508,13 +508,91 @@ class _ProviderRateLimited(RuntimeError):
     pass
 
 
-def _real_llm_call(question: str, chunks: List[Dict[str, Any]], cfg: Dict[str, Any]) -> str:
-    """Production LLM call — Ollama HTTP. Wired in T24.
+def _build_prompt(question: str, chunks: List[Dict[str, Any]]) -> str:
+    """Build the cite-only prompt sent to the AI.
 
-    Until T24 lands, this raises so test paths that don't inject a
-    mock get a clear signal that production wiring isn't done.
+    The system prompt forces the AI to (a) only use the chunks given,
+    (b) cite every claim with a [[link]] that's literally one of the
+    chunk slugs we provided, and (c) refuse if it can't.
     """
-    raise NotImplementedError(
-        "Real Ollama HTTP call is wired in T24 (live integration). "
-        "Tests should inject _llm_call=<mock> to exercise the surrounding flow."
+    chunk_block = "\n\n".join(
+        f"--- chunk {i+1}: [[{c.get('slug', '?')}]] ({c.get('path', '?')}) ---\n"
+        f"{c.get('text', '')}"
+        for i, c in enumerate(chunks)
     )
+    return (
+        "You are a knowledgeable colleague answering questions about a "
+        "software project. You have been given a small set of relevant "
+        "chunks from the project's documentation. Answer the question "
+        "using ONLY these chunks. Every claim must cite the chunk it "
+        "came from using the [[slug]] form (the slug is shown above each "
+        "chunk). Do NOT invent slugs that aren't in the chunks. If the "
+        "chunks don't address the question, say so explicitly. Keep "
+        "the answer under 1024 bytes.\n\n"
+        f"=== CHUNKS ===\n{chunk_block}\n\n"
+        f"=== QUESTION ===\n{question}\n\n"
+        "=== ANSWER (cite-only, under 1024 bytes) ==="
+    )
+
+
+def _real_llm_call(question: str, chunks: List[Dict[str, Any]], cfg: Dict[str, Any]) -> str:
+    """Production LLM call — Ollama-compatible /api/chat HTTP.
+
+    Sends a POST to `<endpoint>/api/chat` with the documented Ollama
+    shape: model + messages + stream:false. Returns the assistant's
+    `message.content` field.
+
+    Errors map to the typed exceptions synthesise() catches:
+      - URLError / ConnectionRefused / timeout → _ProviderUnreachable
+      - HTTP 429                               → _ProviderRateLimited
+      - HTTP other / malformed JSON / missing keys → bubbles up;
+        synthesise() catches the generic Exception and returns the
+        "AI returned malformed response" shape (T17 fourth case).
+
+    Verified by:
+      - Wire-shape tests in tests/test_synthesise_ollama_live.py (T24)
+        — mock urlopen, assert request URL/body shape, response parse
+      - Real-provider walk at SHIP (T26 [PROD-ONLY], AC18) — manual
+    """
+    import json as _json
+    import urllib.error
+    import urllib.request
+
+    endpoint = (cfg.get("endpoint") or "http://127.0.0.1:11434").rstrip("/")
+    model = cfg.get("model") or "gemma2:2b"
+    auth = cfg.get("auth_header") or ""
+
+    url = f"{endpoint}/api/chat"
+    body = {
+        "model": model,
+        "messages": [{"role": "user", "content": _build_prompt(question, chunks)}],
+        "stream": False,
+    }
+    data = _json.dumps(body).encode("utf-8")
+    headers = {"Content-Type": "application/json"}
+    if auth:
+        headers["Authorization"] = auth
+
+    req = urllib.request.Request(url, data=data, headers=headers, method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            payload = resp.read()
+    except urllib.error.HTTPError as e:
+        if e.code == 429:
+            raise _ProviderRateLimited(f"HTTP 429 from {url}") from e
+        raise _ProviderUnreachable(f"HTTP {e.code} from {url}: {e.reason}") from e
+    except (urllib.error.URLError, ConnectionError, OSError) as e:
+        raise _ProviderUnreachable(f"network error talking to {url}: {e}") from e
+
+    try:
+        parsed = _json.loads(payload.decode("utf-8"))
+    except (UnicodeDecodeError, _json.JSONDecodeError) as e:
+        raise RuntimeError(f"AI returned non-JSON response: {e}") from e
+
+    msg = (parsed or {}).get("message") or {}
+    content = msg.get("content")
+    if not isinstance(content, str):
+        raise RuntimeError(
+            f"AI response missing message.content (got: {parsed!r})"
+        )
+    return content
