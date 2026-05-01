@@ -2,7 +2,7 @@
 
 [PHASE: SPEC]
 
-**Active blocker:** §7 (flows)
+**Active blocker:** §8 (dependencies)
 
 ## PHASE: SPEC
 
@@ -169,7 +169,27 @@ USD cost guidance lives in §5 §6 informational block, NOT here — the framewo
 
 ### action: flows
 
-- [ ] flows: draft 1-3 critical flows, each referencing the user story it implements
+- [x] flows: 3 critical flows + 1 sub-variant; each cites the §3 stories it implements + declares a verification path (anti-theatre default per [#111](https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/111))
+
+**Flow 1 — Sam asks a fresh question (cache miss → prose render).** *Implements stories 3, 4, 5.* `/ask` slash → `synthesise(slug, question, format="prose")` → cache lookup (miss) → v1.0 retrieval gathers ~5 chunks → LLM call (token caps enforced via `max_input_tokens_per_call` + `max_total_tokens_per_run`) → cite-check (every `[[link]]` resolves via `_graph_cache.find_node()`) → cache write → prose markdown rendered with inline cites. ~1.5 sec / ~$0.001 (or $0 on Ollama). **Verification path** (T-tests pinned in §11): synthesise on a fixture corpus returns expected cited answers; token caps refuse past thresholds; cache hit returns identical answer without firing the LLM.
+
+**Flow 1 sub-variant — ambiguity surfaced.** Same steps as Flow 1; LLM is prompted to detect conflicting chunks and set `ambiguity: "multi-answer"` with both candidates rather than picking one. Prose renders: *"Two answers — [[001]] says X, [[005]] says Y. Which do you mean?"* **Best-effort prompt design** — verified at SHIP via ~5 representative test cases that the response shape is correct when ambiguity exists in the test corpus. Not enforced over unseen corpora.
+
+**Flow 2 — Agent fires a fresh question mid-SPEC (cache miss → structured render).** *Implements stories 1, 2.* Identical to Flow 1's steps 1-6 except invoked via the MCP query directly with `format="structured"`. Returns JSON `{answer, cite_chunks, ambiguity, ok}`. Agent reads `cite_chunks[*].slug` and decides "reuse the pattern instead of inventing." Saves ~20 KB of context that would otherwise go to re-reading specs. **Verification path:** structured shape passes `json.loads`; structured + prose renders from the same `(slug, question)` produce matching `cite_chunks` (no divergence between renderers — proves the "two views, one core call" §5 promise).
+
+**Flow 3 — Cite-check rejection → raw-chunks fallback.** *Cross-cutting honesty guarantee — protects Flows 1 and 2.* Triggered when the LLM produces an answer with one or more invented `[[link]]` references. Reject the answer immediately; **do NOT cache it** (so an identical re-ask must re-fire the LLM rather than return cached failure). Build fallback: `{"answer": null, "cite_chunks": [raw retrieval chunks], "ok": false, "reason": "cite-check failed: <broken-slugs>"}`. Prose path renders: *"Couldn't generate a clean answer — the model cited references that don't exist in your project (`[[fake-slug]]`). Showing the raw chunks the retrieval found instead so you can answer it yourself: …"* **Verification path:** T-test mocks LLM to invent `[[fake-slug]]` and asserts rejection + ok:false; T-test confirms rejected answer is not cached (re-ask re-fires); T-test confirms fallback contains the raw chunks verbatim (no synthesised summary that could drift).
+
+**Stories → flows map:**
+
+| Story | Flow |
+|---|---|
+| 1 — agent mid-SPEC pattern lookup | Flow 2 |
+| 2 — agent /ship lessons synthesis | Flow 2 (different prompt) |
+| 3 — Sam decision recall | Flow 1 |
+| 4 — Sam milestone sweep | Flow 1 |
+| 5 — Sam health review | Flow 1 |
+| Honesty floor (cross-cutting) | Flow 3 protects 1+2 |
+| Ambiguity surfaced (§4) | Flow 1 sub-variant |
 
 ### action: dependencies
 
