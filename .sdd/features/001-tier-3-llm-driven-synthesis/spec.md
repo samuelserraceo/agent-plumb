@@ -1,10 +1,12 @@
 # Tier 3 LLM-driven synthesis
 
-[PHASE: SHIP]
+[PHASE: SHIPPED]
 
-**Run mode:** full autonomous (Sam confirmed 2026-05-01 — saved in `feedback_full_autonomous_build.md`). Halt-triggers per CLAUDE.md: test stays RED after 3 attempts · pre-commit blocked · real design gap surfaces in §5/§6 · credential/infra step needs Sam.
+**Shipped:** 2026-05-01 via PR #114 (commit 2cd4320) + mark-shipped ceremony PR #115 (commit 874cb4b).
 
-**Active blocker:** SHIP — verify-test-run → verify-prod-only-acs → learn → push-pr → verify-ci-green → mark-shipped
+**Run mode at BUILD:** full autonomous (Sam confirmed 2026-05-01 — saved in `feedback_full_autonomous_build.md`).
+
+**Active blocker:** (none — terminal state)
 
 ## PHASE: SPEC
 
@@ -550,20 +552,28 @@ All §4 constraints have a mapped AC. Plan-decompose coverage check passes pre-e
 
 - [x] lessons: appended block to .sdd/patterns.md capturing cross-feature learnings from the v1.1 Tier 3 build (anti-theatre catches; Ollama+Gemma scope; full-autonomous BUILD; wireframe redesign; setup-help-needed)
 
+### action: adversarial-review
+
+- [x] adversarial: hostile-reviewer pass effectively delivered by 6 cycles of CodeRabbit (5 reviews) + Qodo (1 review) on PR #114, surfacing real bugs the framework's own test suite hadn't caught — cache-key cross-slug collision, lifetime-counter caps masquerading as per-run caps, scope-guard regex dialect mismatch (Python re vs grep -E), `set -e` interaction in regex validation, config leaf-value validation gaps, plus 30+ test-quality and prose nits. Documented across the cycle-1→cycle-5 entries in `.sdd/decisions.md`. The framework dogfooded its CR/Qodo wiring (closes the v0.13.5 adversarial-review re-run loop from issue #65) by walking it fully on a real feature for the first time.
+
+### action: playwright-explore
+
+- ⏭ skipped — non-UI feature. Tier 3 is a backend-only Python+bash MCP query (`extensions/sdd-mcp-server/queries/synthesise.py`) with no browser surface; the `extensions/playwright-explorer/` MCP server requires a deployed feature URL to drive. The framework's own `wireframe.html` files DO have browser surface but lack a Playwright CI today (filed as v1.2 work-item issue #116).
+
 ### action: push-pr
 
 - [x] pr: PR #114 opened against main with comprehensive body (problem → approach → ACs → testing → known caveats); link issues #97, #110, #111, #112, #113
 
 ### action: verify-ci-green
 
-- [ ] ci: framework-tests + scope-guard + graph-integrity all green on the PR
+- [x] ci: all 3 GitHub Actions checks green on the merge commit — Framework tests (mutation-verified), Graph integrity (wiki-links resolve), Scope guard (UI copy + new-file spec refs). CodeRabbit's own status check also green. Confirmed before admin-squash-merge of PR #114 (commit 2cd4320, merged 2026-05-01T21:24Z).
 
 ### action: mark-shipped
 
-- [ ] shipped: `.shipped` marker in feature folder; INDEX.md row moved from `## In flight` to `## Shipped` with rich one-liner block (data-model contributions, lessons, extends-from); decisions.md phase-transition entry
+- [x] shipped: `.shipped` marker dropped at `.sdd/features/001-tier-3-llm-driven-synthesis/.shipped`; INDEX.md row moved from `## In flight` to a new `## Shipped` block (v1.0 catalog format with wiki-link, data-model entities, extends, lesson); decisions.md phase-shipped audit entry appended. Landed via mark-shipped ceremony PR #115 (commit 874cb4b, merged 2026-05-01T21:33Z). Active blocker cleared on INDEX.md.
 
 ### Exit checks (SHIP)
 
-- [ ] C-ship-pr-merged: PR merged to main with CI green
-- [ ] C-ship-marker: .shipped file present in feature folder
-- [ ] C-ship-index: INDEX.md ## Shipped block contains rich row for this feature
+- [x] C-ship-pr-merged: PR #114 admin-squash-merged to main as commit 2cd4320 with all CI green
+- [x] C-ship-marker: `.shipped` marker file present at `.sdd/features/001-tier-3-llm-driven-synthesis/.shipped`
+- [x] C-ship-index: INDEX.md `## Shipped` block contains rich row for `[[001-tier-3-llm-driven-synthesis]]` with PR link, shipped date, data-model entities, extends, and lesson
