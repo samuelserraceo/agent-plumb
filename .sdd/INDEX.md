@@ -1,12 +1,13 @@
+**Active:** features/001-tier-3-llm-driven-synthesis
+**Playbook:** feature
+**Active blocker:** §1 (first action: problem)
 # SDD framework — INDEX
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
-**Active:** _(none)_
-**Playbook:** feature
-**Active blocker:** _(none)_
 
 ## In flight
+- features/001-tier-3-llm-driven-synthesis — Tier 3 LLM-driven synthesis (PHASE: SPEC)
 
 _(no work items in flight — v1.0 shipped via 7 graph-first PRs walked through CR convergence; v1.1 work begins under SDD ceremony from this point forward.)_
 
