@@ -254,7 +254,7 @@ All four already ship and have their own tests. Tier 3 doesn't rewrite or change
 
 ### action: acceptance-criteria
 
-- [x] approval: APPROVED 2026-05-01 — 20 ACs (16 mechanical + 2 best-effort declared + 2 PROD-ONLY); coverage check vs §4 passes; theatre re-check applied (no "free", no "cost caps", concrete pattern lists, exact byte counts)
+- [x] approval: APPROVED 2026-05-01 — 23 ACs (19 mechanical + 2 best-effort declared + 2 PROD-ONLY); coverage check vs §4 passes; theatre re-check applied; AC#20 covers setup-wizard integration; AC#21-23 added 2026-05-01 from §15 edge-case sweep
 
 **Group 1 — Honesty floor.**
 
@@ -330,7 +330,7 @@ All §4 constraints have a mapped AC. Plan-decompose coverage check passes pre-e
 
 **Theatre re-check (post-2026-05-01 audit, Sam's pushback applied):**
 
-- 16 mechanical ACs (#1-14, #17, #20) — every claim has an exact verifier or a pattern list pinned in a sibling file
+- 19 mechanical ACs (#1-14, #17, #20, #21-23) — every claim has an exact verifier or a pattern list pinned in a sibling file
 - 2 best-effort ACs (#15, #16) — explicitly tagged with "5 representative test cases at SHIP, defined in §14"; not promised over arbitrary unseen content
 - 2 `[PROD-ONLY]` ACs (#18, #19) — naturalness explicitly tagged as human judgment
 - Zero "free" / "instant" / "about" / "real-looking" fuzz — every quantitative claim has an exact threshold or a concrete pattern list

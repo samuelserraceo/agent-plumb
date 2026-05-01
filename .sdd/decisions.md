@@ -127,3 +127,10 @@ Added bullet #6 to §9: cache TTL / forced refresh deferred to v1.2+. Surfaced b
 
 Hash: eefc34f7b8e2472e4ab03429e9048de6d80b6401eee260dba138129371a66716
 Reason: §15 edge-case sweep added one new explicit deferral.
+
+## 2026-05-01T17:49:28Z  [[001-tier-3-llm-driven-synthesis]]  feature/acceptance-criteria (re-approved — count consistency patch)
+
+Patching the AC#11 re-approval row + theatre re-check count to reflect the sweep additions (was '20 ACs / 16 mechanical' from before §15; now '23 ACs / 19 mechanical' after §15 added AC#21-23). Same approval intent as the previous re-approval entry; this is a count-consistency patch only — no AC content change.
+
+Hash: ac5848a852dc814d3c8f313722c15ff821753a86821d1e2e36fa0433d92b303a
+Reason: prose count drift after §15 sweep — fixing for audit-trail honesty.
