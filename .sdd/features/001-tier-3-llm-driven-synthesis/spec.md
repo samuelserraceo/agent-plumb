@@ -2,7 +2,7 @@
 
 [PHASE: SPEC]
 
-**Active blocker:** §14 (plan-decompose — turn ACs into ordered build tasks)
+**Active blocker:** §15 (edge-case-sweep — final SPEC step before BUILD)
 
 ## PHASE: SPEC
 
@@ -360,7 +360,66 @@ All §4 constraints have a mapped AC. Plan-decompose coverage check passes pre-e
 
 ### action: plan-decompose
 
-- [ ] tasks: convert acceptance criteria into ordered build tasks (one test file per task)
+- [x] tasks: 27 tasks (25 BUILD + 2 PROD-ONLY) covering all 20 §11 ACs; pre-noted run mode = full autonomous (formally recorded at SPEC→BUILD transition per run-mode-chosen.md)
+
+**Build order — dependencies honoured.**
+
+**Foundation (4 tasks — must land before everything else):**
+- T1 — Scaffold `synthesise.py` stub returning `{ok:false, reason:"not implemented"}`. Test: `tests/test_synthesise_scaffold.py`.
+- T2 — `parameters.mcp.tier3` schema in `templates/.sdd/config.md` (off by default). Test: `tests/test_tier3_config_schema.py`. → AC8.
+- T3 — Confirm `data-model.md` Tier3Config + SynthesisCache entries (already synced earlier in walk). Test: `tests/test_data_model_tier3_entries.py`.
+- T4 — Brick 007 extension scaffolded with placeholder Tier 3 sub-questions. Test: `tests/test_brick_007_tier3_scaffold.py`.
+
+**Honesty floor (3 tasks — load-bearing):**
+- T5 — Clean answer flow with all `[[…]]` resolving. Test: `tests/test_synthesise_clean_answer.py`. → AC1.
+- T6 — Cite-check rejects invented `[[fake-slug]]` and falls back to raw chunks. Test: `tests/test_synthesise_citecheck_reject.py`. → AC2.
+- T7 — Rejected answer NOT cached; identical re-ask re-fires the AI. Test: `tests/test_synthesise_no_cache_on_reject.py`. → AC3.
+
+**Cache mechanics (2 tasks):**
+- T8 — Cache miss → write → hit returns identical answer without firing AI; second call <50ms. Test: `tests/test_synthesise_cache_hit.py`. → AC4.
+- T9 — Corpus-signature flip on cited file edit invalidates cache; next ask is miss. Test: `tests/test_synthesise_cache_invalidate.py`. → AC5.
+
+**Token / call caps (1 task, 3 asserts):**
+- T10 — All three caps refuse past threshold without crashing. Test: `tests/test_synthesise_caps.py`. → AC6.
+
+**Renderers (2 tasks):**
+- T11 — Structured format returns valid JSON shape with required fields. Test: `tests/test_synthesise_structured_shape.py`. → AC7 part 1.
+- T12 — Prose format renders inline `[[…]]` cites; structured + prose for same call match cite_chunks. Test: `tests/test_synthesise_renderer_parity.py`. → AC7.
+
+**Setup + disabled state (4 tasks):**
+- T13 — synthesise() reads provider/endpoint/model from config. Test: `tests/test_synthesise_config_load.py`. → AC8.
+- T14 — `enabled: false` returns clean error, no crash. Test: `tests/test_synthesise_disabled.py`. → AC9.
+- T15 — `${ENV_VAR}` indirection in `auth_header` resolves at runtime. Test: `tests/test_synthesise_envvar.py`. → AC10.
+- T16 — Literal-token warning fires on common patterns. Test: `tests/test_synthesise_literal_warning.py`. → AC11.
+
+**Failure modes (1 task, 4 asserts):**
+- T17 — All four failure cases produce clean errors, not crashes. Test: `tests/test_synthesise_failure_modes.py`. → AC12.
+
+**Length cap + injection floor (2 tasks):**
+- T18 — Default answer ≤ 1024 bytes; longer trimmed exactly at boundary with "want me to expand?" suffix. Test: `tests/test_synthesise_length_cap.py`. → AC13.
+- T19 — Prompt-injection floor: fixture with "ignore previous instructions" produces either cite-check pass OR fallback. Test: `tests/test_synthesise_injection.py`. → AC14.
+
+**Best-effort behaviours (2 tasks, 5 cases each):**
+- T20 — Ambiguity surfaced — 5 representative test cases. Test: `tests/test_synthesise_ambiguity.py`. → AC15.
+- T21 — Empty corpus spelled out — 5 representative test cases. Test: `tests/test_synthesise_empty_corpus.py`. → AC16.
+
+**Observability (1 task):**
+- T22 — Counters report correctly after a sequence of synthesise calls. Test: `tests/test_synthesise_observability.py`. → AC17.
+
+**Wizard end-to-end (1 task):**
+- T23 — Brick 007 Tier 3 sub-questions filled; `/sdd-setup` non-interactive E2E test asserts config values land. Test: `tests/test_setup_tier3_wizard_e2e.py`. → AC20.
+
+**Live Ollama + slash command (2 tasks):**
+- T24 — Live Ollama+Gemma integration; replaces mock provider with real local Ollama HTTP calls. Test: `tests/test_synthesise_ollama_live.py`.
+- T25 — `/ask` slash command body wraps synthesise() with format="prose". Test: `tests/test_ask_slash_command.py`.
+
+**PROD-ONLY (deferred to first prod walk; manual at SHIP per §12):**
+- T26 `[PROD-ONLY]` — Real-provider naturalness check (AC18). Manual smoke from §12.
+- T27 `[PROD-ONLY]` — Real-provider rate-limit shape matches AC#12 mock (AC19). Manual smoke from §12.
+
+**Sizing.** 27 total · 25 mock-runnable + 2 PROD-ONLY. Honesty floor (T5-T7) + cache (T8-T9) are the 5 load-bearing tasks; if those work, most of the rest is plumbing.
+
+**Run mode pre-noted (formally recorded at SPEC→BUILD transition):** full autonomous — Sam stated 2026-05-01 he can't eye-check code between tasks as a non-technical reviewer; checkpoints would create friction without adding value. The agent loops test→code→green until done OR a hard halt-trigger fires (test RED after 3 attempts / pre-commit blocked / real design gap / credential needed).
 
 ### action: edge-case-sweep
 
