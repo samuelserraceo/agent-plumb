@@ -115,7 +115,11 @@ Approval row left [ ] — same flow as §5; Sam ticks at approval-pass time.
 
 ### action: non-functional
 
-- [ ] constraints: draft performance, security, and compliance constraints
+- [x] constraints:
+  - **Performance:** the lint script must finish in <2 seconds across `templates/.sdd/actions/` (~22 files). Anything slower drags PR feedback. Plain bash + grep is fine; no Python interpreter startup needed unless we genuinely need YAML parsing.
+  - **Security:** N/A. The lint reads markdown files and exits 0/1. No network, no credentials, no user input parsing. The only "input" is the action-file content already in the repo.
+  - **Compliance:** N/A. No personal data, no licensing constraints (markdown is the framework's own).
+  - **CI flakiness:** zero tolerance. The lint must be deterministic — same file content → same exit code, every time, on macOS + Linux runners.
 
 ### action: acceptance-criteria
 
