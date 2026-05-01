@@ -3,6 +3,7 @@
   "phase": "SPEC",
   "approved_sections": {
     "proposed-approach": "b183047ce7bfa28e134bfc35f81efc30712a8aa5142b8dd2303de28a59d8b705",
-    "data-contract": "876b2c0739f8c1d268db95c165c9f61813795008094392206812e40b69ef06b8"
+    "data-contract": "876b2c0739f8c1d268db95c165c9f61813795008094392206812e40b69ef06b8",
+    "out-of-scope": "1904d0cf44b19a75aab3085f4f59d2a25782295f540ae4a19b754a8dce3b9114"
   }
 }

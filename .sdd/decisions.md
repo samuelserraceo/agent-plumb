@@ -65,3 +65,9 @@ Re-approved §6 with anti-theatre fixes: Tier3Config schema replaces `cost_limit
 
 Hash: 876b2c0739f8c1d268db95c165c9f61813795008094392206812e40b69ef06b8
 Reason: anti-theatre audit (Sam, 2026-05-01) — same as proposed-approach above.
+
+## 2026-05-01T15:38:53Z  [[001-tier-3-llm-driven-synthesis]]  feature/out-of-scope
+
+Approved 5 explicit out-of-scope items for v1.1 Tier 3: (1) fuzzy / similar-question cache matching — exact-match only, fuzzy parked to v1.2 due to wrong-answer risk; (2) recursive / RLM-style flow — single-round only, recursion is a v1.2+ layer that sits on top of the v1.1 foundation; (3) catching misattributed quotes (semantic-truth check) — cite-check catches invented [[link]]s but not mischaracterised real ones; eye-check via click-through is the v1.1 protection; (4) pre-computed answers at /ship — explicitly rejected as Approach C in §5 because it breaks stories 3, 4, 5; (5) dollar-denominated cost limits — anti-theatre fix from earlier in the walk; framework enforces call/token caps, not USD. None are blocked forever — each can ship as its own work-item later if friction warrants.
+
+Hash: 1904d0cf44b19a75aab3085f4f59d2a25782295f540ae4a19b754a8dce3b9114

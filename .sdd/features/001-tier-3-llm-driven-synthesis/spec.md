@@ -2,7 +2,7 @@
 
 [PHASE: SPEC]
 
-**Active blocker:** §9 (out-of-scope — AGENT-LED, requires user approval)
+**Active blocker:** §10 (non-functional)
 
 ## PHASE: SPEC
 
@@ -224,8 +224,18 @@ All four already ship and have their own tests. Tier 3 doesn't rewrite or change
 
 ### action: out-of-scope
 
-- [ ] list: What are we explicitly NOT building this round? 1-5 bullets, each: name + reason. Empty is fine.
-- [ ] approval: user_approves
+- [x] list: 5 items deferred — fuzzy cache matching, recursive RLM-style flow, semantic-truth check, pre-computed at /ship, dollar-denominated cost limits
+- [x] approval: APPROVED 2026-05-01 — each item below has its deferral reason; none are blocked forever
+
+**1. Fuzzy / similar-question cache matching.** Asking *"why Postgres"* vs *"why did we pick Postgres"* pays the full cost each time the first time — the cache matches identical question text only. *Why deferred:* fuzzy matching is more complex AND introduces a real risk — close-but-not-equivalent questions could return wrong cached answers. Re-evaluate after v1.1 ships, if the friction proves painful.
+
+**2. Recursive / "agent decides what to fetch next" flow.** v1.1 does one retrieval round per question. The MIT RLM paper (Zhang/Kraska/Khattab, Dec 2025) is where this could go later, but its own listed open problems — no cost guarantees, only one round of recursion proven at scale, AI not trained for the pattern — are exactly the gaps single-round v1.1 closes by design. Recursion is a v1.2+ layer on top of v1.1 if and when the corpus grows past what one round handles.
+
+**3. Catching misattributed quotes (semantic-truth check).** v1.1 catches *invented* citations — when the AI makes up a `[[link]]` that doesn't exist in your project. It does NOT catch the case where the AI cites a real `[[link]]` correctly but mischaracterises what that link actually says. *Why deferred:* semantic-truth checking is a different problem and would need its own spec. Until then, the click-on-the-link in chat is your eye-check — surprising answer → click → read the cited chunk yourself.
+
+**4. Pre-computed answers at `/ship`.** Tier 3 only fires when explicitly asked — by you (slash command) or by the agent (mid-spec). It does NOT auto-run at ship time to pre-build summaries. *Why deferred:* pre-computing breaks §3 stories 3, 4, 5 — all depend on ad-hoc questions you can't anticipate at ship time. Considered and rejected as Approach C in §5.
+
+**5. Dollar-denominated cost limits.** The framework counts calls and tokens; it does NOT enforce dollar amounts. *Why deferred:* real dollar enforcement needs a per-provider pricing table someone has to maintain (prices change), plus a live spending ledger across runs — neither exists. Token caps are the mechanical enforcement; the dollar numbers in §5 are picking-a-provider guidance, not promised limits. Anti-theatre fix from earlier in this walk.
 
 ### action: non-functional
 
