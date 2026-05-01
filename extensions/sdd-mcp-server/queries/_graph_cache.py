@@ -258,30 +258,42 @@ def _build_nodes_and_edges(project_root: str, paths: List[str]) -> Tuple[List[Di
     # ``[[pattern:fake]]`` (used to embed text containing backticks)
     # leaked wiki-links straight into the graph.
     #
-    # CommonMark inline code spans use 1-N backticks as delimiter; the
-    # closer must match the opener exactly. Match a run of N backticks,
-    # then any non-newline content that doesn't contain that exact run,
-    # then the same N-backtick closer. Greedy-match all four shapes
-    # (1, 2, 3, 4 backticks) — covers every real-world inline use.
+    # Issue #105 — earlier shape used `.` (no DOTALL) and `[^`\n]+` so
+    # ALL variants stopped at line breaks. CommonMark §6.1 actually
+    # allows code spans to cross newlines (the newline is treated as a
+    # space within the span). The shape below uses `[\s\S]` so each
+    # variant can span newlines, matching CommonMark behaviour. The
+    # negative-lookahead `(?!\1)` still ensures each opener is paired
+    # with its same-length closer (e.g. a 2-backtick opener can't be
+    # closed by a 1-backtick).
     _INLINE_CODE_RE = re.compile(
-        r"(`{4})(?:(?!\1).)+\1"
-        r"|(`{3})(?:(?!\2).)+\2"
-        r"|(`{2})(?:(?!\3).)+\3"
-        r"|`[^`\n]+`"
+        r"(`{4})(?:(?!\1)[\s\S])+\1"
+        r"|(`{3})(?:(?!\2)[\s\S])+\2"
+        r"|(`{2})(?:(?!\3)[\s\S])+\3"
+        r"|`[^`]+?`"
     )
 
-    def _strip_inline_code(line: str) -> str:
-        """Mask `inline code` spans (any backtick count) with same-length
-        whitespace so wiki-link / md-link regex matchers won't pick them
-        up — but won't bridge non-code chars across deletions either.
+    def _strip_inline_code(text: str) -> str:
+        """Mask `inline code` spans (any backtick count, possibly
+        spanning multiple lines) with same-length whitespace so
+        wiki-link / md-link regex matchers won't pick them up.
 
-        CR cycle-4 fix: a naive `.sub("", line)` *deletes* the matched
+        CR cycle-4 fix: a naive `.sub("", text)` *deletes* the matched
         span, which can synthesize a spurious match. Example: the markdown
         `[[pa\`code\`tt]]` becomes `[[patt]]` after deletion — a wiki-link
         that never existed in the source. Replacing with same-length
         whitespace preserves character positions so the wiki-link regex
-        can never match across a stripped span."""
-        return _INLINE_CODE_RE.sub(lambda m: " " * len(m.group()), line)
+        can never match across a stripped span.
+
+        Issue #105 — the masking now runs over the FULL content (not
+        line-by-line) so multi-line spans get masked correctly. Newline
+        characters inside a span are preserved as `\n` rather than
+        replaced with space, so the line-by-line walker that consumes
+        the masked output still sees the original line numbers."""
+        def _mask(m):
+            s = m.group()
+            return "".join("\n" if c == "\n" else " " for c in s)
+        return _INLINE_CODE_RE.sub(_mask, text)
 
     # Fence delimiter pattern. CR cycle-2/3 — earlier code only tracked
     # the FIRST character (` or ~) so the inner triple-backtick line in
@@ -355,14 +367,17 @@ def _build_nodes_and_edges(project_root: str, paths: List[str]) -> Tuple[List[Di
         fenced_lines = _fenced_line_set(content)
         # Wiki-link edges. Normalise to lowercase for lookup so `[[Entity:User]]`
         # and `[[entity:user]]` both resolve to the same node.
-        # v1.0 step 4 — walk line-by-line so we can strip inline `code`
-        # spans before regex matching. Wiki-links inside inline code are
-        # documentation examples (e.g. `[[entity:User]]` in prose), not
-        # real edges.
-        for line_no, raw_line in enumerate(content.split("\n"), start=1):
+        # v1.0 step 4 — walk line-by-line so fenced-block detection still
+        # works per-line. Wiki-links inside inline code are documentation
+        # examples (e.g. `[[entity:User]]` in prose), not real edges.
+        # Issue #105 — strip inline-code spans over the FULL content
+        # FIRST (preserving newline characters), so multi-line backtick
+        # spans get masked too. The fenced-line set is computed against
+        # the original content so fence delimiters remain detectable.
+        masked_content = _strip_inline_code(content)
+        for line_no, stripped_line in enumerate(masked_content.split("\n"), start=1):
             if line_no in fenced_lines:
                 continue
-            stripped_line = _strip_inline_code(raw_line)
             # Wiki-link edges on this line.
             for m in _WIKI_LINK_RE.finditer(stripped_line):
                 slug = m.group(1).lower()

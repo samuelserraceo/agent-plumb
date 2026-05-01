@@ -6534,6 +6534,54 @@ else
 fi
 
 # ============================================================
+# T137 — graph-cache: multi-line inline-code spans (closes #105). CommonMark
+#   §6.1 lets backtick code spans cross newlines. The earlier shape stripped
+#   inline code per-line so multi-line spans leaked any `[[…]]` they
+#   contained as real wiki-link edges. Fix masks the full content first
+#   (preserving newline characters), so multi-line spans are skipped while
+#   line numbers in real edges remain accurate.
+# ============================================================
+note "T137: graph cache skips wiki-links inside multi-line inline-code spans (#105)"
+d=$(mktemp -d) || { bad "T137 cannot mktemp" "mktemp failed"; exit 1; }
+mkdir -p "$d/.sdd/features/001-real" "$d/.sdd/.cache" "$d/extensions/sdd-mcp-server" 2>/dev/null
+cp -r "$FRAMEWORK_ROOT/extensions/sdd-mcp-server/queries" "$d/extensions/sdd-mcp-server/" 2>/dev/null
+cat > "$d/.sdd/features/001-real/spec.md" <<'EOF'
+# 001-real — multi-line code-span fixture (issue #105)
+
+A single-backtick span that crosses lines: `[[pattern:fake-A]]
+keeps going on the next line` should leak no wiki-link edge.
+
+A double-backtick span with newline inside: ``[[pattern:fake-B]] now
+spans lines too`` also no edge.
+
+Single-line code: `[[pattern:fake-C]]` no edge (regression check, AC2).
+
+A real wiki-link OUTSIDE every span: [[001-real]] (resolves to this feature).
+EOF
+result=$(PYTHONPATH="$d/extensions/sdd-mcp-server" python3 - "$d" <<'PYEOF' 2>&1 || echo "PYERR:$?"
+import sys
+proj = sys.argv[1]
+from queries import _graph_cache
+g = _graph_cache.build(proj)
+real_edges = [e for e in g["edges"] if e.get("kind") == "wiki-link"]
+broken = [e for e in real_edges if not e.get("resolved", False)]
+print(f"real={len(real_edges)} broken={len(broken)}")
+for e in real_edges:
+    print(f"  edge: line={e['from_line']} raw={e['raw']} resolved={e.get('resolved')}")
+PYEOF
+)
+rm -rf "$d"
+# Expected: 1 real edge ([[001-real]] outside every span), 0 broken.
+# AC3 — the real edge's line should be 11 (the line where [[001-real]] appears
+# in the fixture above, regardless of how many newlines the spans crossed).
+if echo "$result" | grep -qE '^real=1 broken=0' \
+   && echo "$result" | grep -qE 'line=11 raw=001-real'; then
+  ok "T137 multi-line code spans masked correctly (#105) with accurate line numbers"
+else
+  bad "T137 multi-line code spans still leak wiki-links (#105)" "$result"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
