@@ -6534,6 +6534,69 @@ else
 fi
 
 # ============================================================
+# T138 — v1.1 Tier 3 wizard E2E gate (closes T23 of the v1.1 SPEC).
+#   init.sh on a fresh project must ship brick 007 with the Tier 3
+#   sub-questions content scaffolded — so the wizard can walk Sam
+#   through Ollama+Gemma setup the moment he runs /sdd-setup.
+# ============================================================
+note "T138: Tier 3 wizard step ships via init.sh into a fresh project"
+d=$(mktemp -d) || { bad "T138 cannot mktemp" ""; exit 1; }
+cd "$d" || { bad "T138 cannot cd" "d=$d"; rm -rf "$d"; }
+out=$(bash "$FRAMEWORK_ROOT/scripts/init.sh" 2>&1) && ec=0 || ec=$?
+cd - >/dev/null || true
+ok_count=0
+brick="$d/.sdd/setup/007-mcp-server.md"
+[ -f "$brick" ] && ok_count=$((ok_count + 1))
+grep -q "Tier 3" "$brick" 2>/dev/null && ok_count=$((ok_count + 1))
+grep -q "Ollama" "$brick" 2>/dev/null && ok_count=$((ok_count + 1))
+grep -q "Gemma" "$brick" 2>/dev/null && ok_count=$((ok_count + 1))
+grep -q "tier3" "$brick" 2>/dev/null && ok_count=$((ok_count + 1))
+config="$d/.sdd/config.md"
+grep -q "tier3:" "$config" 2>/dev/null && ok_count=$((ok_count + 1))
+rm -rf "$d"
+# CR feedback: include init.sh's exit code in the gate. A non-zero ec
+# with "happens to write the right files anyway" should still fail —
+# init.sh exited non-zero for a reason (partial write, validation
+# error) that future runs may not be tolerant of.
+if [ "$ec" -ne 0 ]; then
+  bad "T138 init.sh exited non-zero" "ec=$ec out=$out"
+elif [ "$ok_count" -eq 6 ]; then
+  ok "T138 wizard step + tier3 schema ship via init.sh (6/6 checks, ec=0)"
+else
+  bad "T138 wizard E2E gate broken" "ok=$ok_count/6 ec=$ec"
+fi
+
+# ============================================================
+# T139 — v1.1 /ask slash command (closes T25 of the v1.1 SPEC).
+#   templates/.claude/commands/ask.md must ship + carry the shape
+#   that wraps synthesise() with format=prose AND maps failure modes
+#   to plain-English fixes (anti-theatre, plain-English doctrine).
+# ============================================================
+note "T139: /ask slash command ships with synthesise wrapper + plain-English failure-mode messages"
+ask_md="$FRAMEWORK_ROOT/templates/.claude/commands/ask.md"
+ok_count=0
+[ -f "$ask_md" ] && ok_count=$((ok_count + 1))
+grep -q "synthesise" "$ask_md" 2>/dev/null && ok_count=$((ok_count + 1))
+grep -q "format.*prose" "$ask_md" 2>/dev/null && ok_count=$((ok_count + 1))
+# All synthesise failure-mode reason phrases must be mentioned in
+# the /ask plain-English fix table — the user shouldn't ever see a
+# raw `reason:` field without a translation. CR cycle 5 added the
+# missing three (rate-limited, question invalid, invalid slug).
+# Use grep -E with alternation on phrasing variants so wording can
+# evolve slightly without breaking the contract test.
+grep -qE "Tier 3 (not enabled|isn't enabled)" "$ask_md" 2>/dev/null && ok_count=$((ok_count + 1))
+grep -q "provider unreachable" "$ask_md" 2>/dev/null && ok_count=$((ok_count + 1))
+grep -q "cite-check failed" "$ask_md" 2>/dev/null && ok_count=$((ok_count + 1))
+grep -q "rate-limited" "$ask_md" 2>/dev/null && ok_count=$((ok_count + 1))
+grep -q "question invalid" "$ask_md" 2>/dev/null && ok_count=$((ok_count + 1))
+grep -q "invalid slug" "$ask_md" 2>/dev/null && ok_count=$((ok_count + 1))
+if [ "$ok_count" -eq 9 ]; then
+  ok "T139 /ask slash command ships with synthesise wrapper + 7 failure-mode messages"
+else
+  bad "T139 /ask slash command broken" "ok=$ok_count/9"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'

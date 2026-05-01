@@ -4,9 +4,16 @@ title: "Save tokens (and money) as the project grows?"
 when: start
 records_in: ".sdd/config.md"
 records_at: "parameters.mcp.enabled"
+# Tier 3 sub-questions (v1.1) also write to parameters.mcp.tier3.* — see brick body.
+# Listed under agent_infers below + documented in body. Single-string
+# records_at preserves the existing T111 frontmatter validator's contract.
 agent_infers:
   - mcp-enabled
   - mcp-installed
+  - tier3-enabled                 # set by Tier 3 sub-question Q1 (records parameters.mcp.tier3.enabled)
+  - tier3-ollama-endpoint         # set by Q2 (records parameters.mcp.tier3.endpoint)
+  - tier3-gemma-model             # set by Q3 (records parameters.mcp.tier3.model)
+  - tier3-cost-caps               # set by Q4 (records parameters.mcp.tier3.{max_calls_per_run,max_input_tokens_per_call,max_total_tokens_per_run})
 ---
 
 # Want the agent to read your project state efficiently?
@@ -66,3 +73,55 @@ If enabled, `.mcp.json` (or `~/.claude.json`) also gets a registration entry poi
 The agent's per-session token cost stops scaling with the SIZE of your project notes. Whatever the project's vintage, the agent reads only what each turn needs — not the whole file. Older projects benefit most.
 
 If install fails (network, permissions, missing Python), the wizard reports the error in plain English and falls back to recording `enabled: false` with a follow-up reminder for `/sdd-config mcp-server` once the issue is resolved.
+
+---
+
+## Chat-based answers (Tier 3) — only asked if you said yes to MCP server above
+
+> *Scaffolded by T4 of the v1.1 Tier 3 SPEC. The actual wizard wiring that runs these questions and writes the answers into `parameters.mcp.tier3` is T23 (end-to-end test). For now this section is the question content the wizard will read.*
+
+If you turned on the MCP server, the framework can also offer **chat-based answers** about your project — *"why did we pick Postgres?"*, *"what TODOs have piled up?"*. The agent reads the relevant pieces of your project, asks a small AI on your laptop, and returns the answer with clickable citations.
+
+**v1.1 supports Ollama + Gemma running locally only.** Other providers (OpenAI, Anthropic, etc.) are settable manually but not wizard-supported until v1.2+ widens the wizard. v1.1's choice is local-only because: (a) zero operating cost · (b) nothing leaves your laptop (privacy by default) · (c) Gemma is small enough for a typical laptop.
+
+### Q1 — want chat-based answers?
+
+1. **Yes — turn it on** *(recommended if your project will run for months)* — the wizard helps you install Ollama if you don't have it, then pulls a Gemma model. Records `parameters.mcp.tier3.enabled: true` plus the provider / endpoint / model you confirm in Q2-Q4.
+2. **No — skip for now** — records `parameters.mcp.tier3.enabled: false`. You can re-enable any time via `/sdd-config tier3`.
+3. **Tell me more** — agent explains in plain English (uses the Tier 3 walkthrough at [[001-tier-3-llm-driven-synthesis]] if available).
+
+### Q2 — where is your Ollama running? *(only if Q1 = yes)*
+
+Default: `http://localhost:11434` (the standard Ollama port on your machine). If you've changed it, paste the URL.
+
+### Q3 — which Gemma model? *(only if Q1 = yes)*
+
+Default: `gemma2:2b` (a small model that fits on most laptops). Other options:
+- `gemma2:9b` — bigger, slightly better answers, needs more RAM
+- `gemma3:12b` — newer, more capable, needs a beefier laptop
+
+The wizard offers to run `ollama pull <model>` on your behalf if the model isn't installed yet.
+
+### Q4 — accept the default cost caps? *(only if Q1 = yes)*
+
+Defaults from the spec: max 10 calls per run · max 8000 input tokens per call · max 100,000 total tokens per run. Plenty for ~20 questions a week. You can adjust later via `/sdd-config tier3`.
+
+1. **Yes, defaults are fine** *(recommended)* — records the defaults.
+2. **Adjust** — wizard prompts for each cap.
+
+### What gets recorded
+
+```yaml
+# in .sdd/config.md, under parameters.mcp.tier3:
+tier3:
+  enabled: <true | false>
+  provider: "ollama-chat"          # v1.1 wizard always uses this; v1.2+ widens
+  endpoint: "<from Q2>"
+  model: "<from Q3>"
+  max_calls_per_run: <from Q4>
+  max_input_tokens_per_call: <from Q4>
+  max_total_tokens_per_run: <from Q4>
+  auth_header: ""                  # empty for local Ollama; load-bearing for v1.2+ paid providers
+```
+
+**No `cost_limit_usd` field.** The framework can't enforce dollar amounts (anti-theatre — see the spec § proposed-approach for the audit). Token caps above are the mechanical enforcement.

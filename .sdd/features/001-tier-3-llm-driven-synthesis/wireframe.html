@@ -1,0 +1,699 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tier 3 — visual walkthrough (v1.1 draft)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root {
+    --ink: #1c1917; --ink-2: #44403c; --ink-3: #78716c; --paper: #fafaf9;
+    --line: #e7e5e4; --line-2: #d6d3d1;
+    --accent: #4f46e5; --accent-bg: #eef2ff;
+    --green: #15803d; --green-bg: #dcfce7;
+    --amber: #92400e; --amber-bg: #fef3c7;
+    --rose: #b91c1c; --rose-bg: #fee2e2;
+    --violet: #6d28d9; --violet-bg: #ede9fe;
+    --teal: #0e7490; --teal-bg: #cffafe;
+    --slate: #334155; --slate-bg: #f1f5f9;
+  }
+  body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink); background: var(--paper); }
+  .mono { font-family: "SF Mono", Monaco, Consolas, "Liberation Mono", monospace; }
+  .pill { display:inline-flex; align-items:center; gap:6px; padding:2px 10px; border-radius:999px; font-size:11px; font-weight:600; line-height:1.6; }
+  .pill-v11 { background: var(--accent-bg); color: var(--accent); border:1px solid #c7d2fe; }
+  .pill-v10 { background: var(--slate-bg); color: var(--slate); border:1px solid #cbd5e1; }
+  .pill-v12 { background: var(--violet-bg); color: var(--violet); border:1px solid #ddd6fe; border-style: dashed; }
+  .pill-soft { background: #f5f5f4; color: var(--ink-2); border:1px solid var(--line); }
+  .card { background:#fff; border:1px solid var(--line); border-radius:12px; transition: box-shadow .18s ease, transform .18s ease; }
+  .card:hover { box-shadow: 0 4px 18px -8px rgba(0,0,0,.12); }
+  .chat { background: #fbfbf9; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .chat .you { background: var(--accent-bg); color: var(--accent); padding: 10px 14px; font-size: 13px; font-weight: 500; }
+  .chat .tier3 { padding: 14px; font-size: 14px; line-height: 1.65; color: var(--ink); }
+  .chat .tier3 .cite { color: var(--accent); font-family: "SF Mono", Monaco, Consolas, monospace; font-size: 12.5px; padding: 1px 4px; background: var(--accent-bg); border-radius: 3px; cursor: pointer; transition: background .15s ease; }
+  .chat .tier3 .cite:hover { background: #c7d2fe; }
+  .chat .agent { background: #1c1917; color: #fafaf9; padding: 12px 14px; font-size: 12px; font-family: "SF Mono", Monaco, Consolas, monospace; line-height: 1.6; overflow-x: auto; }
+  .chat .agent .k { color: #fbbf24; } .chat .agent .v { color: #a7f3d0; } .chat .agent .c { color: #78716c; font-style: italic; } .chat .agent .s { color: #f9a8d4; }
+  .step-box { fill:#fff; stroke: var(--line-2); stroke-width: 1.5; cursor: pointer; transition: fill .15s ease, stroke .15s ease; }
+  .step-box:hover { fill: var(--accent-bg); stroke: var(--accent); }
+  .step-box.fallback { fill: var(--rose-bg); stroke: #fca5a5; }
+  .step-box.cache { fill: var(--green-bg); stroke: #86efac; }
+  .step-box.active { fill: var(--accent-bg); stroke: var(--accent); stroke-width: 2.5; }
+  .step-label { font-size: 12px; font-weight: 600; fill: var(--ink); pointer-events: none; }
+  .step-sub { font-size: 10px; fill: var(--ink-3); pointer-events: none; }
+  .arrow { stroke: var(--line-2); stroke-width: 1.5; fill: none; marker-end: url(#arrow); }
+  .arrow.fallback { stroke: var(--rose); stroke-dasharray: 4 3; }
+  .arch-box { fill: #fff; stroke: var(--line-2); stroke-width: 1.5; cursor: pointer; transition: fill .15s ease, stroke .15s ease; }
+  .arch-box:hover { fill: var(--accent-bg); stroke: var(--accent); }
+  .arch-box.existing { fill: var(--slate-bg); stroke: #94a3b8; }
+  .arch-box.new { fill: var(--accent-bg); stroke: var(--accent); }
+  .arch-box.future { fill: var(--violet-bg); stroke: var(--violet); stroke-dasharray: 6 4; }
+  .arch-box.active { fill: var(--accent-bg); stroke: var(--accent); stroke-width: 2.5; }
+  details > summary { cursor: pointer; list-style: none; }
+  details > summary::-webkit-details-marker { display: none; }
+  .chevron { display:inline-block; transition: transform .18s ease; }
+  details[open] .chevron { transform: rotate(90deg); }
+  /* legend swatches */
+  .swatch { display:inline-block; width:12px; height:12px; border-radius:3px; margin-right:6px; vertical-align:middle; border:1px solid var(--line-2); }
+  .swatch.existing { background: var(--slate-bg); border-color: #94a3b8; }
+  .swatch.new { background: var(--accent-bg); border-color: var(--accent); }
+  .swatch.future { background: var(--violet-bg); border-color: var(--violet); border-style: dashed; }
+  .swatch.fallback { background: var(--rose-bg); border-color: #fca5a5; }
+  .swatch.cache { background: var(--green-bg); border-color: #86efac; }
+  /* anchor offset for sticky header */
+  section[id] { scroll-margin-top: 96px; }
+  /* citation modal */
+  .cite-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; padding: 24px; z-index: 50; }
+  .cite-modal.open { display: flex; }
+  .cite-modal-inner { background: #fff; border-radius: 12px; max-width: 560px; width: 100%; padding: 24px; box-shadow: 0 20px 60px -10px rgba(0,0,0,.3); }
+  .cite-modal-close { position: absolute; top: 12px; right: 16px; background: none; border: none; font-size: 22px; line-height: 1; color: var(--ink-3); cursor: pointer; }
+  .cite-modal-close:hover { color: var(--ink); }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════ HEADER ═══════════════════════ -->
+<header class="sticky top-0 z-30 bg-stone-50/95 backdrop-blur border-b border-stone-200">
+  <div class="max-w-5xl mx-auto px-6 py-3 flex items-center gap-4 flex-wrap">
+    <a href="#top" class="flex items-center gap-3">
+      <span class="text-base font-bold tracking-tight">Tier 3 — visual walkthrough</span>
+      <span class="pill pill-v11">v1.1 draft</span>
+    </a>
+    <nav class="flex items-center gap-3 text-sm text-stone-600 ml-2">
+      <a href="#chat" class="hover:text-stone-900">What it looks like</a>
+      <a href="#flow" class="hover:text-stone-900">How it works</a>
+      <a href="#architecture" class="hover:text-stone-900">Where it sits</a>
+      <a href="#new-vs-existing" class="hover:text-stone-900">What's new</a>
+    </nav>
+    <div class="ml-auto text-xs text-stone-500">
+      <a class="underline" href="spec.md">spec.md</a>
+      &nbsp;·&nbsp;
+      <a class="underline" href="../../../docs/walkthrough.html">global walkthrough</a>
+    </div>
+  </div>
+</header>
+
+<a id="top"></a>
+
+<!-- ═══════════════════════ HERO ═══════════════════════ -->
+<section class="max-w-5xl mx-auto px-6 pt-12 pb-6">
+  <p class="text-sm text-stone-500 uppercase tracking-wider mb-3">Visual walkthrough · non-UI feature · dogfood of <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/112" target="_blank" rel="noopener noreferrer">issue #112</a></p>
+  <h1 class="text-4xl md:text-5xl font-bold leading-tight tracking-tight max-w-4xl">A knowledgeable colleague you can ask anything about your project.</h1>
+  <div class="mt-6 max-w-3xl text-stone-600 text-lg leading-relaxed space-y-3">
+    <p>Tier 3 lets you (or the agent) ask plain-English questions about your own SDD project — *"why did we pick Postgres?"*, *"what TODOs are piled up?"* — and get cited answers that always point at real pieces of your project. No hallucination. No invented links.</p>
+    <p>This page shows what that feels like, how the answer gets built, and where Tier 3 sits in the rest of the framework. Built for non-technical eyes — the load-bearing doc you read to confirm what we're building is what you actually want.</p>
+  </div>
+  <div class="mt-6 flex gap-3 flex-wrap text-sm">
+    <a href="#chat" class="px-4 py-2 rounded-lg bg-stone-900 text-white font-semibold hover:bg-stone-700">See the chat examples →</a>
+    <a href="#flow" class="px-4 py-2 rounded-lg border border-stone-300 hover:bg-stone-100">Or how the flow works</a>
+  </div>
+</section>
+
+<!-- ═══════════════════════ HOW TO READ ═══════════════════════ -->
+<section class="max-w-5xl mx-auto px-6 py-6">
+  <div class="rounded-xl border border-stone-200 bg-white p-4 text-sm text-stone-700 flex flex-col md:flex-row gap-4 items-start">
+    <span class="pill pill-soft shrink-0">Legend</span>
+    <div class="flex-1 grid md:grid-cols-3 gap-3 text-xs">
+      <div><span class="swatch existing"></span> already in v1.0 — Tier 3 reuses</div>
+      <div><span class="swatch new"></span> new in v1.1 — what Tier 3 adds</div>
+      <div><span class="swatch future"></span> v1.2+ — flagged for later</div>
+      <div><span class="swatch cache"></span> cache hit — instant + free</div>
+      <div><span class="swatch fallback"></span> safety net — kicks in when AI confused</div>
+      <div>&nbsp;</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ CHAT EXAMPLES ═══════════════════════ -->
+<section id="chat" class="max-w-5xl mx-auto px-6 py-10">
+  <h2 class="text-2xl font-bold mb-2">What Tier 3 actually feels like — five conversations</h2>
+  <p class="text-stone-600 max-w-3xl mb-8">One example per user story from §3 of the spec. Read these like real chat transcripts. Click a citation in any answer to see what jumping there looks like.</p>
+
+  <!-- Story 3 -->
+  <div class="card p-5 mb-5">
+    <div class="text-xs text-stone-500 uppercase tracking-wider mb-3 flex items-center gap-2"><span class="pill pill-soft">Story 3</span> Decision recall — weeks later, you ask why</div>
+    <div class="chat">
+      <div class="you">You · /ask "why did we pick Postgres for the waitlist?"</div>
+      <div class="tier3">
+        Postgres was picked because the v1 schema is small enough to colocate with the app — you flagged this in <span class="cite">[[001-waitlist]]</span> §5 about a month ago. Switching to a managed database came up later in <span class="cite">[[005-pivot]]</span> §3 but you parked it.
+      </div>
+    </div>
+    <p class="text-xs text-stone-500 mt-3">~1.5 sec to answer. Both citations resolve to real places in your project — click them and the editor jumps there.</p>
+  </div>
+
+  <!-- Story 4 -->
+  <div class="card p-5 mb-5">
+    <div class="text-xs text-stone-500 uppercase tracking-wider mb-3 flex items-center gap-2"><span class="pill pill-soft">Story 4</span> Milestone sweep — collect deferred prod-only items</div>
+    <div class="chat">
+      <div class="you">You · /ask "list every prod-only AC across shipped features"</div>
+      <div class="tier3">
+        Three prod-only items deferred across your shipped features:
+        <ul class="mt-2 list-disc list-inside space-y-1 text-stone-700">
+          <li>Turnstile real-token rejection — <span class="cite">[[002-checkout]]</span> AC6</li>
+          <li>Stripe webhook retry under real bounce — <span class="cite">[[004-billing]]</span> AC4</li>
+          <li>DNS propagation timing — <span class="cite">[[007-domains]]</span> AC9</li>
+        </ul>
+        <p class="mt-3 text-stone-700">Want me to expand on any of these?</p>
+      </div>
+    </div>
+    <p class="text-xs text-stone-500 mt-3">Three citations, all resolving. The list is a synthesis across three different feature folders.</p>
+  </div>
+
+  <!-- Story 5 -->
+  <div class="card p-5 mb-5">
+    <div class="text-xs text-stone-500 uppercase tracking-wider mb-3 flex items-center gap-2"><span class="pill pill-soft">Story 5</span> Health review — what's piled up across in-flight features</div>
+    <div class="chat">
+      <div class="you">You · /ask "what TODOs have piled up across in-flight features?"</div>
+      <div class="tier3">
+        Five TODOs across three in-flight features:
+        <ul class="mt-2 list-disc list-inside space-y-1 text-stone-700">
+          <li>Cookie consent banner — <span class="cite">[[009-onboarding]]</span></li>
+          <li>Magic-link expiry handling — <span class="cite">[[010-auth]]</span></li>
+          <li>Bulk-import CSV (parked) — <span class="cite">[[010-auth]]</span></li>
+          <li>Logout flow on iOS Safari — <span class="cite">[[010-auth]]</span></li>
+          <li>Avatar upload size cap — <span class="cite">[[011-profile]]</span></li>
+        </ul>
+        <p class="mt-3 text-stone-700">Three of them sit in <span class="cite">[[010-auth]]</span> — might be worth a focused triage there.</p>
+      </div>
+    </div>
+    <p class="text-xs text-stone-500 mt-3">Notice the closing sentence — Tier 3 noticed a cluster and flagged it. The framework doesn't do this; the AI does. Always traceable to its citations.</p>
+  </div>
+
+  <!-- Story 1 — Agent view -->
+  <div class="card p-5 mb-5">
+    <div class="text-xs text-stone-500 uppercase tracking-wider mb-3 flex items-center gap-2"><span class="pill pill-soft">Story 1</span> Agent mid-spec — pattern lookup (data view)</div>
+    <p class="text-sm text-stone-600 mb-3">Same Tier 3 brain, different wrapping. The agent (Claude Code) asks during a SPEC walk and gets back data it can act on directly:</p>
+    <div class="chat">
+      <div class="you">Claude (mid-§5 proposed-approach) · synthesise(slug=current, question="is there a pattern for retry on transient failures?", format="structured")</div>
+      <div class="agent">
+<span class="k">{</span>
+  <span class="k">"answer"</span>: <span class="s">"Yes — see [[pattern:auth-retry-logic]]"</span>,
+  <span class="k">"cite_chunks"</span>: [<span class="k">{</span><span class="k">"slug"</span>: <span class="s">"pattern:auth-retry-logic"</span>, <span class="k">"path"</span>: <span class="s">"patterns.md"</span>, <span class="k">"line"</span>: <span class="v">47</span><span class="k">}</span>],
+  <span class="k">"ambiguity"</span>: <span class="v">null</span>,
+  <span class="k">"ok"</span>: <span class="v">true</span>
+<span class="k">}</span>
+      </div>
+    </div>
+    <p class="text-xs text-stone-500 mt-3">Agent reads "yes — there's a pattern at line 47," decides to reuse it instead of inventing a new one. Saved roughly 20 KB of context that would otherwise have gone to re-reading specs.</p>
+  </div>
+
+  <!-- Story 2 — Agent view -->
+  <div class="card p-5 mb-5">
+    <div class="text-xs text-stone-500 uppercase tracking-wider mb-3 flex items-center gap-2"><span class="pill pill-soft">Story 2</span> Agent at /ship — lessons synthesis</div>
+    <p class="text-sm text-stone-600 mb-3">When the agent runs the `learn` action at `/ship` time, it asks Tier 3 what this feature should contribute to `patterns.md`:</p>
+    <div class="chat">
+      <div class="you">Claude (running /ship learn action) · synthesise(slug=current, question="what should this feature contribute to patterns.md, given what already exists?", format="structured")</div>
+      <div class="agent">
+<span class="k">{</span>
+  <span class="k">"answer"</span>: <span class="s">"Two new patterns. (1) cache-key-corpus-signature — distinct from [[pattern:hash-derived-cache]] because it composes existing v1.0 signature. (2) cite-check-rejection-fallback — extends [[pattern:fail-closed-with-explanation]]."</span>,
+  <span class="k">"cite_chunks"</span>: [
+    <span class="k">{</span><span class="k">"slug"</span>: <span class="s">"pattern:hash-derived-cache"</span><span class="k">}</span>,
+    <span class="k">{</span><span class="k">"slug"</span>: <span class="s">"pattern:fail-closed-with-explanation"</span><span class="k">}</span>
+  ],
+  <span class="k">"ambiguity"</span>: <span class="v">null</span>,
+  <span class="k">"ok"</span>: <span class="v">true</span>
+<span class="k">}</span>
+      </div>
+    </div>
+    <p class="text-xs text-stone-500 mt-3">Agent uses this as the basis for the actual patterns.md update — corpus-aware diff rather than a hand-typed guess.</p>
+  </div>
+
+  <!-- The honesty floor — failure case -->
+  <div class="card p-5 mb-5 bg-rose-50/30">
+    <div class="text-xs text-stone-500 uppercase tracking-wider mb-3 flex items-center gap-2"><span class="pill" style="background: var(--rose-bg); color: var(--rose); border: 1px solid #fca5a5">Honesty floor</span> What happens when the AI tries to invent a citation</div>
+    <p class="text-sm text-stone-600 mb-3">If the AI makes up a link that doesn't exist — say it cites <span class="mono text-xs bg-rose-100 px-1 rounded">[[fake-pattern]]</span> — Tier 3 catches it and shows you the raw chunks instead. You never see a confidently-wrong answer with an invented source.</p>
+    <div class="chat">
+      <div class="you">You · /ask "is there a pattern for X?" — AI hallucinates a citation</div>
+      <div class="tier3" style="background: var(--rose-bg);">
+        <strong>Couldn't generate a clean answer</strong> — the AI cited a reference that doesn't exist in your project (<span class="mono text-xs bg-white px-1 rounded">[[fake-pattern]]</span>). Showing the raw chunks the search found instead, so you can answer it yourself:
+        <div class="mt-2 text-xs mono bg-white p-2 rounded border border-rose-200">
+          patterns.md §47 — auth-retry-logic: ...<br>
+          patterns.md §62 — cache-warm-on-edit: ...<br>
+          decisions.md 2026-04-22 — ...
+        </div>
+      </div>
+    </div>
+    <p class="text-xs text-stone-500 mt-3">No silent leak. No false confidence. The cite-check is mechanical — runs on every Tier 3 answer.</p>
+  </div>
+</section>
+
+<!-- ═══════════════════════ FLOW DIAGRAM ═══════════════════════ -->
+<section id="flow" class="max-w-5xl mx-auto px-6 py-10">
+  <h2 class="text-2xl font-bold mb-2">How a question becomes an answer — five steps</h2>
+  <p class="text-stone-600 max-w-3xl mb-6">When you (or the agent) asks Tier 3 something, this is what happens behind the scenes. Click any step for the full detail.</p>
+
+  <div class="card p-4 md:p-6">
+    <div class="overflow-x-auto">
+      <svg viewBox="0 0 920 340" class="w-full" style="min-width: 720px;">
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--line-2)"/>
+          </marker>
+          <marker id="arrow-rose" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--rose)"/>
+          </marker>
+        </defs>
+
+        <!-- Question -->
+        <g class="step-grp" data-step="question">
+          <rect x="20" y="20" width="160" height="60" rx="30" fill="var(--accent-bg)" stroke="var(--accent)" stroke-width="1.5"/>
+          <text class="step-label" x="100" y="44" text-anchor="middle" fill="var(--accent)">Your question</text>
+          <text class="step-sub" x="100" y="62" text-anchor="middle">"why Postgres?"</text>
+        </g>
+
+        <line class="arrow" x1="180" y1="50" x2="218" y2="50"/>
+
+        <!-- Step 0: cache lookup -->
+        <g class="step-grp" data-step="cache-lookup">
+          <rect class="step-box cache" x="220" y="20" width="160" height="60" rx="6"/>
+          <text class="step-label" x="300" y="44" text-anchor="middle">0. CACHE LOOKUP</text>
+          <text class="step-sub" x="300" y="62" text-anchor="middle">key: question + signature</text>
+        </g>
+
+        <!-- branch: cache hit -->
+        <line class="arrow" x1="300" y1="80" x2="300" y2="118"/>
+        <text class="step-sub" x="307" y="103" font-size="10">hit</text>
+
+        <g class="step-grp">
+          <rect x="220" y="120" width="160" height="48" rx="6" fill="var(--green-bg)" stroke="#86efac"/>
+          <text class="step-label" x="300" y="142" text-anchor="middle" fill="var(--green)">return cached</text>
+          <text class="step-sub" x="300" y="158" text-anchor="middle">~50ms · no AI call</text>
+        </g>
+
+        <!-- arrow miss → step 1 -->
+        <line class="arrow" x1="380" y1="50" x2="418" y2="50"/>
+        <text class="step-sub" x="399" y="42" text-anchor="middle" font-size="10">miss</text>
+
+        <!-- Step 1: retrieval -->
+        <g class="step-grp" data-step="retrieval">
+          <rect class="step-box" x="420" y="20" width="160" height="60" rx="6"/>
+          <text class="step-label" x="500" y="44" text-anchor="middle">1. RETRIEVAL</text>
+          <text class="step-sub" x="500" y="62" text-anchor="middle">v1.0 graph + search</text>
+        </g>
+
+        <line class="arrow" x1="580" y1="50" x2="618" y2="50"/>
+
+        <!-- Step 2: AI call -->
+        <g class="step-grp" data-step="ai-call">
+          <rect class="step-box" x="620" y="20" width="160" height="60" rx="6"/>
+          <text class="step-label" x="700" y="44" text-anchor="middle">2. AI CALL</text>
+          <text class="step-sub" x="700" y="62" text-anchor="middle">Ollama+Gemma local</text>
+        </g>
+
+        <!-- arrow down to step 3 -->
+        <line class="arrow" x1="700" y1="80" x2="700" y2="148"/>
+
+        <!-- Step 3: cite-check (diamond-ish) -->
+        <g class="step-grp" data-step="cite-check">
+          <rect class="step-box" x="620" y="150" width="160" height="60" rx="6"/>
+          <text class="step-label" x="700" y="174" text-anchor="middle">3. CITE-CHECK</text>
+          <text class="step-sub" x="700" y="192" text-anchor="middle">do all [[links]] resolve?</text>
+        </g>
+
+        <!-- branch: pass -->
+        <line class="arrow" x1="620" y1="180" x2="582" y2="180"/>
+        <text class="step-sub" x="601" y="174" text-anchor="middle" font-size="10">pass ✓</text>
+
+        <!-- Step 4: cache write -->
+        <g class="step-grp" data-step="cache-write">
+          <rect class="step-box cache" x="420" y="150" width="160" height="60" rx="6"/>
+          <text class="step-label" x="500" y="174" text-anchor="middle">4. CACHE WRITE</text>
+          <text class="step-sub" x="500" y="192" text-anchor="middle">save for next time</text>
+        </g>
+
+        <line class="arrow" x1="420" y1="180" x2="382" y2="180"/>
+
+        <!-- Answer -->
+        <g class="step-grp">
+          <rect x="220" y="180" width="160" height="60" rx="30" fill="var(--accent-bg)" stroke="var(--accent)" stroke-width="1.5"/>
+          <text class="step-label" x="300" y="204" text-anchor="middle" fill="var(--accent)">Answer to you</text>
+          <text class="step-sub" x="300" y="222" text-anchor="middle">cited + readable</text>
+        </g>
+
+        <!-- branch: fail -->
+        <line class="arrow fallback" x1="700" y1="210" x2="700" y2="258"/>
+        <text class="step-sub" x="710" y="240" font-size="10" fill="var(--rose)">fail ✗</text>
+
+        <g class="step-grp" data-step="fallback">
+          <rect class="step-box fallback" x="540" y="260" width="320" height="60" rx="6"/>
+          <text class="step-label" x="700" y="284" text-anchor="middle" fill="var(--rose)">FALLBACK · raw chunks shown</text>
+          <text class="step-sub" x="700" y="302" text-anchor="middle">"AI confused — here are the raw pieces, you decide"</text>
+        </g>
+      </svg>
+    </div>
+
+    <!-- step detail panel -->
+    <div id="stepDetail" class="mt-6 p-4 bg-stone-50 border border-stone-200 rounded-lg text-sm text-stone-700">
+      <p class="text-stone-500 italic">Click any step in the diagram above for what happens there.</p>
+    </div>
+  </div>
+
+  <p class="text-xs text-stone-500 mt-4">Average time end-to-end: about 1.5 seconds for a fresh question. Under 50ms when the answer's already cached. Cite-check failure (rare in practice) costs the AI call but never leaks a wrong answer.</p>
+</section>
+
+<!-- ═══════════════════════ ARCHITECTURE ═══════════════════════ -->
+<section id="architecture" class="max-w-5xl mx-auto px-6 py-10">
+  <h2 class="text-2xl font-bold mb-2">Where Tier 3 sits in the rest of the framework</h2>
+  <p class="text-stone-600 max-w-3xl mb-6">Tier 3 is small. Most of the heavy lifting was already done in v1.0 — the wiki-graph, the graph cache, the search queries. Tier 3 adds the AI layer on top, plus the cache for cheap re-asks. Click any box for what's inside it.</p>
+
+  <div class="card p-4 md:p-6">
+    <div class="overflow-x-auto">
+      <svg viewBox="0 0 920 480" class="w-full" style="min-width: 720px;">
+        <defs>
+          <marker id="arrow2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--line-2)"/>
+          </marker>
+        </defs>
+
+        <!-- USER -->
+        <g class="arch-grp" data-box="user">
+          <rect x="40" y="20" width="160" height="50" rx="25" fill="#fff" stroke="var(--ink-2)" stroke-width="1.5"/>
+          <text class="step-label" x="120" y="42" text-anchor="middle">YOU</text>
+          <text class="step-sub" x="120" y="58" text-anchor="middle">non-technical builder</text>
+        </g>
+
+        <!-- AGENT -->
+        <g class="arch-grp" data-box="agent">
+          <rect x="720" y="20" width="160" height="50" rx="25" fill="#fff" stroke="var(--ink-2)" stroke-width="1.5"/>
+          <text class="step-label" x="800" y="42" text-anchor="middle">AGENT</text>
+          <text class="step-sub" x="800" y="58" text-anchor="middle">Claude Code, mid-task</text>
+        </g>
+
+        <!-- arrows down -->
+        <line stroke="var(--line-2)" stroke-width="1.5" stroke-dasharray="4 3" x1="120" y1="70" x2="120" y2="105"/>
+        <text class="step-sub" x="125" y="92" font-size="10">/ask</text>
+        <line stroke="var(--line-2)" stroke-width="1.5" stroke-dasharray="4 3" x1="800" y1="70" x2="800" y2="105"/>
+        <text class="step-sub" x="805" y="92" font-size="10">synthesise()</text>
+
+        <!-- TIER 3 box (the new bit) -->
+        <g>
+          <rect x="40" y="110" width="840" height="180" rx="12" fill="#fafaf9" stroke="var(--accent)" stroke-width="2" stroke-dasharray="0"/>
+          <text class="step-sub" x="60" y="130" font-weight="600" fill="var(--accent)">TIER 3 (new in v1.1)</text>
+
+          <g class="arch-grp" data-box="synthesise">
+            <rect class="arch-box new" x="60" y="145" width="180" height="60" rx="6"/>
+            <text class="step-label" x="150" y="170" text-anchor="middle">synthesise()</text>
+            <text class="step-sub" x="150" y="186" text-anchor="middle">the brain — calls Ollama,</text>
+            <text class="step-sub" x="150" y="198" text-anchor="middle">cite-checks, returns answer</text>
+          </g>
+
+          <g class="arch-grp" data-box="cache">
+            <rect class="arch-box new" x="270" y="145" width="180" height="60" rx="6"/>
+            <text class="step-label" x="360" y="170" text-anchor="middle">synthesis cache</text>
+            <text class="step-sub" x="360" y="186" text-anchor="middle">.sdd/.cache/synthesis.json</text>
+            <text class="step-sub" x="360" y="198" text-anchor="middle">key: question + signature</text>
+          </g>
+
+          <g class="arch-grp" data-box="citecheck">
+            <rect class="arch-box new" x="480" y="145" width="180" height="60" rx="6"/>
+            <text class="step-label" x="570" y="170" text-anchor="middle">cite-check</text>
+            <text class="step-sub" x="570" y="186" text-anchor="middle">does every [[link]] resolve?</text>
+            <text class="step-sub" x="570" y="198" text-anchor="middle">if not → reject + fallback</text>
+          </g>
+
+          <g class="arch-grp" data-box="config">
+            <rect class="arch-box new" x="690" y="145" width="180" height="60" rx="6"/>
+            <text class="step-label" x="780" y="170" text-anchor="middle">Tier3Config</text>
+            <text class="step-sub" x="780" y="186" text-anchor="middle">parameters.mcp.tier3</text>
+            <text class="step-sub" x="780" y="198" text-anchor="middle">caps + provider settings</text>
+          </g>
+
+          <g class="arch-grp" data-box="wizard">
+            <rect class="arch-box new" x="270" y="220" width="390" height="50" rx="6"/>
+            <text class="step-label" x="465" y="244" text-anchor="middle">setup wizard step (extension of brick 007)</text>
+            <text class="step-sub" x="465" y="260" text-anchor="middle">/sdd-setup walks you through Ollama install + Gemma model + caps</text>
+          </g>
+        </g>
+
+        <!-- v1.0 EXISTING BOX -->
+        <g>
+          <rect x="40" y="310" width="540" height="150" rx="12" fill="#fafaf9" stroke="#94a3b8" stroke-width="1.5"/>
+          <text class="step-sub" x="60" y="330" font-weight="600" fill="var(--slate)">v1.0 existing — Tier 3 reuses these</text>
+
+          <g class="arch-grp" data-box="graph">
+            <rect class="arch-box existing" x="60" y="345" width="160" height="50" rx="6"/>
+            <text class="step-label" x="140" y="370" text-anchor="middle">wiki-graph</text>
+            <text class="step-sub" x="140" y="386" text-anchor="middle">the [[…]] structure</text>
+          </g>
+
+          <g class="arch-grp" data-box="graphcache">
+            <rect class="arch-box existing" x="240" y="345" width="160" height="50" rx="6"/>
+            <text class="step-label" x="320" y="370" text-anchor="middle">graph cache</text>
+            <text class="step-sub" x="320" y="386" text-anchor="middle">fast lookups + signature</text>
+          </g>
+
+          <g class="arch-grp" data-box="queries">
+            <rect class="arch-box existing" x="420" y="345" width="140" height="50" rx="6"/>
+            <text class="step-label" x="490" y="370" text-anchor="middle">search queries</text>
+            <text class="step-sub" x="490" y="386" text-anchor="middle">v1.0 retrieval</text>
+          </g>
+
+          <g class="arch-grp" data-box="signature">
+            <rect class="arch-box existing" x="60" y="405" width="500" height="40" rx="6"/>
+            <text class="step-label" x="310" y="425" text-anchor="middle">corpus signature</text>
+            <text class="step-sub" x="310" y="438" text-anchor="middle">fingerprint that flips when ANY .sdd/ file changes — drives cache invalidation</text>
+          </g>
+        </g>
+
+        <!-- External: Ollama+Gemma -->
+        <g class="arch-grp" data-box="ollama">
+          <rect class="arch-box new" x="630" y="310" width="240" height="60" rx="6"/>
+          <text class="step-label" x="750" y="334" text-anchor="middle">Ollama + Gemma</text>
+          <text class="step-sub" x="750" y="350" text-anchor="middle">runs locally on your machine</text>
+          <text class="step-sub" x="750" y="362" text-anchor="middle">no data leaves your laptop</text>
+        </g>
+
+        <!-- v1.2+ future -->
+        <g class="arch-grp" data-box="future">
+          <rect class="arch-box future" x="630" y="385" width="240" height="60" rx="6"/>
+          <text class="step-label" x="750" y="408" text-anchor="middle" fill="var(--violet)">v1.2+ — other providers</text>
+          <text class="step-sub" x="750" y="424" text-anchor="middle" fill="var(--violet)">OpenAI / Anthropic / etc.</text>
+          <text class="step-sub" x="750" y="436" text-anchor="middle" fill="var(--violet)">manual config in v1.1; wizard widening v1.2+</text>
+        </g>
+
+        <!-- connections -->
+        <line stroke="var(--line-2)" stroke-width="1.5" x1="150" y1="205" x2="150" y2="345" marker-end="url(#arrow2)"/>
+        <line stroke="var(--line-2)" stroke-width="1.5" x1="270" y1="220" x2="320" y2="345" marker-end="url(#arrow2)"/>
+        <line stroke="var(--line-2)" stroke-width="1.5" x1="200" y1="175" x2="270" y2="175" marker-end="url(#arrow2)"/>
+        <line stroke="var(--line-2)" stroke-width="1.5" x1="450" y1="175" x2="480" y2="175" marker-end="url(#arrow2)"/>
+        <line stroke="var(--line-2)" stroke-width="1.5" x1="660" y1="175" x2="690" y2="175" marker-end="url(#arrow2)"/>
+        <line stroke="var(--line-2)" stroke-width="1.5" x1="240" y1="205" x2="240" y2="345" marker-end="url(#arrow2)"/>
+        <line stroke="var(--line-2)" stroke-width="1.5" x1="240" y1="195" x2="60" y2="395" marker-end="url(#arrow2)"/>
+        <line stroke="var(--line-2)" stroke-width="1.5" x1="240" y1="175" x2="420" y2="345" marker-end="url(#arrow2)"/>
+        <line stroke="var(--line-2)" stroke-width="1.5" x1="240" y1="195" x2="630" y2="340" marker-end="url(#arrow2)"/>
+      </svg>
+    </div>
+
+    <!-- arch detail panel -->
+    <div id="archDetail" class="mt-6 p-4 bg-stone-50 border border-stone-200 rounded-lg text-sm text-stone-700">
+      <p class="text-stone-500 italic">Click any box for what's inside it.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ NEW VS EXISTING ═══════════════════════ -->
+<section id="new-vs-existing" class="max-w-5xl mx-auto px-6 py-10">
+  <h2 class="text-2xl font-bold mb-2">What's new in v1.1 vs what already exists</h2>
+  <p class="text-stone-600 max-w-3xl mb-6">Tier 3 is mostly composition. The pieces that already work in v1.0 carry the load; the new pieces are tight and focused.</p>
+
+  <div class="grid md:grid-cols-2 gap-4">
+    <div class="card p-5">
+      <div class="pill pill-v10 mb-3"><span class="swatch existing"></span>v1.0 — already shipped</div>
+      <ul class="space-y-2 text-sm text-stone-700">
+        <li>· <strong>Wiki-graph</strong> — the <span class="mono text-xs bg-stone-100 px-1 rounded">[[link]]</span> structure that Tier 3 navigates</li>
+        <li>· <strong>Graph cache</strong> — fast lookup + content fingerprint</li>
+        <li>· <strong>Search queries</strong> — neighbours, backlinks, scoped semantic search</li>
+        <li>· <strong>Corpus signature</strong> — drives cache invalidation</li>
+      </ul>
+      <p class="text-xs text-stone-500 mt-4">Tier 3 doesn't change any of these. Just reads them.</p>
+    </div>
+    <div class="card p-5 border-indigo-200">
+      <div class="pill pill-v11 mb-3"><span class="swatch new"></span>v1.1 — new in this feature</div>
+      <ul class="space-y-2 text-sm text-stone-700">
+        <li>· <strong>synthesise()</strong> — the new MCP query (the brain)</li>
+        <li>· <strong>Synthesis cache</strong> — answers keyed by question + signature</li>
+        <li>· <strong>Cite-check</strong> — every <span class="mono text-xs bg-stone-100 px-1 rounded">[[link]]</span> in an answer must resolve, or the answer is rejected</li>
+        <li>· <strong>Tier3Config</strong> — provider, caps, settings in <span class="mono text-xs bg-stone-100 px-1 rounded">config.md</span></li>
+        <li>· <strong>Wizard step</strong> — extension of brick 007 to walk Ollama+Gemma setup</li>
+        <li>· <strong>Ollama+Gemma</strong> — local AI on your machine (privacy by default)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card card-v11 p-5 mt-4 border-violet-300 border-dashed">
+    <div class="pill pill-v12 mb-3"><span class="swatch future"></span>v1.2+ — flagged for later, not in v1.1</div>
+    <ul class="space-y-2 text-sm text-stone-700">
+      <li>· <strong>Other providers</strong> — OpenAI / Anthropic / etc. (settable manually in v1.1; wizard widening is v1.2+)</li>
+      <li>· <strong>Recursive / RLM-style</strong> — the AI decides what to fetch next, multi-round (current Tier 3 is single-round; recursion is a v1.2+ layer on top)</li>
+      <li>· <strong>Fuzzy cache matching</strong> — recognising rephrased questions as cache hits (exact-match only in v1.1)</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ═══════════════════════ FOOTER ═══════════════════════ -->
+<footer class="border-t border-stone-200 mt-12">
+  <div class="max-w-5xl mx-auto px-6 py-8 flex flex-col md:flex-row gap-6 items-start md:items-center justify-between text-sm">
+    <div class="text-stone-500">
+      <p><strong class="text-stone-900">Tier 3 — visual walkthrough</strong> · v1.1 SPEC draft · feature folder: <code class="mono text-xs bg-stone-100 px-1 rounded">.sdd/features/001-tier-3-llm-driven-synthesis/</code></p>
+      <p class="mt-1">Dogfood of issue <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/112" target="_blank" rel="noopener noreferrer">#112</a> — wireframe action redesign for non-UI features + compounding global walkthrough</p>
+    </div>
+    <div class="flex gap-4 flex-wrap">
+      <a class="underline" href="spec.md">spec.md</a>
+      <a class="underline" href="../../decisions.md">decisions.md</a>
+      <a class="underline" href="../../INDEX.md">INDEX.md</a>
+      <a class="underline" href="../../../docs/walkthrough.html">global walkthrough</a>
+    </div>
+  </div>
+</footer>
+
+<!-- citation modal -->
+<div id="citeModal" class="cite-modal" role="dialog" aria-modal="true" aria-labelledby="citeModalTitle">
+  <div class="cite-modal-inner relative" tabindex="-1">
+    <button type="button" class="cite-modal-close" id="citeModalClose" aria-label="Close">×</button>
+    <p class="text-xs text-stone-500 uppercase tracking-wider mb-2">What jumping there looks like</p>
+    <h3 id="citeModalTitle" class="text-lg font-bold mb-3">Citation preview</h3>
+    <div id="citeModalBody" class="text-sm text-stone-700 leading-relaxed space-y-3"></div>
+    <p class="text-xs text-stone-400 mt-4 italic border-t border-stone-200 pt-3">This wireframe is illustrative — the example feature folders shown in the chat examples don't exist in this dogfood project. In a real SDD project, clicking the cite would open the file in your editor and scroll to the cited line.</p>
+  </div>
+</div>
+
+<script>
+(() => {
+  // ─── Citation modal ────────────────────────────────────────────────
+  const CITE_TARGETS = {
+    '[[001-waitlist]]': { kind: 'feature', path: '.sdd/features/001-waitlist/spec.md', detail: 'A feature folder — clicking would open <code class="mono text-xs bg-stone-100 px-1 rounded">spec.md</code> and scroll to the cited section (e.g. §5 proposed-approach where the Postgres choice was discussed).' },
+    '[[005-pivot]]': { kind: 'feature', path: '.sdd/features/005-pivot/spec.md', detail: 'A later feature — would scroll to §3 where the database alternative came up and got parked.' },
+    '[[002-checkout]]': { kind: 'feature', path: '.sdd/features/002-checkout/spec.md', detail: 'A shipped feature — would scroll to AC6 (Turnstile real-token rejection, tagged [PROD-ONLY] until manual prod walk).' },
+    '[[004-billing]]': { kind: 'feature', path: '.sdd/features/004-billing/spec.md', detail: 'A shipped feature — would scroll to AC4 (Stripe webhook retry under real bounce, [PROD-ONLY]).' },
+    '[[007-domains]]': { kind: 'feature', path: '.sdd/features/007-domains/spec.md', detail: 'A shipped feature — would scroll to AC9 (DNS propagation timing, [PROD-ONLY]).' },
+    '[[009-onboarding]]': { kind: 'feature', path: '.sdd/features/009-onboarding/spec.md', detail: 'An in-flight feature — would scroll to the cookie-consent banner TODO.' },
+    '[[010-auth]]': { kind: 'feature', path: '.sdd/features/010-auth/spec.md', detail: 'An in-flight feature — would scroll to the relevant TODO line (this feature has multiple piled up; that is the cluster Tier 3 flagged).' },
+    '[[011-profile]]': { kind: 'feature', path: '.sdd/features/011-profile/spec.md', detail: 'An in-flight feature — would scroll to the avatar-upload size cap TODO.' },
+    '[[pattern:auth-retry-logic]]': { kind: 'pattern', path: '.sdd/patterns.md', detail: 'A heading inside <code class="mono text-xs bg-stone-100 px-1 rounded">patterns.md</code> — would scroll to the auth-retry-logic block (where the existing pattern\'s Source line names the feature that contributed it).' },
+    '[[pattern:hash-derived-cache]]': { kind: 'pattern', path: '.sdd/patterns.md', detail: 'A pattern heading in <code class="mono text-xs bg-stone-100 px-1 rounded">patterns.md</code> documenting hash-keyed cache invalidation.' },
+    '[[pattern:fail-closed-with-explanation]]': { kind: 'pattern', path: '.sdd/patterns.md', detail: 'A pattern heading documenting the framework\'s default error-handling shape — refuse + explain in plain English.' },
+    '[[fake-pattern]]': { kind: 'invented', path: null, detail: '<strong style="color:var(--rose)">⚠️ This is the broken example.</strong> In a real project, this slug does NOT exist anywhere — no feature folder, no pattern heading, no entity, no decision. The cite-check (step 3 of the flow on this page) catches it: every <code class="mono text-xs bg-stone-100 px-1 rounded">[[link]]</code> in an answer must resolve to a real graph node, or the answer is rejected and the raw chunks fallback is shown instead. <strong>This is exactly the honesty floor at work.</strong>' }
+  };
+
+  const modal = document.getElementById('citeModal');
+  const modalTitle = document.getElementById('citeModalTitle');
+  const modalBody = document.getElementById('citeModalBody');
+
+  function showCiteModal(slug) {
+    const target = CITE_TARGETS[slug];
+    if (!target) return;
+    modalTitle.textContent = slug;
+    const kindLabel = target.kind === 'feature' ? 'Feature folder' :
+                      target.kind === 'pattern' ? 'Pattern heading' :
+                      target.kind === 'invented' ? 'Invented (honesty-floor demo)' : 'Citation';
+    const pathLine = target.path
+      ? `<p><strong>Resolves to:</strong> <code class="mono text-xs bg-stone-100 px-1 rounded">${target.path}</code></p>`
+      : `<p><strong>Resolves to:</strong> <em>nothing — this is the demo of what the cite-check rejects</em></p>`;
+    modalBody.innerHTML = `<p class="text-xs text-stone-500 uppercase tracking-wider">${kindLabel}</p>${pathLine}<p>${target.detail}</p>`;
+    modal.classList.add('open');
+    modal.querySelector('[tabindex="-1"]').focus();
+  }
+  function closeCiteModal() {
+    modal.classList.remove('open');
+  }
+
+  document.querySelectorAll('.cite').forEach(el => {
+    // Make .cite spans keyboard-accessible (CR feedback): focusable, with
+    // ARIA role + Enter/Space activation in addition to mouse click.
+    if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '0');
+    if (!el.hasAttribute('role')) el.setAttribute('role', 'button');
+    const activate = (e) => {
+      e.preventDefault();
+      const text = el.textContent.trim();
+      // Match [[…]] within the cite text (covers `[[001-waitlist]] AC6` style)
+      const m = text.match(/\[\[[^\]]+\]\]/);
+      if (m) showCiteModal(m[0]);
+    };
+    el.addEventListener('click', activate);
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+        activate(e);
+      }
+    });
+  });
+  document.getElementById('citeModalClose').addEventListener('click', closeCiteModal);
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeCiteModal(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && modal.classList.contains('open')) closeCiteModal(); });
+
+  // ─── Step detail panel ─────────────────────────────────────────────
+  const STEP_DETAIL = {
+    'question': { t: 'Your question', d: 'Plain English. /ask "why did we pick Postgres?" or whatever you want to know about your project. The agent can also call this directly mid-spec via the MCP query.' },
+    'cache-lookup': { t: 'Step 0 — Cache lookup', d: 'The framework checks if it has answered this exact question before, against the same project state. The key combines: a hash of your question, plus the corpus fingerprint v1.0 already maintains. Hit → return cached answer in ~50ms, no AI call. Miss → continue to step 1.' },
+    'retrieval': { t: 'Step 1 — Retrieval', d: 'v1.0\'s existing search runs: graph backlinks, neighbours, scoped semantic search. Returns ~5 chunks of your .sdd/ markdown most relevant to the question. No new code — Tier 3 reuses what shipped at v1.0. Free.' },
+    'ai-call': { t: 'Step 2 — AI call', d: 'The chunks + your question + a strict prompt template go to Ollama+Gemma running locally. The prompt forces the AI to cite every claim with a [[link]] — and to refuse if it can\'t. Counters tick: calls_used += 1, tokens_used += <count>. If we\'d cross your configured caps, the call is refused before it even fires.' },
+    'cite-check': { t: 'Step 3 — Cite-check', d: 'The mechanical honesty floor. The framework extracts every [[link]] from the AI\'s answer and checks whether each one points at a real piece of your project (a feature folder, a pattern heading, an entity, a decision). If even one link is invented → answer rejected. This catches AI hallucination of citations; it does NOT catch the case where the AI cites something real but mischaracterises it (separate problem, out of scope per §9).' },
+    'cache-write': { t: 'Step 4 — Cache write', d: 'Successful answers get saved to .sdd/.cache/synthesis.json. Key: question hash + corpus signature. Next time you ask the same thing (or the agent does), it\'s instant + free unless your project changed in the meantime.' },
+    'fallback': { t: 'Cite-check failure → raw chunks fallback', d: 'Rare in practice but critical for honesty. When the AI cites a fake [[link]], we don\'t cache the broken answer (so re-asking re-fires) and we don\'t silently leak it. We show you the raw chunks the search found and say "AI got confused, here\'s the raw material — you decide."' }
+  };
+
+  document.querySelectorAll('.step-grp').forEach(g => {
+    g.style.cursor = 'pointer';
+    // CR feedback: keyboard-accessible (focusable + Enter/Space).
+    if (!g.hasAttribute('tabindex')) g.setAttribute('tabindex', '0');
+    if (!g.hasAttribute('role')) g.setAttribute('role', 'button');
+    const activate = () => {
+      const s = g.dataset.step;
+      const d = STEP_DETAIL[s];
+      if (!d) return;
+      document.querySelectorAll('.step-box').forEach(b => b.classList.remove('active'));
+      const box = g.querySelector('.step-box');
+      if (box) box.classList.add('active');
+      document.getElementById('stepDetail').innerHTML = `<p class="font-semibold text-stone-900 mb-2">${d.t}</p><p class="text-sm text-stone-700 leading-relaxed">${d.d}</p>`;
+    };
+    g.addEventListener('click', activate);
+    g.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+        e.preventDefault();
+        activate();
+      }
+    });
+  });
+
+  // ─── Architecture detail panel ─────────────────────────────────────
+  const ARCH_DETAIL = {
+    'user': { t: 'YOU — non-technical builder', d: 'You drive the spec. You bring the what; the agent proposes the how. For Tier 3, you ask questions through /ask in Claude Code, get answers in chat with clickable citations.' },
+    'agent': { t: 'AGENT — Claude Code mid-task', d: 'The agent calls Tier 3 directly via the MCP query (synthesise()) when it needs to know something about your project mid-spec or at /ship time. Gets back structured data, not paragraphs. Same brain as your /ask, different wrapping.' },
+    'synthesise': { t: 'synthesise() — the brain (NEW v1.1)', d: 'The new MCP query that ties everything together. Takes a slug, a question, and a format ("structured" for agent, "prose" for chat). Calls Ollama+Gemma with the chunks v1.0 retrieval found, runs the cite-check, returns the answer. Lives at extensions/sdd-mcp-server/queries/synthesise.py.' },
+    'cache': { t: 'Synthesis cache (NEW v1.1)', d: 'JSON file at .sdd/.cache/synthesis.json (gitignored). Keyed by (question hash + corpus signature). Same shape pattern as the v1.0 graph cache. Lazy invalidation: when corpus signature flips, old entries become stale and get re-fired on next ask.' },
+    'citecheck': { t: 'Cite-check (NEW v1.1)', d: 'Mechanical honesty floor. Every [[link]] in an answer is checked against the v1.0 graph cache\'s find_node() — if any returns null (invented), the answer is rejected and raw chunks are returned instead. The check is exact: catches all invented citations. It does NOT catch real-citation-with-wrong-claim (semantic hallucination — out of scope per §9.3).' },
+    'config': { t: 'Tier3Config (NEW v1.1)', d: 'New config block at parameters.mcp.tier3 in templates/.sdd/config.md. Off by default (foundation 3 — opt-in, no baked-in defaults). When enabled: provider + endpoint + model fields, plus mechanically-counted caps (max_calls_per_run, max_input_tokens_per_call, max_total_tokens_per_run) — NOT a USD limit because the framework can\'t enforce dollar amounts.' },
+    'wizard': { t: 'Setup wizard step (NEW v1.1)', d: 'Extension of existing brick 007 (mcp-server) — when you /sdd-setup or /sdd-config, the wizard asks plain-English questions: do you want Tier 3? Where is your Ollama running? Which Gemma model? — and writes the answers into parameters.mcp.tier3. v1.1 wizard supports Ollama+Gemma only; other providers are manual config edits and are v1.2+ wizard scope.' },
+    'graph': { t: 'Wiki-graph (v1.0)', d: 'The structure of [[link]] cross-references between specs, patterns, decisions, and data-model entries. v1.0 shipped this. Tier 3 navigates it for retrieval and uses it to validate citations.' },
+    'graphcache': { t: 'Graph cache (v1.0)', d: 'File at .sdd/.cache/graph.json. v1.0\'s in-memory representation of the wiki-graph for fast lookups. find_node() resolves a slug to a real graph node (or returns None for invented slugs — that\'s how cite-check works).' },
+    'queries': { t: 'Search queries (v1.0)', d: 'The MCP queries v1.0 shipped: get_neighbours, get_backlinks, search_within, search. Tier 3 calls these in step 1 (retrieval) to gather candidate chunks before sending to the AI. No changes — pure reuse.' },
+    'signature': { t: 'Corpus signature (v1.0)', d: 'A SHA-256 fingerprint of every .sdd/ markdown file\'s content + path. v1.0 uses it to invalidate the graph cache when something changes. Tier 3 uses the same signature as part of its synthesis cache key — so any .sdd/ edit automatically invalidates affected cached answers. Foundation: never assume — always check.' },
+    'ollama': { t: 'Ollama + Gemma (NEW external dep, v1.1)', d: 'The chat AI that runs locally on your machine. You install Ollama once, pull a Gemma model, the wizard tells you which model size matches your laptop. Operating cost: $0. Privacy: nothing leaves your machine. v1.1\'s only wizard-supported provider; the schema is provider-agnostic so OpenAI/Anthropic/etc. can be set via manual config edit, but those aren\'t end-to-end tested in v1.1.' },
+    'future': { t: 'v1.2+ — other providers (planned, not in v1.1)', d: 'When v1.2+ widens wizard scope, OpenAI / Anthropic / OpenAI-compatible endpoints become first-class wizard options with their own setup walks. The Tier3Config schema already supports this (provider field is open); v1.1 just doesn\'t end-to-end test or wizard-walk those paths. Until then, manual config edit works for power users who want them.' }
+  };
+
+  document.querySelectorAll('.arch-grp').forEach(g => {
+    g.style.cursor = 'pointer';
+    // CR feedback: keyboard-accessible (focusable + Enter/Space).
+    if (!g.hasAttribute('tabindex')) g.setAttribute('tabindex', '0');
+    if (!g.hasAttribute('role')) g.setAttribute('role', 'button');
+    const activate = () => {
+      const k = g.dataset.box;
+      const d = ARCH_DETAIL[k];
+      if (!d) return;
+      document.querySelectorAll('.arch-box').forEach(b => b.classList.remove('active'));
+      const box = g.querySelector('.arch-box');
+      if (box) box.classList.add('active');
+      document.getElementById('archDetail').innerHTML = `<p class="font-semibold text-stone-900 mb-2">${d.t}</p><p class="text-sm text-stone-700 leading-relaxed">${d.d}</p>`;
+    };
+    g.addEventListener('click', activate);
+    g.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+        e.preventDefault();
+        activate();
+      }
+    });
+  });
+})();
+</script>
+
+</body>
+</html>
