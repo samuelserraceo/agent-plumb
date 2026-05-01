@@ -487,7 +487,7 @@ All §4 constraints have a mapped AC. Plan-decompose coverage check passes pre-e
 
 **Cache mechanics:**
 - [x] T8 GREEN: cache miss → write → hit returns identical answer without firing AI; <50ms (AC4) → `extensions/sdd-mcp-server/tests/test_synthesise_cache_hit.py` (2/2)
-- [ ] T9 RED: corpus-signature flip on cited file edit invalidates cache (AC5) → `extensions/sdd-mcp-server/tests/test_synthesise_cache_invalidate.py`
+- [x] T9 GREEN: corpus-signature flip on cited file edit invalidates cache (AC5) → `extensions/sdd-mcp-server/tests/test_synthesise_cache_invalidate.py` (1/1)
 
 **Caps:**
 - [ ] T10 RED: three call/token caps refuse past threshold (AC6) → `extensions/sdd-mcp-server/tests/test_synthesise_caps.py`
