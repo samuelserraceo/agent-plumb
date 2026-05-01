@@ -47,6 +47,7 @@
   .arch-box.existing { fill: var(--slate-bg); stroke: #94a3b8; }
   .arch-box.new { fill: var(--accent-bg); stroke: var(--accent); }
   .arch-box.future { fill: var(--violet-bg); stroke: var(--violet); stroke-dasharray: 6 4; }
+  .arch-box.active { fill: var(--accent-bg); stroke: var(--accent); stroke-width: 2.5; }
   details > summary { cursor: pointer; list-style: none; }
   details > summary::-webkit-details-marker { display: none; }
   .chevron { display:inline-block; transition: transform .18s ease; }
@@ -631,7 +632,10 @@
 
   document.querySelectorAll('.step-grp').forEach(g => {
     g.style.cursor = 'pointer';
-    g.addEventListener('click', () => {
+    // CR feedback: keyboard-accessible (focusable + Enter/Space).
+    if (!g.hasAttribute('tabindex')) g.setAttribute('tabindex', '0');
+    if (!g.hasAttribute('role')) g.setAttribute('role', 'button');
+    const activate = () => {
       const s = g.dataset.step;
       const d = STEP_DETAIL[s];
       if (!d) return;
@@ -639,6 +643,13 @@
       const box = g.querySelector('.step-box');
       if (box) box.classList.add('active');
       document.getElementById('stepDetail').innerHTML = `<p class="font-semibold text-stone-900 mb-2">${d.t}</p><p class="text-sm text-stone-700 leading-relaxed">${d.d}</p>`;
+    };
+    g.addEventListener('click', activate);
+    g.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+        e.preventDefault();
+        activate();
+      }
     });
   });
 
@@ -661,7 +672,10 @@
 
   document.querySelectorAll('.arch-grp').forEach(g => {
     g.style.cursor = 'pointer';
-    g.addEventListener('click', () => {
+    // CR feedback: keyboard-accessible (focusable + Enter/Space).
+    if (!g.hasAttribute('tabindex')) g.setAttribute('tabindex', '0');
+    if (!g.hasAttribute('role')) g.setAttribute('role', 'button');
+    const activate = () => {
       const k = g.dataset.box;
       const d = ARCH_DETAIL[k];
       if (!d) return;
@@ -669,6 +683,13 @@
       const box = g.querySelector('.arch-box');
       if (box) box.classList.add('active');
       document.getElementById('archDetail').innerHTML = `<p class="font-semibold text-stone-900 mb-2">${d.t}</p><p class="text-sm text-stone-700 leading-relaxed">${d.d}</p>`;
+    };
+    g.addEventListener('click', activate);
+    g.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+        e.preventDefault();
+        activate();
+      }
     });
   });
 })();

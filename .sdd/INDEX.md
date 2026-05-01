@@ -8,6 +8,7 @@
 
 
 ## In flight
+
 - features/001-tier-3-llm-driven-synthesis — Tier 3 LLM-driven synthesis (PHASE: SHIP — PR pending)
 
 ## Pending production verification

@@ -17,7 +17,8 @@ When the user types `/ask "<question>"`:
      "format": "prose"
    }
    ```
-4. The query runs the v1.1 Tier 3 flow: cache lookup → v1.0 retrieval → AI call → cite-check → cache write → prose render. See `.sdd/features/001-tier-3-llm-driven-synthesis/spec.md` for the full flow.
+
+4. The query runs the v1.1 Tier 3 flow: cache lookup → v1.0 retrieval → AI call → cite-check → cache write → prose render. See [[001-tier-3-llm-driven-synthesis]] for the full flow.
 5. Render the response to chat:
    - On `ok: true`: print `result.answer` (markdown with inline `[[…]]` cites that the user can click in editors that render Obsidian-style links).
    - On `ok: false` with cite-check failure: print *"Couldn't generate a clean answer — the AI cited references that don't exist in your project. Showing the raw chunks the search found instead:"* + the `cite_chunks` content.

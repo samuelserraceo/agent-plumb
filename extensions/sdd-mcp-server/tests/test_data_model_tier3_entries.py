@@ -100,7 +100,6 @@ class TestDataModelTier3Entries(unittest.TestCase):
         # (anti-theatre note); it must not list it as a present field.
         # Heuristic: look for `cost_limit_usd:` (with colon) — would be a
         # YAML-style field listing.
-        import re
         self.assertNotRegex(block, r"\bcost_limit_usd:", msg=(
             "Tier3Config description must not list cost_limit_usd as a field — "
             "removed by 2026-05-01 anti-theatre audit"

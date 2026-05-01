@@ -74,6 +74,31 @@ class TestTier3ConfigSchema(unittest.TestCase):
         tier3_idx = self.body.find("tier3:", mcp_idx)
         return tier3_idx
 
+    def _tier3_block(self) -> str:
+        """Return the tier3 section content, bounded by the next sibling key
+        or top-level YAML key (rather than a brittle fixed N-byte slice).
+
+        CR feedback: the previous fixed 1500-byte slice broke when the
+        section grew. Boundary heuristic: read until the next line
+        starting at the same or shallower indent (i.e. another key under
+        `mcp:` such as `tier4:` if it ever lands, OR a sibling under
+        `parameters:` like `voice:`, OR a top-level closing `---` of the
+        frontmatter). We use a regex that matches a YAML key at column 0
+        (top-level) OR at 4 spaces (sibling of mcp's children) OR the
+        frontmatter terminator.
+        """
+        idx = self._scoped_tier3_idx()
+        if idx == -1:
+            return ""
+        rest = self.body[idx:]
+        # Skip the `tier3:` line itself, then look for the first line
+        # at indent ≤4 spaces that's also a key (k:) or the `---`
+        # frontmatter terminator. That marks the end of the block.
+        boundary = re.search(r"\n(?:[a-zA-Z_][a-zA-Z0-9_]*:|    [a-zA-Z_][a-zA-Z0-9_]*:|---\s*$)", rest[len("tier3:"):], re.MULTILINE)
+        if boundary is None:
+            return rest
+        return rest[: len("tier3:") + boundary.start()]
+
     def test_tier3_block_exists(self):
         """The `tier3:` block exists under `parameters.mcp`."""
         tier3_idx = self._scoped_tier3_idx()
@@ -97,7 +122,7 @@ class TestTier3ConfigSchema(unittest.TestCase):
         # Locate the scoped tier3 block once (not in the inner loop).
         tier3_idx = self._scoped_tier3_idx()
         self.assertGreater(tier3_idx, -1, "tier3 block missing under parameters.mcp")
-        tier3_block = self.body[tier3_idx:tier3_idx + 1500]
+        tier3_block = self._tier3_block()
         for field in required_fields:
             with self.subTest(field=field):
                 self.assertIn(f"{field}:", tier3_block,
@@ -107,7 +132,7 @@ class TestTier3ConfigSchema(unittest.TestCase):
         """`enabled: false` must be the default (foundation 3 — opt-in)."""
         tier3_idx = self._scoped_tier3_idx()
         self.assertGreater(tier3_idx, -1, "tier3 block missing under parameters.mcp")
-        tier3_block = self.body[tier3_idx:tier3_idx + 1500]
+        tier3_block = self._tier3_block()
         # match `enabled: false` (any whitespace before, allow comment after)
         self.assertRegex(tier3_block, r"enabled:\s*false",
                          "tier3.enabled must default to false (opt-in)")
@@ -127,7 +152,7 @@ class TestTier3ConfigSchema(unittest.TestCase):
         """
         tier3_idx = self._scoped_tier3_idx()
         self.assertGreater(tier3_idx, -1, "tier3 block missing under parameters.mcp")
-        tier3_block = self.body[tier3_idx:tier3_idx + 1500]
+        tier3_block = self._tier3_block()
         # Field would appear at start of a line (after indent) with a
         # colon and value — not as a word inside a `#` comment.
         # Match: `^[ \t]+cost_limit_usd:` (multiline)

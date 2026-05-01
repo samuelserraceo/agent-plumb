@@ -344,7 +344,15 @@ def _gather_chunks(project_root: str, graph: Dict[str, Any], slug: str, question
     target's content (capped to 2KB per chunk for token bounds).
     Real embedding-based retrieval is layered later when semantic_search
     is enabled — this is the structural retrieval path that always works.
+
+    Note (CR feedback): the `question` parameter is intentionally
+    reserved. Today the retrieval is purely structural (graph anchor +
+    neighbours). When semantic_search lands as the v1.2+ alternative
+    retrieval path, `question` becomes the embedding query — keeping
+    the signature stable now means callers don't have to change shape
+    when that path turns on. Until then, it's accepted-but-unused.
     """
+    del question  # explicit: reserved for v1.2+ semantic retrieval
     chunks: List[Dict[str, Any]] = []
     nodes = graph.get("nodes", [])
     seen_paths: set = set()
@@ -668,7 +676,7 @@ def _real_llm_call(question: str, chunks: List[Dict[str, Any]], cfg: Dict[str, A
     # urllib.request.urlopen and read whatever urllib decides. Plain
     # http and https are the only shapes Ollama / OpenAI-compatible
     # providers ever ship.
-    if not (endpoint.startswith("http://") or endpoint.startswith("https://")):
+    if not endpoint.startswith(("http://", "https://")):
         raise _ProviderUnreachable(
             f"refusing endpoint with unsupported scheme: '{endpoint}' "
             "(only http:// and https:// are accepted)"
