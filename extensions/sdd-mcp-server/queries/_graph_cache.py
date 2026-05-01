@@ -300,12 +300,25 @@ def _build_nodes_and_edges(project_root: str, paths: List[str]) -> Tuple[List[Di
             m = _FENCE_RE.match(line)
             if m:
                 run = m.group(1)
+                # CR cycle-3 fence-suffix check — per CommonMark §4.5, an
+                # opening fence may carry an info string (e.g. ``` python),
+                # but a CLOSING fence must have only optional whitespace
+                # after the delimiter. Without this check, a line like
+                # ``` python (which is a NEW opening) would be mistaken
+                # for a closer when one is already open, prematurely
+                # ending the block.
+                suffix = line[m.end():]
                 if not in_fence:
                     in_fence = True
                     fence_delim = run
-                elif run[0] == fence_delim[0] and len(run) >= len(fence_delim):
+                elif (
+                    run[0] == fence_delim[0]
+                    and len(run) >= len(fence_delim)
+                    and suffix.strip() == ""
+                ):
                     # Closer must use the same fence char AND be at least
-                    # as long as the opener (CommonMark §4.5).
+                    # as long as the opener AND have no info string after
+                    # the delimiter (CommonMark §4.5).
                     in_fence = False
                     fence_delim = None
                 # Fence delimiters themselves aren't "inside the fence" —
