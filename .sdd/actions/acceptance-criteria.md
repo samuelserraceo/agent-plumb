@@ -5,7 +5,7 @@ tag: AGENT-LED
 title: "§11 Acceptance criteria"
 short_label: "ACs"
 steps:
-  - { id: approval, action: draft_iterate_approve_acs_with_constraint_coverage_check, field: "§11", triggers: [section_approved] }
+  - { id: approval, action: "draft the acceptance criteria, run a constraint-coverage check vs §4, iterate, get approval", field: "§11", triggers: [section_approved] }
 used_by: [feature]
 references: [success, user-stories, flows, ux-brief, non-functional]
 touches: []

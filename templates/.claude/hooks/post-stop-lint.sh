@@ -13,7 +13,7 @@
 # English fix path if any drifted. Foundation 3 (never assume — always
 # check) applied at turn boundary, not just commit boundary.
 #
-# The 7 invariants checked:
+# The 9 invariants checked:
 #   1. .sdd/INDEX.md has exactly one **Active:** line
 #   2. .sdd/INDEX.md ## In flight lines all point at existing feature folders
 #   3. Active feature's spec.md has a single [PHASE: X] line
@@ -22,6 +22,9 @@
 #      entries mutated)
 #   6. .sdd/.cache/manifest.json parses as JSON
 #   7. Every [x] row in spec.md has a non-empty answer after the colon
+#   8. Wiki-links [[slug]] in .sdd/ markdown all resolve to known nodes
+#      (v1.0 graph layer; opt-in via the MCP server extension)
+#   9. No NUL bytes in any tracked .sdd/ file (binary contamination)
 #
 # Wires up as a Claude Code Stop hook in settings.json. Stop hooks
 # receive a JSON payload on stdin describing the session state, but
@@ -454,6 +457,160 @@ $samples
 }
 
 # ============================================================
+# Invariant 9 — no NUL bytes in tracked .sdd/ files (binary contamination).
+# (Function body lives here; numbering note: invariant 8 is wiki-link
+# resolution, defined further below.)
+# ============================================================
+check_no_nul_bytes() {
+  # D4 (stress-test) — NUL bytes (0x00) in any tracked .sdd/ markdown file
+  # signal binary contamination (corrupt save, half-written file, byte-flip
+  # on a flaky disk). Catches them at turn boundary so the user fixes the
+  # corrupt file before committing it.
+  if [ ! -d .sdd ]; then return 0; fi
+  local hits
+  # CR cycle-5 Major — `grep -P` (PCRE) isn't portable. macOS / BSD grep
+  # rejects -P; even a `grep '\x00'` literal-mode invocation isn't
+  # guaranteed to handle NUL bytes consistently across grep flavours.
+  # Use a small Python walker instead — already a framework-required
+  # dependency (the rest of this hook shells to python3 too), and it
+  # gives us deterministic behaviour on every platform.
+  hits=$(PROJECT_DIR="$PROJECT_DIR" python3 <<'PYEOF' 2>/dev/null
+import os, sys
+root = os.path.join(os.environ["PROJECT_DIR"], ".sdd")
+exts = (".md", ".json", ".yaml", ".yml")
+exclude = {".cache", "archive", "ideas"}
+hits = []
+for dirpath, dirnames, filenames in os.walk(root):
+    dirnames[:] = [d for d in dirnames if d not in exclude]
+    for fn in filenames:
+        if not fn.lower().endswith(exts):
+            continue
+        p = os.path.join(dirpath, fn)
+        try:
+            with open(p, "rb") as f:
+                if b"\x00" in f.read():
+                    hits.append(os.path.relpath(p, os.environ["PROJECT_DIR"]))
+        except OSError:
+            continue
+print("\n".join(hits))
+PYEOF
+)
+  if [ -n "$hits" ]; then
+    # CR Minor #6 fix — quote $hits via newline-IFS read so paths with
+    # spaces don't get word-split into garbage args (SC2086).
+    local formatted=""
+    while IFS= read -r path; do
+      [ -n "$path" ] && formatted="${formatted}  ${path}"$'\n'
+    done <<< "$hits"
+    add_violation "[stop-lint] NUL bytes found in framework files (binary contamination):
+${formatted}  Fix: open the file in your editor and save again as UTF-8 (text). NUL
+       bytes usually mean a half-written save or filesystem corruption.
+       If the file is unrecoverable, restore it: \`git checkout HEAD -- <path>\`."
+  fi
+}
+
+# ============================================================
+# Invariant 8 — every wiki-link in .sdd/ markdown resolves to a real node.
+#
+# v1.0 graph layer: cross-references between markdown atoms become
+# first-class via `[[slug]]` syntax. A broken link means a node was
+# renamed/deleted without updating its citers, OR a citer assumed a
+# pattern/entity exists that doesn't.
+#
+# Foundation 3 ("never assume — always check") applied to retrieval:
+# don't trust that wiki-links are honest; verify each resolves at
+# turn-boundary so drift surfaces before commit-time.
+#
+# Wiki-link grammar accepted (refused if extended):
+#   - [[001-waitlist]]            (feature folder)
+#   - [[entity:User]]             (data-model.md heading)
+#   - [[pattern:auth-retry]]      (patterns.md heading)
+# NO section anchors (#section), NO display aliases (|alias).
+#
+# Implementation: shells out to a Python helper that uses the MCP
+# server's _graph_cache module — same path the queries use, so the
+# stop-hook's view of "broken" is exactly what `get_backlinks` sees.
+# Falls back to silent pass if the MCP server isn't available
+# (extension is optional; this hook is mandatory).
+# ============================================================
+check_wiki_links_resolve() {
+  local mcp_root="$PROJECT_DIR/extensions/sdd-mcp-server"
+  # When running on a downstream user's project, the MCP server lives at the
+  # framework's own path — try a few common locations.
+  if [ ! -d "$mcp_root" ]; then
+    # Fall back to the framework-bundled copy if installed via plugin path.
+    local plugin_root="${CLAUDE_PLUGIN_ROOT:-}"
+    if [ -n "$plugin_root" ] && [ -d "$plugin_root/extensions/sdd-mcp-server" ]; then
+      mcp_root="$plugin_root/extensions/sdd-mcp-server"
+    else
+      return 0  # MCP server not present; graph layer is opt-in via extension
+    fi
+  fi
+  local result
+  # CR cycle-2 Major — when the graph checker is FOUND but BROKEN (import
+  # error, exception during build, etc.), surface that as ERROR so the user
+  # sees invariant 8 has been silently disabled. Old code exited 0 in that
+  # branch, hiding broken wiki-links exactly when graph code had drifted.
+  result=$(MCP_ROOT="$mcp_root" PROJECT_DIR="$PROJECT_DIR" python3 <<'PYEOF' 2>&1
+import os, sys
+sys.path.insert(0, os.environ["MCP_ROOT"])
+try:
+    from queries import _graph_cache
+except ImportError as exc:
+    print(f"ERROR:import failed — {type(exc).__name__}: {exc}")
+    sys.exit(0)
+proj = os.environ["PROJECT_DIR"]
+try:
+    g = _graph_cache.build(proj)
+except Exception as exc:
+    print(f"ERROR:graph cache build failed — {type(exc).__name__}: {exc}")
+    sys.exit(0)
+# CR cycle-3 Major — invariant 8 is documented as "wiki-link resolution".
+# `find_broken_edges()` returns unresolved wiki-link AND md-link edges; the
+# md-link branch represents a different drift class (path-based references
+# pointing at missing files) and isn't part of this invariant. Filter to
+# wiki-links only here. Broken md-links can be a separate invariant later
+# if useful, but conflating them dilutes the wiki-link guarantee.
+broken = [e for e in _graph_cache.find_broken_edges(g)
+          if e.get("kind") == "wiki-link"]
+if not broken:
+    sys.exit(0)
+print(f"BROKEN:{len(broken)}")
+for e in broken[:5]:
+    raw = e.get("raw") or e.get("to_path", "?")
+    src = e.get("from_path", "?")
+    line = e.get("from_line", "?")
+    print(f"  {src}:{line}  [[{raw}]]")
+PYEOF
+)
+  if [ -n "$result" ] && [[ "$result" == BROKEN:* ]]; then
+    local first_line
+    first_line=$(echo "$result" | head -1)
+    local count="${first_line#BROKEN:}"
+    local samples
+    samples=$(echo "$result" | tail -n +2 | head -5)
+    add_violation "[stop-lint] $count wiki-link(s) don't resolve to a known node.
+  Sample (showing first 5):
+$samples
+  Fix: either rename the link to match an existing node (feature folder, pattern
+       heading in patterns.md, or entity heading in data-model.md), or create
+       the target node. Run \`get_backlinks(slug)\` via the MCP server to see
+       what cites a node before renaming it."
+  elif [ -n "$result" ] && [[ "$result" == ERROR:* ]]; then
+    # The graph checker is present but failed to run — surface that as a
+    # violation so invariant 8 isn't silently disabled when the graph code
+    # itself has drifted (CR cycle-2 Major).
+    add_violation "[stop-lint] invariant 8 (wiki-link resolution) couldn't run because the
+  graph cache helper failed. Wiki-links are NOT being checked this turn.
+  Detail: ${result#ERROR:}
+  Fix: investigate why \`extensions/sdd-mcp-server/queries/_graph_cache.py\`
+       can't be imported / can't build the graph. Common causes: a syntax error
+       in a recent edit, a missing dependency, or a malformed .sdd/ tree that
+       trips the walker. The other 8 invariants still ran."
+  fi
+}
+
+# ============================================================
 # Run all checks. Each adds to $violations on drift; nothing exits
 # early — we want the user to see the whole picture in one pass.
 # ============================================================
@@ -465,6 +622,8 @@ check_duplicate_ids
 check_decisions_append_only
 check_manifest_json
 check_ticked_rows_have_answers
+check_wiki_links_resolve
+check_no_nul_bytes
 
 # Happy path: no violations → silent allow.
 [ -z "$violations" ] && exit 0

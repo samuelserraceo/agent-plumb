@@ -5,9 +5,9 @@ tag: BUILD-TASK
 title: "Build a task"
 short_label: "Task"
 steps:
-  - { id: test, action: write_failing_test_for_task_N, field: "tests/task-NNN.*" }
-  - { id: code, action: write_code_make_test_green_keep_others_green, field: "src" }
-  - { id: green, action: mark_task_status_GREEN_commit_atomic, field: "BUILD.task-N.status" }
+  - { id: test, action: "write the failing test for this task (RED required before code)", field: "tests/task-NNN.*" }
+  - { id: code, action: "write the code that makes the new test pass (GREEN) without breaking other tests", field: "src" }
+  - { id: green, action: "mark the task GREEN in spec.md and commit (one task = one commit)", field: "BUILD.task-N.status" }
 used_by: [feature]
 references: [acceptance-criteria, plan-decompose]
 touches: []

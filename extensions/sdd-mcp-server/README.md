@@ -16,7 +16,7 @@ Old way (per question): three file reads → 15–35 KB of context.
 
 New way (per question): one query → ~200 B of context.
 
-That's ~99% less context per question. Across a working session, the documented saving is 40–60% of the per-session token budget — money + room for longer conversations + faster turns.
+That's ~99% less context per question. Across a working session, the saving is **96.6% measured aggregate over a 3-question script run against a real `.sdd/` tree** (Apr 2026 verification). The older walkthrough's "40-60% across-session" figure factored in non-MCP work (file edits, wireframes) — both are honest, the smaller one is the right framing across a real session that mixes both kinds of work.
 
 The trade is: you have to enable the server once. After that it just runs.
 
@@ -56,7 +56,9 @@ Add this snippet to `.mcp.json` in your project root (or `~/.claude.json` for us
 
 Replace the path with where you cloned this repo. Restart Claude Code.
 
-## The 6 queries
+## The 9 queries
+
+Six original queries + three v1.0 graph-traversal queries. Wiki-links `[[slug]]` in `.sdd/` markdown become a navigable graph; `get_backlinks` / `get_neighbours` / `search_within` query that graph without grep.
 
 | Query | What it answers |
 |---|---|
@@ -66,6 +68,9 @@ Replace the path with where you cloned this repo. Restart Claude Code.
 | `get_references` | Who else mentions this feature/action/playbook? |
 | `get_decisions_since` | What was decided after this date? |
 | `search` | Semantic search over `.sdd/` (opt-in — see below). |
+| `get_backlinks` | Which files cite `[[slug]]`? (v1.0 graph layer) |
+| `get_neighbours` | What's adjacent to `[[slug]]` in the graph? (v1.0) |
+| `search_within` | Bounded semantic search over a slug's graph neighbourhood (v1.0) |
 
 Detailed shapes, sample requests, and sample responses live in [`docs/query-reference.md`](docs/query-reference.md).
 

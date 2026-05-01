@@ -471,7 +471,9 @@ class ProtocolShimTests(_FixtureBase):
         self.assertIn("serverInfo", resp["result"])
         self.assertEqual(resp["result"]["serverInfo"]["name"], "sdd-mcp-server")
 
-    def test_mcp_tools_list_includes_all_six(self):
+    def test_mcp_tools_list_includes_all_nine(self):
+        # v1.0 — three new graph-traversal queries land alongside the original 6:
+        # get_backlinks, get_neighbours, search_within. (Tier 3 synthesize is v1.1.)
         resp = handle_message({"jsonrpc": "2.0", "id": 2, "method": "tools/list"})
         names = {t["name"] for t in resp["result"]["tools"]}
         self.assertEqual(
@@ -483,6 +485,9 @@ class ProtocolShimTests(_FixtureBase):
                 "get_references",
                 "get_decisions_since",
                 "search",
+                "get_backlinks",
+                "get_neighbours",
+                "search_within",
             },
         )
 

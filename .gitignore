@@ -2,3 +2,11 @@
 *.bak
 node_modules/
 /.claude/
+
+# Local Obsidian vault state (templates/.obsidian/ is shipped; root .obsidian/ is per-user)
+/.obsidian/
+# Stale per-project graph cache that the test suite occasionally writes
+# into the extension dir. Narrowed (CR cycle-9): previously ignored the
+# whole `.sdd/` subtree which would have hidden any legitimate file added
+# under the extension. Only the cache dir is a test artefact.
+/extensions/sdd-mcp-server/.sdd/.cache/

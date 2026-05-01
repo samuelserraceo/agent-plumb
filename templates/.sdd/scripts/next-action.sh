@@ -101,12 +101,35 @@ def emit(d):
     sys.stdout.write("\n")
 
 # Read spec.md.
+# D1 (stress-test) — catch UnicodeDecodeError so a UTF-16 spec.md (Windows
+# editor, `iconv -t UTF-16`) gives a plain-English error instead of a
+# Python traceback.
+# D5 (stress-test) — strip a leading UTF-8 BOM (﻿, written by Notepad
+# on Windows) so the [PHASE: X] line on row 1 is recognised. Without this
+# the script reports "no [PHASE: X] line found" when there is one.
 try:
     with open(spec_path, encoding="utf-8") as f:
-        spec_lines = f.read().split("\n")
+        spec_text = f.read()
 except OSError as e:
     sys.stderr.write(json.dumps({"error": f"cannot read spec: {e}"}) + "\n")
     sys.exit(1)
+except UnicodeDecodeError:
+    sys.stderr.write(json.dumps({
+        "error": "spec.md isn't UTF-8 — re-save it as UTF-8 (most editors offer "
+                 "'Save As → UTF-8'). The framework's tools and the agent both "
+                 "expect UTF-8."
+    }) + "\n")
+    sys.exit(1)
+if spec_text.startswith("﻿"):
+    spec_text = spec_text[1:]
+# CR cycle-6 Critical — normalise CRLF/CR endings before split. Windows-saved
+# files (Notepad, GitBash on Windows, sed -i on a CRLF source) leave \r at
+# every line tail; later string equality checks like `line == target_heading`
+# silently never match, and the script reports "no open [ ] step in PHASE: X"
+# even when there ARE open steps. That returns a transition signal, which the
+# agent then mistakes for "phase done" — drift-by-line-ending.
+spec_text = spec_text.replace("\r\n", "\n").replace("\r", "\n")
+spec_lines = spec_text.split("\n")
 
 # 1. Find [PHASE: X] line.
 phase = None

@@ -1,27 +1,35 @@
-"""playwright-explorer MCP server — scaffold + protocol surface only.
+"""playwright-explorer MCP server.
 
-⚠️ STATUS: scaffold (v0.13.x). The agentic Playwright-driving logic is
-deferred to a follow-up SPEC. Calling the `explore` query today returns
-a `{"deferred": ...}` response with a pointer at the open work.
+Exposes three tools over JSON-RPC stdio:
 
-Once the follow-up SPEC ships:
+  - `explore`           — drive a deployed feature URL through 8
+                          edge-case categories, return findings.
+  - `summarise_findings` — turn raw findings into the edge-case-sweep
+                          add/drop/later triage shape.
+  - `report_status`     — return stats from the last `explore` run
+                          (or `{idle: true}` if nothing has run yet).
 
-  - `explore` runs the actual exploration loop (LLM picks inputs,
-    Playwright drives the browser, findings collected)
-  - `summarise_findings` turns raw findings into the edge-case-sweep
-    `add` / `drop` / `later` triage shape
-  - `report_status` reports cost / actions used / findings count
-    midway through long runs
+The server composes one LLMDriver + one BrowserDriver per `explore`
+call. By default, drivers are built from the call args:
 
-Until then this server is a deliberate stub: it registers, accepts
-JSON-RPC tool/call requests on stdio, and returns structured "deferred"
-errors so callers know the surface exists but isn't backed yet.
+    {
+      "url": "https://stage.example.com/feature",
+      "spec_path": "/abs/path/.sdd/features/001-x/spec.md",
+      "provider": {"endpoint": "...", "model": "...", "auth_env": "OPENAI_API_KEY"},
+      "auth_cookie": {"name": "session", "value": "...", "domain": "stage.example.com", "path": "/"},
+      "max_llm_calls": 50,
+      "max_browser_actions": 200,
+      "cost_limit_usd": 1.00,
+      "headless": true,
+      "viewport": {"width": 390, "height": 844}
+    }
+
+Tests substitute `_explore_factory` to inject mock drivers; this is
+the test seam mentioned in #84 AC7.
 
 Run from extensions/playwright-explorer/:
 
     python3 server.py        # stdio MCP loop
-
-Same protocol shape as extensions/sdd-mcp-server/.
 """
 
 from __future__ import annotations
@@ -30,29 +38,45 @@ import json
 import os
 import sys
 import traceback
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional, Tuple
+
+from drivers import (
+    BrowserDriver,
+    HttpLLMDriver,
+    LLMDriver,
+)
+from explorer import explore as _run_explore, summarise_findings as _summarise
 
 
 SERVER_NAME = "sdd-playwright-explorer"
-SERVER_VERSION = "0.0.1-scaffold"
+SERVER_VERSION = "1.0.0"
 
-# --- Tool registry -----------------------------------------------------------
+# Last run's stats — populated by `explore`, read by `report_status`.
+_LAST_RUN: Dict[str, Any] = {"idle": True}
+
+
+# -- Tool registry ------------------------------------------------------------
 
 TOOLS = {
     "explore": {
         "description": (
             "Drive a deployed feature URL via Playwright + an LLM, looking "
-            "for edge cases the spec author didn't think to test. Returns a "
-            "list of findings flagged as 'covered by current ACs' or 'NEW'. "
-            "STATUS: scaffold; agentic logic deferred (see README)."
+            "for edge cases the spec author didn't think to test. Returns "
+            "structured findings with reproduction steps and a wiki-link "
+            "suggestion for new acceptance criteria."
         ),
         "inputSchema": {
             "type": "object",
             "properties": {
                 "url": {"type": "string", "description": "Deployed feature URL to explore"},
                 "spec_path": {"type": "string", "description": "Path to feature spec.md"},
+                "provider": {"type": "object", "description": "LLM endpoint + model config"},
+                "auth_cookie": {"type": "object", "description": "Optional cookie for authed pages"},
                 "max_llm_calls": {"type": "integer", "default": 50},
                 "max_browser_actions": {"type": "integer", "default": 200},
+                "cost_limit_usd": {"type": "number", "default": 1.00},
+                "headless": {"type": "boolean", "default": True},
+                "viewport": {"type": "object"},
             },
             "required": ["url", "spec_path"],
         },
@@ -60,9 +84,9 @@ TOOLS = {
     "summarise_findings": {
         "description": (
             "Turn a raw findings list (from `explore`) into the edge-case-sweep "
-            "triage shape: each finding gets a category, severity, and "
-            "proposed-AC text the user can `add` / `drop` / `later`. "
-            "STATUS: scaffold."
+            "triage shape: each finding becomes a candidate with a category, "
+            "severity, proposed AC sentence, and [[ac:<slug>]] wiki-link the "
+            "user can `add` / `drop` / `later`."
         ),
         "inputSchema": {
             "type": "object",
@@ -74,9 +98,10 @@ TOOLS = {
     },
     "report_status": {
         "description": (
-            "Report current run status: LLM calls used / budget, browser "
-            "actions used / budget, findings collected so far. "
-            "STATUS: scaffold."
+            "Report the last explore run's stats: LLM calls used, browser "
+            "actions used, estimated cost, halt reason, attempts per "
+            "category, findings counts. Returns `{idle: true}` if no run "
+            "has happened yet in this server session."
         ),
         "inputSchema": {
             "type": "object",
@@ -86,31 +111,107 @@ TOOLS = {
 }
 
 
-def _deferred_response(query_name: str) -> Dict[str, Any]:
-    return {
-        "deferred": True,
-        "query": query_name,
-        "status": "scaffold — agentic implementation pending follow-up SPEC",
-        "next": (
-            "Open via `/start \"Playwright-explorer agentic implementation\"` "
-            "to start the SPEC. The MCP protocol surface is in place; the "
-            "implementation fills in the explore loop + LLM provider + "
-            "Playwright driver."
-        ),
-        "see": "extensions/playwright-explorer/README.md",
+# -- Driver factory (test seam) -----------------------------------------------
+
+def _build_default_drivers(args: Dict[str, Any]) -> Tuple[LLMDriver, BrowserDriver]:
+    """Default factory: HttpLLMDriver + PlaywrightBrowserDriver from args.
+
+    Imports the Playwright driver lazily so the import doesn't fail
+    when playwright isn't installed (tests use a mock factory).
+    """
+    provider = args.get("provider") or {}
+    endpoint = provider.get("endpoint") or ""
+    model = provider.get("model") or ""
+    auth_env = provider.get("auth_env") or None
+    if not endpoint or not model:
+        raise ValueError(
+            "explore: provider.endpoint + provider.model are required for live runs. "
+            "Configure parameters.playwright_explorer in .sdd/config.md."
+        )
+    llm = HttpLLMDriver(endpoint=endpoint, model=model, auth_env=auth_env)
+    # Lazy import — keeps the test path free of playwright as a hard dep.
+    from drivers.browser import PlaywrightBrowserDriver
+    browser = PlaywrightBrowserDriver(
+        auth_cookie=args.get("auth_cookie"),
+        headless=bool(args.get("headless", True)),
+        viewport=args.get("viewport"),
+    )
+    return llm, browser
+
+
+# Tests overwrite this to inject mock drivers without touching the dispatch.
+_explore_factory: Callable[[Dict[str, Any]], Tuple[LLMDriver, BrowserDriver]] = _build_default_drivers
+
+
+# -- Tool dispatch ------------------------------------------------------------
+
+def _safe_int(val: Any, default: int) -> int:
+    """Convert val to int; return default on None / non-numeric input."""
+    try:
+        return int(val) if val is not None else default
+    except (TypeError, ValueError):
+        return default
+
+
+def _safe_float(val: Any, default: float) -> float:
+    try:
+        return float(val) if val is not None else default
+    except (TypeError, ValueError):
+        return default
+
+
+def _do_explore(args: Dict[str, Any]) -> Dict[str, Any]:
+    global _LAST_RUN
+    try:
+        llm, browser = _explore_factory(args)
+    except Exception as exc:
+        return {"error": f"failed to build drivers: {exc}"}
+    try:
+        result = _run_explore(
+            url=args.get("url") or "",
+            spec_path=args.get("spec_path") or "",
+            llm=llm,
+            browser=browser,
+            max_llm_calls=_safe_int(args.get("max_llm_calls"), 50),
+            max_browser_actions=_safe_int(args.get("max_browser_actions"), 200),
+            cost_limit_usd=_safe_float(args.get("cost_limit_usd"), 1.00),
+        )
+    except ValueError as exc:
+        return {"error": str(exc)}
+    _LAST_RUN = {
+        "idle": False,
+        "found": result["found"],
+        "uncovered": result["uncovered"],
+        "stats": result["stats"],
     }
+    return result
+
+
+def _do_summarise(args: Dict[str, Any]) -> Dict[str, Any]:
+    findings = args.get("findings")
+    if not isinstance(findings, list):
+        return {"error": "summarise_findings: `findings` must be a list"}
+    return _summarise(findings)
+
+
+def _do_report_status(_args: Dict[str, Any]) -> Dict[str, Any]:
+    return dict(_LAST_RUN)
+
+
+_DISPATCH = {
+    "explore": _do_explore,
+    "summarise_findings": _do_summarise,
+    "report_status": _do_report_status,
+}
 
 
 def _dispatch(name: str, args: Dict[str, Any]) -> Dict[str, Any]:
-    if name not in TOOLS:
+    if name not in _DISPATCH:
         return {"error": f"unknown query '{name}' — try one of: {', '.join(sorted(TOOLS))}"}
-    # Until the follow-up SPEC lands, every query returns a deferred response.
-    # The shape of the response is the contract; the contents are what gets
-    # filled in later.
-    return _deferred_response(name)
+    return _DISPATCH[name](args)
 
 
-# --- MCP-flavoured handlers --------------------------------------------------
+# -- MCP-flavoured handlers ---------------------------------------------------
 
 def _handle_initialize(req: Dict[str, Any]) -> Dict[str, Any]:
     return {
@@ -158,10 +259,7 @@ def handle_message(req: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     response. Supports the simplified `{"query": ..., "args": ...}` path
     (same as sdd-mcp-server) for callers that don't speak full MCP."""
     if "query" in req and "method" not in req:
-        # Simplified path — always returns a result (this is our own
-        # convention, not JSON-RPC, so notifications don't apply).
-        result = _dispatch(req.get("query"), req.get("args", {}) or {})
-        return result
+        return _dispatch(req.get("query"), req.get("args", {}) or {})
     method = req.get("method", "")
     is_notification = "id" not in req
     if method == "initialize":
@@ -170,8 +268,6 @@ def handle_message(req: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         return _handle_tools_list(req)
     if method == "tools/call":
         return _handle_tools_call(req)
-    # Common MCP notification: notifications/initialized has no id and
-    # expects no response.
     if is_notification:
         return None
     return {
@@ -197,8 +293,6 @@ def main():
             resp = handle_message(req)
         except Exception:
             resp = {"error": traceback.format_exc().splitlines()[-1]}
-        # Notifications return None — JSON-RPC says we MUST NOT respond
-        # to them, so skip the write and continue the loop.
         if resp is None:
             continue
         sys.stdout.write(json.dumps(resp) + "\n")

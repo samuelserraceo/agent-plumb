@@ -1642,21 +1642,87 @@ rm -rf "$d"
 
 # ============================================================
 # T51 — /start rejects unknown playbook with plain-English error
-#   B-1 only has `feature`. Asking for /start --playbook=bug should
-#   produce a plain-English message, NOT a bash stack trace.
+#   `idea` and `question` playbooks aren't shipped yet — asking for
+#   /start --playbook=idea should produce a plain-English message,
+#   NOT a bash stack trace.
+#   v1.0 step 2: bug.md NOW EXISTS, so the legacy "bug is coming
+#   in a future release" branch was retired. This test now uses
+#   `idea` to keep proving the future-release error path works.
 # ============================================================
 note "T51: /start rejects unknown playbook with plain-English error"
 d=$(mkproj_v08)
-cd "$d"
-out=$(bash "$START_SH" --playbook=bug "fix something" 2>&1) && ec=0 || ec=$?
-cd - >/dev/null
+cd "$d" || { bad "T51 cannot cd into mkproj output" "$d"; rm -rf "$d"; }
+out=$(bash "$START_SH" --playbook=idea "scratch a thought" 2>&1) && ec=0 || ec=$?
+cd - >/dev/null || true
 rm -rf "$d"
-# Expect non-zero exit AND plain-English message mentioning bug + Phase C
-if [ "$ec" -ne 0 ] && echo "$out" | grep -qiE 'phase c|coming|use.*feature'; then
+# Expect non-zero exit AND plain-English message mentioning idea + future
+if [ "$ec" -ne 0 ] && echo "$out" | grep -qiE 'future|coming|use.*feature'; then
   ok "T51 unknown playbook rejected with plain-English error"
 else
   bad "T51 wrong error or accepted unknown playbook" "exit=$ec; out='$out'"
 fi
+
+# ============================================================
+# T130 — bug.md playbook ships in v1.0
+#   /start --playbook=bug "fix the typo" should scaffold under
+#   bugs/<NNN>-<slug>/ with the 5-section bug SPEC. Closes #87 / step 2.
+# ============================================================
+note "T130: bug.md playbook scaffolds correctly via --playbook=bug"
+d=$(mkproj_v08)
+cd "$d" || { bad "T130 cannot cd into mkproj output" "$d"; rm -rf "$d"; }
+out=$(bash "$START_SH" --playbook=bug "magic-link 500" 2>&1) && ec=0 || ec=$?
+cd - >/dev/null || true
+if [ "$ec" -eq 0 ] \
+   && [ -d "$d/.sdd/bugs/001-magic-link-500" ] \
+   && [ -f "$d/.sdd/bugs/001-magic-link-500/spec.md" ] \
+   && grep -q '^### action: bug-problem' "$d/.sdd/bugs/001-magic-link-500/spec.md" \
+   && grep -q '^### action: bug-repro' "$d/.sdd/bugs/001-magic-link-500/spec.md" \
+   && grep -q '^### action: bug-root-cause' "$d/.sdd/bugs/001-magic-link-500/spec.md" \
+   && grep -q '^### action: bug-fix' "$d/.sdd/bugs/001-magic-link-500/spec.md" \
+   && grep -q '^### action: bug-regression-test' "$d/.sdd/bugs/001-magic-link-500/spec.md"; then
+  ok "T130 bug.md scaffolded with all 5 SPEC actions"
+else
+  bad "T130 bug.md scaffold incomplete" "exit=$ec; spec=$(cat "$d/.sdd/bugs/001-magic-link-500/spec.md" 2>/dev/null | head -20)"
+fi
+rm -rf "$d"
+
+# ============================================================
+# T131 — `/start [BUG] "..."` auto-routes to bug.md without --playbook
+#   The user-friendly entry path: any `/start` whose title starts
+#   with `[BUG]` (case-insensitive) auto-resolves to the bug playbook
+#   and strips the prefix from the slug. Closes AC4 of #87.
+# ============================================================
+note "T131: /start [BUG] prefix auto-routes to bug playbook"
+d=$(mkproj_v08)
+cd "$d" || { bad "T131 cannot cd into mkproj output" "$d"; rm -rf "$d"; }
+out=$(bash "$START_SH" "[BUG] confirm-link typo" 2>&1) && ec=0 || ec=$?
+cd - >/dev/null || true
+if [ "$ec" -eq 0 ] \
+   && [ -d "$d/.sdd/bugs/001-confirm-link-typo" ] \
+   && grep -q "playbook = bug" <<< "$out"; then
+  ok "T131 [BUG] prefix auto-routes + strips prefix from slug"
+else
+  bad "T131 [BUG] auto-route failed" "exit=$ec; out='$out'; expected dir bugs/001-confirm-link-typo/"
+fi
+rm -rf "$d"
+
+# ============================================================
+# T131b — lowercase `[bug]` prefix is also case-insensitively routed
+#   The doctrine says case-insensitive; pin it as a regression test.
+# ============================================================
+note "T131b: /start [bug] (lowercase) prefix also auto-routes"
+d=$(mkproj_v08)
+cd "$d" || { bad "T131b cannot cd into mkproj output" "$d"; rm -rf "$d"; }
+out=$(bash "$START_SH" "[bug] another typo" 2>&1) && ec=0 || ec=$?
+cd - >/dev/null || true
+if [ "$ec" -eq 0 ] \
+   && [ -d "$d/.sdd/bugs/001-another-typo" ] \
+   && grep -q "playbook = bug" <<< "$out"; then
+  ok "T131b lowercase [bug] prefix also auto-routes"
+else
+  bad "T131b lowercase [bug] auto-route failed" "exit=$ec; out='$out'"
+fi
+rm -rf "$d"
 
 # ============================================================
 # T52 — pre-commit-rules BLOCKS when an active action's
@@ -6238,6 +6304,85 @@ if [ "$malformed_passes" -eq "$total_payloads" ]; then
   ok "T121-malformed-resolver settings.sh fails closed on $total_payloads/$total_payloads malformed payloads"
 else
   bad "T121-malformed-resolver settings.sh trusted at least one malformed payload" "passes=$malformed_passes/$total_payloads"
+fi
+
+# T132 — refactor.md playbook ships in v1.0 (closes #85, step 3)
+#   /start --playbook=refactor "extract atomic-write" scaffolds under
+#   refactors/<NNN>-<slug>/ with the 4-section SPEC: refactor-scope,
+#   regression-coverage, refactor-approach, minimal-diff-verify.
+# ============================================================
+note "T132: refactor.md playbook scaffolds correctly via --playbook=refactor"
+d=$(mkproj_v08)
+cd "$d" || { bad "T132 cannot cd into mkproj output" "$d"; rm -rf "$d"; }
+out=$(bash "$START_SH" --playbook=refactor "extract atomic-write helper" 2>&1) && ec=0 || ec=$?
+cd - >/dev/null || true
+spec="$d/.sdd/refactors/001-extract-atomic-write-helper/spec.md"
+# Assert EXACTLY 4 actions in the SPEC stage AND in the documented
+# order (refactor-scope → regression-coverage → refactor-approach →
+# minimal-diff-verify). The flow is order-sensitive: regression-coverage
+# must happen before approach, minimal-diff-verify must close the
+# section. CR cycle-5/8/9: scoped to SPEC phase only — BUILD/SHIP have
+# their own action: headings that would otherwise trip this assertion.
+expected_order="refactor-scope
+regression-coverage
+refactor-approach
+minimal-diff-verify"
+# Slice spec body between '## PHASE: SPEC' and the next phase boundary.
+# awk emits only lines inside that slice, then we extract action: tokens.
+actual_order=$(awk '
+  /^## PHASE: SPEC[[:space:]]*$/ { in_spec=1; next }
+  /^## PHASE: / && in_spec { exit }
+  in_spec && /^### action: / { sub(/^### action: /, ""); print }
+' "$spec" 2>/dev/null || echo "")
+if [ "$ec" -eq 0 ] \
+   && [ -f "$spec" ] \
+   && [ "$actual_order" = "$expected_order" ]; then
+  ok "T132 refactor.md scaffolded with exactly 4 SPEC actions in correct order"
+else
+  bad "T132 refactor.md scaffold order mismatch" "exit=$ec; expected=[$expected_order]; actual=[$actual_order]"
+fi
+rm -rf "$d"
+
+# ============================================================
+# T133 — graph-integrity: wiki-links in fenced blocks + inline code spans
+#   are NOT walked as real edges (closes #26 / step 4 — the framework's
+#   own action prose has many `[[X]]` documentation examples that
+#   shouldn't trip the graph-integrity CI gate).
+# ============================================================
+note "T133: graph cache skips wiki-links inside fenced blocks + inline code"
+d=$(mktemp -d) || { bad "T133 cannot mktemp" "mktemp failed"; exit 1; }
+mkdir -p "$d/.sdd/features/001-real" "$d/.sdd/.cache" "$d/extensions/sdd-mcp-server" 2>/dev/null
+cp -r "$FRAMEWORK_ROOT/extensions/sdd-mcp-server/queries" "$d/extensions/sdd-mcp-server/" 2>/dev/null
+cat > "$d/.sdd/features/001-real/spec.md" <<'EOF'
+# 001-real
+
+This is a doc paragraph showing a wiki-link example: `[[pattern:fake-pattern]]` should not be picked up.
+
+```markdown
+This fenced example also has [[pattern:another-fake]] that must not count.
+```
+
+A real wiki-link OUTSIDE code is fine: [[001-real]] (resolves to this feature).
+EOF
+result=$(PYTHONPATH="$d/extensions/sdd-mcp-server" python3 - "$d" <<'PYEOF' 2>&1 || echo "PYERR:$?"
+import os, sys
+proj = sys.argv[1]
+from queries import _graph_cache
+g = _graph_cache.build(proj)
+broken = [e for e in _graph_cache.find_broken_edges(g) if e.get("kind") == "wiki-link"]
+real_edges = [e for e in g.get("edges", []) if e.get("kind") == "wiki-link"]
+print(f"broken={len(broken)} real={len(real_edges)} nodes={len(g.get('nodes', []))}")
+for e in real_edges:
+    print(f"  edge: line={e['from_line']} raw={e['raw']} resolved={e.get('resolved')}")
+PYEOF
+)
+rm -rf "$d"
+# Expected: 1 real edge (the [[001-real]] outside code), 0 broken (the
+# fake-pattern inside inline code + fenced block were skipped).
+if echo "$result" | grep -qE '^broken=0 real=1 '; then
+  ok "T133 graph cache correctly skips wiki-links in fenced + inline-code spans"
+else
+  bad "T133 graph cache leaked wiki-links from code blocks" "$result"
 fi
 
 # ============================================================
