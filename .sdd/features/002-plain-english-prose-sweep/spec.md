@@ -99,7 +99,7 @@ Approval row left [ ] — same flow as §5; Sam ticks at approval-pass time.
 
 ### action: dependencies
 
-- [ ] deps: draft external services + pricing math scaled to success-volume targets
+- [x] deps: **No new dependencies.** Existing framework dependencies cover this feature: `bash` (lint script), `grep` / `awk` (text scanning), `python3` + `PyYAML` (frontmatter parsing if needed — likely just grep is enough). Cost: $0/month. Pricing math: N/A — no external service calls, no LLM tokens, runs entirely on local + CI machines.
 
 ### action: out-of-scope
 
