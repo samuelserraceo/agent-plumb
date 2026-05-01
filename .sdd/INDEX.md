@@ -1,15 +1,22 @@
 **Active:** features/001-tier-3-llm-driven-synthesis
 **Playbook:** feature
-**Active blocker:** §1 (first action: problem)
+**Active blocker:** SHIP (final stretch — push PR + CR cycle + admin-merge)
 # SDD framework — INDEX
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
 
 ## In flight
-- features/001-tier-3-llm-driven-synthesis — Tier 3 LLM-driven synthesis (PHASE: SPEC)
+- features/001-tier-3-llm-driven-synthesis — Tier 3 LLM-driven synthesis (PHASE: SHIP — PR pending)
 
-_(no work items in flight — v1.0 shipped via 7 graph-first PRs walked through CR convergence; v1.1 work begins under SDD ceremony from this point forward.)_
+## Pending production verification
+
+After Tier 3 first-prod deploy, walk these `[PROD-ONLY]` ACs manually per §12 of the [[001-tier-3-llm-driven-synthesis]] spec:
+
+- **AC18 (T26)** — Real-provider naturalness check. Against your live Ollama+Gemma VPS, ask one of the §3 stories' questions and confirm the answer (a) passes the cite-check mechanically and (b) reads naturally to you as a human reviewer. *Naturalness is your judgment; cite-check is mechanical.*
+- **AC19 (T27)** — Real-provider rate-limit response shape matches what AC#12 mocks. Manual confirmation against actual Ollama behaviour, once.
+
+Tick each as `[x] PROD-VERIFIED` in this list once walked. If either fails in prod, file a bug task back to BUILD.
 
 ## Shipped via ad-hoc PRs (pre-self-host)
 

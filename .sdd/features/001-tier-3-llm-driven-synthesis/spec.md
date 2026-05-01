@@ -544,11 +544,11 @@ All §4 constraints have a mapped AC. Plan-decompose coverage check passes pre-e
 
 ### action: verify-prod-only-acs
 
-- [ ] collect: list every [PROD-ONLY] AC in the feature into INDEX.md `## Pending production verification` block, so Sam can walk them after first deploy
+- [x] collect: T26 + T27 listed in INDEX.md ## Pending production verification block; Sam walks both manually after first prod deploy per §12. Each ticks as PROD-VERIFIED in INDEX once walked. List [PROD-ONLY] AC in the feature into INDEX.md `## Pending production verification` block, so Sam can walk them after first deploy
 
 ### action: learn
 
-- [ ] lessons: append a block to .sdd/patterns.md capturing cross-feature learnings from the v1.1 Tier 3 build (anti-theatre catches; Ollama+Gemma scope; full-autonomous BUILD; wireframe redesign; setup-help-needed)
+- [x] lessons: appended block to .sdd/patterns.md capturing cross-feature learnings from the v1.1 Tier 3 build (anti-theatre catches; Ollama+Gemma scope; full-autonomous BUILD; wireframe redesign; setup-help-needed)
 
 ### action: push-pr
 
