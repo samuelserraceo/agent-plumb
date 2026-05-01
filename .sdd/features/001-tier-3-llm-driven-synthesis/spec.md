@@ -540,7 +540,7 @@ All §4 constraints have a mapped AC. Plan-decompose coverage check passes pre-e
 
 ### action: verify-test-run
 
-- [ ] run: full test suite GREEN locally (framework + MCP unit) before pushing PR
+- [x] run: full test suite GREEN locally — 194/194 framework + 159/159 MCP unit tests passing as of phase-advance commit (90b9cf9) (framework + MCP unit) before pushing PR
 
 ### action: verify-prod-only-acs
 
