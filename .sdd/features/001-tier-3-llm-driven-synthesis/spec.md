@@ -2,7 +2,7 @@
 
 [PHASE: SPEC]
 
-**Active blocker:** §1 (first action: problem)
+**Active blocker:** §2 (success)
 
 ## PHASE: SPEC
 
@@ -10,7 +10,7 @@
 
 - [x] who: agent + Sam (primary in v1.1); future teammates + downstream adopters (later — design must not preclude them)
 - [x] why-now: complex projects need full-picture agent + token efficiency — both co-equal drivers, not one then the other
-- [ ] what-breaks: What breaks (concretely) if it isn't solved?
+- [x] what-breaks: roadmap velocity wall — Sam ends up patching agent-memory issues instead of shipping features
 
 ### action: success
 
