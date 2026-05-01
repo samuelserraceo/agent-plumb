@@ -2,7 +2,7 @@
 
 [PHASE: SPEC]
 
-**Active blocker:** §2 (success)
+**Active blocker:** §3 (user-stories)
 
 ## PHASE: SPEC
 
@@ -14,7 +14,7 @@
 
 ### action: success
 
-- [ ] metric: Pick a metric pattern (volume / speed / quality / engagement) or describe your own. Give a target number AND the current baseline if known.
+- [x] metric: dual co-equal — (1) quality: ≥80% of synthesised answers cite-check correctly on framework corpus (baseline: no synthesis exists today); (2) cost: avg synthesised answer <1 KB (baseline: Tier 2 returns ~5–20 KB raw chunks per question)
 
 ### action: user-stories
 
