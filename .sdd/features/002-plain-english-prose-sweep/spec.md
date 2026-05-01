@@ -125,6 +125,42 @@ Approval row left [ ] — same flow as §5; Sam ticks at approval-pass time.
 
 - [ ] approval: draft the acceptance criteria, run a constraint-coverage check vs §4, iterate, get approval
 
+**Group 1 — Inventory + sweep coverage.**
+
+1. **Audit completes.** A baseline run of `lint-action-prose.sh` against `templates/.sdd/actions/*.md` lists every file with `tag: USER-LED` or `tag: AGENT-LED` in its frontmatter, classifies each as compliant / non-compliant, and reports the count to stderr. → `tests/task-001.sh`
+
+2. **Every qualifying action file has a `**What it looks like:**` block.** After sweep: for every file with `tag: USER-LED` or `tag: AGENT-LED`, `grep -F '**What it looks like:**' file` returns at least one match. → `tests/task-002.sh`
+
+3. **First paragraph cap.** After sweep: for every qualifying file, the first non-frontmatter paragraph is ≤2 sentences AND ≤200 characters total (sentences delimited by `. `, `! `, `? ` followed by capital letter or EOL). → `tests/task-003.sh`
+
+**Group 2 — Lint mechanics.**
+
+4. **Lint script exists and is executable.** `[ -x .sdd/scripts/lint-action-prose.sh ]` returns 0. → `tests/task-004.sh`
+
+5. **Lint passes on swept files (happy path).** `bash .sdd/scripts/lint-action-prose.sh` exits 0 after the sweep is done; stderr is silent on success. → `tests/task-005.sh`
+
+6. **Lint fails on a bad fixture (negative path).** Given a temp action file with `tag: USER-LED` but no `**What it looks like:**` block, the lint exits 1 and stderr contains the file path AND the literal string `What it looks like` to identify which check failed. → `tests/task-006.sh`
+
+7. **Lint fails on a long-first-paragraph fixture.** Given a temp action file with `tag: AGENT-LED` and a >200-character first paragraph, the lint exits 1 and stderr contains the file path AND the literal string `first paragraph` to identify which check failed. → `tests/task-007.sh`
+
+**Group 3 — CI + doctrine integration.**
+
+8. **CI gate wired.** `test/run-framework-test.sh` contains a T-numbered note line referencing `lint-action-prose.sh` AND a call site that exits non-zero if the lint fails. → `tests/task-008.sh`
+
+9. **CLAUDE.md doctrine line.** Both `CLAUDE.md` AND `templates/CLAUDE.md` contain the literal string `lint-action-prose.sh` exactly once each, inside the "Code-quality doctrine" section. → `tests/task-009.sh`
+
+**Group 4 — Don't-break-existing-shape.**
+
+10. **Frontmatter preserved.** After sweep: every action file's YAML frontmatter parses with PyYAML AND contains the original `type:`, `slug:`, `tag:`, `title:`, `steps:`, `used_by:`, `references:`, `touches:`, `trust:`, `budget:`, `requires_user_approval:` fields. No field added or removed; only body prose changed. → `tests/task-010.sh`
+
+11. **Action prompt fields unchanged.** After sweep: for every action file, the frontmatter `prompt:` field (if present in any `steps:` row) is byte-identical to the pre-sweep version. The technical agent-internal prompt that drives `next-action.sh` doesn't change shape — we're rewriting the BODY prose only. → `tests/task-011.sh`
+
+12. **All existing framework tests still pass.** `bash test/run-framework-test.sh` exits 0 (currently 194/194). The sweep doesn't break any moat / scope-guard / graph-integrity check. → `tests/task-012.sh`
+
+**Coverage check vs §4 UX brief constraints (Plan-decompose pre-check):**
+
+§4 was skipped (non-UI feature). No mobile / accessibility / locale constraints to map back. Coverage trivially complete.
+
 ### action: signoff-steps
 
 - [ ] manual-steps: What manual smoke tests do YOU need to do before SHIP, beyond the automated tests? 1-5 bullets.
