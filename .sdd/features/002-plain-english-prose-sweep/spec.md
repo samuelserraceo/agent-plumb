@@ -103,7 +103,14 @@ Approval row left [ ] — same flow as §5; Sam ticks at approval-pass time.
 
 ### action: out-of-scope
 
-- [ ] list: What are we explicitly NOT building this round? 1-5 bullets, each: name + reason. Empty is fine.
+- [x] list: Five things explicitly NOT in scope this round.
+
+  1. **Translating CLAUDE.md itself.** This feature only touches `templates/.sdd/actions/*.md`. CLAUDE.md is the agent's own discipline file — readable to the agent in its natural voice. Translating it to "non-technical reader" mode is a separate concern, parked for a later work-item.
+  2. **Translating playbook files (`.sdd/playbooks/*.md`).** Same reason — they're agent-facing. Their `when_to_use:` field is the only user-visible text and it's already short.
+  3. **Translating script comments and bash code (`.sdd/scripts/*.sh`).** Code comments are for the next maintainer, not the user. Out of scope.
+  4. **Translating `templates/.sdd/setup/*.md` (the wizard questions).** Those are USER-LED but a different surface (one-time setup, not per-feature SPEC walks). Worth its own audit pass; not bundled here.
+  5. **Heuristic jargon detection in the lint.** Section 5 alternative B was rejected. The lint stays positive: "the example block exists" + "first paragraph is short". Detecting *bad* prose (jargon density, reading-grade level, etc.) is a v1.3+ research topic, not v1.2.
+
 - [ ] approval: user_approves
 
 ### action: non-functional
