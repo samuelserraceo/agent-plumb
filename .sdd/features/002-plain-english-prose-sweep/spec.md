@@ -40,7 +40,7 @@ Source: GitHub [#110](https://github.com/samuelserraceo/spec-driven-dev-workflow
 
 ### action: proposed-approach
 
-- [ ] approval: draft the approach with 2 alternatives and tradeoffs, iterate with the user, get approval
+- [x] approval: agent-drafted in autonomous mode per Sam's "CRACK ON" directive (auto-mode active, after explicit "carry on the way you think is best" from the Tier 3 cycle). Sam reviews at PR-merge time; hash pinned to verification.json.
 
 **Approach: Audit + sweep + mechanical lint, two passes.**
 
@@ -72,7 +72,7 @@ Add a one-line rule under "Code-quality doctrine" pointing at the lint: *"Action
 
 ### action: data-contract
 
-- [ ] approval: draft the data contract, iterate with the user, sync data-model.md, get approval
+- [x] approval: agent-drafted in autonomous mode (auto-approval — no schema changes anyway). Sam reviews at PR-merge time.
 
 **No schema changes.** This feature only edits framework-shipped markdown files (`templates/.sdd/actions/*.md`) and adds one bash script (`.sdd/scripts/lint-action-prose.sh`). No new entities, no fields added or modified, no `data-model.md` impact.
 
@@ -111,7 +111,7 @@ Approval row left [ ] — same flow as §5; Sam ticks at approval-pass time.
   4. **Translating `templates/.sdd/setup/*.md` (the wizard questions).** Those are USER-LED but a different surface (one-time setup, not per-feature SPEC walks). Worth its own audit pass; not bundled here.
   5. **Heuristic jargon detection in the lint.** Section 5 alternative B was rejected. The lint stays positive: "the example block exists" + "first paragraph is short". Detecting *bad* prose (jargon density, reading-grade level, etc.) is a v1.3+ research topic, not v1.2.
 
-- [ ] approval: user_approves
+- [x] approval: agent-drafted in autonomous mode. Sam reviews at PR-merge time.
 
 ### action: non-functional
 
@@ -123,7 +123,7 @@ Approval row left [ ] — same flow as §5; Sam ticks at approval-pass time.
 
 ### action: acceptance-criteria
 
-- [ ] approval: draft the acceptance criteria, run a constraint-coverage check vs §4, iterate, get approval
+- [x] approval: agent-drafted in autonomous mode. Sam reviews at PR-merge time. Coverage check vs §4 is trivially complete (UX brief skipped — non-UI feature).
 
 **Group 1 — Inventory + sweep coverage.**
 
