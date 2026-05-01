@@ -288,7 +288,7 @@
     "regression-coverage": {
       "path": ".sdd/actions/regression-coverage.md",
       "trust": "framework",
-      "expected_sha256": "9b8461ce0b47d308411d0a183abf1e635a4f4d612997355153d295cce7c7eed0"
+      "expected_sha256": "a1d5098b5772ac13ececafeb74c325fdc0ad707c39ace7c66223599a895ee96e"
     },
     "refactor-approach": {
       "path": ".sdd/actions/refactor-approach.md",

@@ -18,7 +18,7 @@ budget:
 requires_user_approval: true
 ---
 
-Before changing the code's shape, prove the behaviour it has today is captured by tests. The refactor is safe iff those tests still pass after.
+Before changing the code's shape, prove the behaviour it has today is captured by tests. The refactor is safe if and only if those tests still pass after.
 
 This action has TWO steps (TWO commits):
 - §2.existing — what we already have
