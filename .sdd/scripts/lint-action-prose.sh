@@ -97,6 +97,39 @@ for f in "${TARGETS[@]}"; do
     echo "[lint-action-prose] $f — missing 'What it looks like:' example block (USER-LED/AGENT-LED actions must ship a plain-English example so the agent has a non-jargon model to mirror)" >&2
     violations=$((violations + 1))
   fi
+
+  # Check 2 (T03): first non-frontmatter paragraph ≤200 chars and ≤2 sentences.
+  # Extract: skip frontmatter (--- ... ---), skip blank lines, capture
+  # the FIRST paragraph (run of non-blank lines until next blank line).
+  first_para=$(awk '
+    BEGIN { fm = 0; in_para = 0 }
+    /^---[[:space:]]*$/ {
+      if (!fm_seen) { fm = 1; fm_seen = 1; next }
+      else if (fm) { fm = 0; next }
+    }
+    fm { next }
+    /^[[:space:]]*$/ {
+      if (in_para) exit
+      next
+    }
+    { in_para = 1; print }
+  ' "$f")
+
+  if [ -n "$first_para" ]; then
+    char_count=$(printf '%s' "$first_para" | wc -m | tr -d ' ')
+    # Sentence count: split on `. `, `! `, `? ` followed by EOL or whitespace
+    sent_count=$(printf '%s' "$first_para" | grep -oE '[.!?]+([[:space:]]|$)' | wc -l | tr -d ' ')
+    [ "$sent_count" -eq 0 ] && sent_count=1  # paragraph with no terminator is 1 sentence
+
+    if [ "$char_count" -gt 200 ]; then
+      echo "[lint-action-prose] $f — first paragraph too long ($char_count chars > 200; the opening line shapes the agent's draft tone — keep it short and plain-English)" >&2
+      violations=$((violations + 1))
+    fi
+    if [ "$sent_count" -gt 2 ]; then
+      echo "[lint-action-prose] $f — first paragraph too many sentences ($sent_count > 2; trim to ≤2)" >&2
+      violations=$((violations + 1))
+    fi
+  fi
 done
 
 if [ "$violations" -gt 0 ]; then

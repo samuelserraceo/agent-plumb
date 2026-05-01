@@ -181,8 +181,8 @@ Approval row left [ ] — same flow as §5; Sam ticks at approval-pass time.
 
   - [x] T01 GREEN: `lint-action-prose.sh` v0 with `--inventory` mode landed. 41 qualifying files identified.
   - [x] T02 GREEN: example-block check landed. Lint flags files missing `**What it looks like:**` with file path + check name in stderr.
-  - [ ] T03: extend `lint-action-prose.sh` to assert first paragraph ≤2 sentences AND ≤200 chars. Test: `tests/task-003.sh` runs against 2 fixtures (one short, one long) and asserts only the long one is flagged.
-  - [ ] T04: chmod +x the script + place under `.sdd/scripts/`. Test: `tests/task-004.sh` checks `[ -x .sdd/scripts/lint-action-prose.sh ]`.
+  - [x] T03 GREEN: first-paragraph cap landed (≤200 chars AND ≤2 sentences).
+  - [x] T04 GREEN: script is executable at `.sdd/scripts/lint-action-prose.sh` (chmod +x done in T01).
   - [ ] T05: sweep ALL `templates/.sdd/actions/*.md` files (the actual prose-rewrite). Each file gets the `**What it looks like:**` block + a tightened first paragraph. Test: `tests/task-005.sh` runs the full lint and asserts exit 0 + silent stderr.
   - [ ] T06: lint negative path — bad fixture without the block. Test: `tests/task-006.sh` builds a temp file in /tmp, runs lint with the temp path, asserts exit 1 + stderr contains `What it looks like` + the file path.
   - [ ] T07: lint negative path — long-first-paragraph fixture. Test: `tests/task-007.sh` mirror of T06 with a long paragraph fixture.
