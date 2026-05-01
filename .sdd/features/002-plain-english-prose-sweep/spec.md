@@ -8,7 +8,7 @@
 
 ### action: problem
 
-- [ ] who: Who specifically has this problem? (real persona, not 'users')
+- [x] who: Two real people. (1) Sam — the framework owner, non-technical, drives every SDD spec walk. (2) Future SDD plugin users (Anthropic marketplace candidate per the v1.0 backlog) — assumed non-technical by design. Both rely on the agent's USER-LED questions reading like "what would a smart non-coder ask?", not like a code review.
 - [ ] why-now: Why is it worth solving now?
 - [ ] what-breaks: What breaks (concretely) if it isn't solved?
 
