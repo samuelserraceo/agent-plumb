@@ -9,7 +9,7 @@
 ### action: problem
 
 - [x] who: agent + Sam (primary in v1.1); future teammates + downstream adopters (later — design must not preclude them)
-- [ ] why-now: Why is it worth solving now?
+- [x] why-now: complex projects need full-picture agent + token efficiency — both co-equal drivers, not one then the other
 - [ ] what-breaks: What breaks (concretely) if it isn't solved?
 
 ### action: success
