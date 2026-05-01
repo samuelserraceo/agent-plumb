@@ -552,7 +552,7 @@ All §4 constraints have a mapped AC. Plan-decompose coverage check passes pre-e
 
 ### action: push-pr
 
-- [ ] pr: open PR against main with comprehensive body (problem → approach → ACs → testing → known caveats); link issues #97, #110, #111, #112, #113
+- [x] pr: PR #114 opened against main with comprehensive body (problem → approach → ACs → testing → known caveats); link issues #97, #110, #111, #112, #113
 
 ### action: verify-ci-green
 
