@@ -22,26 +22,43 @@ Mechanical check at the end of SPEC: did we actually shrink the codebase, or did
 **Run this command** in the project root. Detect the base branch first — `main` is the most common but some projects use `master`, `develop`, or a release-line branch — and HALT if neither the base ref nor the merge-base resolves (silent failure here would defeat the safety gate by reporting an empty diff):
 
 ```bash
-# 1. Detect the base branch. Most teams use main; some still use master.
+# 1. Detect the base branch. Try (a) origin/HEAD, (b) common origin
+# branches, (c) common LOCAL branches. The local fallback matters
+# because a fresh project pre-first-push has no `origin/*` refs at
+# all — telling the user to run `git remote set-head origin` would be
+# nonsense before they've pushed anything.
+base_ref=""  # full ref to compare against (e.g. "origin/main" or "main")
 base="$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null \
         | sed 's@^refs/remotes/origin/@@')"
-if [ -z "$base" ]; then
+if [ -n "$base" ]; then
+  base_ref="origin/$base"
+fi
+if [ -z "$base_ref" ]; then
   for candidate in main master develop trunk; do
     if git rev-parse --verify --quiet "origin/$candidate" >/dev/null; then
-      base="$candidate"; break
+      base_ref="origin/$candidate"; break
     fi
   done
 fi
-if [ -z "$base" ]; then
-  echo "ERROR: cannot detect base branch (no origin/HEAD, no main/master/develop/trunk)." >&2
-  echo "       Set it explicitly: git remote set-head origin <branch>" >&2
+if [ -z "$base_ref" ]; then
+  # No origin refs available — fall back to local branches.
+  for candidate in main master develop trunk; do
+    if git rev-parse --verify --quiet "$candidate" >/dev/null; then
+      base_ref="$candidate"; break
+    fi
+  done
+fi
+if [ -z "$base_ref" ]; then
+  echo "ERROR: cannot detect base branch (no origin/HEAD, no origin/main|master|develop|trunk, no local main|master|develop|trunk)." >&2
+  echo "       If you have a remote: git remote set-head origin <branch>" >&2
+  echo "       If you don't yet:    create a base branch (e.g. \`git branch main\` if your work is on a different branch)." >&2
   exit 1
 fi
 
 # 2. Compute the merge-base. If this fails, HALT — don't advance with no signal.
-mb="$(git merge-base HEAD "origin/$base")" || {
-  echo "ERROR: cannot compute merge-base against origin/$base." >&2
-  echo "       Branch may not be tracking the right base, or origin/$base may be missing." >&2
+mb="$(git merge-base HEAD "$base_ref")" || {
+  echo "ERROR: cannot compute merge-base against $base_ref." >&2
+  echo "       Branch may not be tracking the right base, or $base_ref may be missing." >&2
   exit 1
 }
 
