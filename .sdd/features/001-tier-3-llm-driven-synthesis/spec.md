@@ -2,7 +2,7 @@
 
 [PHASE: SPEC]
 
-**Active blocker:** §11 (acceptance-criteria — AGENT-LED, requires user approval)
+**Active blocker:** §12 (signoff-steps)
 
 ## PHASE: SPEC
 
