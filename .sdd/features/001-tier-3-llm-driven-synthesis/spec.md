@@ -2,7 +2,7 @@
 
 [PHASE: SPEC]
 
-**Active blocker:** §12 (signoff-steps)
+**Active blocker:** §13 (wireframe — SKIPPABLE for non-UI features) AND a parallel sweep of §5/§6/§8/§11 to correct the multi-provider drift to Ollama+Gemma-only (v1.1 wizard scope)
 
 ## PHASE: SPEC
 
@@ -332,7 +332,19 @@ All §4 constraints have a mapped AC. Plan-decompose coverage check passes pre-e
 
 ### action: signoff-steps
 
-- [ ] manual-steps: What manual smoke tests do YOU need to do before SHIP, beyond the automated tests? 1-5 bullets.
+- [x] manual-steps: 5 manual smoke tests captured — all 5 must pass before SHIP, on top of the automated AC suite
+
+**Five manual smoke tests (you walk these by hand on a real project before SHIP).**
+
+1. **Walk all 5 §3 stories on a real project.** Type each question into Tier 3 (decision recall, milestone sweep, health review, agent mid-spec lookup, agent /ship lessons synthesis) and read the answers as a real user would. Eye-check that they sound like the knowledgeable-colleague voice from §4 and that the `[[link]]` citations actually make sense in context. Catches naturalness + helpfulness, things automated tests can't measure.
+
+2. **Configure Ollama+Gemma on a fresh project per the README** (the v1.1-supported provider — note: §5/§6 say "user-configured provider" generically; v1.1 wizard supports Ollama+Gemma only — provider-agnosticism is v1.2+). Confirm Tier 3 works end-to-end against your local Ollama instance.
+
+3. **Run the new wizard flow.** `/sdd-setup` on a brand-new directory → walk the Tier 3 questions (Ollama install path, Gemma model name, etc.) → after the wizard finishes, open `config.md` and visually confirm that `parameters.mcp.tier3` has the right values you entered. Verifies the wizard didn't silently drop or corrupt answers.
+
+4. **Click a `[[link]]` citation** in a real chat answer and confirm it lands at the correct spec / pattern / decision in your project. The cite-check is mechanical (covered by AC#1); this manual step verifies the rendering on top of it (the link is actually clickable + jumps where it claims to).
+
+5. **Stress-test the failure paths.** Deliberately break things — unset your Ollama config, point at a non-existent model, corrupt the auth_header — and ask a question. Confirm the error messages read cleanly to a non-technical reader. No stack traces. No jargon. Plain *"Ollama isn't running, run `ollama serve`"* shape.
 
 ### action: wireframe
 
