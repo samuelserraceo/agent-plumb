@@ -8,7 +8,7 @@
 
 ## In flight
 
-_(no work items in flight via SDD-managed flow yet — Phase A items 1-5 ship as ad-hoc PRs first; Phase B starts once `#74` self-host lands and `#42` worktree-aware INDEX.md follows)_
+_(no work items in flight — v1.0 shipped via 7 graph-first PRs walked through CR convergence; v1.1 work begins under SDD ceremony from this point forward.)_
 
 ## Shipped via ad-hoc PRs (pre-self-host)
 
@@ -18,6 +18,7 @@ The framework's history before self-hosting. Each entry is a tagged release; ful
 - **v0.13.4** — chore sweep (plain-English rewording #66 + npm install auto-run #70 + doctrine drift cleanup #73). [PR #75](https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/75).
 - **v0.13.5** — adversarial-review re-run wiring (closes #65). [PR #76](https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/76).
 - **v0.13.6** — five-PR feature pack (#69 / #67 / #68 / #72 / #71). [PRs #77–#82](https://github.com/samuelserraceo/spec-driven-dev-workflow/pulls?q=is%3Apr+is%3Amerged+v0.13.6+).
+- **v1.0.0** — graph-first re-sequencing. Seven PRs through 20 CR cycles: graph foundation [#98](https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/98), branch-derived active [#99](https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/99), Playwright explorer agentic [#100](https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/100) + fast-follow [#102](https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/102), bug.md playbook [#101](https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/101), refactor.md playbook [#103](https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/103), CI graph-integrity [#104](https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/104). Tier 3 LLM-synthesis carved out to v1.1 ([#97](https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/97)). 187 framework tests + 68 MCP unit tests, mutation-verified.
 
 ## Backlog (post-v1.0)
 

@@ -104,7 +104,7 @@
       "trust": "framework"
     }
   },
-  "sdd_version": "0.11.0",
+  "sdd_version": "1.0.0",
   "actions": {
     "acceptance-criteria": {
       "expected_sha256": "72ecddb55208259745786e030aaebfe037470628078a9e9999b5131a28fdb148",

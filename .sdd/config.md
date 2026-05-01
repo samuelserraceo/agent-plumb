@@ -1,6 +1,6 @@
 ---
 type: config
-sdd_version: 0.13.6
+sdd_version: 1.0.0
 playbooks_available: [feature, project, bug, refactor]
 default_playbook: feature
 extensions: {}
@@ -136,7 +136,7 @@ This file is your one knob for telling SDD what's available in this project. The
 
 ## What each switch means (plain English)
 
-### `sdd_version: 0.13.6` (or current ship)
+### `sdd_version: 1.0.0` (or current ship)
 
 Which version of the SDD framework this project was created against. The framework warns on mismatch so you can re-run a migration if you upgrade.
 

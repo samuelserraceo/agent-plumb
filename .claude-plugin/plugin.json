@@ -1,7 +1,7 @@
 {
   "name": "sdd",
   "description": "Spec-Driven Development — opinionated workflow that mechanically refuses commits drifting from approved decisions. Two playbooks (single-feature + multi-feature project), plain-English specs, append-only audit trail, mutation-verified tests.",
-  "version": "0.11.0",
+  "version": "1.0.0",
   "author": {
     "name": "Samuel Serra",
     "email": "hello@samserra.com"
