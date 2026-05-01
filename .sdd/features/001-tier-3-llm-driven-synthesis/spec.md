@@ -44,9 +44,9 @@
 
 **Three concrete moments it produces (approved verbatim, 2026-05-01):**
 
-1. **Sam asks** — *"Why did we pick Postgres for the waitlist?"* → *"Postgres was picked because the v1 schema is small enough to colocate with the app — you flagged this in [[001-waitlist]] about a month ago. Switching to a managed database came up in [[005-pivot]] but you parked it."*
+1. **Sam asks** — *"Why did we pick Postgres for the waitlist?"* → *"Postgres was picked because the v1 schema is small enough to colocate with the app — you flagged this in `[[001-waitlist]]` about a month ago. Switching to a managed database came up in `[[005-pivot]]` but you parked it."*
 2. **Agent asks (mid-SPEC)** — *"Is there already a pattern for retrying failed signups in this project?"* → structured data response (yes/no + citation) the agent reads directly. Same brain, different wrapping for the consumer.
-3. **Sam asks** — *"What's deferred across all my features right now?"* → *"Three things deferred: cookie consent banner ([[002-checkout]]), Stripe webhook retry ([[004-billing]]), import CSV (parked, [[007-onboarding]]). Want me to expand on any of them?"*
+3. **Sam asks** — *"What's deferred across all my features right now?"* → *"Three things deferred: cookie consent banner (`[[002-checkout]]`), Stripe webhook retry (`[[004-billing]]`), import CSV (parked, `[[007-onboarding]]`). Want me to expand on any of them?"*
 
 **Three design choices that produce that feel:**
 
@@ -175,7 +175,7 @@ USD cost guidance lives in §5 §6 informational block, NOT here — the framewo
 
 **Flow 1 — Sam asks a fresh question (cache miss → prose render).** *Implements stories 3, 4, 5.* `/ask` slash → `synthesise(slug, question, format="prose")` → cache lookup (miss) → v1.0 retrieval gathers ~5 chunks → LLM call (token caps enforced via `max_input_tokens_per_call` + `max_total_tokens_per_run`) → cite-check (every `[[link]]` resolves via `_graph_cache.find_node()`) → cache write → prose markdown rendered with inline cites. ~1.5 sec / ~$0.001 (or $0 on Ollama). **Verification path** (T-tests pinned in §11): synthesise on a fixture corpus returns expected cited answers; token caps refuse past thresholds; cache hit returns identical answer without firing the LLM.
 
-**Flow 1 sub-variant — ambiguity surfaced.** Same steps as Flow 1; LLM is prompted to detect conflicting chunks and set `ambiguity: "multi-answer"` with both candidates rather than picking one. Prose renders: *"Two answers — [[001]] says X, [[005]] says Y. Which do you mean?"* **Best-effort prompt design** — verified at SHIP via ~5 representative test cases that the response shape is correct when ambiguity exists in the test corpus. Not enforced over unseen corpora.
+**Flow 1 sub-variant — ambiguity surfaced.** Same steps as Flow 1; LLM is prompted to detect conflicting chunks and set `ambiguity: "multi-answer"` with both candidates rather than picking one. Prose renders: *"Two answers — `[[001]]` says X, `[[005]]` says Y. Which do you mean?"* **Best-effort prompt design** — verified at SHIP via ~5 representative test cases that the response shape is correct when ambiguity exists in the test corpus. Not enforced over unseen corpora.
 
 **Flow 2 — Agent fires a fresh question mid-SPEC (cache miss → structured render).** *Implements stories 1, 2.* Identical to Flow 1's steps 1-6 except invoked via the MCP query directly with `format="structured"`. Returns JSON `{answer, cite_chunks, ambiguity, ok}`. Agent reads `cite_chunks[*].slug` and decides "reuse the pattern instead of inventing." Saves ~20 KB of context that would otherwise go to re-reading specs. **Verification path:** structured shape passes `json.loads`; structured + prose renders from the same `(slug, question)` produce matching `cite_chunks` (no divergence between renderers — proves the "two views, one core call" §5 promise).
 
@@ -429,7 +429,7 @@ All §4 constraints have a mapped AC. Plan-decompose coverage check passes pre-e
 - T30 — Slug sanitisation (regex match before any file read; path-traversal rejected). Test: `tests/test_synthesise_slug_validation.py`. → AC23.
 
 **Sub-test notes folded into existing tasks (no new test files; assertions added to existing tests, added 2026-05-01 from §15 sweep):**
-- T5 / T6 — also assert: question containing `[[…]]` syntax in itself (e.g. *"what does [[001-waitlist]] §5 say?"*) doesn't confuse cite-check on the answer.
+- T5 / T6 — also assert: question containing `[[…]]` syntax in itself (e.g. *"what does `[[001-waitlist]]` §5 say?"*) doesn't confuse cite-check on the answer.
 - T6 — also assert: AI's answer with `[[link]]` inside fenced or inline code spans is correctly skipped (consistent with v1.0 graph cache fence-aware logic, issue #105).
 - T8 / T9 — also assert: two concurrent synthesise() calls with the same key don't corrupt `synthesis.json` (cache write must be atomic — reuse v1.0 tempfile+os.replace pattern from `_graph_cache._save`).
 - T14 — also assert: a config that has NO `parameters.mcp.tier3` block at all (e.g. an old project upgraded without re-running `/sdd-config`) returns the same clean *"Tier 3 not enabled"* shape as `enabled: false`.

@@ -221,8 +221,15 @@ jobs:
           # project would silently mask Block 2 via `|| true` and any
           # new UI file slipping through with no `// spec:` reference
           # would never be flagged. Fail fast instead.
-          if ! printf '' | grep -E -- "$ui_path_re" >/dev/null 2>&1; then
-            echo "::error::[SDD scope-guard] ui_path_re from scope_guard config does not compile as a POSIX ERE: '$ui_path_re'"
+          #
+          # Bug fix (2026-05-01, v1.1 Tier 3 PR): the previous form was
+          #     if ! printf '' | grep -E -- "$pat" >/dev/null 2>&1
+          # which always failed because grep on empty input returns 1
+          # (no match) regardless of pattern validity. Use python re
+          # compile to reliably distinguish "valid but no match" from
+          # "invalid regex". Python is already required for PyYAML.
+          if ! python3 -c "import re, sys; re.compile(sys.argv[1])" -- "$ui_path_re" 2>/dev/null; then
+            echo "::error::[SDD scope-guard] ui_path_re from scope_guard config does not compile as a regex: '$ui_path_re'"
             echo "::error::Fix: check .sdd/config.md scope_guard.file_extensions / ui_dirs for invalid characters."
             exit 1
           fi
