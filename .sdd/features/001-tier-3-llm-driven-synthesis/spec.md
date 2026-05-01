@@ -483,7 +483,7 @@ All §4 constraints have a mapped AC. Plan-decompose coverage check passes pre-e
 **Honesty floor (load-bearing):**
 - [x] T5 GREEN: clean answer flow — synthesise() with valid config returns answer with all `[[…]]` resolving (AC1) → `extensions/sdd-mcp-server/tests/test_synthesise_clean_answer.py` (6/6 · 92/92 MCP · 192/192 framework)
 - [x] T6 GREEN: cite-check rejects invented `[[fake-slug]]` and falls back to raw chunks (AC2) → `extensions/sdd-mcp-server/tests/test_synthesise_citecheck_reject.py` (4/4)
-- [ ] T7 RED: rejected answer NOT cached (AC3) → `extensions/sdd-mcp-server/tests/test_synthesise_no_cache_on_reject.py`
+- [x] T7 GREEN: rejected answer NOT cached (AC3) → `extensions/sdd-mcp-server/tests/test_synthesise_no_cache_on_reject.py` (2/2)
 
 **Cache mechanics:**
 - [ ] T8 RED: cache miss → write → hit returns identical answer without firing AI; <50ms (AC4) → `extensions/sdd-mcp-server/tests/test_synthesise_cache_hit.py`
