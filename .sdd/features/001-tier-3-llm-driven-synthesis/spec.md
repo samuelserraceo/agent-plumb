@@ -4,7 +4,7 @@
 
 **Run mode:** full autonomous (Sam confirmed 2026-05-01 — saved in `feedback_full_autonomous_build.md`). Halt-triggers per CLAUDE.md: test stays RED after 3 attempts · pre-commit blocked · real design gap surfaces in §5/§6 · credential/infra step needs Sam.
 
-**Active blocker:** T4 — brick 007 extension scaffolded with placeholder Tier 3 sub-questions
+**Active blocker:** T5 — clean answer flow (the load-bearing honesty floor; AC1)
 
 ## PHASE: SPEC
 
@@ -478,7 +478,7 @@ All §4 constraints have a mapped AC. Plan-decompose coverage check passes pre-e
 - [x] T1 GREEN: scaffold `synthesise.py` stub + register in MCP REGISTRY → `extensions/sdd-mcp-server/tests/test_synthesise_scaffold.py` (71/71 MCP tests passing; 192/192 framework tests passing)
 - [x] T2 GREEN: `parameters.mcp.tier3` schema in `templates/.sdd/config.md` → `extensions/sdd-mcp-server/tests/test_tier3_config_schema.py` (4/4 T2 · 75/75 MCP · 192/192 framework)
 - [x] T3 GREEN: confirm `data-model.md` Tier3Config + SynthesisCache entries → `extensions/sdd-mcp-server/tests/test_data_model_tier3_entries.py` (6/6 — entries synced during §6 + §15 SPEC work; this test is regression coverage)
-- [ ] T4 RED: brick 007 extension scaffolded with placeholder Tier 3 sub-questions → `extensions/sdd-mcp-server/tests/test_brick_007_tier3_scaffold.py`
+- [x] T4 GREEN: brick 007 extension scaffolded with placeholder Tier 3 sub-questions → `extensions/sdd-mcp-server/tests/test_brick_007_tier3_scaffold.py` (5/5 T4 · 86/86 MCP · 192/192 framework, including T111 records_at format compatibility)
 
 **Honesty floor (load-bearing):**
 - [ ] T5 RED: clean answer flow — synthesise() with valid config returns answer with all `[[…]]` resolving (AC1) → `extensions/sdd-mcp-server/tests/test_synthesise_clean_answer.py`
