@@ -45,3 +45,9 @@ Full handoff archived at `.uat/2026-04-27-phase-B-1.md`.
 Approved Approach A (single-shot RAG with cite-check) plus an exact-match synthesis cache keyed by (question, corpus signature). The wiki-graph picks the documents to feed the model; the model answers with [[link]] citations; the cite-check rejects any answer whose links don't resolve in the graph cache. User-configured provider with cost ceiling — no baked-in defaults. Two render formats (structured for the agent, prose for chat) come out of one shared LLM call. Lazy escalation and pre-computed-at-ship were explicitly considered and rejected (state-dependent shape and broken §3 stories respectively). RLM-style recursion ([Zhang et al., MIT, Dec 2025](https://arxiv.org/abs/2512.24601)) is deferred to v1.2+ as a layer on top of the v1.1 single-shot foundation.
 
 Hash: 2ba64f7fa326e43093413b1fc53f2acf62b9f01ee9a2339035fe7256fc6b17a0
+
+## 2026-05-01T14:44:40Z  [[001-tier-3-llm-driven-synthesis]]  feature/data-contract
+
+Approved the §6 data contract: two new framework-domain entities introduced — SynthesisCache (derived JSON cache at .sdd/.cache/synthesis.json, gitignored, keyed by (question_hash, corpus_signature), invalidated lazily on corpus signature flip) and Tier3Config (parameters.mcp.tier3 config block, opt-in, off by default, no baked-in defaults). data-model.md synced in the same commit with both entities and two new relationships. SQLite-as-cache and question-only-keying alternatives explicitly rejected (foundation 1 and cache-warmth respectively). The contract requires no changes to existing v1.0 graph nodes or query layer — Tier 3 reads them cleanly.
+
+Hash: 5359e2a31bc0b688ca3956cac7625e7e2ff7d6dbf54c55c5b45f66cb1d4864bd

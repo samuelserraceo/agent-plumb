@@ -52,6 +52,20 @@ A framework-runtime script. Lives at `templates/.sdd/scripts/<name>.sh`. Each is
 
 Today: **13 scripts** ship — `advance.sh`, `hash-section.sh`, `load-playbook.sh`, `next-action.sh`, `read-events.sh`, `reapprove.sh`, `resolve-parameters.sh`, `revert-phase.sh`, `settings.sh`, `start.sh`, `validate-sdd-path.sh`, `verify-stage.sh`, `check-setup-answer.sh`. v1.0 adds `scope-guard-config.sh` (item 2, PR #89).
 
+### SynthesisCache
+
+A derived index of cached synthesise() answers. Lives at `.sdd/.cache/synthesis.json` (gitignored — same pattern as the v1.0 graph cache). Source of truth is the corpus + the question history; cache exists purely to make repeat questions instant + free.
+
+Shape: JSON dict keyed by `<sha256(question)>:<corpus_signature>` → `{answer, cite_chunks: [{slug, path, line}, ...], format_seen, ambiguity, created_at}`.
+
+Invalidation: any corpus signature flip (any `.sdd/` markdown change) marks all entries from prior signatures stale; new keys use the new signature so old entries can stay readable until eviction. v1.1 adds this when [[001-tier-3-llm-driven-synthesis]] ships.
+
+### Tier3Config
+
+A config block under `parameters.mcp.tier3` in `templates/.sdd/config.md`. Off by default; opt-in. Required when `enabled: true`: `provider`, `endpoint`, `model`, plus cost ceiling (`max_calls_per_run`, `cost_limit_usd`) and optional `auth_header` with `${ENV_VAR}` indirection.
+
+Same shape pattern as v1.0 `parameters.mcp.semantic_search` and Playwright-explorer config — foundation 3 ("never assume an external service"). v1.1 adds this when [[001-tier-3-llm-driven-synthesis]] ships.
+
 ## Relationships
 
 - **Playbook → Action**: a playbook's `stages` array references action slugs in order.
@@ -59,6 +73,8 @@ Today: **13 scripts** ship — `advance.sh`, `hash-section.sh`, `load-playbook.s
 - **Brick → Action**: a brick's `requires_setup:` field names actions that halt if the brick's answer is deferred (v0.13.6 sub-stage triggering).
 - **Slash command → Script**: each slash command body invokes one or more scripts (e.g. `/start` runs `start.sh`; `/next` runs `next-action.sh`).
 - **Hook → Script**: hooks invoke scripts to validate state at commit time (e.g. `pre-commit-stage-verified.sh` runs `verify-stage.sh`).
+- **Tier3Config → SynthesisCache**: config gates when the cache gets read/written; cache obeys the cost ceiling declared in config.
+- **SynthesisCache → Graph node**: every cached answer's `cite_chunks[*].slug` must resolve to a real graph node (feature / pattern / entity / decision). Cite-check enforces this on every read AND every write.
 
 ## How this differs from a downstream user's data-model.md
 

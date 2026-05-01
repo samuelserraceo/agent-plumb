@@ -2,7 +2,7 @@
 
 [PHASE: SPEC]
 
-**Active blocker:** §6 (data-contract — AGENT-LED, requires user approval)
+**Active blocker:** §7 (flows)
 
 ## PHASE: SPEC
 
@@ -106,7 +106,56 @@ Step 4 — CACHE WRITE         on success (instant, $0)
 
 ### action: data-contract
 
-- [ ] approval: draft the data contract, iterate with the user, sync data-model.md, get approval
+- [x] approval: APPROVED 2026-05-01 — two new framework-domain entities (SynthesisCache + Tier3Config); reads existing graph nodes + v1.0 query layer + corpus signature; data-model.md synced in same commit
+
+**Two new framework-domain entities:**
+
+**SynthesisCache (derived artifact, gitignored)** — lives at `.sdd/.cache/synthesis.json`. Cached answers from past synthesise calls. Invalidates lazily when corpus signature flips. Same shape pattern as v1.0 graph cache.
+
+```json
+{
+  "version": 1,
+  "entries": {
+    "<sha256(question)>:<corpus_signature>": {
+      "answer": "Postgres was picked because…",
+      "cite_chunks": [{"slug": "001-waitlist", "path": "...", "line": 42}],
+      "format_seen": ["structured", "prose"],
+      "ambiguity": null,
+      "created_at": "2026-05-01T14:39:15Z"
+    }
+  }
+}
+```
+
+**Tier3Config (config block in `templates/.sdd/config.md`)** — `parameters.mcp.tier3`. Off by default, opt-in. No baked-in defaults. Same shape as v1.0 `parameters.mcp.semantic_search`.
+
+```yaml
+parameters:
+  mcp:
+    tier3:
+      enabled: false
+      provider: ""              # openai | anthropic | ollama-chat
+      endpoint: ""              # http(s)://host:port
+      model: ""                 # chat model name
+      max_calls_per_run: 10
+      cost_limit_usd: 0.50
+      auth_header: ""           # ${ENV_VAR} indirection supported
+```
+
+**What Tier 3 reads (existing — no schema changes):**
+- Graph-cache nodes (`features/<id>` / `pattern:<slug>` / `entity:<slug>` / `decision:<slug>`) — for cite-check
+- v1.0 MCP queries (`get_neighbours`, `get_backlinks`, `search_within`, `search`) — for retrieval
+- Corpus content-hash signature from `_graph_cache._file_signature` — for cache key + invalidation
+
+**Two trivial alternatives rejected:**
+- *Cache as SQLite* — adds a dependency; foundation 1 violation. JSON fits the realistic cache size (few MB).
+- *Cache keyed by question only* — wastes valid entries on unrelated changes. Two-key (question, corpus_signature) keeps cross-edit valid entries warm.
+
+**Relationships:**
+- `Tier3Config` → `SynthesisCache`: config controls when the cache gets read/written
+- `SynthesisCache` → graph-cache nodes: every `cite_chunks[*].slug` must resolve (cite-check enforces)
+
+`data-model.md` synced in this commit with the two new entities.
 
 ### action: flows
 
