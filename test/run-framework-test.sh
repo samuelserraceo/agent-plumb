@@ -5474,9 +5474,9 @@ fi
 # ============================================================
 note "T132: refactor.md playbook scaffolds correctly via --playbook=refactor"
 d=$(mkproj_v08)
-cd "$d"
+cd "$d" || { bad "T132 cannot cd into mkproj output" "$d"; rm -rf "$d"; }
 out=$(bash "$START_SH" --playbook=refactor "extract atomic-write helper" 2>&1) && ec=0 || ec=$?
-cd - >/dev/null
+cd - >/dev/null || true
 spec="$d/.sdd/refactors/001-extract-atomic-write-helper/spec.md"
 # Assert EXACTLY 4 actions in the SPEC stage — not "≥4" — so an
 # accidental extra `### action:` block in the scaffold would fail
