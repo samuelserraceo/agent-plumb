@@ -71,8 +71,8 @@
 
 **2. The five-step flow per question.**
 
-```
-Step 0 — CACHE LOOKUP        Key: (question, corpus signature)
+```text
+Step 0 — CACHE LOOKUP        Key: (slug, question, corpus signature)
                              Hit  → return cached (instant, $0)
                              Miss → continue
 Step 1 — v1.0 RETRIEVAL      Graph + semantic search gather ~5 chunks (instant, $0)

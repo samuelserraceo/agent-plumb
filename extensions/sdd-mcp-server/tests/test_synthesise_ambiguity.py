@@ -54,12 +54,15 @@ class TestAmbiguity(unittest.TestCase):
             )
             if result.get("ambiguity") == "multi-answer":
                 detected += 1
-        # Best-effort target: at least 3/5 detected (60%) — heuristic
-        # detection isn't perfect; this is a regression floor not a
-        # correctness oracle.
-        self.assertGreaterEqual(
-            detected, 3,
-            msg=f"only {detected}/5 ambiguity cases detected; expected ≥3"
+        # All 5 fixtures are deterministic and contain BOTH the 2+ cite
+        # condition AND a disambiguation cue from the heuristic's list
+        # ("which do you mean" / "two answers" / "two candidates" /
+        # "which one"), so the heuristic should fire on every one.
+        # CR feedback: keep the assertion equal to the fixture count so
+        # any heuristic regression that drops a case fails the test.
+        self.assertEqual(
+            detected, len(_AMBIGUOUS_ANSWERS),
+            msg=f"only {detected}/{len(_AMBIGUOUS_ANSWERS)} ambiguity cases detected; expected all"
         )
 
     def test_unambiguous_answer_no_ambiguity_marker(self):

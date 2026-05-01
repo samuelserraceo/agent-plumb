@@ -2,7 +2,7 @@
   "playbook": "feature",
   "phase": "BUILD",
   "approved_sections": {
-    "proposed-approach": "838708dd6d79cb9274aeabe4bb7ce4a07828e71f8ca92769ebc15f0ef54341fb",
+    "proposed-approach": "d81ccecbb7130cb4fd2f572c50e273a26f66b2c767873b4f2350d64a495d8377",
     "data-contract": "71b8144aedad168e51e015adcd21d9bb311283db72e92f21235b664a510d140c",
     "out-of-scope": "eefc34f7b8e2472e4ab03429e9048de6d80b6401eee260dba138129371a66716",
     "acceptance-criteria": "3414394998207a80bba53ba82c043f8b25690a20df8e38c3146557616451846c",

@@ -18,7 +18,7 @@ from tests.conftest import make_temp_project  # noqa: E402
 
 
 def _mock(q, c, cfg):
-    return f"x — see [[001-waitlist]]."
+    return "x — see [[001-waitlist]]."
 
 
 class TestCacheEviction(unittest.TestCase):
@@ -53,8 +53,13 @@ class TestCacheEviction(unittest.TestCase):
             with open(cache_path) as f:
                 cache = json.load(f)
             entries = cache.get("entries", {})
-            # Expected: cap of 5, with small batch buffer
-            self.assertLessEqual(len(entries), 6,
-                                 msg=f"cache exceeded eviction cap: {len(entries)} entries")
+            # CR feedback: enforce the EXACT cap. The synchronous eviction
+            # path (`_evict_lru_if_full` runs inside every successful
+            # _save_synthesis_cache before flush) cuts strictly back to
+            # syn_mod._CACHE_MAX_ENTRIES. Anything over is a regression.
+            self.assertEqual(
+                len(entries), syn_mod._CACHE_MAX_ENTRIES,
+                msg=f"cache must equal the patched cap exactly: got {len(entries)}, expected {syn_mod._CACHE_MAX_ENTRIES}",
+            )
         finally:
             syn_mod._CACHE_MAX_ENTRIES = original

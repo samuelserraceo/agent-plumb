@@ -40,6 +40,9 @@ class TestQuestionValidation(unittest.TestCase):
             _llm_call=_mock,
         )
         self.assertIs(result.get("ok"), False)
+        # CR feedback: pin the rejection to the question-validation path
+        # so a different error (e.g. cap or config drift) wouldn't pass.
+        self.assertIn("question invalid", (result.get("reason") or "").lower())
 
     def test_control_char_question_rejected(self):
         result = synthesise(
@@ -47,6 +50,7 @@ class TestQuestionValidation(unittest.TestCase):
             _llm_call=_mock,
         )
         self.assertIs(result.get("ok"), False)
+        self.assertIn("question invalid", (result.get("reason") or "").lower())
 
     def test_null_byte_question_rejected(self):
         result = synthesise(
@@ -54,3 +58,4 @@ class TestQuestionValidation(unittest.TestCase):
             _llm_call=_mock,
         )
         self.assertIs(result.get("ok"), False)
+        self.assertIn("question invalid", (result.get("reason") or "").lower())

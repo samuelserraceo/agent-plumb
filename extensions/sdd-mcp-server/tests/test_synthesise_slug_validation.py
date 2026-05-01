@@ -71,8 +71,11 @@ class TestSlugValidation(unittest.TestCase):
                     self.root, {"slug": ok_slug, "question": "x", "format": "structured"},
                     _llm_call=_mock,
                 )
-                # Either ok=True OR ok=False for non-cite-check reasons; the
-                # POINT is the slug itself doesn't trip the validator.
-                reason = (result.get("reason") or "").lower()
-                self.assertNotIn("invalid slug", reason,
-                                 msg=f"valid slug {ok_slug!r} wrongly rejected: {reason}")
+                # CR cycle 5: assert the call actually succeeded — not
+                # just that the slug validator didn't reject it. A
+                # not-in("invalid slug") check would silently allow other
+                # failures (config drift, cap miss, cite-check) to pass.
+                self.assertIs(
+                    result.get("ok"), True,
+                    msg=f"valid slug {ok_slug!r} should produce ok=True; got reason={result.get('reason')!r}",
+                )

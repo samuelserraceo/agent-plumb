@@ -29,12 +29,31 @@ class TestLiteralTokenWarning(unittest.TestCase):
         self._cleanup()
 
     def _set_auth(self, value: str) -> None:
+        """Replace ONLY the tier3 block's `auth_header` value, not any
+        other tier (e.g. semantic_search) that might also have one.
+
+        CR cycle 5: previous form did a global text.replace which would
+        scribble over every `auth_header: ""` regardless of which
+        nested block it lived under. The test fixture only has one
+        today, but future fixtures (or downstream projects mirroring
+        the test shape) could have several — fix the replacement to
+        scope to the tier3 block.
+        """
         cfg_path = os.path.join(self.root, ".sdd", "config.md")
         with open(cfg_path) as f:
             text = f.read()
-        text = text.replace('auth_header: ""', f'auth_header: "{value}"')
+        # Locate the tier3 block under parameters.mcp. Replace the next
+        # `auth_header: ""` after `tier3:` only.
+        tier3_idx = text.find("tier3:")
+        if tier3_idx == -1:
+            raise RuntimeError("tier3 block missing from fixture config.md")
+        # Slice into "before tier3" + "tier3 block + after". Replace
+        # the first `auth_header: ""` in the second slice only.
+        head = text[:tier3_idx]
+        tail = text[tier3_idx:]
+        tail = tail.replace('auth_header: ""', f'auth_header: "{value}"', 1)
         with open(cfg_path, "w") as f:
-            f.write(text)
+            f.write(head + tail)
 
     def _capture_stderr_during_synth(self) -> str:
         old_stderr = sys.stderr

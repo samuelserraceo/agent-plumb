@@ -174,3 +174,22 @@ New acceptance-criteria hash pinned to verification.json. The regex-validation b
 
 Hash: 3414394998207a80bba53ba82c043f8b25690a20df8e38c3146557616451846c  (acceptance-criteria re-pinned)
 Reason: AC21 buffer wording + AC23 slug regex must reflect the actual implementation, not the rough first draft.
+
+
+## 2026-05-01T19:55:00Z  [[001-tier-3-llm-driven-synthesis]]  feature/cr-cycle-5-substantive-fixes
+
+CR cycle 5 surfaced three real implementation drifts hidden behind a "passing" test suite. All fixed:
+
+(1) **Cache key was missing slug.** `_make_cache_key(question, corpus_signature)` would collide across slugs — `synthesise(slug=A, question=Q)` and `synthesise(slug=B, question=Q)` shared one cached answer with citations from the wrong slug's neighbourhood. Fixed by adding slug to the key with a NUL separator so prefix collisions hash differently. §5 proposed-approach prose updated (the Step 0 — CACHE LOOKUP block now reads `Key: (slug, question, corpus signature)`); fenced as ```text per markdownlint.
+
+(2) **Per-run caps were lifetime caps in disguise.** The cap-check used `counters[…]` (persistent in synthesis.json), so `max_calls_per_run` would block forever once cumulative usage exceeded it — exactly Sam's anti-theatre catch from earlier in the walk. Fixed by introducing module-level `_RUN_COUNTERS` that scope to one MCP-server process lifetime (the actual semantics of "run" given the long-lived stdio loop). Tests get a `_reset_run_counters_for_test` seam so they don't leak state between tests; conftest.make_temp_project resets automatically.
+
+(3) **Tier 3 config leaf values weren't validated.** `enabled: "false"` (quoted YAML string) is truthy in Python and would silently turn Tier 3 on; non-numeric caps would crash with ValueError at int() coercion. `_load_tier3_config` now coerces enabled to bool (non-bool → fail-closed disabled), strings to str-or-empty, ints with default fallback.
+
+Plus 9 CR cycle-5 findings closed in the same commit-set: spec.md flow-diagram fence language, INDEX.md MD022/MD031 spacing + AC18/AC19 task-list shape + SHIP wording (PR-open vs PR-pending), 5 test-quality fixes (ambiguity floor → exact, cache eviction ≤cap+1 → ==cap, caps docstring claim → 2 new tests for the previously-unproven max_calls_per_run + max_total_tokens_per_run paths, scoped _set_auth replacement, slug validation reason assertions, valid-slug ok=True positive assertion), and the /ask test now grep-checks all 7 documented failure-mode phrases (was 6, missing rate-limited / question invalid / invalid slug).
+
+161/161 MCP tests + 194/194 framework tests passing — substantive coverage went up two MCP tests as a result of round-5 cap proofs.
+
+New §5 proposed-approach hash pinned to verification.json:
+Hash: d81ccecbb7130cb4fd2f572c50e273a26f66b2c767873b4f2350d64a495d8377  (proposed-approach re-pinned)
+Reason: Step 0 cache-key shape now includes slug to match the implementation; fenced as ```text for markdownlint.

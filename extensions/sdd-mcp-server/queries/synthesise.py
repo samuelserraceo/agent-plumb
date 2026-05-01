@@ -57,6 +57,25 @@ _LITERAL_TOKEN_PATTERNS = [             # T16 — common provider key shapes
 _WIKI_LINK_RE = re.compile(r"\[\[([a-z0-9][a-z0-9._:\-]*)\]\]", re.IGNORECASE)
 
 
+# Process-local run counters. The MCP server is a long-running stdio
+# loop (server.py: `for raw in sys.stdin`), so module-level state
+# persists across synthesise() calls within one server lifetime.
+# That's the unit "run" means in the cap names — a single MCP-server
+# process. Reset only on process restart, which Claude Code does
+# between sessions. CR cycle 5: had to choose between lifetime caps
+# (theatre — would block forever once cumulative usage exceeded the
+# cap) and per-call caps (theatre — every call resets to 0); this is
+# the middle ground.
+_RUN_COUNTERS: Dict[str, int] = {"calls_made": 0, "tokens_used": 0}
+
+
+def _reset_run_counters_for_test() -> None:
+    """Test-only seam — let unit tests start each test with a clean
+    run-counter slate without spawning a subprocess."""
+    _RUN_COUNTERS["calls_made"] = 0
+    _RUN_COUNTERS["tokens_used"] = 0
+
+
 # ─── Exceptions used internally ──────────────────────────────────────
 class _Tier3Error(Exception):
     """Internal — caught by synthesise() and rendered as ok:false."""
@@ -144,22 +163,22 @@ def synthesise(
         counters = cache.setdefault("counters", {})
         counters["cache_misses"] = counters.get("cache_misses", 0) + 1
 
-        # CR cycle 4: per-run caps must enforce against run-local counters,
-        # not lifetime counters persisted to synthesis.json. Without this
-        # split, max_calls_per_run becomes a lifetime cap that locks the
-        # framework out forever once the historical tally exceeds it —
-        # the exact anti-theatre case Sam called out earlier in the walk.
-        # Use a process-local dict for cap enforcement; keep the persistent
-        # `counters` for observability across runs.
-        run_counters = {"calls_made": 0, "tokens_used": 0}
+        # CR cycle 4+5: per-run caps must enforce against per-process
+        # counters, not lifetime counters (synthesis.json) and not
+        # per-synthesise-call counters (which would always be 0).
+        # The MCP server is a long-running stdio loop, so module-level
+        # _RUN_COUNTERS naturally scopes to "one server invocation"
+        # — what the cap names say. (Lifetime would block forever
+        # after enough cumulative usage; per-call resets to 0 every
+        # time, never firing.)
 
         # 6. Retrieval — gather candidate chunks (T5 path; reuses
         #    v1.0 graph queries minimally for now)
         chunks = _gather_chunks(project_root, graph, slug, question)
 
         # 7. Caps — pre-network refusal (T10) — all three caps enforced
-        # against run-local tally so per-run semantics are real, not theatre.
-        cap_err = _check_caps(chunks, cfg, run_counters)
+        # against per-process tally so per-run semantics are real, not theatre.
+        cap_err = _check_caps(chunks, cfg, _RUN_COUNTERS)
         if cap_err is not None:
             # Persist the bumped cache_misses counter even on cap refusal —
             # observability honesty: an attempt happened, we just didn't
@@ -170,12 +189,12 @@ def synthesise(
 
         # 8. LLM call — dependency-injected for tests
         llm = _llm_call or _real_llm_call
-        # Bump BOTH the run-local enforcement counters (so the second call
-        # in the same run sees the first call's tokens) AND the persistent
-        # observability counters. (CR cycle 4.)
+        # Bump BOTH the per-process enforcement counters (so the second call
+        # in the same MCP-server run sees the first call's tokens) AND the
+        # persistent observability counters in synthesis.json.
         approx_input_tokens = sum(len(c.get("text", "")) for c in chunks) // 4
-        run_counters["calls_made"] += 1
-        run_counters["tokens_used"] += approx_input_tokens
+        _RUN_COUNTERS["calls_made"] += 1
+        _RUN_COUNTERS["tokens_used"] += approx_input_tokens
         counters["calls_made"] = counters.get("calls_made", 0) + 1
         counters["tokens_used"] = counters.get("tokens_used", 0) + approx_input_tokens
         try:

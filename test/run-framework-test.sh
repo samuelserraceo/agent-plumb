@@ -6578,13 +6578,22 @@ ok_count=0
 [ -f "$ask_md" ] && ok_count=$((ok_count + 1))
 grep -q "synthesise" "$ask_md" 2>/dev/null && ok_count=$((ok_count + 1))
 grep -q "format.*prose" "$ask_md" 2>/dev/null && ok_count=$((ok_count + 1))
-grep -q "Tier 3 not enabled" "$ask_md" 2>/dev/null && ok_count=$((ok_count + 1))
+# All synthesise failure-mode reason phrases must be mentioned in
+# the /ask plain-English fix table — the user shouldn't ever see a
+# raw `reason:` field without a translation. CR cycle 5 added the
+# missing three (rate-limited, question invalid, invalid slug).
+# Use grep -E with alternation on phrasing variants so wording can
+# evolve slightly without breaking the contract test.
+grep -qE "Tier 3 (not enabled|isn't enabled)" "$ask_md" 2>/dev/null && ok_count=$((ok_count + 1))
 grep -q "provider unreachable" "$ask_md" 2>/dev/null && ok_count=$((ok_count + 1))
 grep -q "cite-check failed" "$ask_md" 2>/dev/null && ok_count=$((ok_count + 1))
-if [ "$ok_count" -eq 6 ]; then
-  ok "T139 /ask slash command ships with synthesise wrapper + 4 failure-mode messages"
+grep -q "rate-limited" "$ask_md" 2>/dev/null && ok_count=$((ok_count + 1))
+grep -q "question invalid" "$ask_md" 2>/dev/null && ok_count=$((ok_count + 1))
+grep -q "invalid slug" "$ask_md" 2>/dev/null && ok_count=$((ok_count + 1))
+if [ "$ok_count" -eq 9 ]; then
+  ok "T139 /ask slash command ships with synthesise wrapper + 7 failure-mode messages"
 else
-  bad "T139 /ask slash command broken" "ok=$ok_count/6"
+  bad "T139 /ask slash command broken" "ok=$ok_count/9"
 fi
 
 # ============================================================

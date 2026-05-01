@@ -293,7 +293,22 @@ def make_temp_project(
     with_tier3: bool = False,
     tier3_disabled: bool = False,
 ) -> "tuple[str, callable]":
-    """Build a fresh tempdir-backed project. Returns (root, cleanup_fn)."""
+    """Build a fresh tempdir-backed project. Returns (root, cleanup_fn).
+
+    As a side-effect, resets the synthesise module's process-local
+    _RUN_COUNTERS so tests don't see counter state from prior tests.
+    The MCP server itself runs as a long-lived stdio loop where the
+    counters PERSIST across calls — that's what the per-run cap
+    semantics rely on. Tests need a fresh slate to avoid cross-test
+    flakes.
+    """
+    # Lazy-import so this module stays loadable even if synthesise
+    # changes shape; only the tier3 fixtures actually exercise caps.
+    try:
+        from queries.synthesise import _reset_run_counters_for_test  # type: ignore
+        _reset_run_counters_for_test()
+    except ImportError:
+        pass  # synthesise not on path or not yet built — fine
     root = tempfile.mkdtemp(prefix="sdd-mcp-test-")
     build_fixture_tree(
         root,
