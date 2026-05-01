@@ -46,15 +46,17 @@ class TestSynthesiseScaffold(unittest.TestCase):
         self.assertIn("synthesise", queries.REGISTRY)
         self.assertIs(queries.REGISTRY["synthesise"], queries.synthesise)
 
-    def test_stub_returns_not_implemented_shape(self):
-        """Calling the stub returns {ok: False, reason: 'not implemented'}.
+    def test_returns_dict_shape(self):
+        """Calling synthesise returns a dict — the immutable scaffold contract.
 
-        Later tasks (T5 onwards) replace this body with the real
-        synthesis behaviour. Until then, the stub returns the
-        documented sentinel so callers (the agent, the /ask slash
-        command) can detect Tier 3 isn't wired yet without crashing.
+        T1 scaffold originally returned `{ok: False, reason: 'not implemented'}`.
+        T5 onwards layered real behaviour onto that scaffold so the
+        sentinel is no longer the observed shape (it returns disabled-state,
+        validation errors, or real synthesis results depending on
+        config + args). What stays true forever: the function returns
+        a dict — never raises, never returns None, never returns a
+        string. That's the lasting scaffold contract.
         """
         result = queries.synthesise(project_root=".", args={})
         self.assertIsInstance(result, dict)
-        self.assertIs(result.get("ok"), False)
-        self.assertEqual(result.get("reason"), "not implemented")
+        self.assertIn("ok", result, msg="every synthesise() result must carry an `ok` key")

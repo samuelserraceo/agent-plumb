@@ -181,6 +181,50 @@ parameters:
 """
 
 
+CONFIG_MD_WITH_TIER3 = """---
+type: config
+sdd_version: 1.1.0
+playbooks_available: [feature]
+default_playbook: feature
+extensions: {}
+parameters:
+  mcp:
+    enabled: true
+    tier3:
+      enabled: true
+      provider: ollama-chat
+      endpoint: http://127.0.0.1:11434
+      model: gemma2:2b
+      max_calls_per_run: 10
+      max_input_tokens_per_call: 8000
+      max_total_tokens_per_run: 100000
+      auth_header: ""
+---
+
+# SDD project configuration with Tier 3 enabled
+"""
+
+
+CONFIG_MD_TIER3_DISABLED = """---
+type: config
+sdd_version: 1.1.0
+playbooks_available: [feature]
+default_playbook: feature
+extensions: {}
+parameters:
+  mcp:
+    enabled: true
+    tier3:
+      enabled: false
+      provider: ""
+      endpoint: ""
+      model: ""
+---
+
+# Tier 3 disabled
+"""
+
+
 FEATURE_001_README = """# 001-waitlist
 
 extends: 000-bootstrap
@@ -190,8 +234,20 @@ References:
 """
 
 
-def build_fixture_tree(root: str, *, with_semantic_search: bool = False) -> None:
-    """Populate `root` with a minimal .sdd/ tree."""
+def build_fixture_tree(
+    root: str,
+    *,
+    with_semantic_search: bool = False,
+    with_tier3: bool = False,
+    tier3_disabled: bool = False,
+) -> None:
+    """Populate `root` with a minimal .sdd/ tree.
+
+    Mutually-exclusive config flags (only one should be true):
+      - with_semantic_search: legacy v1.0 semantic_search config
+      - with_tier3: v1.1 Tier 3 enabled config (Ollama+Gemma)
+      - tier3_disabled: v1.1 schema present but tier3.enabled=false
+    """
     sdd = os.path.join(root, ".sdd")
     os.makedirs(sdd, exist_ok=True)
     os.makedirs(os.path.join(sdd, "features", "001-waitlist"), exist_ok=True)
@@ -203,7 +259,14 @@ def build_fixture_tree(root: str, *, with_semantic_search: bool = False) -> None
         fh.write(DECISIONS_MD)
     with open(os.path.join(sdd, "patterns.md"), "w", encoding="utf-8") as fh:
         fh.write(PATTERNS_MD)
-    config_text = CONFIG_MD_WITH_SEARCH if with_semantic_search else CONFIG_MD
+    if with_tier3:
+        config_text = CONFIG_MD_WITH_TIER3
+    elif tier3_disabled:
+        config_text = CONFIG_MD_TIER3_DISABLED
+    elif with_semantic_search:
+        config_text = CONFIG_MD_WITH_SEARCH
+    else:
+        config_text = CONFIG_MD
     with open(os.path.join(sdd, "config.md"), "w", encoding="utf-8") as fh:
         fh.write(config_text)
     with open(os.path.join(sdd, "features", "001-waitlist", "spec.md"), "w", encoding="utf-8") as fh:
@@ -214,10 +277,20 @@ def build_fixture_tree(root: str, *, with_semantic_search: bool = False) -> None
         fh.write(SPEC_MD_002)
 
 
-def make_temp_project(*, with_semantic_search: bool = False) -> "tuple[str, callable]":
+def make_temp_project(
+    *,
+    with_semantic_search: bool = False,
+    with_tier3: bool = False,
+    tier3_disabled: bool = False,
+) -> "tuple[str, callable]":
     """Build a fresh tempdir-backed project. Returns (root, cleanup_fn)."""
     root = tempfile.mkdtemp(prefix="sdd-mcp-test-")
-    build_fixture_tree(root, with_semantic_search=with_semantic_search)
+    build_fixture_tree(
+        root,
+        with_semantic_search=with_semantic_search,
+        with_tier3=with_tier3,
+        tier3_disabled=tier3_disabled,
+    )
 
     def cleanup():
         shutil.rmtree(root, ignore_errors=True)

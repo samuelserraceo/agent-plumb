@@ -4,7 +4,7 @@
 
 **Run mode:** full autonomous (Sam confirmed 2026-05-01 — saved in `feedback_full_autonomous_build.md`). Halt-triggers per CLAUDE.md: test stays RED after 3 attempts · pre-commit blocked · real design gap surfaces in §5/§6 · credential/infra step needs Sam.
 
-**Active blocker:** T5 — clean answer flow (the load-bearing honesty floor; AC1)
+**Active blocker:** T6 — cite-check rejects invented `[[fake-slug]]` and falls back to raw chunks (AC2)
 
 ## PHASE: SPEC
 
@@ -481,7 +481,7 @@ All §4 constraints have a mapped AC. Plan-decompose coverage check passes pre-e
 - [x] T4 GREEN: brick 007 extension scaffolded with placeholder Tier 3 sub-questions → `extensions/sdd-mcp-server/tests/test_brick_007_tier3_scaffold.py` (5/5 T4 · 86/86 MCP · 192/192 framework, including T111 records_at format compatibility)
 
 **Honesty floor (load-bearing):**
-- [ ] T5 RED: clean answer flow — synthesise() with valid config returns answer with all `[[…]]` resolving (AC1) → `extensions/sdd-mcp-server/tests/test_synthesise_clean_answer.py`
+- [x] T5 GREEN: clean answer flow — synthesise() with valid config returns answer with all `[[…]]` resolving (AC1) → `extensions/sdd-mcp-server/tests/test_synthesise_clean_answer.py` (6/6 · 92/92 MCP · 192/192 framework)
 - [ ] T6 RED: cite-check rejects invented `[[fake-slug]]` and falls back to raw chunks (AC2) → `extensions/sdd-mcp-server/tests/test_synthesise_citecheck_reject.py`
 - [ ] T7 RED: rejected answer NOT cached (AC3) → `extensions/sdd-mcp-server/tests/test_synthesise_no_cache_on_reject.py`
 
