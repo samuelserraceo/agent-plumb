@@ -36,6 +36,10 @@
   .arch-box:hover { fill: var(--accent-bg); stroke: var(--accent); }
   .arch-box.dashed { stroke-dasharray: 6 4; stroke: var(--violet); fill: var(--violet-bg); }
   .arch-box.active { fill: var(--accent-bg); stroke: var(--accent); stroke-width: 2.5; }
+  .arch-box-grp { outline: none; }
+  .arch-box-grp:focus-visible .arch-box { stroke: var(--accent); stroke-width: 2.5; filter: drop-shadow(0 0 4px rgba(79,70,229,.45)); }
+  .arch-box-grp:focus-visible:not(:has(.arch-box)) text { fill: var(--accent); text-decoration: underline; }
+  .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
   .arch-label { font-size: 13px; font-weight: 600; fill: var(--ink); pointer-events: none; }
   .arch-sub   { font-size: 11px; fill: var(--ink-3); pointer-events: none; }
   .arch-arrow { stroke: var(--line-2); stroke-width: 1.5; fill: none; marker-end: url(#arrow); }
@@ -97,9 +101,9 @@
     </nav>
     <div class="ml-auto flex items-center gap-2">
       <span class="text-xs text-stone-500 mr-1">Show:</span>
-      <button class="filter-btn px-2 py-1 text-xs rounded border border-stone-300" data-set="all">All</button>
-      <button class="filter-btn px-2 py-1 text-xs rounded border border-stone-300" data-set="v10">v1.0 only</button>
-      <button class="filter-btn px-2 py-1 text-xs rounded border border-stone-300" data-set="v11">v1.1 only</button>
+      <button type="button" class="filter-btn px-2 py-1 text-xs rounded border border-stone-300" data-set="all">All</button>
+      <button type="button" class="filter-btn px-2 py-1 text-xs rounded border border-stone-300" data-set="v10">v1.0 only</button>
+      <button type="button" class="filter-btn px-2 py-1 text-xs rounded border border-stone-300" data-set="v11">v1.1 only</button>
       <span class="mx-2 w-px h-5 bg-stone-300"></span>
       <label class="flex items-center gap-2 text-xs cursor-pointer select-none">
         <input id="reviewToggle" type="checkbox" class="accent-indigo-600">
@@ -113,7 +117,7 @@
 
 <!-- ═══════════════════════════════════════════ HERO ═══════════════════════════════════════════ -->
 <section class="max-w-6xl mx-auto px-6 pt-12 pb-8 reviewable" data-section="hero">
-  <div class="review-tools review-only"><button class="rb" data-flag="ok" title="Looks good">✓</button><button class="rb" data-flag="unclear" title="Unclear">?</button><button class="rb" data-flag="problem" title="Issue">✗</button></div>
+  <div class="review-tools review-only"><button type="button" class="rb" data-flag="ok" title="Looks good">✓</button><button type="button" class="rb" data-flag="unclear" title="Unclear">?</button><button type="button" class="rb" data-flag="problem" title="Issue">✗</button></div>
   <p class="text-sm text-stone-500 uppercase tracking-wider mb-3">A spec-driven workflow for non-technical builders working with AI.</p>
   <h1 class="text-4xl md:text-5xl font-bold leading-tight tracking-tight max-w-4xl">A way to build software with AI without the AI making stuff up.</h1>
   <div class="mt-6 max-w-3xl text-stone-600 text-lg leading-relaxed space-y-3">
@@ -142,7 +146,7 @@
 
 <!-- ═══════════════════════════════════════════ AT A GLANCE ═══════════════════════════════════════════ -->
 <section class="max-w-6xl mx-auto px-6 py-10 reviewable" data-section="at-a-glance">
-  <div class="review-tools review-only"><button class="rb" data-flag="ok">✓</button><button class="rb" data-flag="unclear">?</button><button class="rb" data-flag="problem">✗</button></div>
+  <div class="review-tools review-only"><button type="button" class="rb" data-flag="ok">✓</button><button type="button" class="rb" data-flag="unclear">?</button><button type="button" class="rb" data-flag="problem">✗</button></div>
   <h2 class="text-2xl font-bold mb-2">The whole framework in three sentences.</h2>
   <p class="text-stone-600 max-w-3xl mb-8">There's no orchestrator, no database, no embedded LLM, no SaaS. It's three plain ideas wired together by markdown files and pre-commit hooks.</p>
   <div class="grid md:grid-cols-3 gap-4">
@@ -167,26 +171,26 @@
 
 <!-- ═══════════════════════════════════════════ THE 30-SECOND LOOP ═══════════════════════════════════════════ -->
 <section id="loop" class="max-w-6xl mx-auto px-6 py-10 reviewable" data-section="loop">
-  <div class="review-tools review-only"><button class="rb" data-flag="ok">✓</button><button class="rb" data-flag="unclear">?</button><button class="rb" data-flag="problem">✗</button></div>
+  <div class="review-tools review-only"><button type="button" class="rb" data-flag="ok">✓</button><button type="button" class="rb" data-flag="unclear">?</button><button type="button" class="rb" data-flag="problem">✗</button></div>
   <h2 class="text-2xl font-bold mb-2">The 30-second loop — what one <code class="mono text-xl bg-stone-100 px-2 rounded">/next</code> actually does.</h2>
   <p class="text-stone-600 max-w-3xl mb-6">Every <code class="mono text-sm bg-stone-100 px-1 rounded">/next</code> command runs the same four-step container. One step in your spec = one commit in git. No batching, no shortcuts.</p>
 
   <!-- Stepper nav -->
   <div class="card p-6">
     <div class="flex items-center gap-2 md:gap-6 mb-6 overflow-x-auto" id="loopStepper">
-      <button class="loop-step flex items-center gap-3" data-step="1">
+      <button type="button" class="loop-step flex items-center gap-3" data-step="1">
         <span class="step-dot"></span><span class="step-label text-sm text-stone-500">1. LOCATE</span>
       </button>
       <span class="flex-1 h-px bg-stone-200 min-w-4"></span>
-      <button class="loop-step flex items-center gap-3" data-step="2">
+      <button type="button" class="loop-step flex items-center gap-3" data-step="2">
         <span class="step-dot"></span><span class="step-label text-sm text-stone-500">2. EXECUTE</span>
       </button>
       <span class="flex-1 h-px bg-stone-200 min-w-4"></span>
-      <button class="loop-step flex items-center gap-3" data-step="3">
+      <button type="button" class="loop-step flex items-center gap-3" data-step="3">
         <span class="step-dot"></span><span class="step-label text-sm text-stone-500">3. SYNC</span>
       </button>
       <span class="flex-1 h-px bg-stone-200 min-w-4"></span>
-      <button class="loop-step flex items-center gap-3" data-step="4">
+      <button type="button" class="loop-step flex items-center gap-3" data-step="4">
         <span class="step-dot"></span><span class="step-label text-sm text-stone-500">4. ADVANCE</span>
       </button>
     </div>
@@ -195,9 +199,9 @@
     <div id="loopContent" class="grid md:grid-cols-2 gap-6 min-h-[280px]"></div>
 
     <div class="mt-6 flex justify-between items-center">
-      <button id="loopPrev" class="px-4 py-2 rounded border border-stone-300 text-sm hover:bg-stone-100">← Previous step</button>
+      <button type="button" id="loopPrev" class="px-4 py-2 rounded border border-stone-300 text-sm hover:bg-stone-100">← Previous step</button>
       <span id="loopCounter" class="text-xs text-stone-500">Step 1 of 4</span>
-      <button id="loopNext" class="px-4 py-2 rounded border border-stone-300 text-sm hover:bg-stone-100">Next step →</button>
+      <button type="button" id="loopNext" class="px-4 py-2 rounded border border-stone-300 text-sm hover:bg-stone-100">Next step →</button>
     </div>
   </div>
   <textarea class="review-note review-only" placeholder="Notes on the loop demo…" data-note="loop"></textarea>
@@ -205,7 +209,7 @@
 
 <!-- ═══════════════════════════════════════════ ARCHITECTURE DIAGRAM ═══════════════════════════════════════════ -->
 <section id="architecture" class="max-w-6xl mx-auto px-6 py-10 reviewable" data-section="architecture">
-  <div class="review-tools review-only"><button class="rb" data-flag="ok">✓</button><button class="rb" data-flag="unclear">?</button><button class="rb" data-flag="problem">✗</button></div>
+  <div class="review-tools review-only"><button type="button" class="rb" data-flag="ok">✓</button><button type="button" class="rb" data-flag="unclear">?</button><button type="button" class="rb" data-flag="problem">✗</button></div>
   <h2 class="text-2xl font-bold mb-2">System architecture — solid lines = live, dashed = v1.1 plan.</h2>
   <p class="text-stone-600 max-w-3xl mb-6">Click any box to see what's actually inside it (file paths, counts, a real sample). The diagram is the source of truth — every claim below it traces to a file you can open.</p>
 
@@ -341,7 +345,7 @@
 
 <!-- ═══════════════════════════════════════════ ARCHITECTURE VALIDATION ═══════════════════════════════════════════ -->
 <section id="validation" class="max-w-6xl mx-auto px-6 py-10 reviewable" data-section="validation">
-  <div class="review-tools review-only"><button class="rb" data-flag="ok">✓</button><button class="rb" data-flag="unclear">?</button><button class="rb" data-flag="problem">✗</button></div>
+  <div class="review-tools review-only"><button type="button" class="rb" data-flag="ok">✓</button><button type="button" class="rb" data-flag="unclear">?</button><button type="button" class="rb" data-flag="problem">✗</button></div>
   <h2 class="text-2xl font-bold mb-2">Does the architecture hold up? Three checks you can do yourself.</h2>
   <p class="text-stone-600 max-w-3xl mb-6">SDD's design rests on three foundations. The whole framework rots if any of them slip. Here's a check per foundation — read the evidence, then mark whether you buy it.</p>
 
@@ -389,9 +393,9 @@
     </div>
     <div class="flex items-center gap-2 flex-wrap pt-3 border-t border-stone-100">
       <span class="text-sm text-stone-600 mr-2">Can a non-coder read these?</span>
-      <button class="vbtn validation-btn" data-validation="f1" data-vote="ok">✓ Yes</button>
-      <button class="vbtn validation-btn" data-validation="f1" data-vote="unclear">🤔 Some bits unclear</button>
-      <button class="vbtn validation-btn" data-validation="f1" data-vote="problem">✗ Too dense</button>
+      <button type="button" class="vbtn validation-btn" data-validation="f1" data-vote="ok">✓ Yes</button>
+      <button type="button" class="vbtn validation-btn" data-validation="f1" data-vote="unclear">🤔 Some bits unclear</button>
+      <button type="button" class="vbtn validation-btn" data-validation="f1" data-vote="problem">✗ Too dense</button>
     </div>
   </div>
 
@@ -458,9 +462,9 @@
     </div>
     <div class="flex items-center gap-2 flex-wrap pt-3 border-t border-stone-100">
       <span class="text-sm text-stone-600 mr-2">All four follow the same shape?</span>
-      <button class="vbtn validation-btn" data-validation="f2" data-vote="ok">✓ Same shape, different actions</button>
-      <button class="vbtn validation-btn" data-validation="f2" data-vote="unclear">🤔 Hard to tell</button>
-      <button class="vbtn validation-btn" data-validation="f2" data-vote="problem">✗ They diverge</button>
+      <button type="button" class="vbtn validation-btn" data-validation="f2" data-vote="ok">✓ Same shape, different actions</button>
+      <button type="button" class="vbtn validation-btn" data-validation="f2" data-vote="unclear">🤔 Hard to tell</button>
+      <button type="button" class="vbtn validation-btn" data-validation="f2" data-vote="problem">✗ They diverge</button>
     </div>
   </div>
 
@@ -488,9 +492,9 @@
     </div>
     <div class="flex items-center gap-2 flex-wrap pt-3 border-t border-stone-100">
       <span class="text-sm text-stone-600 mr-2">Do these checks defeat assumption?</span>
-      <button class="vbtn validation-btn" data-validation="f3" data-vote="ok">✓ I see the checks</button>
-      <button class="vbtn validation-btn" data-validation="f3" data-vote="unclear">🤔 Half convinced</button>
-      <button class="vbtn validation-btn" data-validation="f3" data-vote="problem">✗ Still assumptions</button>
+      <button type="button" class="vbtn validation-btn" data-validation="f3" data-vote="ok">✓ I see the checks</button>
+      <button type="button" class="vbtn validation-btn" data-validation="f3" data-vote="unclear">🤔 Half convinced</button>
+      <button type="button" class="vbtn validation-btn" data-validation="f3" data-vote="problem">✗ Still assumptions</button>
     </div>
   </div>
 
@@ -504,7 +508,7 @@
 
 <!-- ═══════════════════════════════════════════ WHAT v1.0 SHIPS ═══════════════════════════════════════════ -->
 <section id="shipped" class="max-w-6xl mx-auto px-6 py-10 reviewable" data-section="shipped" data-tier="v10">
-  <div class="review-tools review-only"><button class="rb" data-flag="ok">✓</button><button class="rb" data-flag="unclear">?</button><button class="rb" data-flag="problem">✗</button></div>
+  <div class="review-tools review-only"><button type="button" class="rb" data-flag="ok">✓</button><button type="button" class="rb" data-flag="unclear">?</button><button type="button" class="rb" data-flag="problem">✗</button></div>
   <div class="flex items-end justify-between mb-2 flex-wrap gap-3">
     <div>
       <h2 class="text-2xl font-bold">What v1.0.0 ships — five marquee capabilities.</h2>
@@ -517,7 +521,7 @@
     <div class="flex items-start gap-3 mb-3">
       <span class="pill pill-v10">1</span>
       <h3 class="font-semibold flex-1">Knowledge-graph foundation — markdown becomes navigable.</h3>
-      <a class="pill pill-soft" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/98" target="_blank">PR #98</a>
+      <a class="pill pill-soft" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/98" target="_blank" rel="noopener noreferrer">PR #98</a>
     </div>
     <p class="text-sm text-stone-600 mb-3">A small subset of cross-references in <code class="mono text-xs bg-stone-100 px-1 rounded">.sdd/</code> markdown is now written as wiki-links <code class="mono text-xs bg-stone-100 px-1 rounded">[[slug]]</code>. The framework's MCP server (a small Python helper that lets Claude ask short questions instead of reading whole files) traverses them via three new queries.</p>
     <div class="grid md:grid-cols-2 gap-3 mb-4">
@@ -548,7 +552,7 @@ search_within(slug)   bounded semantic search
     <div class="flex items-start gap-3 mb-3">
       <span class="pill pill-v10">2</span>
       <h3 class="font-semibold flex-1">Branch-derived active feature — switch git branches, switch what you're working on.</h3>
-      <a class="pill pill-soft" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/99" target="_blank">PR #99</a>
+      <a class="pill pill-soft" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/99" target="_blank" rel="noopener noreferrer">PR #99</a>
     </div>
     <p class="text-sm text-stone-600 mb-3">Pre-v1.0 the active feature was a single editable line in <code class="mono text-xs bg-stone-100 px-1 rounded">INDEX.md</code> — flipping between two in-flight features meant remembering to update it. v1.0 reads the active feature from your current git branch (<code class="mono text-xs bg-stone-100 px-1 rounded">sdd/&lt;id&gt;-&lt;slug&gt;</code>). Just check out the other branch — that's it.</p>
     <pre class="code text-xs"><span class="c">$</span> git checkout sdd/002-admin-dashboard
@@ -565,8 +569,8 @@ search_within(slug)   bounded semantic search
       <span class="pill pill-v10">3</span>
       <h3 class="font-semibold flex-1">4 playbooks — feature, project, bug, refactor.</h3>
       <span class="flex gap-1">
-        <a class="pill pill-soft" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/101" target="_blank">PR #101</a>
-        <a class="pill pill-soft" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/103" target="_blank">PR #103</a>
+        <a class="pill pill-soft" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/101" target="_blank" rel="noopener noreferrer">PR #101</a>
+        <a class="pill pill-soft" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/103" target="_blank" rel="noopener noreferrer">PR #103</a>
       </span>
     </div>
     <p class="text-sm text-stone-600 mb-3">v1.0 doubled the playbook count without writing new framework code. Each new playbook is a YAML composition referencing existing action prose files.</p>
@@ -586,7 +590,7 @@ search_within(slug)   bounded semantic search
     <div class="flex items-start gap-3 mb-3">
       <span class="pill pill-v10">4</span>
       <h3 class="font-semibold flex-1">CI graph-integrity gate — broken refs fail the PR.</h3>
-      <a class="pill pill-soft" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/104" target="_blank">PR #104</a>
+      <a class="pill pill-soft" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/104" target="_blank" rel="noopener noreferrer">PR #104</a>
     </div>
     <p class="text-sm text-stone-600 mb-3">A new GitHub Actions job builds the graph cache against your repo's <code class="mono text-xs bg-stone-100 px-1 rounded">.sdd/</code> tree on every PR. Any <code class="mono text-xs bg-stone-100 px-1 rounded">[[slug]]</code> that doesn't resolve to a real node fails the merge. The cache is fence-aware (skips wiki-links inside fenced code blocks and inline backticks) so only real prose links count.</p>
     <p class="text-xs text-stone-500">CI runs three jobs total: <strong>framework-tests</strong> (mutation-verified), <strong>scope-guard</strong> (UI copy ≥30 chars must trace to spec.md or wireframe.html), and <strong>graph-integrity</strong>.</p>
@@ -597,8 +601,8 @@ search_within(slug)   bounded semantic search
       <span class="pill pill-v10">5</span>
       <h3 class="font-semibold flex-1">Cost-bounded Playwright explorer — agentic browser-test discovery.</h3>
       <span class="flex gap-1">
-        <a class="pill pill-soft" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/100" target="_blank">PR #100</a>
-        <a class="pill pill-soft" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/102" target="_blank">PR #102</a>
+        <a class="pill pill-soft" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/100" target="_blank" rel="noopener noreferrer">PR #100</a>
+        <a class="pill pill-soft" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/102" target="_blank" rel="noopener noreferrer">PR #102</a>
       </span>
     </div>
     <p class="text-sm text-stone-600 mb-3">An optional extension that drives a real browser, navigates a page, and proposes acceptance-criteria suggestions back to you for triage. Findings emit <code class="mono text-xs bg-stone-100 px-1 rounded">ac:&lt;slug&gt;</code> wiki-links into the graph cache so they're queryable. <strong>Provider/endpoint/model required</strong> — no baked-in default. Costs are hard-capped per run.</p>
@@ -609,9 +613,9 @@ search_within(slug)   bounded semantic search
 
 <!-- ═══════════════════════════════════════════ PHASE B HARDENING ═══════════════════════════════════════════ -->
 <section id="phase-b" class="max-w-6xl mx-auto px-6 py-10 reviewable" data-section="phase-b" data-tier="v10">
-  <div class="review-tools review-only"><button class="rb" data-flag="ok">✓</button><button class="rb" data-flag="unclear">?</button><button class="rb" data-flag="problem">✗</button></div>
+  <div class="review-tools review-only"><button type="button" class="rb" data-flag="ok">✓</button><button type="button" class="rb" data-flag="unclear">?</button><button type="button" class="rb" data-flag="problem">✗</button></div>
   <h2 class="text-2xl font-bold mb-2">Phase B hardening — five small fixes that prevented a broken v1.0.</h2>
-  <p class="text-stone-600 max-w-3xl mb-6">Before tagging, three release blockers and two nice-to-haves surfaced during heavy throwaway testing. All five landed in <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/106" target="_blank">PR #106</a> alongside the version-marker bump.</p>
+  <p class="text-stone-600 max-w-3xl mb-6">Before tagging, three release blockers and two nice-to-haves surfaced during heavy throwaway testing. All five landed in <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/106" target="_blank" rel="noopener noreferrer">PR #106</a> alongside the version-marker bump.</p>
 
   <div class="grid md:grid-cols-2 gap-3">
     <div class="card p-5">
@@ -640,11 +644,11 @@ search_within(slug)   bounded semantic search
 
 <!-- ═══════════════════════════════════════════ WHAT'S COMING — v1.1 ═══════════════════════════════════════════ -->
 <section id="planned" class="max-w-6xl mx-auto px-6 py-10 reviewable" data-section="planned" data-tier="v11">
-  <div class="review-tools review-only"><button class="rb" data-flag="ok">✓</button><button class="rb" data-flag="unclear">?</button><button class="rb" data-flag="problem">✗</button></div>
+  <div class="review-tools review-only"><button type="button" class="rb" data-flag="ok">✓</button><button type="button" class="rb" data-flag="unclear">?</button><button type="button" class="rb" data-flag="problem">✗</button></div>
   <div class="flex items-end justify-between mb-2 flex-wrap gap-3">
     <div>
       <h2 class="text-2xl font-bold">What's coming in v1.1 — chat over the graph.</h2>
-      <p class="text-stone-600 mt-1">Tracked at <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/97" target="_blank">issue #97</a> on milestone v1.1. Carved out of v1.0 because the graph layer needs corpus to accumulate before chat synthesis adds value over plain retrieval — and because generation introduces hallucination risk that strains foundation 3.</p>
+      <p class="text-stone-600 mt-1">Tracked at <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/97" target="_blank" rel="noopener noreferrer">issue #97</a> on milestone v1.1. Carved out of v1.0 because the graph layer needs corpus to accumulate before chat synthesis adds value over plain retrieval — and because generation introduces hallucination risk that strains foundation 3.</p>
     </div>
     <span class="pill pill-v11">v1.1 — planned</span>
   </div>
@@ -672,8 +676,8 @@ search_within(slug)   bounded semantic search
   <details class="card p-5 mt-4">
     <summary class="font-semibold flex items-center"><span class="chevron mr-2">▶</span>Other open issues post-v1.0 (the small backlog)</summary>
     <ul class="mt-3 space-y-2 text-sm text-stone-600">
-      <li>· <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/95" target="_blank">#95</a> — ~25 deferred CodeRabbit findings from PR #92 self-host (parking lot — nothing security-critical, batch into a v1.0.1 maintenance pass).</li>
-      <li>· <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/105" target="_blank">#105</a> — multi-line code-span detection in <code class="mono text-xs">_graph_cache.py</code> (CommonMark backtick spans across line breaks; deferred from PR #104).</li>
+      <li>· <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/95" target="_blank" rel="noopener noreferrer">#95</a> — ~25 deferred CodeRabbit findings from PR #92 self-host (parking lot — nothing security-critical, batch into a v1.0.1 maintenance pass).</li>
+      <li>· <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/105" target="_blank" rel="noopener noreferrer">#105</a> — multi-line code-span detection in <code class="mono text-xs">_graph_cache.py</code> (CommonMark backtick spans across line breaks; deferred from PR #104).</li>
     </ul>
   </details>
 
@@ -682,7 +686,7 @@ search_within(slug)   bounded semantic search
 
 <!-- ═══════════════════════════════════════════ TRY IT NOW ═══════════════════════════════════════════ -->
 <section id="try" class="max-w-6xl mx-auto px-6 py-10 reviewable" data-section="try">
-  <div class="review-tools review-only"><button class="rb" data-flag="ok">✓</button><button class="rb" data-flag="unclear">?</button><button class="rb" data-flag="problem">✗</button></div>
+  <div class="review-tools review-only"><button type="button" class="rb" data-flag="ok">✓</button><button type="button" class="rb" data-flag="unclear">?</button><button type="button" class="rb" data-flag="problem">✗</button></div>
   <h2 class="text-2xl font-bold mb-4">Try it on a project — three commands.</h2>
 
   <ol class="space-y-4">
@@ -711,7 +715,7 @@ search_within(slug)   bounded semantic search
 
 <!-- ═══════════════════════════════════════════ REFERENCE TABLES ═══════════════════════════════════════════ -->
 <section id="reference" class="max-w-6xl mx-auto px-6 py-10 reviewable" data-section="reference">
-  <div class="review-tools review-only"><button class="rb" data-flag="ok">✓</button><button class="rb" data-flag="unclear">?</button><button class="rb" data-flag="problem">✗</button></div>
+  <div class="review-tools review-only"><button type="button" class="rb" data-flag="ok">✓</button><button type="button" class="rb" data-flag="unclear">?</button><button type="button" class="rb" data-flag="problem">✗</button></div>
   <h2 class="text-2xl font-bold mb-2">Reference — every artifact, counted live.</h2>
   <p class="text-stone-600 max-w-3xl mb-6">The numbers on this page came from running <code class="mono text-sm bg-stone-100 px-1 rounded">ls</code> against the live repo at v1.0.0. Click each header to expand the inventory.</p>
 
@@ -745,7 +749,8 @@ search_within(slug)   bounded semantic search
 
   <details class="card p-4 mb-3">
     <summary class="font-semibold flex items-center justify-between"><span><span class="chevron mr-2">▶</span>41 actions</span><span class="text-xs text-stone-400 mono">templates/.sdd/actions/</span></summary>
-    <input id="actionFilter" type="text" placeholder="filter…" class="w-full mt-3 px-3 py-2 text-sm border border-stone-200 rounded">
+    <label for="actionFilter" class="visually-hidden">Filter the 41 actions list</label>
+    <input id="actionFilter" type="text" placeholder="filter…" aria-label="Filter actions" class="w-full mt-3 px-3 py-2 text-sm border border-stone-200 rounded">
     <div id="actionList" class="mt-3 grid md:grid-cols-3 gap-1 text-xs mono text-stone-700"></div>
   </details>
 
@@ -838,14 +843,14 @@ search_within(slug)   bounded semantic search
     <table class="w-full mt-3 text-sm">
       <thead class="text-left text-xs uppercase text-stone-500"><tr><th class="py-2">PR</th><th>What landed</th><th>Merged</th></tr></thead>
       <tbody class="divide-y divide-stone-100 text-stone-600">
-        <tr><td class="py-2 mono"><a class="underline" target="_blank" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/98">#98</a></td><td>Graph foundation: wiki-links + 4-tier resolve + 3 MCP queries + invariant 8</td><td class="text-xs">2026-04-30</td></tr>
-        <tr><td class="py-2 mono"><a class="underline" target="_blank" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/99">#99</a></td><td>Branch-derived active feature</td><td class="text-xs">2026-05-01</td></tr>
-        <tr><td class="py-2 mono"><a class="underline" target="_blank" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/100">#100</a></td><td>Playwright explorer agentic logic</td><td class="text-xs">2026-04-30</td></tr>
-        <tr><td class="py-2 mono"><a class="underline" target="_blank" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/101">#101</a></td><td>bug.md playbook</td><td class="text-xs">2026-04-30</td></tr>
-        <tr><td class="py-2 mono"><a class="underline" target="_blank" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/102">#102</a></td><td>Playwright explorer 3 dogfood fixes</td><td class="text-xs">2026-04-30</td></tr>
-        <tr><td class="py-2 mono"><a class="underline" target="_blank" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/103">#103</a></td><td>refactor.md playbook</td><td class="text-xs">2026-05-01</td></tr>
-        <tr><td class="py-2 mono"><a class="underline" target="_blank" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/104">#104</a></td><td>CI graph-integrity gate</td><td class="text-xs">2026-05-01</td></tr>
-        <tr><td class="py-2 mono"><a class="underline" target="_blank" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/106">#106</a></td><td>v1.0.0 release + 5 Phase B fixes</td><td class="text-xs">2026-05-01</td></tr>
+        <tr><td class="py-2 mono"><a class="underline" target="_blank" rel="noopener noreferrer" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/98">#98</a></td><td>Graph foundation: wiki-links + 4-tier resolve + 3 MCP queries + invariant 8</td><td class="text-xs">2026-04-30</td></tr>
+        <tr><td class="py-2 mono"><a class="underline" target="_blank" rel="noopener noreferrer" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/99">#99</a></td><td>Branch-derived active feature</td><td class="text-xs">2026-05-01</td></tr>
+        <tr><td class="py-2 mono"><a class="underline" target="_blank" rel="noopener noreferrer" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/100">#100</a></td><td>Playwright explorer agentic logic</td><td class="text-xs">2026-04-30</td></tr>
+        <tr><td class="py-2 mono"><a class="underline" target="_blank" rel="noopener noreferrer" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/101">#101</a></td><td>bug.md playbook</td><td class="text-xs">2026-04-30</td></tr>
+        <tr><td class="py-2 mono"><a class="underline" target="_blank" rel="noopener noreferrer" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/102">#102</a></td><td>Playwright explorer 3 dogfood fixes</td><td class="text-xs">2026-04-30</td></tr>
+        <tr><td class="py-2 mono"><a class="underline" target="_blank" rel="noopener noreferrer" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/103">#103</a></td><td>refactor.md playbook</td><td class="text-xs">2026-05-01</td></tr>
+        <tr><td class="py-2 mono"><a class="underline" target="_blank" rel="noopener noreferrer" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/104">#104</a></td><td>CI graph-integrity gate</td><td class="text-xs">2026-05-01</td></tr>
+        <tr><td class="py-2 mono"><a class="underline" target="_blank" rel="noopener noreferrer" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/106">#106</a></td><td>v1.0.0 release + 5 Phase B fixes</td><td class="text-xs">2026-05-01</td></tr>
       </tbody>
     </table>
   </details>
@@ -855,7 +860,7 @@ search_within(slug)   bounded semantic search
 
 <!-- ═══════════════════════════════════════════ HONEST CAVEATS ═══════════════════════════════════════════ -->
 <section id="caveats" class="max-w-6xl mx-auto px-6 py-10 reviewable" data-section="caveats">
-  <div class="review-tools review-only"><button class="rb" data-flag="ok">✓</button><button class="rb" data-flag="unclear">?</button><button class="rb" data-flag="problem">✗</button></div>
+  <div class="review-tools review-only"><button type="button" class="rb" data-flag="ok">✓</button><button type="button" class="rb" data-flag="unclear">?</button><button type="button" class="rb" data-flag="problem">✗</button></div>
   <h2 class="text-2xl font-bold mb-2">Honest caveats — what SDD isn't.</h2>
   <p class="text-stone-600 max-w-3xl mb-6">SDD is opinionated and explicitly trades some things to win others. If any of these feel wrong for your project, SDD is the wrong tool.</p>
 
@@ -874,13 +879,13 @@ search_within(slug)   bounded semantic search
 <footer class="border-t border-stone-200 mt-12">
   <div class="max-w-6xl mx-auto px-6 py-8 flex flex-col md:flex-row gap-6 items-start md:items-center justify-between text-sm">
     <div class="text-stone-500">
-      <p><strong class="text-stone-900">SDD v1.0.0</strong> · tagged on commit <a class="mono underline" target="_blank" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/commit/ec3e711">ec3e711</a> · 2026-05-01</p>
+      <p><strong class="text-stone-900">SDD v1.0.0</strong> · tagged on commit <a class="mono underline" target="_blank" rel="noopener noreferrer" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/commit/ec3e711">ec3e711</a> · 2026-05-01</p>
       <p class="mt-1">192/192 framework tests + 68/68 MCP unit tests · all mutation-verified</p>
     </div>
     <div class="flex gap-4 flex-wrap">
-      <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow" target="_blank">Repo</a>
-      <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/releases/tag/v1.0.0" target="_blank">v1.0.0 release notes</a>
-      <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/97" target="_blank">v1.1 plan</a>
+      <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow" target="_blank" rel="noopener noreferrer">Repo</a>
+      <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/releases/tag/v1.0.0" target="_blank" rel="noopener noreferrer">v1.0.0 release notes</a>
+      <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/97" target="_blank" rel="noopener noreferrer">v1.1 plan</a>
       <a class="underline" href="history.html">Legacy walkthrough (archaeology)</a>
     </div>
   </div>
@@ -895,22 +900,23 @@ search_within(slug)   bounded semantic search
       <p class="text-xs text-stone-500 mono"><span id="rbCount">0 flagged</span> · <span id="rbNoteCount">0 notes</span></p>
     </div>
     <div class="flex flex-col gap-2">
-      <button id="exportReview" class="px-3 py-2 text-xs rounded bg-indigo-600 text-white font-semibold hover:bg-indigo-700">Export feedback</button>
-      <button id="clearReview" class="px-3 py-2 text-xs rounded border border-stone-300 hover:bg-stone-100">Clear all</button>
+      <button type="button" id="exportReview" class="px-3 py-2 text-xs rounded bg-indigo-600 text-white font-semibold hover:bg-indigo-700">Export feedback</button>
+      <button type="button" id="clearReview" class="px-3 py-2 text-xs rounded border border-stone-300 hover:bg-stone-100">Clear all</button>
     </div>
   </div>
 </div>
 
 <!-- Hidden export modal -->
-<div id="exportModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-6">
-  <div class="bg-white rounded-xl max-w-2xl w-full p-6">
+<div id="exportModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-6" role="dialog" aria-modal="true" aria-labelledby="exportTitle">
+  <div class="bg-white rounded-xl max-w-2xl w-full p-6" tabindex="-1">
     <div class="flex items-center justify-between mb-4">
-      <h3 class="font-bold text-lg">Your review — copy as markdown</h3>
-      <button id="closeExport" class="text-stone-500 hover:text-stone-900 text-xl leading-none">✕</button>
+      <h3 id="exportTitle" class="font-bold text-lg">Your review — copy as markdown</h3>
+      <button type="button" id="closeExport" aria-label="Close export dialog" class="text-stone-500 hover:text-stone-900 text-xl leading-none">✕</button>
     </div>
+    <label for="exportText" class="visually-hidden">Markdown export of your review notes</label>
     <textarea id="exportText" class="w-full h-72 p-3 mono text-xs border border-stone-200 rounded bg-stone-50" readonly></textarea>
     <div class="mt-3 flex gap-2 justify-end">
-      <button id="copyExport" class="px-4 py-2 text-sm rounded bg-stone-900 text-white font-semibold">Copy to clipboard</button>
+      <button type="button" id="copyExport" class="px-4 py-2 text-sm rounded bg-stone-900 text-white font-semibold">Copy to clipboard</button>
     </div>
   </div>
 </div>
@@ -1044,11 +1050,32 @@ references: [data-model.md, INDEX.md]
       ${file}
     `;
   }
+  // Plain-English labels for SVG group screen-reader text + aria-label.
+  const ARCH_ARIA = {
+    user: 'You — the human builder', claude: 'Claude Code harness',
+    playbooks: '4 playbooks', actions: '41 actions', hooks: '8 hooks',
+    scripts: '16 scripts', mcp: 'MCP server — 9 queries',
+    extensions: '3 extensions', setup: '7 setup-wizard bricks',
+    commands: '9 slash commands', tier3: 'Tier 3 synthesis (v1.1 plan)',
+    ci: 'CI workflow — three jobs', manifest: 'Hash-pinned manifest',
+    'claude-md': 'CLAUDE.md', outputs: 'Project outputs in plain markdown'
+  };
   document.querySelectorAll('.arch-box-grp').forEach(g => {
-    g.addEventListener('click', () => {
+    g.setAttribute('tabindex', '0');
+    g.setAttribute('role', 'button');
+    const aria = ARCH_ARIA[g.dataset.box] || g.dataset.box;
+    g.setAttribute('aria-label', `Inspect ${aria}`);
+    const activate = () => {
+      // Some groups (e.g. outputs) have no .arch-box rect — render detail
+      // without the active highlight rather than throwing.
       document.querySelectorAll('.arch-box').forEach(b => b.classList.remove('active'));
-      g.querySelector('.arch-box').classList.add('active');
+      const box = g.querySelector('.arch-box');
+      if (box) box.classList.add('active');
       renderArchDetail(g.dataset.box);
+    };
+    g.addEventListener('click', activate);
+    g.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); }
     });
   });
 
@@ -1154,17 +1181,59 @@ references: [data-model.md, INDEX.md]
       lines.push('');
     }
     document.getElementById('exportText').value = lines.join('\n');
-    document.getElementById('exportModal').classList.remove('hidden');
+    openExportModal();
   });
 
-  document.getElementById('closeExport').addEventListener('click', () => {
-    document.getElementById('exportModal').classList.add('hidden');
+  // Modal open/close + focus management + Escape-to-close. The function
+  // declarations below are hoisted within the IIFE so the exportReview
+  // handler above can call openExportModal() at click-time.
+  const modal = document.getElementById('exportModal');
+  let lastFocus = null;
+  function openExportModal() {
+    lastFocus = document.activeElement;
+    modal.classList.remove('hidden');
+    modal.querySelector('[tabindex="-1"]').focus();
+  }
+  function closeExportModal() {
+    modal.classList.add('hidden');
+    if (lastFocus && typeof lastFocus.focus === 'function') lastFocus.focus();
+  }
+  document.getElementById('closeExport').addEventListener('click', closeExportModal);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeExportModal();
   });
-  document.getElementById('copyExport').addEventListener('click', () => {
-    const t = document.getElementById('exportText');
-    t.select(); document.execCommand('copy');
-    document.getElementById('copyExport').textContent = 'Copied ✓';
-    setTimeout(() => { document.getElementById('copyExport').textContent = 'Copy to clipboard'; }, 1500);
+
+  // Modern clipboard with execCommand fallback. Only flash success if the
+  // copy actually succeeded; surface a clear error otherwise.
+  document.getElementById('copyExport').addEventListener('click', async () => {
+    const btn = document.getElementById('copyExport');
+    const text = document.getElementById('exportText').value;
+    const flash = (msg, ok = true) => {
+      const original = 'Copy to clipboard';
+      btn.textContent = msg;
+      btn.classList.toggle('bg-rose-700', !ok);
+      btn.classList.toggle('bg-stone-900', ok);
+      setTimeout(() => {
+        btn.textContent = original;
+        btn.classList.remove('bg-rose-700');
+        btn.classList.add('bg-stone-900');
+      }, 1500);
+    };
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        flash('Copied ✓');
+        return;
+      }
+    } catch (err) { /* fall through to execCommand fallback */ }
+    try {
+      const ta = document.getElementById('exportText');
+      ta.select();
+      const ok = document.execCommand('copy');
+      flash(ok ? 'Copied ✓' : 'Copy failed — select + ⌘C', ok);
+    } catch (err) {
+      flash('Copy failed — select + ⌘C', false);
+    }
   });
 
   applyReview();
