@@ -130,7 +130,7 @@ def synthesise(
 
         # 5. Cache lookup (T8 — exact-match question + corpus signature)
         cache = _load_synthesis_cache(project_root)
-        cache_key = _make_cache_key(question, corpus_signature)
+        cache_key = _make_cache_key(slug, question, corpus_signature)
         hit = cache.get("entries", {}).get(cache_key)
         if hit is not None:
             # Update LRU touch time + counters + return cached answer
@@ -144,12 +144,22 @@ def synthesise(
         counters = cache.setdefault("counters", {})
         counters["cache_misses"] = counters.get("cache_misses", 0) + 1
 
+        # CR cycle 4: per-run caps must enforce against run-local counters,
+        # not lifetime counters persisted to synthesis.json. Without this
+        # split, max_calls_per_run becomes a lifetime cap that locks the
+        # framework out forever once the historical tally exceeds it —
+        # the exact anti-theatre case Sam called out earlier in the walk.
+        # Use a process-local dict for cap enforcement; keep the persistent
+        # `counters` for observability across runs.
+        run_counters = {"calls_made": 0, "tokens_used": 0}
+
         # 6. Retrieval — gather candidate chunks (T5 path; reuses
         #    v1.0 graph queries minimally for now)
         chunks = _gather_chunks(project_root, graph, slug, question)
 
         # 7. Caps — pre-network refusal (T10) — all three caps enforced
-        cap_err = _check_caps(chunks, cfg, counters)
+        # against run-local tally so per-run semantics are real, not theatre.
+        cap_err = _check_caps(chunks, cfg, run_counters)
         if cap_err is not None:
             # Persist the bumped cache_misses counter even on cap refusal —
             # observability honesty: an attempt happened, we just didn't
@@ -160,10 +170,13 @@ def synthesise(
 
         # 8. LLM call — dependency-injected for tests
         llm = _llm_call or _real_llm_call
-        # Bump counters BEFORE the call (so a crash mid-call still
-        # reflects the attempt — observability honesty).
-        counters["calls_made"] = counters.get("calls_made", 0) + 1
+        # Bump BOTH the run-local enforcement counters (so the second call
+        # in the same run sees the first call's tokens) AND the persistent
+        # observability counters. (CR cycle 4.)
         approx_input_tokens = sum(len(c.get("text", "")) for c in chunks) // 4
+        run_counters["calls_made"] += 1
+        run_counters["tokens_used"] += approx_input_tokens
+        counters["calls_made"] = counters.get("calls_made", 0) + 1
         counters["tokens_used"] = counters.get("tokens_used", 0) + approx_input_tokens
         try:
             answer_text = llm(question, chunks, cfg)
@@ -287,7 +300,47 @@ def _load_tier3_config(project_root: str) -> Dict[str, Any]:
     tier3 = mcp.get("tier3")
     if not isinstance(tier3, dict):
         return {"enabled": False}
-    return tier3
+
+    # CR cycle 4: validate + normalise leaf values. Without this, bad
+    # state reaches the call site:
+    #   - enabled: "false" (quoted YAML string) is truthy → unintended
+    #     enabling
+    #   - max_calls_per_run: "ten" → ValueError at int() coercion in
+    #     _check_caps
+    #   - non-string endpoint/model → urllib failure deep in HTTP path
+    # Fail closed: any leaf type that doesn't match returns disabled
+    # (not enabled), or for caps falls back to the documented default.
+    enabled = tier3.get("enabled", False)
+    if not isinstance(enabled, bool):
+        enabled = False  # treat non-bool as disabled
+    if not enabled:
+        return {"enabled": False}
+
+    def _str_or_empty(v: Any) -> str:
+        return v if isinstance(v, str) else ""
+
+    def _coerce_int(v: Any, default: int) -> int:
+        if isinstance(v, bool):  # True/False are int-coercible — refuse
+            return default
+        if isinstance(v, int):
+            return v
+        if isinstance(v, str):
+            try:
+                return int(v)
+            except ValueError:
+                return default
+        return default
+
+    return {
+        "enabled": True,
+        "provider": _str_or_empty(tier3.get("provider")),
+        "endpoint": _str_or_empty(tier3.get("endpoint")),
+        "model": _str_or_empty(tier3.get("model")),
+        "auth_header": _str_or_empty(tier3.get("auth_header")),
+        "max_input_tokens_per_call": _coerce_int(tier3.get("max_input_tokens_per_call"), 8000),
+        "max_calls_per_run": _coerce_int(tier3.get("max_calls_per_run"), 10),
+        "max_total_tokens_per_run": _coerce_int(tier3.get("max_total_tokens_per_run"), 100000),
+    }
 
 
 def _validate_question(question: Any) -> Optional[str]:
@@ -331,9 +384,18 @@ def _resolve_auth_header(value: str) -> str:
     return value
 
 
-def _make_cache_key(question: str, corpus_signature: str) -> str:
-    """Cache key = sha256(question) || corpus_signature (T8 / T9)."""
-    qh = hashlib.sha256(question.encode("utf-8")).hexdigest()
+def _make_cache_key(slug: str, question: str, corpus_signature: str) -> str:
+    """Cache key = sha256(slug || NUL || question) || corpus_signature.
+
+    CR cycle 4: slug must be part of the key. Retrieval is anchored on
+    slug (anchor node + neighbours), so two different slugs asking the
+    same question would have shared one cached answer with citations
+    from the wrong part of the graph. The NUL separator guarantees
+    `(slug="a", question="bc")` and `(slug="ab", question="c")` hash
+    differently. (T8 / T9.)
+    """
+    material = f"{slug.lower()}\x00{question}"
+    qh = hashlib.sha256(material.encode("utf-8")).hexdigest()
     return f"{qh}:{corpus_signature}"
 
 
