@@ -5478,15 +5478,20 @@ cd "$d"
 out=$(bash "$START_SH" --playbook=refactor "extract atomic-write helper" 2>&1) && ec=0 || ec=$?
 cd - >/dev/null
 spec="$d/.sdd/refactors/001-extract-atomic-write-helper/spec.md"
+# Assert EXACTLY 4 actions in the SPEC stage — not "≥4" — so an
+# accidental extra `### action:` block in the scaffold would fail
+# the test instead of slipping through (CR cycle-5 minor).
+action_count=$(grep -c '^### action:' "$spec" 2>/dev/null || echo "0")
 if [ "$ec" -eq 0 ] \
    && [ -f "$spec" ] \
+   && [ "$action_count" -eq 4 ] \
    && grep -q '^### action: refactor-scope' "$spec" \
    && grep -q '^### action: regression-coverage' "$spec" \
    && grep -q '^### action: refactor-approach' "$spec" \
    && grep -q '^### action: minimal-diff-verify' "$spec"; then
-  ok "T132 refactor.md scaffolded with all 4 SPEC actions"
+  ok "T132 refactor.md scaffolded with exactly 4 SPEC actions"
 else
-  bad "T132 refactor.md scaffold incomplete" "exit=$ec; spec_head=$(head -25 "$spec" 2>/dev/null)"
+  bad "T132 refactor.md scaffold incomplete" "exit=$ec; action_count=$action_count; spec_head=$(head -25 "$spec" 2>/dev/null)"
 fi
 rm -rf "$d"
 
