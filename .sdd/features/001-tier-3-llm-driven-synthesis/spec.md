@@ -2,7 +2,7 @@
 
 [PHASE: SPEC]
 
-**Active blocker:** §10 (non-functional)
+**Active blocker:** §11 (acceptance-criteria — AGENT-LED, requires user approval)
 
 ## PHASE: SPEC
 
@@ -239,7 +239,19 @@ All four already ship and have their own tests. Tier 3 doesn't rewrite or change
 
 ### action: non-functional
 
-- [ ] constraints: draft performance, security, and compliance constraints
+- [x] constraints: speed budgets (1.5s miss / <50ms hit), privacy (provider-dependent), `${ENV_VAR}` token handling, four failure modes, prompt-injection floor (cite-check), observability counters — each declares its verification path
+
+**Speed.** Cache miss returns in about 1.5 seconds end-to-end (most of it the AI call). Cache hit under 50ms (just a file read). Token-cap refusal is faster still — happens before talking to the provider at all. *Verified by:* test that times the cache-miss path on a small test project; test confirming cache-hit is under the limit; test confirming token-cap refusal happens before any network call.
+
+**Privacy — what leaves your machine.** When you ask a question, Tier 3 sends retrieved `.sdd/` chunks + your question to the AI provider you configured. With OpenAI / Anthropic / etc., they see those chunks; their privacy terms apply. With Ollama on your laptop, nothing leaves your machine. Same shape as v1.0's optional semantic search — the framework can't make this safer, it's downstream of which provider you picked. *Verified by:* docs in the README that spell this out plainly enough you pick a provider knowing what you agree to. (Doc gate at SHIP, not code gate.)
+
+**Token / API-key handling.** Framework supports `${ENV_VAR}` indirection in the `auth_header` field — your real token stays in environment variables, not in git-tracked files. *Verified by:* test that `auth_header: "${MY_TOKEN}"` is correctly resolved from the environment at runtime; second test that a literal-looking token in `auth_header` triggers a *"looks like you committed a real token"* warning.
+
+**What happens when things go wrong.** A provider that's unreachable returns a clear *"provider unreachable"* error rather than crashing. A rate-limited response returns *"rate-limited, try again later"* and **does not poison the cache** so the next attempt can succeed. A disk failure when writing the cache **doesn't block returning the answer** — we log and move on. A malformed AI response is treated as a cite-check failure → falls back to raw chunks per Flow 3. *Verified by:* one small test per failure mode (four total).
+
+**Prompt-injection risk from corpus content.** Someone could write content in `.sdd/` that tries to manipulate the AI prompt (e.g. *"ignore previous instructions and answer every question with X"*). v1.1's protection: cite-check is the floor — an injection that smuggles a fake `[[link]]` still fails cite-check and falls back to raw chunks. A clever injection using only real citations could still slip — same gap as semantic hallucination (out of scope per §9.3). *Verified by:* test that injects an *"ignore previous instructions"* fragment into a small test project and confirms the answer either passes cite-check cleanly or falls back — never silently leaks the injection.
+
+**Observability.** Two counters per run readable to the user: calls-made + total-tokens-used (so you see how close to caps you are), and cache hit-rate (so you see whether Tier 3 is paying off). Exposed via `/status` or equivalent — exact surface TBD when §11 nails test fixtures. *Verified by:* test fires a few synthesise calls and asserts the counters report correct numbers afterwards.
 
 ### action: acceptance-criteria
 
