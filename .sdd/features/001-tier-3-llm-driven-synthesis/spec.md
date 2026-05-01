@@ -8,7 +8,7 @@
 
 ### action: problem
 
-- [ ] who: Who specifically has this problem? (real persona, not 'users')
+- [x] who: agent + Sam (primary in v1.1); future teammates + downstream adopters (later — design must not preclude them)
 - [ ] why-now: Why is it worth solving now?
 - [ ] what-breaks: What breaks (concretely) if it isn't solved?
 
