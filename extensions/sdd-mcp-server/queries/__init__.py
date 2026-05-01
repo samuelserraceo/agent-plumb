@@ -19,6 +19,7 @@ from .search import search
 from .get_backlinks import get_backlinks
 from .get_neighbours import get_neighbours
 from .search_within import search_within
+from .synthesise import synthesise
 
 REGISTRY = {
     "get_active_step": get_active_step,
@@ -30,6 +31,7 @@ REGISTRY = {
     "get_backlinks": get_backlinks,
     "get_neighbours": get_neighbours,
     "search_within": search_within,
+    "synthesise": synthesise,
 }
 
 __all__ = ["REGISTRY", *REGISTRY.keys()]

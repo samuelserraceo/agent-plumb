@@ -4,7 +4,7 @@
 
 **Run mode:** full autonomous (Sam confirmed 2026-05-01 — saved in `feedback_full_autonomous_build.md`). Halt-triggers per CLAUDE.md: test stays RED after 3 attempts · pre-commit blocked · real design gap surfaces in §5/§6 · credential/infra step needs Sam.
 
-**Active blocker:** T1 — scaffold `synthesise.py` stub returning `{ok:false, reason:"not implemented"}`
+**Active blocker:** T2 — `parameters.mcp.tier3` schema in `templates/.sdd/config.md`
 
 ## PHASE: SPEC
 
@@ -475,7 +475,7 @@ All §4 constraints have a mapped AC. Plan-decompose coverage check passes pre-e
 ### Build tasks (30 total — 28 BUILD + 2 PROD-ONLY · run mode: full autonomous)
 
 **Foundation:**
-- [ ] T1 RED: scaffold `synthesise.py` stub + register in MCP REGISTRY → `extensions/sdd-mcp-server/tests/test_synthesise_scaffold.py`
+- [x] T1 GREEN: scaffold `synthesise.py` stub + register in MCP REGISTRY → `extensions/sdd-mcp-server/tests/test_synthesise_scaffold.py` (71/71 MCP tests passing; 192/192 framework tests passing)
 - [ ] T2 RED: `parameters.mcp.tier3` schema in `templates/.sdd/config.md` → `extensions/sdd-mcp-server/tests/test_tier3_config_schema.py`
 - [ ] T3 RED: confirm `data-model.md` Tier3Config + SynthesisCache entries → `extensions/sdd-mcp-server/tests/test_data_model_tier3_entries.py`
 - [ ] T4 RED: brick 007 extension scaffolded with placeholder Tier 3 sub-questions → `extensions/sdd-mcp-server/tests/test_brick_007_tier3_scaffold.py`
