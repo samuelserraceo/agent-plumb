@@ -510,11 +510,11 @@ All §4 constraints have a mapped AC. Plan-decompose coverage check passes pre-e
 - [x] T19 GREEN: prompt-injection floor: cite-check pass OR fallback (AC14) → `extensions/sdd-mcp-server/tests/test_synthesise_injection.py`
 
 **Best-effort:**
-- [ ] T20 RED: ambiguity surfaced — 5 representative test cases (AC15) → `extensions/sdd-mcp-server/tests/test_synthesise_ambiguity.py`
-- [ ] T21 RED: empty corpus — 5 representative test cases (AC16) → `extensions/sdd-mcp-server/tests/test_synthesise_empty_corpus.py`
+- [x] T20 GREEN: ambiguity surfaced — 5 representative test cases (AC15) → `extensions/sdd-mcp-server/tests/test_synthesise_ambiguity.py`
+- [x] T21 GREEN: empty corpus — 5 representative test cases (AC16) → `extensions/sdd-mcp-server/tests/test_synthesise_empty_corpus.py`
 
 **Observability:**
-- [ ] T22 RED: counters report correctly (AC17) → `extensions/sdd-mcp-server/tests/test_synthesise_observability.py`
+- [x] T22 GREEN: counters report correctly (AC17) → `extensions/sdd-mcp-server/tests/test_synthesise_observability.py`
 
 **Wizard E2E:**
 - [ ] T23 RED: brick 007 Tier 3 sub-questions filled; non-interactive E2E (AC20) → `test/run-framework-test.sh::T138-tier3-wizard`
@@ -524,9 +524,9 @@ All §4 constraints have a mapped AC. Plan-decompose coverage check passes pre-e
 - [ ] T25 RED: `/ask` slash command body wraps synthesise() with format="prose" → `test/run-framework-test.sh::T139-ask-slash`
 
 **§15 sweep additions:**
-- [ ] T28 RED: cache eviction policy LRU at 1000 entries (AC21) → `extensions/sdd-mcp-server/tests/test_synthesise_cache_eviction.py`
-- [ ] T29 RED: question validation (AC22) → `extensions/sdd-mcp-server/tests/test_synthesise_question_validation.py`
-- [ ] T30 RED: slug sanitisation (AC23) → `extensions/sdd-mcp-server/tests/test_synthesise_slug_validation.py`
+- [x] T28 GREEN: cache eviction policy LRU at 1000 entries (AC21) → `extensions/sdd-mcp-server/tests/test_synthesise_cache_eviction.py`
+- [x] T29 GREEN: question validation (AC22) → `extensions/sdd-mcp-server/tests/test_synthesise_question_validation.py`
+- [x] T30 GREEN: slug sanitisation (AC23) → `extensions/sdd-mcp-server/tests/test_synthesise_slug_validation.py`
 
 **PROD-ONLY (deferred to first prod walk):**
 - [ ] T26 [PROD-ONLY]: real-provider naturalness check (AC18) → manual smoke per §12
