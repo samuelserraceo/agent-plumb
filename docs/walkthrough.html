@@ -1,0 +1,1244 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SDD v1.0.0 — what shipped, what's next, can it be reviewed</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root {
+    --ink: #1c1917; --ink-2: #44403c; --ink-3: #78716c; --paper: #fafaf9;
+    --line: #e7e5e4; --line-2: #d6d3d1;
+    --accent: #4f46e5; --accent-bg: #eef2ff;
+    --green: #15803d; --green-bg: #dcfce7;
+    --amber: #92400e; --amber-bg: #fef3c7;
+    --rose: #b91c1c; --rose-bg: #fee2e2;
+    --violet: #6d28d9; --violet-bg: #ede9fe;
+    --teal: #0e7490; --teal-bg: #cffafe;
+  }
+  body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink); background: var(--paper); }
+  .mono { font-family: "SF Mono", Monaco, Consolas, "Liberation Mono", monospace; }
+  .pill { display:inline-flex; align-items:center; gap:6px; padding:2px 10px; border-radius:999px; font-size:11px; font-weight:600; line-height:1.6; }
+  .pill-v10 { background: var(--green-bg); color: var(--green); border:1px solid #86efac; }
+  .pill-v11 { background: var(--violet-bg); color: var(--violet); border:1px solid #c4b5fd; border-style: dashed; }
+  .pill-soft { background: #f5f5f4; color: var(--ink-2); border:1px solid var(--line); }
+  .card { background:#fff; border:1px solid var(--line); border-radius:12px; transition: box-shadow .18s ease, transform .18s ease; }
+  .card:hover { box-shadow: 0 4px 18px -8px rgba(0,0,0,.12); }
+  .card-v11 { border-style: dashed; border-color: #c4b5fd; background: linear-gradient(to bottom, #fff, #fbf9ff); }
+  .code { background: #1c1917; color: #fafaf9; padding: 14px 18px; border-radius: 8px; overflow-x:auto; font-size: 12.5px; line-height: 1.65; }
+  .code .k { color: #fbbf24; } .code .v { color: #a7f3d0; } .code .c { color: #78716c; font-style: italic; } .code .s { color: #f9a8d4; }
+  .codeblock-light { background:#f5f5f4; border:1px solid var(--line); padding: 12px 16px; border-radius: 8px; overflow-x:auto; font-size: 12.5px; line-height: 1.6; color: var(--ink-2); }
+  details > summary { cursor: pointer; list-style: none; }
+  details > summary::-webkit-details-marker { display: none; }
+  .chevron { display:inline-block; transition: transform .18s ease; }
+  details[open] .chevron { transform: rotate(90deg); }
+  .arch-box { fill: #fff; stroke: var(--line-2); stroke-width: 1.5; cursor: pointer; transition: fill .15s ease, stroke .15s ease; }
+  .arch-box:hover { fill: var(--accent-bg); stroke: var(--accent); }
+  .arch-box.dashed { stroke-dasharray: 6 4; stroke: var(--violet); fill: var(--violet-bg); }
+  .arch-box.active { fill: var(--accent-bg); stroke: var(--accent); stroke-width: 2.5; }
+  .arch-box-grp { outline: none; }
+  .arch-box-grp:focus-visible .arch-box { stroke: var(--accent); stroke-width: 2.5; filter: drop-shadow(0 0 4px rgba(79,70,229,.45)); }
+  .arch-box-grp:focus-visible:not(:has(.arch-box)) text { fill: var(--accent); text-decoration: underline; }
+  .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+  .arch-label { font-size: 13px; font-weight: 600; fill: var(--ink); pointer-events: none; }
+  .arch-sub   { font-size: 11px; fill: var(--ink-3); pointer-events: none; }
+  .arch-arrow { stroke: var(--line-2); stroke-width: 1.5; fill: none; marker-end: url(#arrow); }
+  .arch-arrow.dashed { stroke-dasharray: 4 3; stroke: var(--violet); }
+  .step-active .step-dot { background: var(--accent); transform: scale(1.2); }
+  .step-active .step-label { color: var(--accent); font-weight: 600; }
+  .step-dot { width: 10px; height: 10px; border-radius: 999px; background: var(--line-2); transition: all .2s ease; }
+  /* filter visibility */
+  body[data-filter="v10"] [data-tier="v11"] { display: none; }
+  body[data-filter="v11"] [data-tier="v10"] { display: none; }
+  /* review mode */
+  body:not([data-review="on"]) .review-only { display: none; }
+  body[data-review="on"] .reviewable { position: relative; }
+  body[data-review="on"] .reviewable::before {
+    content: ''; position: absolute; inset: -8px -8px -8px -8px; border: 2px dashed transparent;
+    border-radius: 14px; pointer-events: none; transition: border-color .2s ease;
+  }
+  body[data-review="on"] .reviewable:hover::before { border-color: rgba(79,70,229,.25); }
+  body[data-review="on"] .reviewable[data-flag="ok"]::before { border-color: var(--green); }
+  body[data-review="on"] .reviewable[data-flag="problem"]::before { border-color: var(--rose); }
+  body[data-review="on"] .reviewable[data-flag="unclear"]::before { border-color: var(--amber); }
+  .review-tools { position: absolute; top: -10px; right: 6px; display: flex; gap: 4px; opacity: 0; transition: opacity .15s; z-index: 5; }
+  body[data-review="on"] .reviewable:hover .review-tools,
+  body[data-review="on"] .reviewable[data-flag] .review-tools { opacity: 1; }
+  .rb { width: 26px; height: 22px; border-radius: 6px; border: 1px solid var(--line); background: #fff; font-size: 11px; cursor: pointer; }
+  .rb:hover { background: var(--accent-bg); border-color: var(--accent); }
+  .rb.active-ok { background: var(--green-bg); border-color: var(--green); }
+  .rb.active-problem { background: var(--rose-bg); border-color: var(--rose); }
+  .rb.active-unclear { background: var(--amber-bg); border-color: var(--amber); }
+  .review-note { display: block; width: 100%; margin-top: 8px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; font-size: 13px; background: #fffbea; }
+  /* validation pills */
+  .vbtn { padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); background: #fff; font-size: 13px; cursor: pointer; }
+  .vbtn.on-ok { background: var(--green-bg); border-color: var(--green); color: var(--green); }
+  .vbtn.on-problem { background: var(--rose-bg); border-color: var(--rose); color: var(--rose); }
+  .vbtn.on-unclear { background: var(--amber-bg); border-color: var(--amber); color: var(--amber); }
+  /* sticky header sizing */
+  header.app { position: sticky; top: 0; z-index: 30; background: rgba(250,250,249,.92); backdrop-filter: blur(6px); border-bottom: 1px solid var(--line); }
+  /* anchor offset for sticky header */
+  section[id] { scroll-margin-top: 96px; }
+</style>
+</head>
+<body data-filter="all">
+
+<!-- ═══════════════════════════════════════════ HEADER ═══════════════════════════════════════════ -->
+<header class="app">
+  <div class="max-w-6xl mx-auto px-6 py-3 flex items-center gap-4 flex-wrap">
+    <a href="#top" class="flex items-center gap-3">
+      <span class="text-base font-bold tracking-tight">SDD</span>
+      <span class="pill pill-v10">v1.0.0 shipped</span>
+    </a>
+    <nav class="flex items-center gap-3 text-sm text-stone-600 ml-2">
+      <a href="#loop" class="hover:text-stone-900">The loop</a>
+      <a href="#architecture" class="hover:text-stone-900">Architecture</a>
+      <a href="#validation" class="hover:text-stone-900">Validate</a>
+      <a href="#shipped" class="hover:text-stone-900">v1.0</a>
+      <a href="#planned" class="hover:text-stone-900">v1.1</a>
+      <a href="#try" class="hover:text-stone-900">Try it</a>
+      <a href="#reference" class="hover:text-stone-900">Reference</a>
+    </nav>
+    <div class="ml-auto flex items-center gap-2">
+      <span class="text-xs text-stone-500 mr-1">Show:</span>
+      <button type="button" class="filter-btn px-2 py-1 text-xs rounded border border-stone-300" data-set="all">All</button>
+      <button type="button" class="filter-btn px-2 py-1 text-xs rounded border border-stone-300" data-set="v10">v1.0 only</button>
+      <button type="button" class="filter-btn px-2 py-1 text-xs rounded border border-stone-300" data-set="v11">v1.1 only</button>
+      <span class="mx-2 w-px h-5 bg-stone-300"></span>
+      <label class="flex items-center gap-2 text-xs cursor-pointer select-none">
+        <input id="reviewToggle" type="checkbox" class="accent-indigo-600">
+        <span>Review mode</span>
+      </label>
+    </div>
+  </div>
+</header>
+
+<a id="top"></a>
+
+<!-- ═══════════════════════════════════════════ HERO ═══════════════════════════════════════════ -->
+<section class="max-w-6xl mx-auto px-6 pt-12 pb-8 reviewable" data-section="hero">
+  <div class="review-tools review-only"><button type="button" class="rb" data-flag="ok" title="Looks good">✓</button><button type="button" class="rb" data-flag="unclear" title="Unclear">?</button><button type="button" class="rb" data-flag="problem" title="Issue">✗</button></div>
+  <p class="text-sm text-stone-500 uppercase tracking-wider mb-3">A spec-driven workflow for non-technical builders working with AI.</p>
+  <h1 class="text-4xl md:text-5xl font-bold leading-tight tracking-tight max-w-4xl">A way to build software with AI without the AI making stuff up.</h1>
+  <div class="mt-6 max-w-3xl text-stone-600 text-lg leading-relaxed space-y-3">
+    <p>You bring the <em>what</em> in plain English. The agent proposes the <em>how</em> with tradeoffs you can react to. Every decision lands in markdown files you can read, share with a future engineer, or rebuild on a different stack.</p>
+    <p>Pre-commit hooks make drift mechanically impossible — the agent literally cannot commit code that wanders from its spec. v1.0 ships with 4 playbooks, a knowledge graph layer, and a CI gate that blocks broken refs at PR time.</p>
+  </div>
+  <div class="mt-8 flex gap-3 flex-wrap">
+    <a href="#try" class="px-5 py-3 rounded-lg bg-stone-900 text-white text-sm font-semibold hover:bg-stone-700">Try SDD now →</a>
+    <a href="#loop" class="px-5 py-3 rounded-lg border border-stone-300 text-sm font-semibold hover:bg-stone-100">Watch the 30-second loop</a>
+    <a href="#validation" class="px-5 py-3 rounded-lg border border-stone-300 text-sm font-semibold hover:bg-stone-100">Validate the architecture</a>
+  </div>
+  <textarea class="review-note review-only" placeholder="Notes on the hero…" data-note="hero"></textarea>
+</section>
+
+<!-- ═══════════════════════════════════════════ HOW TO READ ═══════════════════════════════════════════ -->
+<section class="max-w-6xl mx-auto px-6 py-6">
+  <div class="rounded-xl border border-stone-200 bg-white p-5 text-sm text-stone-700 flex flex-col md:flex-row gap-4 items-start">
+    <span class="pill pill-soft">How to read this page</span>
+    <div class="flex-1 grid md:grid-cols-3 gap-4">
+      <div><strong class="block text-stone-900 mb-1">Filter (top right)</strong> Show all, only v1.0 (live today), or only v1.1 (planned, dashed).</div>
+      <div><strong class="block text-stone-900 mb-1">Click any architecture box</strong> A panel opens with the actual file paths and a sample.</div>
+      <div><strong class="block text-stone-900 mb-1">Review mode (top right)</strong> Flag any section ✓ / ? / ✗, leave a note, export feedback as markdown.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ AT A GLANCE ═══════════════════════════════════════════ -->
+<section class="max-w-6xl mx-auto px-6 py-10 reviewable" data-section="at-a-glance">
+  <div class="review-tools review-only"><button type="button" class="rb" data-flag="ok">✓</button><button type="button" class="rb" data-flag="unclear">?</button><button type="button" class="rb" data-flag="problem">✗</button></div>
+  <h2 class="text-2xl font-bold mb-2">The whole framework in three sentences.</h2>
+  <p class="text-stone-600 max-w-3xl mb-8">There's no orchestrator, no database, no embedded LLM, no SaaS. It's three plain ideas wired together by markdown files and pre-commit hooks.</p>
+  <div class="grid md:grid-cols-3 gap-4">
+    <div class="card p-5">
+      <div class="pill pill-soft mb-3">1. The state file</div>
+      <h3 class="font-semibold mb-2">The state file is the program.</h3>
+      <p class="text-sm text-stone-600 leading-relaxed">Every running feature has a <code class="mono text-xs bg-stone-100 px-1 rounded">spec.md</code>. Each <code class="mono text-xs bg-stone-100 px-1 rounded">[ ]</code> row is a question waiting for an answer. The agent reads it, fills it, ticks it, commits. Your work-tree IS your application state.</p>
+    </div>
+    <div class="card p-5">
+      <div class="pill pill-soft mb-3">2. The playbook</div>
+      <h3 class="font-semibold mb-2">The playbook is the questioning agent.</h3>
+      <p class="text-sm text-stone-600 leading-relaxed">A playbook (<code class="mono text-xs bg-stone-100 px-1 rounded">feature.md</code>, <code class="mono text-xs bg-stone-100 px-1 rounded">bug.md</code>, etc.) says <em>"ask these questions in this order."</em> Each step is a small focused prose file. New playbooks are just compositions of existing steps — not new code.</p>
+    </div>
+    <div class="card p-5">
+      <div class="pill pill-soft mb-3">3. The filesystem</div>
+      <h3 class="font-semibold mb-2">The filesystem is the retrieval system.</h3>
+      <p class="text-sm text-stone-600 leading-relaxed">Lessons land in <code class="mono text-xs bg-stone-100 px-1 rounded">patterns.md</code>, schemas in <code class="mono text-xs bg-stone-100 px-1 rounded">data-model.md</code>, decisions in an append-only <code class="mono text-xs bg-stone-100 px-1 rounded">decisions.md</code>. <a class="underline decoration-stone-300 hover:decoration-stone-700" href="#shipped-graph">v1.0 added a graph layer</a> on top so the agent can follow <code class="mono text-xs bg-stone-100 px-1 rounded">[[links]]</code> between them.</p>
+    </div>
+  </div>
+  <textarea class="review-note review-only" placeholder="Notes on the three-card explainer…" data-note="at-a-glance"></textarea>
+</section>
+
+<!-- ═══════════════════════════════════════════ THE 30-SECOND LOOP ═══════════════════════════════════════════ -->
+<section id="loop" class="max-w-6xl mx-auto px-6 py-10 reviewable" data-section="loop">
+  <div class="review-tools review-only"><button type="button" class="rb" data-flag="ok">✓</button><button type="button" class="rb" data-flag="unclear">?</button><button type="button" class="rb" data-flag="problem">✗</button></div>
+  <h2 class="text-2xl font-bold mb-2">The 30-second loop — what one <code class="mono text-xl bg-stone-100 px-2 rounded">/next</code> actually does.</h2>
+  <p class="text-stone-600 max-w-3xl mb-6">Every <code class="mono text-sm bg-stone-100 px-1 rounded">/next</code> command runs the same four-step container. One step in your spec = one commit in git. No batching, no shortcuts.</p>
+
+  <!-- Stepper nav -->
+  <div class="card p-6">
+    <div class="flex items-center gap-2 md:gap-6 mb-6 overflow-x-auto" id="loopStepper">
+      <button type="button" class="loop-step flex items-center gap-3" data-step="1">
+        <span class="step-dot"></span><span class="step-label text-sm text-stone-500">1. LOCATE</span>
+      </button>
+      <span class="flex-1 h-px bg-stone-200 min-w-4"></span>
+      <button type="button" class="loop-step flex items-center gap-3" data-step="2">
+        <span class="step-dot"></span><span class="step-label text-sm text-stone-500">2. EXECUTE</span>
+      </button>
+      <span class="flex-1 h-px bg-stone-200 min-w-4"></span>
+      <button type="button" class="loop-step flex items-center gap-3" data-step="3">
+        <span class="step-dot"></span><span class="step-label text-sm text-stone-500">3. SYNC</span>
+      </button>
+      <span class="flex-1 h-px bg-stone-200 min-w-4"></span>
+      <button type="button" class="loop-step flex items-center gap-3" data-step="4">
+        <span class="step-dot"></span><span class="step-label text-sm text-stone-500">4. ADVANCE</span>
+      </button>
+    </div>
+
+    <!-- Step content -->
+    <div id="loopContent" class="grid md:grid-cols-2 gap-6 min-h-[280px]"></div>
+
+    <div class="mt-6 flex justify-between items-center">
+      <button type="button" id="loopPrev" class="px-4 py-2 rounded border border-stone-300 text-sm hover:bg-stone-100">← Previous step</button>
+      <span id="loopCounter" class="text-xs text-stone-500">Step 1 of 4</span>
+      <button type="button" id="loopNext" class="px-4 py-2 rounded border border-stone-300 text-sm hover:bg-stone-100">Next step →</button>
+    </div>
+  </div>
+  <textarea class="review-note review-only" placeholder="Notes on the loop demo…" data-note="loop"></textarea>
+</section>
+
+<!-- ═══════════════════════════════════════════ ARCHITECTURE DIAGRAM ═══════════════════════════════════════════ -->
+<section id="architecture" class="max-w-6xl mx-auto px-6 py-10 reviewable" data-section="architecture">
+  <div class="review-tools review-only"><button type="button" class="rb" data-flag="ok">✓</button><button type="button" class="rb" data-flag="unclear">?</button><button type="button" class="rb" data-flag="problem">✗</button></div>
+  <h2 class="text-2xl font-bold mb-2">System architecture — solid lines = live, dashed = v1.1 plan.</h2>
+  <p class="text-stone-600 max-w-3xl mb-6">Click any box to see what's actually inside it (file paths, counts, a real sample). The diagram is the source of truth — every claim below it traces to a file you can open.</p>
+
+  <div class="card p-4 md:p-6">
+    <div class="overflow-x-auto">
+      <svg viewBox="0 0 900 540" class="w-full" style="min-width: 720px;">
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--line-2)"/>
+          </marker>
+          <marker id="arrow-v" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--violet)"/>
+          </marker>
+        </defs>
+
+        <!-- USER -->
+        <g class="arch-box-grp" data-box="user">
+          <rect class="arch-box" x="40" y="30" width="160" height="60" rx="8" />
+          <text class="arch-label" x="120" y="55" text-anchor="middle">YOU (the human)</text>
+          <text class="arch-sub"   x="120" y="74" text-anchor="middle">non-technical builder</text>
+        </g>
+
+        <!-- arrow user → claude -->
+        <line class="arch-arrow" x1="120" y1="92" x2="120" y2="118"/>
+
+        <!-- CLAUDE CODE -->
+        <g class="arch-box-grp" data-box="claude">
+          <rect class="arch-box" x="40" y="120" width="820" height="60" rx="8" />
+          <text class="arch-label" x="450" y="145" text-anchor="middle">CLAUDE CODE — the harness (reads CLAUDE.md, fires hooks, runs slash commands)</text>
+          <text class="arch-sub"   x="450" y="164" text-anchor="middle">built-in pre-commit + post-stop hooks chain · trust boundary between framework and project data</text>
+        </g>
+
+        <!-- arrow claude → sdd -->
+        <line class="arch-arrow" x1="450" y1="182" x2="450" y2="206"/>
+
+        <!-- SDD FRAMEWORK BODY -->
+        <g>
+          <rect x="40" y="210" width="820" height="220" rx="12" fill="#fafaf9" stroke="var(--line)" stroke-width="1.5"/>
+          <text class="arch-sub" x="60" y="232" font-size="11" font-weight="600" fill="var(--ink-2)">SDD FRAMEWORK</text>
+
+          <!-- playbooks -->
+          <g class="arch-box-grp" data-box="playbooks">
+            <rect class="arch-box" x="60" y="245" width="160" height="50" rx="6"/>
+            <text class="arch-label" x="140" y="266" text-anchor="middle">Playbooks</text>
+            <text class="arch-sub"   x="140" y="284" text-anchor="middle">4 — feature, project, bug, refactor</text>
+          </g>
+          <!-- actions -->
+          <g class="arch-box-grp" data-box="actions">
+            <rect class="arch-box" x="230" y="245" width="160" height="50" rx="6"/>
+            <text class="arch-label" x="310" y="266" text-anchor="middle">Actions</text>
+            <text class="arch-sub"   x="310" y="284" text-anchor="middle">41 — one prose file per step</text>
+          </g>
+          <!-- hooks -->
+          <g class="arch-box-grp" data-box="hooks">
+            <rect class="arch-box" x="400" y="245" width="160" height="50" rx="6"/>
+            <text class="arch-label" x="480" y="266" text-anchor="middle">Hooks</text>
+            <text class="arch-sub"   x="480" y="284" text-anchor="middle">8 — enforcement layer</text>
+          </g>
+          <!-- scripts -->
+          <g class="arch-box-grp" data-box="scripts">
+            <rect class="arch-box" x="570" y="245" width="130" height="50" rx="6"/>
+            <text class="arch-label" x="635" y="266" text-anchor="middle">Scripts</text>
+            <text class="arch-sub"   x="635" y="284" text-anchor="middle">16 helpers</text>
+          </g>
+          <!-- mcp -->
+          <g class="arch-box-grp" data-box="mcp">
+            <rect class="arch-box" x="710" y="245" width="130" height="50" rx="6"/>
+            <text class="arch-label" x="775" y="266" text-anchor="middle">MCP server</text>
+            <text class="arch-sub"   x="775" y="284" text-anchor="middle">9 queries (3 graph)</text>
+          </g>
+
+          <!-- extensions -->
+          <g class="arch-box-grp" data-box="extensions">
+            <rect class="arch-box" x="60" y="315" width="220" height="50" rx="6"/>
+            <text class="arch-label" x="170" y="336" text-anchor="middle">Extensions</text>
+            <text class="arch-sub"   x="170" y="354" text-anchor="middle">3 — Playwright · explorer · MCP</text>
+          </g>
+          <!-- setup bricks -->
+          <g class="arch-box-grp" data-box="setup">
+            <rect class="arch-box" x="290" y="315" width="200" height="50" rx="6"/>
+            <text class="arch-label" x="390" y="336" text-anchor="middle">Setup wizard</text>
+            <text class="arch-sub"   x="390" y="354" text-anchor="middle">7 plain-English questions</text>
+          </g>
+          <!-- slash commands -->
+          <g class="arch-box-grp" data-box="commands">
+            <rect class="arch-box" x="500" y="315" width="170" height="50" rx="6"/>
+            <text class="arch-label" x="585" y="336" text-anchor="middle">Slash commands</text>
+            <text class="arch-sub"   x="585" y="354" text-anchor="middle">9 user-facing</text>
+          </g>
+          <!-- v1.1 tier 3 -->
+          <g class="arch-box-grp" data-box="tier3" data-tier="v11">
+            <rect class="arch-box dashed" x="680" y="315" width="160" height="50" rx="6"/>
+            <text class="arch-label" x="760" y="336" text-anchor="middle" fill="var(--violet)">Tier 3 synthesis</text>
+            <text class="arch-sub"   x="760" y="354" text-anchor="middle" fill="var(--violet)">v1.1 — chat over graph</text>
+          </g>
+
+          <!-- CI gate -->
+          <g class="arch-box-grp" data-box="ci">
+            <rect class="arch-box" x="60" y="385" width="280" height="35" rx="6"/>
+            <text class="arch-label" x="200" y="408" text-anchor="middle">CI: framework-tests · scope-guard · graph-integrity</text>
+          </g>
+          <g class="arch-box-grp" data-box="manifest">
+            <rect class="arch-box" x="350" y="385" width="220" height="35" rx="6"/>
+            <text class="arch-label" x="460" y="408" text-anchor="middle">Manifest — hash-pinned ~61 files</text>
+          </g>
+          <g class="arch-box-grp" data-box="claude-md">
+            <rect class="arch-box" x="580" y="385" width="260" height="35" rx="6"/>
+            <text class="arch-label" x="710" y="408" text-anchor="middle">CLAUDE.md — managed + project rules</text>
+          </g>
+        </g>
+
+        <!-- arrow sdd → outputs -->
+        <line class="arch-arrow" x1="450" y1="432" x2="450" y2="458"/>
+
+        <!-- OUTPUTS -->
+        <g>
+          <rect x="40" y="460" width="820" height="65" rx="12" fill="#fff7ed" stroke="#fdba74" stroke-width="1.5"/>
+          <text class="arch-sub" x="60" y="482" font-size="11" font-weight="600" fill="var(--amber)">OUTPUTS — the project state in plain markdown</text>
+          <g class="arch-box-grp" data-box="outputs">
+            <text class="arch-label" x="450" y="505" text-anchor="middle" font-size="13">spec.md · INDEX.md · decisions.md · patterns.md · data-model.md · stack.md · git commits · graph cache · verification.json</text>
+          </g>
+        </g>
+      </svg>
+    </div>
+
+    <!-- detail panel -->
+    <div id="archDetail" class="mt-6 p-5 bg-stone-50 border border-stone-200 rounded-lg text-sm text-stone-700">
+      <p class="text-stone-500 italic">Click any box in the diagram above. Detail appears here.</p>
+    </div>
+  </div>
+  <textarea class="review-note review-only" placeholder="Notes on the architecture diagram…" data-note="architecture"></textarea>
+</section>
+
+<!-- ═══════════════════════════════════════════ ARCHITECTURE VALIDATION ═══════════════════════════════════════════ -->
+<section id="validation" class="max-w-6xl mx-auto px-6 py-10 reviewable" data-section="validation">
+  <div class="review-tools review-only"><button type="button" class="rb" data-flag="ok">✓</button><button type="button" class="rb" data-flag="unclear">?</button><button type="button" class="rb" data-flag="problem">✗</button></div>
+  <h2 class="text-2xl font-bold mb-2">Does the architecture hold up? Three checks you can do yourself.</h2>
+  <p class="text-stone-600 max-w-3xl mb-6">SDD's design rests on three foundations. The whole framework rots if any of them slip. Here's a check per foundation — read the evidence, then mark whether you buy it.</p>
+
+  <!-- F1: Simplicity -->
+  <div class="card p-6 mb-4">
+    <div class="flex items-start gap-3 mb-3">
+      <span class="pill pill-soft">Foundation 1</span>
+      <h3 class="font-semibold flex-1">Simplicity over capability — files a non-coder can <code class="mono bg-stone-100 px-1 rounded text-sm">cat</code>.</h3>
+      <span class="text-xs text-stone-400 mono">[1/3]</span>
+    </div>
+    <p class="text-sm text-stone-600 mb-4">Bash, markdown, YAML. No build step, no SaaS, no database, no <code class="mono text-xs bg-stone-100 px-1 rounded">node_modules</code>. Framework deps: <code class="mono text-xs bg-stone-100 px-1 rounded">bash · python3 · PyYAML · git · gh</code>. Here are three real files from the live framework — open in any text editor and skim.</p>
+    <div class="grid md:grid-cols-3 gap-3 mb-4">
+      <div>
+        <div class="text-xs text-stone-500 mono mb-1">.sdd/INDEX.md</div>
+        <pre class="codeblock-light text-xs">**Active:** features/001-waitlist
+**Playbook:** feature
+
+## In flight
+- 001-waitlist · phase: SPEC · blocker: §5
+
+## Shipped
+- **[[001-waitlist]]** — public signup
+  - Shipped: 2026-04-12 · PR #5</pre>
+      </div>
+      <div>
+        <div class="text-xs text-stone-500 mono mb-1">spec.md (excerpt)</div>
+        <pre class="codeblock-light text-xs">## §1. Problem [USER-LED]
+- [x] who: solo founders, age 25-45
+- [x] why-now: launch in 6 weeks
+- [ ] what-breaks: ?
+
+## §2. Success [USER-LED]
+- [ ] target: 200 signups/mo</pre>
+      </div>
+      <div>
+        <div class="text-xs text-stone-500 mono mb-1">templates/.sdd/config.md (excerpt)</div>
+        <pre class="codeblock-light text-xs">parameters:
+  budget:
+    max_minutes: 5
+    max_commits: 1
+  voice:
+    plain_english: true
+    translate_jargon_on_first_use: true</pre>
+      </div>
+    </div>
+    <div class="flex items-center gap-2 flex-wrap pt-3 border-t border-stone-100">
+      <span class="text-sm text-stone-600 mr-2">Can a non-coder read these?</span>
+      <button type="button" class="vbtn validation-btn" data-validation="f1" data-vote="ok">✓ Yes</button>
+      <button type="button" class="vbtn validation-btn" data-validation="f1" data-vote="unclear">🤔 Some bits unclear</button>
+      <button type="button" class="vbtn validation-btn" data-validation="f1" data-vote="problem">✗ Too dense</button>
+    </div>
+  </div>
+
+  <!-- F2: Lego -->
+  <div class="card p-6 mb-4">
+    <div class="flex items-start gap-3 mb-3">
+      <span class="pill pill-soft">Foundation 2</span>
+      <h3 class="font-semibold flex-1">Composable Lego bricks — new playbooks are compositions of existing actions.</h3>
+      <span class="text-xs text-stone-400 mono">[2/3]</span>
+    </div>
+    <p class="text-sm text-stone-600 mb-4">v1.0 doubled the playbook count from 2 to 4. <strong>None of those new playbooks needed new code</strong> — they're just new compositions of existing action atoms. Here are all 4 playbook frontmatters side by side. Same shape: <code class="mono text-xs bg-stone-100 px-1 rounded">stages → actions → exit_checks</code>.</p>
+    <div class="grid md:grid-cols-2 gap-3 mb-4">
+      <div>
+        <div class="text-xs text-stone-500 mono mb-1">feature.md — full SPEC + BUILD + SHIP</div>
+        <pre class="codeblock-light text-xs">stages:
+  - id: SPEC
+    actions: [problem, success, user-stories,
+      ux-brief, proposed-approach, data-contract,
+      flows, dependencies, out-of-scope,
+      non-functional, acceptance-criteria,
+      signoff-steps, wireframe, plan-decompose,
+      edge-case-sweep]
+    exit_checks: [≥1 AC, ≥1 task]</pre>
+      </div>
+      <div>
+        <div class="text-xs text-stone-500 mono mb-1">bug.md — tight 5-section repro→fix</div>
+        <pre class="codeblock-light text-xs">stages:
+  - id: SPEC
+    actions: [bug-problem, bug-repro,
+      bug-root-cause, bug-fix,
+      bug-regression-test]
+    exit_checks: [repro, cause, fix, regression]
+  - id: BUILD
+    actions: [run-mode-chosen, build-task]
+  - id: SHIP
+    actions: [verify-test-run, learn,
+      push-pr, verify-ci-green, mark-shipped]</pre>
+      </div>
+      <div>
+        <div class="text-xs text-stone-500 mono mb-1">refactor.md — minimal-diff discipline</div>
+        <pre class="codeblock-light text-xs">stages:
+  - id: SPEC
+    actions: [refactor-scope,
+      regression-coverage, refactor-approach,
+      minimal-diff-verify]
+    exit_checks: [scope, coverage,
+      approach, minimal-diff]
+  - id: BUILD
+    actions: [run-mode-chosen, build-task]</pre>
+      </div>
+      <div>
+        <div class="text-xs text-stone-500 mono mb-1">project.md — multi-feature roadmap</div>
+        <pre class="codeblock-light text-xs">stages:
+  - id: VISION
+    actions: [project-problem, project-success,
+      project-stakeholders]
+  - id: BREAKDOWN
+    actions: [project-capabilities,
+      project-priorities]
+  - id: KICKOFF
+    actions: [project-queue-features,
+      project-start-first]</pre>
+      </div>
+    </div>
+    <div class="flex items-center gap-2 flex-wrap pt-3 border-t border-stone-100">
+      <span class="text-sm text-stone-600 mr-2">All four follow the same shape?</span>
+      <button type="button" class="vbtn validation-btn" data-validation="f2" data-vote="ok">✓ Same shape, different actions</button>
+      <button type="button" class="vbtn validation-btn" data-validation="f2" data-vote="unclear">🤔 Hard to tell</button>
+      <button type="button" class="vbtn validation-btn" data-validation="f2" data-vote="problem">✗ They diverge</button>
+    </div>
+  </div>
+
+  <!-- F3: Never-assume -->
+  <div class="card p-6 mb-4">
+    <div class="flex items-start gap-3 mb-3">
+      <span class="pill pill-soft">Foundation 3</span>
+      <h3 class="font-semibold flex-1">Never assume — always check.</h3>
+      <span class="text-xs text-stone-400 mono">[3/3]</span>
+    </div>
+    <p class="text-sm text-stone-600 mb-4">Every place the framework <em>could</em> trust the agent's word, it instead re-checks. Three concrete examples below.</p>
+    <div class="space-y-3 mb-4">
+      <details class="card p-3" open>
+        <summary class="font-semibold text-sm flex items-center"><span class="chevron mr-2">▶</span>Example 1 — the moat hook re-runs verification on the staged file, ignoring what the agent claims</summary>
+        <p class="text-sm text-stone-600 mt-2">When the agent commits, <code class="mono text-xs bg-stone-100 px-1 rounded">pre-commit-stage-verified.sh</code> doesn't read the agent's "I'm done" claim. It re-runs <code class="mono text-xs bg-stone-100 px-1 rounded">verify-stage.sh</code> on the actually-staged spec.md. If the freshly-computed result disagrees with what's claimed, the commit is refused.</p>
+      </details>
+      <details class="card p-3">
+        <summary class="font-semibold text-sm flex items-center"><span class="chevron mr-2">▶</span>Example 2 — the manifest is hash-pinned; the moat catches modify, delete AND rename of any framework file</summary>
+        <p class="text-sm text-stone-600 mt-2">~61 framework files (playbooks, actions, scripts, hooks) have their normalised SHA-256 stored in <code class="mono text-xs bg-stone-100 px-1 rounded">.sdd/.cache/manifest.json</code>. v1.0 Phase B closed three tamper paths that were possible before: isolated edit (T135), isolated delete (T135b), isolated rename (T135c). All three now refuse the commit with a plain-English explanation.</p>
+      </details>
+      <details class="card p-3">
+        <summary class="font-semibold text-sm flex items-center"><span class="chevron mr-2">▶</span>Example 3 — placeholder tokens like <code class="mono text-xs bg-stone-100 px-1 rounded">(assumed)</code> in spec.md cause an automatic refusal</summary>
+        <p class="text-sm text-stone-600 mt-2"><code class="mono text-xs bg-stone-100 px-1 rounded">pre-commit-no-assumed-markers.sh</code> scans staged spec.md for <code class="mono text-xs bg-stone-100 px-1 rounded">(assumed)</code>, <code class="mono text-xs bg-stone-100 px-1 rounded">(TBD)</code>, <code class="mono text-xs bg-stone-100 px-1 rounded">(?)</code>, <code class="mono text-xs bg-stone-100 px-1 rounded">&lt;FILL IN&gt;</code>, <code class="mono text-xs bg-stone-100 px-1 rounded">[?]</code> task rows, and 5 other placeholders. If the agent gave up and filled with a guess, the commit gets blocked. The right move: ask the human.</p>
+      </details>
+    </div>
+    <div class="flex items-center gap-2 flex-wrap pt-3 border-t border-stone-100">
+      <span class="text-sm text-stone-600 mr-2">Do these checks defeat assumption?</span>
+      <button type="button" class="vbtn validation-btn" data-validation="f3" data-vote="ok">✓ I see the checks</button>
+      <button type="button" class="vbtn validation-btn" data-validation="f3" data-vote="unclear">🤔 Half convinced</button>
+      <button type="button" class="vbtn validation-btn" data-validation="f3" data-vote="problem">✗ Still assumptions</button>
+    </div>
+  </div>
+
+  <!-- summary -->
+  <div id="validationSummary" class="card p-5 bg-stone-900 text-white">
+    <p class="text-sm">Tick all three foundations to see whether the architecture validates against its own philosophy. <span id="validationCount" class="font-mono">0/3 checked</span></p>
+  </div>
+
+  <textarea class="review-note review-only" placeholder="Notes on the foundation checks…" data-note="validation"></textarea>
+</section>
+
+<!-- ═══════════════════════════════════════════ WHAT v1.0 SHIPS ═══════════════════════════════════════════ -->
+<section id="shipped" class="max-w-6xl mx-auto px-6 py-10 reviewable" data-section="shipped" data-tier="v10">
+  <div class="review-tools review-only"><button type="button" class="rb" data-flag="ok">✓</button><button type="button" class="rb" data-flag="unclear">?</button><button type="button" class="rb" data-flag="problem">✗</button></div>
+  <div class="flex items-end justify-between mb-2 flex-wrap gap-3">
+    <div>
+      <h2 class="text-2xl font-bold">What v1.0.0 ships — five marquee capabilities.</h2>
+      <p class="text-stone-600 mt-1">Tagged <code class="mono text-sm bg-stone-100 px-1 rounded">v1.0.0</code> on commit <code class="mono text-sm bg-stone-100 px-1 rounded">ec3e711</code> · 8 PRs over ~30 CodeRabbit cycles · 192/192 framework tests + 68/68 MCP unit tests.</p>
+    </div>
+    <span class="pill pill-v10">live today</span>
+  </div>
+
+  <div id="shipped-graph" class="card p-6 mb-4">
+    <div class="flex items-start gap-3 mb-3">
+      <span class="pill pill-v10">1</span>
+      <h3 class="font-semibold flex-1">Knowledge-graph foundation — markdown becomes navigable.</h3>
+      <a class="pill pill-soft" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/98" target="_blank" rel="noopener noreferrer">PR #98</a>
+    </div>
+    <p class="text-sm text-stone-600 mb-3">A small subset of cross-references in <code class="mono text-xs bg-stone-100 px-1 rounded">.sdd/</code> markdown is now written as wiki-links <code class="mono text-xs bg-stone-100 px-1 rounded">[[slug]]</code>. The framework's MCP server (a small Python helper that lets Claude ask short questions instead of reading whole files) traverses them via three new queries.</p>
+    <div class="grid md:grid-cols-2 gap-3 mb-4">
+      <div>
+        <div class="text-xs text-stone-500 mono mb-1">Three target shapes (anything else refused)</div>
+        <pre class="codeblock-light text-xs">[[001-waitlist]]               feature folder
+[[entity:User]]                heading in data-model.md
+[[pattern:auth-retry-logic]]   heading in patterns.md
+
+[[001-waitlist#§5]]            REFUSED — anchors
+[[001-waitlist|the waitlist]]  REFUSED — aliases</pre>
+      </div>
+      <div>
+        <div class="text-xs text-stone-500 mono mb-1">Three new graph queries</div>
+        <pre class="codeblock-light text-xs">get_backlinks(slug)   who cites this?
+get_neighbours(slug)  what's adjacent in the graph?
+search_within(slug)   bounded semantic search
+                      around a slug's neighbourhood</pre>
+      </div>
+    </div>
+    <div class="bg-emerald-50 border border-emerald-200 rounded p-3 text-sm text-emerald-900 mb-3">
+      <strong>Plain-English impact:</strong> the agent answers <em>"is there already a pattern for X?"</em> with one query (~200 bytes back) instead of reading <code class="mono text-xs">INDEX.md</code> + <code class="mono text-xs">spec.md</code> + grep (~15–35 KB). On a real <code class="mono text-xs">.sdd/</code> tree that's <strong>96.6% less context burned per question</strong> (40–60% across a whole working session that mixes queries with file edits).
+    </div>
+    <p class="text-xs text-stone-500">Plus: <strong>stop-hook invariant 8</strong> refuses to end any turn with a broken <code class="mono">[[…]]</code> reference, and a <strong>CI graph-integrity job</strong> blocks PRs containing one.</p>
+  </div>
+
+  <div class="card p-6 mb-4">
+    <div class="flex items-start gap-3 mb-3">
+      <span class="pill pill-v10">2</span>
+      <h3 class="font-semibold flex-1">Branch-derived active feature — switch git branches, switch what you're working on.</h3>
+      <a class="pill pill-soft" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/99" target="_blank" rel="noopener noreferrer">PR #99</a>
+    </div>
+    <p class="text-sm text-stone-600 mb-3">Pre-v1.0 the active feature was a single editable line in <code class="mono text-xs bg-stone-100 px-1 rounded">INDEX.md</code> — flipping between two in-flight features meant remembering to update it. v1.0 reads the active feature from your current git branch (<code class="mono text-xs bg-stone-100 px-1 rounded">sdd/&lt;id&gt;-&lt;slug&gt;</code>). Just check out the other branch — that's it.</p>
+    <pre class="code text-xs"><span class="c">$</span> git checkout sdd/002-admin-dashboard
+<span class="c">$</span> .sdd/scripts/resolve-active.sh
+<span class="k">{</span>
+  <span class="k">"active"</span>: <span class="s">"features/002-admin-dashboard"</span>,
+  <span class="k">"source"</span>: <span class="s">"branch"</span>,
+  <span class="k">"ambiguous"</span>: <span class="v">false</span>
+<span class="k">}</span></pre>
+  </div>
+
+  <div class="card p-6 mb-4">
+    <div class="flex items-start gap-3 mb-3">
+      <span class="pill pill-v10">3</span>
+      <h3 class="font-semibold flex-1">4 playbooks — feature, project, bug, refactor.</h3>
+      <span class="flex gap-1">
+        <a class="pill pill-soft" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/101" target="_blank" rel="noopener noreferrer">PR #101</a>
+        <a class="pill pill-soft" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/103" target="_blank" rel="noopener noreferrer">PR #103</a>
+      </span>
+    </div>
+    <p class="text-sm text-stone-600 mb-3">v1.0 doubled the playbook count without writing new framework code. Each new playbook is a YAML composition referencing existing action prose files.</p>
+    <div class="grid md:grid-cols-2 gap-3">
+      <div class="border border-stone-200 rounded p-3">
+        <p class="text-sm font-semibold mb-1">bug.md</p>
+        <p class="text-xs text-stone-500 mb-2">When something is broken in shipped behaviour. Tight 5-section SPEC: symptom → repro → root cause → fix → regression test.</p>
+      </div>
+      <div class="border border-stone-200 rounded p-3">
+        <p class="text-sm font-semibold mb-1">refactor.md</p>
+        <p class="text-xs text-stone-500 mb-2">When the code shape is wrong but behaviour is right. The action <code class="mono text-xs bg-stone-100 px-1 rounded">minimal-diff-verify</code> halts the SPEC if the line delta is positive — refactors are not allowed to add net lines.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card p-6 mb-4">
+    <div class="flex items-start gap-3 mb-3">
+      <span class="pill pill-v10">4</span>
+      <h3 class="font-semibold flex-1">CI graph-integrity gate — broken refs fail the PR.</h3>
+      <a class="pill pill-soft" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/104" target="_blank" rel="noopener noreferrer">PR #104</a>
+    </div>
+    <p class="text-sm text-stone-600 mb-3">A new GitHub Actions job builds the graph cache against your repo's <code class="mono text-xs bg-stone-100 px-1 rounded">.sdd/</code> tree on every PR. Any <code class="mono text-xs bg-stone-100 px-1 rounded">[[slug]]</code> that doesn't resolve to a real node fails the merge. The cache is fence-aware (skips wiki-links inside fenced code blocks and inline backticks) so only real prose links count.</p>
+    <p class="text-xs text-stone-500">CI runs three jobs total: <strong>framework-tests</strong> (mutation-verified), <strong>scope-guard</strong> (UI copy ≥30 chars must trace to spec.md or wireframe.html), and <strong>graph-integrity</strong>.</p>
+  </div>
+
+  <div class="card p-6 mb-4">
+    <div class="flex items-start gap-3 mb-3">
+      <span class="pill pill-v10">5</span>
+      <h3 class="font-semibold flex-1">Cost-bounded Playwright explorer — agentic browser-test discovery.</h3>
+      <span class="flex gap-1">
+        <a class="pill pill-soft" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/100" target="_blank" rel="noopener noreferrer">PR #100</a>
+        <a class="pill pill-soft" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/102" target="_blank" rel="noopener noreferrer">PR #102</a>
+      </span>
+    </div>
+    <p class="text-sm text-stone-600 mb-3">An optional extension that drives a real browser, navigates a page, and proposes acceptance-criteria suggestions back to you for triage. Findings emit <code class="mono text-xs bg-stone-100 px-1 rounded">ac:&lt;slug&gt;</code> wiki-links into the graph cache so they're queryable. <strong>Provider/endpoint/model required</strong> — no baked-in default. Costs are hard-capped per run.</p>
+  </div>
+
+  <textarea class="review-note review-only" placeholder="Notes on the v1.0 marquee…" data-note="shipped"></textarea>
+</section>
+
+<!-- ═══════════════════════════════════════════ PHASE B HARDENING ═══════════════════════════════════════════ -->
+<section id="phase-b" class="max-w-6xl mx-auto px-6 py-10 reviewable" data-section="phase-b" data-tier="v10">
+  <div class="review-tools review-only"><button type="button" class="rb" data-flag="ok">✓</button><button type="button" class="rb" data-flag="unclear">?</button><button type="button" class="rb" data-flag="problem">✗</button></div>
+  <h2 class="text-2xl font-bold mb-2">Phase B hardening — five small fixes that prevented a broken v1.0.</h2>
+  <p class="text-stone-600 max-w-3xl mb-6">Before tagging, three release blockers and two nice-to-haves surfaced during heavy throwaway testing. All five landed in <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/106" target="_blank" rel="noopener noreferrer">PR #106</a> alongside the version-marker bump.</p>
+
+  <div class="grid md:grid-cols-2 gap-3">
+    <div class="card p-5">
+      <div class="flex items-center gap-2 mb-2"><span class="pill" style="background:var(--rose-bg);color:var(--rose);border:1px solid #fca5a5">🔴 blocker</span><h4 class="font-semibold">init.sh fresh-install fix</h4></div>
+      <p class="text-sm text-stone-600">The installer was checking for a file deleted in v0.8 (<code class="mono text-xs">rubric.md</code>). Replaced with a v1.0 surface check on playbooks/actions/INDEX.md/config.md. <strong>Without this fix:</strong> every fresh install on v1.0.0 would have aborted.</p>
+    </div>
+    <div class="card p-5">
+      <div class="flex items-center gap-2 mb-2"><span class="pill" style="background:var(--rose-bg);color:var(--rose);border:1px solid #fca5a5">🔴 blocker</span><h4 class="font-semibold">init.sh now copies the MCP server</h4></div>
+      <p class="text-sm text-stone-600">Invariant 8 (broken-wiki-link detector) relied on <code class="mono text-xs">extensions/sdd-mcp-server/</code> being present, but the installer never copied it. Without it, the v1.0 marquee feature would silently no-op. Now copied alongside <code class="mono text-xs">.sdd/</code> and <code class="mono text-xs">.claude/</code>.</p>
+    </div>
+    <div class="card p-5">
+      <div class="flex items-center gap-2 mb-2"><span class="pill" style="background:var(--rose-bg);color:var(--rose);border:1px solid #fca5a5">🔴 blocker</span><h4 class="font-semibold">moat closes framework-tamper gap</h4></div>
+      <p class="text-sm text-stone-600">When ONLY a framework file was staged (no spec / verification.json / manifest), the moat hook early-exited and never re-checked the manifest pin. Three new tests (T135/T135b/T135c) lock isolated <em>edit</em>, <em>delete</em>, and <em>rename</em>.</p>
+    </div>
+    <div class="card p-5">
+      <div class="flex items-center gap-2 mb-2"><span class="pill" style="background:var(--amber-bg);color:var(--amber);border:1px solid #fcd34d">🟡 nice-to-have</span><h4 class="font-semibold">bugs/ + refactors/ graduate</h4></div>
+      <p class="text-sm text-stone-600">The folders <code class="mono text-xs">.sdd/bugs/</code> and <code class="mono text-xs">.sdd/refactors/</code> were on a "do not create" list pre-v1.0 (the playbooks didn't exist yet). They've been removed from <code class="mono text-xs">deferred_paths</code> so the new playbooks can scaffold work-items into them.</p>
+    </div>
+    <div class="card p-5 md:col-span-2">
+      <div class="flex items-center gap-2 mb-2"><span class="pill" style="background:var(--amber-bg);color:var(--amber);border:1px solid #fcd34d">🟡 nice-to-have</span><h4 class="font-semibold">minimal-diff-verify falls back to local branches</h4></div>
+      <p class="text-sm text-stone-600">For projects where you haven't pushed yet (<code class="mono text-xs">origin</code> isn't configured), the line-delta check used to error out asking you to set up <code class="mono text-xs">origin/HEAD</code>. Now it falls through to local <code class="mono text-xs">main</code> / <code class="mono text-xs">master</code> / <code class="mono text-xs">develop</code> / <code class="mono text-xs">trunk</code> and the error message covers both paths in plain English.</p>
+    </div>
+  </div>
+  <textarea class="review-note review-only" placeholder="Notes on Phase B fixes…" data-note="phase-b"></textarea>
+</section>
+
+<!-- ═══════════════════════════════════════════ WHAT'S COMING — v1.1 ═══════════════════════════════════════════ -->
+<section id="planned" class="max-w-6xl mx-auto px-6 py-10 reviewable" data-section="planned" data-tier="v11">
+  <div class="review-tools review-only"><button type="button" class="rb" data-flag="ok">✓</button><button type="button" class="rb" data-flag="unclear">?</button><button type="button" class="rb" data-flag="problem">✗</button></div>
+  <div class="flex items-end justify-between mb-2 flex-wrap gap-3">
+    <div>
+      <h2 class="text-2xl font-bold">What's coming in v1.1 — chat over the graph.</h2>
+      <p class="text-stone-600 mt-1">Tracked at <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/97" target="_blank" rel="noopener noreferrer">issue #97</a> on milestone v1.1. Carved out of v1.0 because the graph layer needs corpus to accumulate before chat synthesis adds value over plain retrieval — and because generation introduces hallucination risk that strains foundation 3.</p>
+    </div>
+    <span class="pill pill-v11">v1.1 — planned</span>
+  </div>
+
+  <div class="grid md:grid-cols-2 gap-3">
+    <div class="card card-v11 p-5">
+      <h4 class="font-semibold mb-2">1 · Tier 3 LLM-driven synthesis</h4>
+      <p class="text-sm text-stone-600 mb-2">A new MCP query <code class="mono text-xs bg-stone-100 px-1 rounded">synthesize.py</code>: takes a slug + corpus chunks from Tier 1+2 retrieval, returns a ranked summary with cite-checkable chunks. Trust-boundary doctrine ("synthesised output is never directive — cite-check before quoting") is already in CLAUDE.md, forward-loaded from v1.0.</p>
+      <p class="text-xs text-stone-500">Same opt-in pattern as Tier 2: requires explicit provider/endpoint/model in <code class="mono text-xs">config.md</code>.</p>
+    </div>
+    <div class="card card-v11 p-5">
+      <h4 class="font-semibold mb-2">2 · Migration tool — sdd-migrate.sh</h4>
+      <p class="text-sm text-stone-600">For projects scaffolded against v0.x or pre-v1.0 main: walks <code class="mono text-xs">.sdd/</code>, proposes wiki-link emit-points based on existing prose (e.g. patterns already cited by name in <code class="mono text-xs">§5 proposed-approach</code> auto-convert to <code class="mono text-xs">[[pattern:slug]]</code>), shows a diff, asks for confirmation, applies. Optional — the lazy path (graph emerges as new features ship) stays valid.</p>
+    </div>
+    <div class="card card-v11 p-5">
+      <h4 class="font-semibold mb-2">3 · Auto-suggest cross-references at <code class="mono text-xs bg-stone-100 px-1 rounded">mark-shipped</code></h4>
+      <p class="text-sm text-stone-600">Graph traversal pulls candidate patterns and entities the feature touches; embeddings narrow; synthesis writes <em>"this feature uses [[pattern:auth-retry-logic]] and [[entity:User]]"</em>. You confirm or edit before it's recorded.</p>
+    </div>
+    <div class="card card-v11 p-5">
+      <h4 class="font-semibold mb-2">4 · Tier 3 config block</h4>
+      <p class="text-sm text-stone-600">New stanza in <code class="mono text-xs bg-stone-100 px-1 rounded">templates/.sdd/config.md</code>: <code class="mono text-xs">parameters.mcp.tier3</code> with <code class="mono text-xs">enabled · provider · endpoint · model · max_calls_per_run · cost_limit_usd</code>. Opt-in, no baked-in defaults — same shape as Tier 2 + Playwright explorer.</p>
+    </div>
+  </div>
+
+  <details class="card p-5 mt-4">
+    <summary class="font-semibold flex items-center"><span class="chevron mr-2">▶</span>Other open issues post-v1.0 (the small backlog)</summary>
+    <ul class="mt-3 space-y-2 text-sm text-stone-600">
+      <li>· <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/95" target="_blank" rel="noopener noreferrer">#95</a> — ~25 deferred CodeRabbit findings from PR #92 self-host (parking lot — nothing security-critical, batch into a v1.0.1 maintenance pass).</li>
+      <li>· <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/105" target="_blank" rel="noopener noreferrer">#105</a> — multi-line code-span detection in <code class="mono text-xs">_graph_cache.py</code> (CommonMark backtick spans across line breaks; deferred from PR #104).</li>
+    </ul>
+  </details>
+
+  <textarea class="review-note review-only" placeholder="Notes on the v1.1 plan…" data-note="planned"></textarea>
+</section>
+
+<!-- ═══════════════════════════════════════════ TRY IT NOW ═══════════════════════════════════════════ -->
+<section id="try" class="max-w-6xl mx-auto px-6 py-10 reviewable" data-section="try">
+  <div class="review-tools review-only"><button type="button" class="rb" data-flag="ok">✓</button><button type="button" class="rb" data-flag="unclear">?</button><button type="button" class="rb" data-flag="problem">✗</button></div>
+  <h2 class="text-2xl font-bold mb-4">Try it on a project — three commands.</h2>
+
+  <ol class="space-y-4">
+    <li class="card p-5">
+      <p class="text-sm text-stone-500 mb-2 mono">Step 1 — clone the framework somewhere stable</p>
+      <pre class="code text-xs"><span class="c">$</span> git clone https://github.com/samuelserraceo/spec-driven-dev-workflow ~/Projects/sdd</pre>
+      <p class="text-xs text-stone-500 mt-2">Requires Python 3 with PyYAML (<code class="mono">pip install pyyaml</code>). Framework deps stop there.</p>
+    </li>
+    <li class="card p-5">
+      <p class="text-sm text-stone-500 mb-2 mono">Step 2 — drop SDD into your project</p>
+      <pre class="code text-xs"><span class="c">$</span> cd &lt;your-project&gt;
+<span class="c">$</span> ~/Projects/sdd/scripts/init.sh</pre>
+      <p class="text-xs text-stone-500 mt-2">Adds <code class="mono">.sdd/</code>, <code class="mono">.claude/</code>, <code class="mono">CLAUDE.md</code>, copies the MCP server, and sets <code class="mono">git config core.hooksPath .claude/hooks</code> (with a halt-and-ask if you already use Husky / lefthook).</p>
+    </li>
+    <li class="card p-5">
+      <p class="text-sm text-stone-500 mb-2 mono">Step 3 — open Claude Code and start your first work item</p>
+      <pre class="code text-xs"><span class="c">$</span> claude
+<span class="c">&gt;</span> /sdd-setup            <span class="c"># once: 7 plain-English questions to fill stack.md + config.md</span>
+<span class="c">&gt;</span> /start "build a waitlist landing page"
+<span class="c">&gt;</span> /next                 <span class="c"># walk the playbook one step at a time</span></pre>
+      <p class="text-xs text-stone-500 mt-2">From there: USER-LED steps ask plain-English questions, AGENT-LED steps propose answers with tradeoffs, BUILD-TASK steps run test-first. <code class="mono">/ship</code> opens the PR and watches CI when SHIP is done.</p>
+    </li>
+  </ol>
+  <textarea class="review-note review-only" placeholder="Notes on the install path…" data-note="try"></textarea>
+</section>
+
+<!-- ═══════════════════════════════════════════ REFERENCE TABLES ═══════════════════════════════════════════ -->
+<section id="reference" class="max-w-6xl mx-auto px-6 py-10 reviewable" data-section="reference">
+  <div class="review-tools review-only"><button type="button" class="rb" data-flag="ok">✓</button><button type="button" class="rb" data-flag="unclear">?</button><button type="button" class="rb" data-flag="problem">✗</button></div>
+  <h2 class="text-2xl font-bold mb-2">Reference — every artifact, counted live.</h2>
+  <p class="text-stone-600 max-w-3xl mb-6">The numbers on this page came from running <code class="mono text-sm bg-stone-100 px-1 rounded">ls</code> against the live repo at v1.0.0. Click each header to expand the inventory.</p>
+
+  <details class="card p-4 mb-3">
+    <summary class="font-semibold flex items-center justify-between"><span><span class="chevron mr-2">▶</span>9 slash commands</span><span class="text-xs text-stone-400 mono">templates/.claude/commands/</span></summary>
+    <div class="mt-3 grid md:grid-cols-3 gap-2 text-sm">
+      <div><code class="mono text-xs bg-stone-100 px-1 rounded">/sdd-setup</code> — first-run wizard</div>
+      <div><code class="mono text-xs bg-stone-100 px-1 rounded">/sdd-config</code> — re-answer one wizard q</div>
+      <div><code class="mono text-xs bg-stone-100 px-1 rounded">/start</code> — scaffold work item</div>
+      <div><code class="mono text-xs bg-stone-100 px-1 rounded">/next</code> — advance one atomic step</div>
+      <div><code class="mono text-xs bg-stone-100 px-1 rounded">/idea</code> — capture cheaply</div>
+      <div><code class="mono text-xs bg-stone-100 px-1 rounded">/status</code> — print state</div>
+      <div><code class="mono text-xs bg-stone-100 px-1 rounded">/settings</code> — get/set/reset config</div>
+      <div><code class="mono text-xs bg-stone-100 px-1 rounded">/ship</code> — push, PR, CI watch</div>
+      <div><code class="mono text-xs bg-stone-100 px-1 rounded">/compress</code> — consolidate notebooks</div>
+    </div>
+  </details>
+
+  <details class="card p-4 mb-3">
+    <summary class="font-semibold flex items-center justify-between"><span><span class="chevron mr-2">▶</span>4 playbooks</span><span class="text-xs text-stone-400 mono">templates/.sdd/playbooks/</span></summary>
+    <table class="w-full mt-3 text-sm">
+      <thead class="text-left text-xs uppercase text-stone-500"><tr><th class="py-2">Slug</th><th>When to use</th><th>SPEC actions</th></tr></thead>
+      <tbody class="divide-y divide-stone-100">
+        <tr><td class="py-2 mono text-xs">feature</td><td>new functionality</td><td>15 actions</td></tr>
+        <tr><td class="py-2 mono text-xs">project</td><td>multi-feature initiative</td><td>7 actions across VISION/BREAKDOWN/KICKOFF</td></tr>
+        <tr><td class="py-2 mono text-xs">bug</td><td>shipped behaviour broken</td><td>5 actions</td></tr>
+        <tr><td class="py-2 mono text-xs">refactor</td><td>code shape wrong, behaviour right</td><td>4 actions (incl. minimal-diff-verify halt)</td></tr>
+      </tbody>
+    </table>
+  </details>
+
+  <details class="card p-4 mb-3">
+    <summary class="font-semibold flex items-center justify-between"><span><span class="chevron mr-2">▶</span>41 actions</span><span class="text-xs text-stone-400 mono">templates/.sdd/actions/</span></summary>
+    <label for="actionFilter" class="visually-hidden">Filter the 41 actions list</label>
+    <input id="actionFilter" type="text" placeholder="filter…" aria-label="Filter actions" class="w-full mt-3 px-3 py-2 text-sm border border-stone-200 rounded">
+    <div id="actionList" class="mt-3 grid md:grid-cols-3 gap-1 text-xs mono text-stone-700"></div>
+  </details>
+
+  <details class="card p-4 mb-3">
+    <summary class="font-semibold flex items-center justify-between"><span><span class="chevron mr-2">▶</span>8 hooks</span><span class="text-xs text-stone-400 mono">templates/.claude/hooks/</span></summary>
+    <table class="w-full mt-3 text-sm">
+      <thead class="text-left text-xs uppercase text-stone-500"><tr><th class="py-2">Hook</th><th>Fires</th><th>Job</th></tr></thead>
+      <tbody class="divide-y divide-stone-100 text-stone-600">
+        <tr><td class="py-2 mono text-xs">session-start.sh</td><td>each new Claude session</td><td>Print active work item + phase + blocker.</td></tr>
+        <tr><td class="py-2 mono text-xs">user-prompt-submit.sh</td><td>each user message</td><td>Inject INDEX.md + active spec + patterns.md. Wrap user content in <code class="mono">[PROJECT DATA]</code> markers.</td></tr>
+        <tr><td class="py-2 mono text-xs">triage-on-first-message.sh</td><td>first non-slash message</td><td>Triage: feature / extension / tweak / bug / idea / refactor.</td></tr>
+        <tr><td class="py-2 mono text-xs">pre-commit-rules.sh</td><td>each git commit</td><td>F1 generic enforcer: action <code class="mono">touches</code>, file_classes, file_rules, state_rules, folder_rules. Subsumes 7 legacy hooks.</td></tr>
+        <tr><td class="py-2 mono text-xs">pre-commit-stage-verified.sh</td><td>each git commit</td><td>The moat. Re-runs verify-stage on staged content. Pins approved-section + manifest hashes.</td></tr>
+        <tr><td class="py-2 mono text-xs">pre-commit-no-assumed-markers.sh</td><td>each git commit</td><td>Refuses commits with <code class="mono">(assumed)</code>, <code class="mono">(TBD)</code>, <code class="mono">[?]</code>, etc.</td></tr>
+        <tr><td class="py-2 mono text-xs">post-stop-lint.sh</td><td>end of every Claude turn</td><td>9 invariants — INDEX shape, phase shape, append-only decisions, manifest validity, wiki-link resolution, no NUL bytes, etc.</td></tr>
+        <tr><td class="py-2 mono text-xs">pre-commit (no extension)</td><td>each git commit (native)</td><td>Native git shim — closes the <code class="mono">git add &amp;&amp; git commit</code> chained-call bypass that PreToolUse hooks miss.</td></tr>
+      </tbody>
+    </table>
+  </details>
+
+  <details class="card p-4 mb-3">
+    <summary class="font-semibold flex items-center justify-between"><span><span class="chevron mr-2">▶</span>16 scripts</span><span class="text-xs text-stone-400 mono">templates/.sdd/scripts/</span></summary>
+    <div class="mt-3 grid md:grid-cols-3 gap-1 text-xs mono text-stone-700">
+      <div>advance.sh</div><div>check-setup-answer.sh</div><div>hash-section.sh</div>
+      <div>load-playbook.sh</div><div>next-action.sh</div><div>read-events.sh</div>
+      <div>reapprove.sh</div><div>resolve-active.sh <span class="text-emerald-700">★ v1.0</span></div>
+      <div>resolve-parameters.sh</div><div>revert-phase.sh</div>
+      <div>scope-guard-config.sh <span class="text-emerald-700">★ v1.0</span></div>
+      <div>settings.sh</div><div>start.sh</div><div>status-banner.sh</div>
+      <div>validate-sdd-path.sh</div><div>verify-stage.sh</div>
+    </div>
+  </details>
+
+  <details class="card p-4 mb-3">
+    <summary class="font-semibold flex items-center justify-between"><span><span class="chevron mr-2">▶</span>9 MCP queries</span><span class="text-xs text-stone-400 mono">extensions/sdd-mcp-server/queries/</span></summary>
+    <table class="w-full mt-3 text-sm">
+      <thead class="text-left text-xs uppercase text-stone-500"><tr><th class="py-2">Query</th><th>Answers</th><th>Tier</th></tr></thead>
+      <tbody class="divide-y divide-stone-100 text-stone-600">
+        <tr><td class="py-2 mono text-xs">get_active_step</td><td>What's the next open step?</td><td>1</td></tr>
+        <tr><td class="py-2 mono text-xs">get_by_tag</td><td>Which features are in-flight / shipped?</td><td>1</td></tr>
+        <tr><td class="py-2 mono text-xs">get_pattern</td><td>Show me &lt;slug&gt; from patterns.md.</td><td>1</td></tr>
+        <tr><td class="py-2 mono text-xs">get_references</td><td>Who else mentions this feature?</td><td>1</td></tr>
+        <tr><td class="py-2 mono text-xs">get_decisions_since</td><td>What was decided after this date?</td><td>1</td></tr>
+        <tr><td class="py-2 mono text-xs">search</td><td>Semantic search over <code class="mono">.sdd/</code> (opt-in).</td><td>2</td></tr>
+        <tr class="bg-emerald-50/50"><td class="py-2 mono text-xs">get_backlinks</td><td>Which files cite <code class="mono">[[slug]]</code>?</td><td><span class="pill pill-v10">★ v1.0 graph</span></td></tr>
+        <tr class="bg-emerald-50/50"><td class="py-2 mono text-xs">get_neighbours</td><td>What's adjacent in the graph?</td><td><span class="pill pill-v10">★ v1.0 graph</span></td></tr>
+        <tr class="bg-emerald-50/50"><td class="py-2 mono text-xs">search_within</td><td>Bounded semantic search around a slug.</td><td><span class="pill pill-v10">★ v1.0 graph</span></td></tr>
+        <tr class="bg-violet-50/50" data-tier="v11"><td class="py-2 mono text-xs">synthesize</td><td>Chat over corpus with cite-check.</td><td><span class="pill pill-v11">v1.1 plan</span></td></tr>
+      </tbody>
+    </table>
+  </details>
+
+  <details class="card p-4 mb-3">
+    <summary class="font-semibold flex items-center justify-between"><span><span class="chevron mr-2">▶</span>7 setup-wizard bricks · 1 walkthrough</span><span class="text-xs text-stone-400 mono">templates/.sdd/setup/</span></summary>
+    <ul class="mt-3 grid md:grid-cols-2 gap-1 text-sm text-stone-600">
+      <li>· 001 project-type</li><li>· 002 data-needs</li>
+      <li>· 003 pr-reviewer</li><li>· 004 browser-tests</li>
+      <li>· 005 where-it-runs</li><li>· 006 extras</li>
+      <li>· 007 mcp-server</li>
+      <li class="text-stone-500">→ walkthroughs/coderabbit.md (1 tool-specific install guide)</li>
+    </ul>
+  </details>
+
+  <details class="card p-4 mb-3">
+    <summary class="font-semibold flex items-center justify-between"><span><span class="chevron mr-2">▶</span>3 extensions</span><span class="text-xs text-stone-400 mono">extensions/</span></summary>
+    <ul class="mt-3 space-y-2 text-sm text-stone-600">
+      <li>· <strong>playwright/</strong> — browser-test runner config + scaffolding (production)</li>
+      <li>· <strong>playwright-explorer/</strong> — agentic exploration loop emitting AC suggestions (production, v1.0)</li>
+      <li>· <strong>sdd-mcp-server/</strong> — Python MCP helper exposing 9 queries (production)</li>
+    </ul>
+  </details>
+
+  <details class="card p-4 mb-3">
+    <summary class="font-semibold flex items-center justify-between"><span><span class="chevron mr-2">▶</span>9 stop-hook invariants</span><span class="text-xs text-stone-400 mono">post-stop-lint.sh</span></summary>
+    <ol class="mt-3 space-y-1 text-sm text-stone-600 list-decimal list-inside">
+      <li>INDEX.md has exactly one <code class="mono text-xs">**Active:**</code> line</li>
+      <li>Every <code class="mono text-xs">## In flight</code> row points at a real folder</li>
+      <li>Active spec.md has exactly one <code class="mono text-xs">[PHASE: X]</code> line</li>
+      <li>No duplicate task / AC IDs in spec.md</li>
+      <li><code class="mono text-xs">decisions.md</code> is append-only relative to HEAD</li>
+      <li><code class="mono text-xs">manifest.json</code> parses as JSON</li>
+      <li>Every <code class="mono text-xs">[x]</code> row in spec.md has a non-empty answer</li>
+      <li class="font-semibold">Every <code class="mono text-xs">[[wiki-link]]</code> resolves to a known node ★ <span class="text-emerald-700">v1.0</span></li>
+      <li>No NUL bytes in tracked <code class="mono text-xs">.sdd/</code> files</li>
+    </ol>
+  </details>
+
+  <details class="card p-4 mb-3">
+    <summary class="font-semibold flex items-center justify-between"><span><span class="chevron mr-2">▶</span>The 8 PRs that landed v1.0</span><span class="text-xs text-stone-400 mono">github.com/samuelserraceo/spec-driven-dev-workflow</span></summary>
+    <table class="w-full mt-3 text-sm">
+      <thead class="text-left text-xs uppercase text-stone-500"><tr><th class="py-2">PR</th><th>What landed</th><th>Merged</th></tr></thead>
+      <tbody class="divide-y divide-stone-100 text-stone-600">
+        <tr><td class="py-2 mono"><a class="underline" target="_blank" rel="noopener noreferrer" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/98">#98</a></td><td>Graph foundation: wiki-links + 4-tier resolve + 3 MCP queries + invariant 8</td><td class="text-xs">2026-04-30</td></tr>
+        <tr><td class="py-2 mono"><a class="underline" target="_blank" rel="noopener noreferrer" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/99">#99</a></td><td>Branch-derived active feature</td><td class="text-xs">2026-05-01</td></tr>
+        <tr><td class="py-2 mono"><a class="underline" target="_blank" rel="noopener noreferrer" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/100">#100</a></td><td>Playwright explorer agentic logic</td><td class="text-xs">2026-04-30</td></tr>
+        <tr><td class="py-2 mono"><a class="underline" target="_blank" rel="noopener noreferrer" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/101">#101</a></td><td>bug.md playbook</td><td class="text-xs">2026-04-30</td></tr>
+        <tr><td class="py-2 mono"><a class="underline" target="_blank" rel="noopener noreferrer" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/102">#102</a></td><td>Playwright explorer 3 dogfood fixes</td><td class="text-xs">2026-04-30</td></tr>
+        <tr><td class="py-2 mono"><a class="underline" target="_blank" rel="noopener noreferrer" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/103">#103</a></td><td>refactor.md playbook</td><td class="text-xs">2026-05-01</td></tr>
+        <tr><td class="py-2 mono"><a class="underline" target="_blank" rel="noopener noreferrer" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/104">#104</a></td><td>CI graph-integrity gate</td><td class="text-xs">2026-05-01</td></tr>
+        <tr><td class="py-2 mono"><a class="underline" target="_blank" rel="noopener noreferrer" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/106">#106</a></td><td>v1.0.0 release + 5 Phase B fixes</td><td class="text-xs">2026-05-01</td></tr>
+      </tbody>
+    </table>
+  </details>
+
+  <textarea class="review-note review-only" placeholder="Notes on the reference tables…" data-note="reference"></textarea>
+</section>
+
+<!-- ═══════════════════════════════════════════ HONEST CAVEATS ═══════════════════════════════════════════ -->
+<section id="caveats" class="max-w-6xl mx-auto px-6 py-10 reviewable" data-section="caveats">
+  <div class="review-tools review-only"><button type="button" class="rb" data-flag="ok">✓</button><button type="button" class="rb" data-flag="unclear">?</button><button type="button" class="rb" data-flag="problem">✗</button></div>
+  <h2 class="text-2xl font-bold mb-2">Honest caveats — what SDD isn't.</h2>
+  <p class="text-stone-600 max-w-3xl mb-6">SDD is opinionated and explicitly trades some things to win others. If any of these feel wrong for your project, SDD is the wrong tool.</p>
+
+  <ul class="space-y-3">
+    <li class="card p-4"><strong class="block mb-1">Not for typo fixes or copy tweaks.</strong> A 30–90 minute SPEC ceremony for a one-line change is the wrong tool. SDD's "triage on first message" rule routes those to plain commits with no ceremony.</li>
+    <li class="card p-4"><strong class="block mb-1">Not for one-shot speed.</strong> A first SPEC takes 30–90 minutes. If you want it built right now without questions, this isn't the framework.</li>
+    <li class="card p-4"><strong class="block mb-1">Doesn't turn a bad idea into a good one.</strong> The framework makes drift expensive and deep questioning cheap. It does not invent product strategy.</li>
+    <li class="card p-4"><strong class="block mb-1">Scales to roughly 50 in-flight features / 500 total.</strong> Beyond that, you outgrow plain markdown — but the cold-tier + size caps + auto-archival keep working memory bounded indefinitely up to that scale.</li>
+    <li class="card p-4"><strong class="block mb-1">Retrofit on existing repos is still rough.</strong> <code class="mono text-xs">init.sh</code> assumes a clean repo. Projects with existing PRDs / Husky / Drizzle migrations need the v1.1 migration tool (planned).</li>
+    <li class="card p-4"><strong class="block mb-1">Action prose still carries some JS-stack assumptions.</strong> Mentions of <code class="mono text-xs">tests/task-NNN.mjs</code>, Tailwind, <code class="mono text-xs">gh pr create</code>. Non-JS adopters fork the affected actions or write a sibling extension.</li>
+  </ul>
+  <textarea class="review-note review-only" placeholder="Notes on the caveats…" data-note="caveats"></textarea>
+</section>
+
+<!-- ═══════════════════════════════════════════ FOOTER ═══════════════════════════════════════════ -->
+<footer class="border-t border-stone-200 mt-12">
+  <div class="max-w-6xl mx-auto px-6 py-8 flex flex-col md:flex-row gap-6 items-start md:items-center justify-between text-sm">
+    <div class="text-stone-500">
+      <p><strong class="text-stone-900">SDD v1.0.0</strong> · tagged on commit <a class="mono underline" target="_blank" rel="noopener noreferrer" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/commit/ec3e711">ec3e711</a> · 2026-05-01</p>
+      <p class="mt-1">192/192 framework tests + 68/68 MCP unit tests · all mutation-verified</p>
+    </div>
+    <div class="flex gap-4 flex-wrap">
+      <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow" target="_blank" rel="noopener noreferrer">Repo</a>
+      <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/releases/tag/v1.0.0" target="_blank" rel="noopener noreferrer">v1.0.0 release notes</a>
+      <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/97" target="_blank" rel="noopener noreferrer">v1.1 plan</a>
+      <a class="underline" href="history.html">Legacy walkthrough (archaeology)</a>
+    </div>
+  </div>
+</footer>
+
+<!-- ═══════════════════════════════════════════ FLOATING REVIEW BAR ═══════════════════════════════════════════ -->
+<div id="reviewBar" class="review-only fixed bottom-4 right-4 left-4 md:left-auto md:max-w-md card shadow-2xl p-4 bg-white border-2 border-indigo-500" style="z-index:40">
+  <div class="flex items-start gap-3">
+    <div class="flex-1">
+      <p class="text-sm font-semibold mb-1">Review mode is on.</p>
+      <p class="text-xs text-stone-600 mb-2">Hover any section, click ✓ / ? / ✗ to flag, type a note in the textarea below it. Notes save automatically.</p>
+      <p class="text-xs text-stone-500 mono"><span id="rbCount">0 flagged</span> · <span id="rbNoteCount">0 notes</span></p>
+    </div>
+    <div class="flex flex-col gap-2">
+      <button type="button" id="exportReview" class="px-3 py-2 text-xs rounded bg-indigo-600 text-white font-semibold hover:bg-indigo-700">Export feedback</button>
+      <button type="button" id="clearReview" class="px-3 py-2 text-xs rounded border border-stone-300 hover:bg-stone-100">Clear all</button>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden export modal -->
+<div id="exportModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-6" role="dialog" aria-modal="true" aria-labelledby="exportTitle">
+  <div class="bg-white rounded-xl max-w-2xl w-full p-6" tabindex="-1">
+    <div class="flex items-center justify-between mb-4">
+      <h3 id="exportTitle" class="font-bold text-lg">Your review — copy as markdown</h3>
+      <button type="button" id="closeExport" aria-label="Close export dialog" class="text-stone-500 hover:text-stone-900 text-xl leading-none">✕</button>
+    </div>
+    <label for="exportText" class="visually-hidden">Markdown export of your review notes</label>
+    <textarea id="exportText" class="w-full h-72 p-3 mono text-xs border border-stone-200 rounded bg-stone-50" readonly></textarea>
+    <div class="mt-3 flex gap-2 justify-end">
+      <button type="button" id="copyExport" class="px-4 py-2 text-sm rounded bg-stone-900 text-white font-semibold">Copy to clipboard</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  // ─── 41 actions inventory ───────────────────────────────────────────
+  const ACTIONS = ['acceptance-criteria','adversarial-review','bug-fix','bug-problem','bug-regression-test','bug-repro','bug-root-cause','build-task','data-contract','dependencies','edge-case-sweep','flows','learn','mark-shipped','minimal-diff-verify','non-functional','out-of-scope','plan-decompose','playwright-explore','problem','project-capabilities','project-priorities','project-problem','project-queue-features','project-stakeholders','project-start-first','project-success','proposed-approach','push-pr','refactor-approach','refactor-scope','regression-coverage','run-mode-chosen','signoff-steps','success','user-stories','ux-brief','verify-ci-green','verify-prod-only-acs','verify-test-run','wireframe'];
+  const actionList = document.getElementById('actionList');
+  function renderActions(filter='') {
+    const f = filter.toLowerCase().trim();
+    actionList.innerHTML = ACTIONS.filter(a => a.includes(f)).map(a => `<div>${a}</div>`).join('');
+  }
+  renderActions();
+  document.getElementById('actionFilter')?.addEventListener('input', e => renderActions(e.target.value));
+
+  // ─── Filter (v1.0 / v1.1 / all) ─────────────────────────────────────
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const set = btn.dataset.set;
+      document.body.dataset.filter = set;
+      document.querySelectorAll('.filter-btn').forEach(b => {
+        b.classList.toggle('bg-stone-900', b === btn);
+        b.classList.toggle('text-white', b === btn);
+        b.classList.toggle('border-stone-900', b === btn);
+      });
+    });
+  });
+  document.querySelector('.filter-btn[data-set="all"]').classList.add('bg-stone-900','text-white','border-stone-900');
+
+  // ─── Stepper for the 30-second loop ─────────────────────────────────
+  const STEPS = [
+    {
+      label: 'LOCATE',
+      title: 'Read state, find the next open step.',
+      blurb: 'The framework reads <code class="mono text-xs bg-stone-100 px-1 rounded">.sdd/INDEX.md</code> to find the active feature, then runs <code class="mono text-xs bg-stone-100 px-1 rounded">resolve-active.sh</code> to confirm the branch matches. It opens the spec.md and finds the next <code class="mono text-xs bg-stone-100 px-1 rounded">[ ]</code> row.',
+      file: '.sdd/INDEX.md',
+      code: `**Active:** features/001-waitlist
+**Playbook:** feature
+**Active blocker:** §1.who
+
+## In flight
+- 001-waitlist · phase: SPEC · blocker: §1.who`
+    },
+    {
+      label: 'EXECUTE',
+      title: 'Ask the user (or propose, or run test-first).',
+      blurb: 'The action\'s <code class="mono text-xs bg-stone-100 px-1 rounded">tag:</code> field decides what happens. <strong>USER-LED:</strong> ask in plain English. <strong>AGENT-LED:</strong> propose 2-3 options + tradeoffs. <strong>BUILD-TASK:</strong> write the test, watch it fail, write the code.',
+      file: 'spec.md (excerpt)',
+      code: `## §1. Problem [USER-LED]
+- [x] who: solo founders, age 25-45
+- [x] why-now: launch in 6 weeks
+- [ ] what-breaks: ?       ← agent asks: "what happens if you don't ship?"`
+    },
+    {
+      label: 'SYNC',
+      title: 'Stage the files the action declared it touches.',
+      blurb: 'Each action\'s frontmatter lists the files it\'s allowed to touch. The hooks check that <strong>only those files</strong> are staged. If a UI-affecting action edits spec.md without also staging wireframe.html, the commit is refused.',
+      file: 'templates/.sdd/actions/problem.md (frontmatter)',
+      code: `---
+slug: problem
+tag: USER-LED
+touches: [spec.md]
+references: [data-model.md, INDEX.md]
+---`
+    },
+    {
+      label: 'ADVANCE',
+      title: 'Tick the box, commit, fire triggers.',
+      blurb: 'The <code class="mono text-xs bg-stone-100 px-1 rounded">[ ]</code> flips to <code class="mono text-xs bg-stone-100 px-1 rounded">[x]</code> with the user\'s answer inline. One step = one commit. If a section was approved, an entry appends to <code class="mono text-xs bg-stone-100 px-1 rounded">decisions.md</code>. INDEX.md updates if the phase changed.',
+      file: 'git log --oneline',
+      code: `[SDD:001-waitlist] spec: §1.what-breaks
+[SDD:001-waitlist] spec: §1.why-now
+[SDD:001-waitlist] spec: §1.who`
+    }
+  ];
+  let curStep = 1;
+  function renderStep(n) {
+    const s = STEPS[n - 1];
+    document.getElementById('loopContent').innerHTML = `
+      <div>
+        <h4 class="text-lg font-bold mb-2">${n}. ${s.label} — ${s.title}</h4>
+        <p class="text-sm text-stone-600 leading-relaxed">${s.blurb}</p>
+      </div>
+      <div>
+        <p class="text-xs text-stone-500 mono mb-2">${s.file}</p>
+        <pre class="codeblock-light text-xs">${s.code}</pre>
+      </div>
+    `;
+    document.querySelectorAll('.loop-step').forEach(el => {
+      el.classList.toggle('step-active', parseInt(el.dataset.step) === n);
+    });
+    document.getElementById('loopCounter').textContent = `Step ${n} of ${STEPS.length}`;
+    document.getElementById('loopPrev').disabled = n === 1;
+    document.getElementById('loopNext').disabled = n === STEPS.length;
+    document.getElementById('loopPrev').classList.toggle('opacity-40', n === 1);
+    document.getElementById('loopNext').classList.toggle('opacity-40', n === STEPS.length);
+  }
+  renderStep(1);
+  document.querySelectorAll('.loop-step').forEach(el => el.addEventListener('click', () => { curStep = parseInt(el.dataset.step); renderStep(curStep); }));
+  document.getElementById('loopPrev').addEventListener('click', () => { if (curStep > 1) { curStep--; renderStep(curStep); } });
+  document.getElementById('loopNext').addEventListener('click', () => { if (curStep < STEPS.length) { curStep++; renderStep(curStep); } });
+
+  // ─── Architecture diagram detail panel ──────────────────────────────
+  const ARCH_DETAIL = {
+    user: { t: 'YOU — the human builder', d: 'Non-technical or technical-curious. Brings the <em>what</em> in plain English. Decides between proposals; never reads YAML. The framework\'s entire output (specs, status messages, error explanations) is calibrated for a reader who isn\'t paid to read code.' },
+    claude: { t: 'CLAUDE CODE — the harness', d: 'The CLI/IDE that runs the agent loop. Reads <code class="mono">CLAUDE.md</code> at session start, fires the SDD hooks before/after tool calls. SDD is registered with Claude Code as a plugin via the manifest in this repo.' },
+    playbooks: { t: '4 playbooks', files: 'templates/.sdd/playbooks/', list: ['feature.md (15 SPEC actions)','project.md (7 actions across VISION/BREAKDOWN/KICKOFF)','bug.md (5 SPEC actions)','refactor.md (4 SPEC actions; minimal-diff-verify halts on positive line delta)'], d: 'Each playbook\'s YAML frontmatter declares stages → actions → exit_checks. New playbooks are compositions of existing actions — no framework code change needed.' },
+    actions: { t: '41 actions', files: 'templates/.sdd/actions/', d: 'One prose file per step. Frontmatter declares <code class="mono text-xs">tag</code> (USER-LED / AGENT-LED / BUILD-TASK / TRANSITION), <code class="mono text-xs">steps</code>, <code class="mono text-xs">touches</code>, <code class="mono text-xs">requires_user_approval</code>. Body is plain-English instructions Claude Code reads + executes.' },
+    hooks: { t: '8 hooks (7 .sh + 1 native git shim)', files: 'templates/.claude/hooks/', list: ['session-start.sh — print state','user-prompt-submit.sh — inject context','triage-on-first-message.sh — classify intent','pre-commit-rules.sh — F1 generic enforcer','pre-commit-stage-verified.sh — the moat','pre-commit-no-assumed-markers.sh — placeholder gate','post-stop-lint.sh — 9 turn-end invariants','pre-commit (no extension) — native git shim'], d: 'Mechanical enforcement. Each hook fails closed: a refused commit needs the user to fix the blocker, not work around it.' },
+    scripts: { t: '16 scripts', files: 'templates/.sdd/scripts/', d: 'Runtime helpers invoked by hooks and slash commands. Notable v1.0 additions: <code class="mono text-xs">resolve-active.sh</code> (branch-aware), <code class="mono text-xs">scope-guard-config.sh</code> (per-project UI dirs).' },
+    mcp: { t: '9 MCP queries (3 v1.0 graph)', files: 'extensions/sdd-mcp-server/queries/', d: 'A small Python helper. Lets Claude ask short questions instead of reading whole files — ~200 bytes back per query vs 15–35 KB of file reads. v1.0 added 3 graph-traversal queries for the wiki-link layer.' },
+    extensions: { t: '3 extensions', files: 'extensions/', d: 'Opt-in Lego bricks: <strong>playwright/</strong> (browser-test runner config), <strong>playwright-explorer/</strong> (agentic exploration loop, v1.0), <strong>sdd-mcp-server/</strong> (the Python helper above).' },
+    setup: { t: '7 setup-wizard bricks', files: 'templates/.sdd/setup/', d: 'Plain-English questions <code class="mono text-xs">/sdd-setup</code> walks once. Each brick records its answer in <code class="mono text-xs">stack.md</code> or <code class="mono text-xs">config.md</code>. v0.13.6 added brick 007 (MCP server opt-in).' },
+    commands: { t: '9 slash commands', files: 'templates/.claude/commands/', list: ['/sdd-setup · /sdd-config · /start · /next · /idea · /status · /settings · /ship · /compress'], d: 'User-facing entry points. The framework\'s "triage on first message" rule routes plain English to the right command.' },
+    tier3: { t: 'Tier 3 synthesis (v1.1 plan)', d: 'Chat-based summarisation over graph queries with cite-checkable corpus chunks. Carved out of v1.0 because corpus needs to accumulate before synthesis adds value, and generation introduces hallucination risk that strains foundation 3. Trust-boundary doctrine already in CLAUDE.md, forward-loaded for when it ships.' },
+    ci: { t: 'CI — three jobs', files: '.github/workflows/sdd-ci.yml', list: ['framework-tests — 192 mutation-verified tests','scope-guard — UI copy ≥30 chars must trace to spec.md or wireframe.html','graph-integrity — broken [[…]] refs fail the PR (v1.0)'], d: 'Local hooks gate commits; CI gates merges. Both run the same checks at different lifecycle moments.' },
+    manifest: { t: 'Manifest — hash-pinned', files: '.sdd/.cache/manifest.json', d: '~61 framework files have their normalised SHA-256 stored here. Hash algorithm: LF + strip trailing whitespace + strip blank-line edges. Tampering with any tracked file (modify / delete / rename) refuses the commit at the moat.' },
+    'claude-md': { t: 'CLAUDE.md — managed + project rules', d: 'A managed section (overwritten by <code class="mono text-xs">update.sh</code>) carries the framework discipline. Below the managed marker: your project rules (your stack, conventions, domain knowledge). The hook warns if anything is edited inside the managed block.' },
+    outputs: { t: 'OUTPUTS — plain markdown your project state', d: 'Every framework input and output is a markdown file you can <code class="mono text-xs">cat</code> in a terminal or open in any text editor. <code class="mono text-xs">spec.md</code> per feature · <code class="mono text-xs">INDEX.md</code> as catalog · <code class="mono text-xs">decisions.md</code> append-only audit log · <code class="mono text-xs">patterns.md</code> cross-feature lessons · <code class="mono text-xs">data-model.md</code> single source of truth for schemas · <code class="mono text-xs">stack.md</code> tech-stack facts.' }
+  };
+  function renderArchDetail(box) {
+    const d = ARCH_DETAIL[box];
+    if (!d) return;
+    const list = d.list ? '<ul class="mt-2 ml-4 list-disc text-stone-600">' + d.list.map(x => `<li>${x}</li>`).join('') + '</ul>' : '';
+    const file = d.files ? `<p class="text-xs text-stone-500 mono mt-2">${d.files}</p>` : '';
+    document.getElementById('archDetail').innerHTML = `
+      <p class="font-semibold text-stone-900 mb-2">${d.t}</p>
+      <p class="text-sm text-stone-700 leading-relaxed">${d.d}</p>
+      ${list}
+      ${file}
+    `;
+  }
+  // Plain-English labels for SVG group screen-reader text + aria-label.
+  const ARCH_ARIA = {
+    user: 'You — the human builder', claude: 'Claude Code harness',
+    playbooks: '4 playbooks', actions: '41 actions', hooks: '8 hooks',
+    scripts: '16 scripts', mcp: 'MCP server — 9 queries',
+    extensions: '3 extensions', setup: '7 setup-wizard bricks',
+    commands: '9 slash commands', tier3: 'Tier 3 synthesis (v1.1 plan)',
+    ci: 'CI workflow — three jobs', manifest: 'Hash-pinned manifest',
+    'claude-md': 'CLAUDE.md', outputs: 'Project outputs in plain markdown'
+  };
+  document.querySelectorAll('.arch-box-grp').forEach(g => {
+    g.setAttribute('tabindex', '0');
+    g.setAttribute('role', 'button');
+    const aria = ARCH_ARIA[g.dataset.box] || g.dataset.box;
+    g.setAttribute('aria-label', `Inspect ${aria}`);
+    const activate = () => {
+      // Some groups (e.g. outputs) have no .arch-box rect — render detail
+      // without the active highlight rather than throwing.
+      document.querySelectorAll('.arch-box').forEach(b => b.classList.remove('active'));
+      const box = g.querySelector('.arch-box');
+      if (box) box.classList.add('active');
+      renderArchDetail(g.dataset.box);
+    };
+    g.addEventListener('click', activate);
+    g.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); }
+    });
+  });
+
+  // ─── Architecture validation buttons ────────────────────────────────
+  const VALIDATION = JSON.parse(localStorage.getItem('sdd-walkthrough-validation') || '{}');
+  function persistValidation() { localStorage.setItem('sdd-walkthrough-validation', JSON.stringify(VALIDATION)); }
+  function renderValidation() {
+    document.querySelectorAll('.validation-btn').forEach(b => {
+      const v = VALIDATION[b.dataset.validation];
+      b.classList.remove('on-ok','on-problem','on-unclear');
+      if (v === b.dataset.vote) b.classList.add('on-' + v);
+    });
+    const checked = Object.keys(VALIDATION).length;
+    const greens = Object.values(VALIDATION).filter(x => x === 'ok').length;
+    const summary = document.getElementById('validationCount');
+    if (greens === 3) {
+      summary.innerHTML = '<span class="text-emerald-300">✓ 3/3 — the architecture validates against its own philosophy.</span>';
+    } else if (checked === 3) {
+      summary.innerHTML = `${checked}/3 checked · ${greens} green · the architecture has gaps you flagged. <span class="text-amber-300">Tell us what's wrong in your review note above.</span>`;
+    } else {
+      summary.textContent = `${checked}/3 checked`;
+    }
+  }
+  document.querySelectorAll('.validation-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      VALIDATION[b.dataset.validation] = b.dataset.vote;
+      persistValidation();
+      renderValidation();
+    });
+  });
+  renderValidation();
+
+  // ─── Review mode ────────────────────────────────────────────────────
+  const REVIEW = JSON.parse(localStorage.getItem('sdd-walkthrough-review') || '{"flags":{},"notes":{}}');
+  const persistReview = () => localStorage.setItem('sdd-walkthrough-review', JSON.stringify(REVIEW));
+
+  function applyReview() {
+    document.querySelectorAll('.reviewable').forEach(s => {
+      const id = s.dataset.section;
+      const flag = REVIEW.flags[id];
+      if (flag) s.dataset.flag = flag; else delete s.dataset.flag;
+      s.querySelectorAll('.review-tools .rb').forEach(b => {
+        b.classList.remove('active-ok','active-problem','active-unclear');
+        if (b.dataset.flag === flag) b.classList.add('active-' + flag);
+      });
+      const note = s.querySelector('textarea[data-note]');
+      if (note) note.value = REVIEW.notes[id] || '';
+    });
+    document.getElementById('rbCount').textContent = `${Object.keys(REVIEW.flags).length} flagged`;
+    document.getElementById('rbNoteCount').textContent = `${Object.values(REVIEW.notes).filter(n => n && n.trim()).length} notes`;
+  }
+
+  document.querySelectorAll('.reviewable').forEach(s => {
+    const id = s.dataset.section;
+    s.querySelectorAll('.review-tools .rb').forEach(b => {
+      b.addEventListener('click', () => {
+        if (REVIEW.flags[id] === b.dataset.flag) delete REVIEW.flags[id];
+        else REVIEW.flags[id] = b.dataset.flag;
+        persistReview(); applyReview();
+      });
+    });
+    const note = s.querySelector('textarea[data-note]');
+    note?.addEventListener('input', () => {
+      if (note.value.trim()) REVIEW.notes[id] = note.value;
+      else delete REVIEW.notes[id];
+      persistReview();
+      document.getElementById('rbNoteCount').textContent = `${Object.values(REVIEW.notes).filter(n => n && n.trim()).length} notes`;
+    });
+  });
+
+  document.getElementById('reviewToggle').addEventListener('change', e => {
+    document.body.dataset.review = e.target.checked ? 'on' : '';
+    if (e.target.checked) applyReview();
+  });
+
+  document.getElementById('clearReview').addEventListener('click', () => {
+    if (!confirm('Clear all review flags and notes?')) return;
+    REVIEW.flags = {}; REVIEW.notes = {}; persistReview(); applyReview();
+  });
+
+  document.getElementById('exportReview').addEventListener('click', () => {
+    const lines = ['# SDD v1.0 walkthrough — review feedback', '', `Date: ${new Date().toISOString().slice(0,10)}`, ''];
+    const sections = [...new Set([...Object.keys(REVIEW.flags), ...Object.keys(REVIEW.notes)])];
+    if (sections.length === 0) {
+      lines.push('_(no flags or notes recorded)_');
+    } else {
+      sections.sort().forEach(id => {
+        const flag = REVIEW.flags[id];
+        const flagStr = flag === 'ok' ? '✓ looks good' : flag === 'problem' ? '✗ issue' : flag === 'unclear' ? '? unclear' : '';
+        lines.push(`## ${id}${flagStr ? '  —  ' + flagStr : ''}`);
+        if (REVIEW.notes[id]) lines.push('', REVIEW.notes[id]);
+        lines.push('');
+      });
+    }
+    // architecture-validation results
+    if (Object.keys(VALIDATION).length) {
+      lines.push('## architecture-validation', '');
+      const labels = { f1: 'Foundation 1 (simplicity)', f2: 'Foundation 2 (Lego)', f3: 'Foundation 3 (never-assume)' };
+      Object.entries(VALIDATION).forEach(([k, v]) => {
+        const sym = v === 'ok' ? '✓' : v === 'problem' ? '✗' : '?';
+        lines.push(`- ${sym} ${labels[k]}: ${v}`);
+      });
+      lines.push('');
+    }
+    document.getElementById('exportText').value = lines.join('\n');
+    openExportModal();
+  });
+
+  // Modal open/close + focus management + Escape-to-close. The function
+  // declarations below are hoisted within the IIFE so the exportReview
+  // handler above can call openExportModal() at click-time.
+  const modal = document.getElementById('exportModal');
+  let lastFocus = null;
+  function openExportModal() {
+    lastFocus = document.activeElement;
+    modal.classList.remove('hidden');
+    modal.querySelector('[tabindex="-1"]').focus();
+  }
+  function closeExportModal() {
+    modal.classList.add('hidden');
+    if (lastFocus && typeof lastFocus.focus === 'function') lastFocus.focus();
+  }
+  document.getElementById('closeExport').addEventListener('click', closeExportModal);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeExportModal();
+  });
+
+  // Modern clipboard with execCommand fallback. Only flash success if the
+  // copy actually succeeded; surface a clear error otherwise.
+  document.getElementById('copyExport').addEventListener('click', async () => {
+    const btn = document.getElementById('copyExport');
+    const text = document.getElementById('exportText').value;
+    const flash = (msg, ok = true) => {
+      const original = 'Copy to clipboard';
+      btn.textContent = msg;
+      btn.classList.toggle('bg-rose-700', !ok);
+      btn.classList.toggle('bg-stone-900', ok);
+      setTimeout(() => {
+        btn.textContent = original;
+        btn.classList.remove('bg-rose-700');
+        btn.classList.add('bg-stone-900');
+      }, 1500);
+    };
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        flash('Copied ✓');
+        return;
+      }
+    } catch (err) { /* fall through to execCommand fallback */ }
+    try {
+      const ta = document.getElementById('exportText');
+      ta.select();
+      const ok = document.execCommand('copy');
+      flash(ok ? 'Copied ✓' : 'Copy failed — select + ⌘C', ok);
+    } catch (err) {
+      flash('Copy failed — select + ⌘C', false);
+    }
+  });
+
+  applyReview();
+})();
+</script>
+
+</body>
+</html>
