@@ -175,7 +175,22 @@ Approval row left [ ] — same flow as §5; Sam ticks at approval-pass time.
 
 ### action: plan-decompose
 
-- [ ] tasks: convert acceptance criteria into ordered build tasks (one test file per task)
+- [x] tasks: 12 BUILD tasks, mapped 1-1 to AC1-12, ordered to keep BUILD test-runs green at each step.
+
+  - [ ] T01: write `lint-action-prose.sh` v0 (just the inventory pass — list qualifying files + their compliance state). Test: `tests/task-001.sh` asserts `bash .sdd/scripts/lint-action-prose.sh --inventory` lists ≥10 qualifying files. *RED → code → GREEN.*
+  - [ ] T02: extend `lint-action-prose.sh` to assert `**What it looks like:**` block in each qualifying file. Test: `tests/task-002.sh` runs the lint against a temp tree of 2 files (one with the block, one without) and asserts only the second is flagged.
+  - [ ] T03: extend `lint-action-prose.sh` to assert first paragraph ≤2 sentences AND ≤200 chars. Test: `tests/task-003.sh` runs against 2 fixtures (one short, one long) and asserts only the long one is flagged.
+  - [ ] T04: chmod +x the script + place under `.sdd/scripts/`. Test: `tests/task-004.sh` checks `[ -x .sdd/scripts/lint-action-prose.sh ]`.
+  - [ ] T05: sweep ALL `templates/.sdd/actions/*.md` files (the actual prose-rewrite). Each file gets the `**What it looks like:**` block + a tightened first paragraph. Test: `tests/task-005.sh` runs the full lint and asserts exit 0 + silent stderr.
+  - [ ] T06: lint negative path — bad fixture without the block. Test: `tests/task-006.sh` builds a temp file in /tmp, runs lint with the temp path, asserts exit 1 + stderr contains `What it looks like` + the file path.
+  - [ ] T07: lint negative path — long-first-paragraph fixture. Test: `tests/task-007.sh` mirror of T06 with a long paragraph fixture.
+  - [ ] T08: hook into `test/run-framework-test.sh` as new T-numbered note + check. Test: `tests/task-008.sh` greps for `lint-action-prose.sh` in `test/run-framework-test.sh`.
+  - [ ] T09: add CLAUDE.md doctrine line in BOTH `CLAUDE.md` AND `templates/CLAUDE.md`, in the "Code-quality doctrine" section. Test: `tests/task-009.sh` greps for `lint-action-prose.sh` in both files.
+  - [ ] T10: assert all action-file frontmatter parses with PyYAML and contains the original 11 fields. Test: `tests/task-010.sh` runs Python via `python3 -c` to parse each action file's frontmatter, fails if any field is missing or new.
+  - [ ] T11: assert frontmatter `prompt:` strings byte-identical to pre-sweep. Test: `tests/task-011.sh` snapshots the prompt strings before T05 and diffs after.
+  - [ ] T12: full framework regression. Test: `tests/task-012.sh` runs `bash test/run-framework-test.sh` and asserts exit 0.
+
+  **Run mode:** *(asked at SPEC→BUILD entry per `run-mode-chosen.md`)*. For this feature: probably `full autonomous` — the work is highly mechanical (regex-find + structured-rewrite + bash lint), low risk per task, hits a halt-trigger only on real prose-design questions.
 
 ### action: edge-case-sweep
 
