@@ -5482,12 +5482,19 @@ spec="$d/.sdd/refactors/001-extract-atomic-write-helper/spec.md"
 # order (refactor-scope → regression-coverage → refactor-approach →
 # minimal-diff-verify). The flow is order-sensitive: regression-coverage
 # must happen before approach, minimal-diff-verify must close the
-# section. CR cycle-5/8: prefix-membership wasn't enough.
+# section. CR cycle-5/8/9: scoped to SPEC phase only — BUILD/SHIP have
+# their own action: headings that would otherwise trip this assertion.
 expected_order="refactor-scope
 regression-coverage
 refactor-approach
 minimal-diff-verify"
-actual_order=$(grep -E '^### action: ' "$spec" 2>/dev/null | sed 's/^### action: //' || echo "")
+# Slice spec body between '## PHASE: SPEC' and the next phase boundary.
+# awk emits only lines inside that slice, then we extract action: tokens.
+actual_order=$(awk '
+  /^## PHASE: SPEC[[:space:]]*$/ { in_spec=1; next }
+  /^## PHASE: / && in_spec { exit }
+  in_spec && /^### action: / { sub(/^### action: /, ""); print }
+' "$spec" 2>/dev/null || echo "")
 if [ "$ec" -eq 0 ] \
    && [ -f "$spec" ] \
    && [ "$actual_order" = "$expected_order" ]; then
