@@ -77,3 +77,10 @@ Hash: 1904d0cf44b19a75aab3085f4f59d2a25782295f540ae4a19b754a8dce3b9114
 Approved 20 ACs covering Tier 3 v1.1 — 16 mechanical, 2 best-effort (declared with named test count), 2 PROD-ONLY (naturalness as human judgment, real-provider rate-limit confirmation). Sam pushed back twice on the draft: (a) wording was too technical (4th drift in this session — applied pre-flight check more aggressively in the redraft), (b) my own theatre re-check missed real theatre ("free" in AC#4 was dollar-language, "cost caps" in AC#6 was the same shape as the cost_limit_usd we removed, "real-looking key" in AC#11 was fuzzy, "about 1 KB" in AC#13 was inexact). All four theatre items fixed. New AC#20 added covering setup-wizard integration — Sam caught that §6's "set up tier3 config" was unsaid HOW; the answer is via extension of brick 007 (mcp-server). All §4 UX brief constraints have mapped ACs — Plan-decompose coverage check passes pre-emptively.
 
 Hash: 80e2e2953623f58eed62535e453f1a480a36684acc39c545dc75f3fac585849c
+
+## 2026-05-01T16:05:27Z  [[001-tier-3-llm-driven-synthesis]]  feature/acceptance-criteria (correction)
+
+Correcting the previous §11 approval entry — the spec.md edit that wrote the 20 ACs failed silently (Edit tool's old_string didn't match the actual scaffold prompt text). The previous approval committed with hash 80e2e2953623f58eed62535e453f1a480a36684acc39c545dc75f3fac585849c — that hash was over an EMPTY §11 (just the unanswered prompt row), not the approved 20-AC content. This entry pins the correct hash for the actual approved content.
+
+Hash: 42367fee42e68abcb8c8385142be2de7b3a361ba77aa148529fbc93022072c17
+Reason: spec.md content recovered after the previous commit's first Edit silently no-op'd; same approval, correct content this time.

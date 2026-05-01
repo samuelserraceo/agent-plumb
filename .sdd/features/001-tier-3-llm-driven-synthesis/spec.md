@@ -255,7 +255,80 @@ All four already ship and have their own tests. Tier 3 doesn't rewrite or change
 
 ### action: acceptance-criteria
 
-- [ ] approval: draft the acceptance criteria, run a constraint-coverage check vs §4, iterate, get approval
+- [x] approval: APPROVED 2026-05-01 — 20 ACs (16 mechanical + 2 best-effort declared + 2 PROD-ONLY); coverage check vs §4 passes; theatre re-check applied (no "free", no "cost caps", concrete pattern lists, exact byte counts)
+
+**Group 1 — Honesty floor.**
+
+1. **Every `[[link]]` in a Tier 3 answer points at something real in your project.** Verified by an automated test on a small test project.
+2. **When the AI tries to invent a link** that doesn't exist, Tier 3 catches it, refuses the answer, and shows the raw chunks instead. Test makes the fake AI invent a link, confirms the fallback fires.
+3. **A refused answer is NOT remembered.** Asking the same question again triggers a fresh AI call. Test asks twice, confirms the AI was called both times.
+
+**Group 2 — Memory (the cache).**
+
+4. **The second time you ask the same question, the AI is not called and the cache returns under 50ms.** Test asks once, then again, confirms the AI ran exactly once and the second response was within the latency budget from §10.
+5. **When you edit a piece of your project that a cached answer referenced, the next ask re-fires the AI.** Test edits the referenced file, confirms a fresh AI call follows.
+
+**Group 3 — Call/token caps.**
+
+6. **The three call/token caps each refuse past their threshold without crashing** — `max_calls_per_run`, `max_input_tokens_per_call`, `max_total_tokens_per_run`. Hitting any cap returns `{ok: false, reason: "<cap name> exceeded"}`. One test per cap.
+
+**Group 4 — Two views of the same answer.**
+
+7. **The agent can ask the same question as data, you can ask as paragraphs, and the two views always cite the same pieces of your project.** Test calls both ways and asserts the cited pieces match.
+
+**Group 5 — Setup + not-set-up state.**
+
+8. **Tier 3 reads where the AI lives + which model + your access key from your config.** Test sets up config, confirms the call goes to the configured place.
+9. **If you haven't enabled Tier 3, asking a question returns `"Tier 3 not enabled"` instead of crashing.** Test runs disabled.
+10. **Your real access key stays in environment variables.** Writing `${MY_TOKEN}` makes the framework read the actual value at runtime; the literal key never lives in a git-tracked file. Test confirms substitution.
+11. **A literal key matching common provider patterns (`sk-…`, `sk_live_…`, `Bearer eyJ…`) pasted directly into config triggers a warning** so you don't commit it. Pattern list pinned in `templates/.sdd/setup/setup-tier3.md`. Test confirms warning fires.
+
+**Group 6 — When things go wrong.**
+
+12. **The four expected failure cases produce clean errors, not crashes:** AI provider unreachable; provider rate-limited; cache disk write fails; AI returns gibberish. One test per case.
+
+**Group 7 — Length cap + injection floor.**
+
+13. **The default answer is ≤ 1024 bytes; longer responses are trimmed at exactly that boundary** with a `"want me to expand on [[X]]?"` suffix. Test checks size in bytes.
+14. **Someone hiding "ignore previous instructions" content in your project markdown cannot make Tier 3 silently lie to you.** Either the cite-check catches it (because the manipulation produced a fake link) or the answer falls back to raw chunks. Test plants the injection, confirms one of those two safe outcomes.
+
+**Group 8 — Best-effort behaviours (declared explicitly — not enforced over arbitrary unseen content).**
+
+15. **When the project has two contradictory answers, the response surfaces both candidates** rather than picking one silently. Best-effort: 5 specific representative test cases at SHIP, defined in §14 plan-decompose.
+16. **When the project has nothing relevant, the response says so explicitly** with the closest tangential link. Best-effort: same 5 representative test cases.
+
+**Group 9 — Observability.**
+
+17. **You can see how many calls Tier 3 made, how many tokens it spent, and what fraction of asks were cache hits.** Test fires a sequence of calls and confirms counters report correctly.
+
+**Group 10 — Real-provider checks `[PROD-ONLY]`.**
+
+18. `[PROD-ONLY]` Against your actual configured provider, a real question against a small test project produces an answer that passes the cite-check and reads naturally to you. **Naturalness is your judgment as the human reviewer; the cite-check is mechanical.** Manual walk once after first deploy.
+19. `[PROD-ONLY]` Real provider's "you've used your allowance" response matches what AC #12 mocks. Manual confirmation, once.
+
+**Group 11 — Setup-wizard integration (added on Sam's catch).**
+
+20. **Running `/sdd-setup` on a fresh project (or `/sdd-config` to update) walks plain-English questions about Tier 3 — *do you want it? which provider? where does it live? how to handle your access key?* — and writes the answers into `parameters.mcp.tier3` correctly.** Implementation: extension of existing brick 007 (`007-mcp-server.md`) — adds Tier 3 sub-questions when the user enables the MCP server. Verified by end-to-end test that runs the wizard non-interactively against a known answer set and asserts the resulting config values.
+
+**Coverage check vs §4 UX brief constraints (Plan-decompose pre-check):**
+
+| §4 constraint | Mapped AC |
+|---|---|
+| No invented citations | #2 |
+| Ambiguity surfaced | #15 (best-effort) |
+| Empty corpus spelled out | #16 (best-effort) |
+| Length cap (≤ 1024 bytes) | #13 |
+| Knowledgeable-colleague voice | #18 (`[PROD-ONLY]` human reviewer) |
+| Freshness via corpus signature | #5 |
+
+All §4 constraints have a mapped AC. Plan-decompose coverage check passes pre-emptively.
+
+**Theatre re-check (post-2026-05-01 audit, Sam's pushback applied):**
+
+- 16 mechanical ACs (#1-14, #17, #20) — every claim has an exact verifier or a pattern list pinned in a sibling file
+- 2 best-effort ACs (#15, #16) — explicitly tagged with "5 representative test cases at SHIP, defined in §14"; not promised over arbitrary unseen content
+- 2 `[PROD-ONLY]` ACs (#18, #19) — naturalness explicitly tagged as human judgment
+- Zero "free" / "instant" / "about" / "real-looking" fuzz — every quantitative claim has an exact threshold or a concrete pattern list
 
 ### action: signoff-steps
 
