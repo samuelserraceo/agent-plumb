@@ -1,8 +1,10 @@
 # graph-cache multi-line code span fix
 
-[PHASE: SPEC]
+[PHASE: SHIP]
 
-**Active blocker:** §15 done, phase advance next
+**Run mode at BUILD:** full autonomous.
+
+**Active blocker:** SHIP — push-pr → CR cycles → mark-shipped.
 
 ## PHASE: SPEC
 
@@ -124,13 +126,13 @@ Restructure `_strip_inline_code` to operate on the FULL content (not one line at
 
 ### Build tasks (4 total · run mode: full autonomous)
 
-- [ ] T01: multi-line span mask + zero-edge fixture test
-- [ ] T02: single-line span regression
-- [ ] T03: line-number accuracy
-- [ ] T04: framework regression
+- [x] T01 GREEN: `_INLINE_CODE_MULTILINE_RE` + `_mask_inline_code_in_content` helper landed in `_graph_cache.py`; fixture with multi-line span containing `[[pattern:fake]]` produces 0 phantom edges
+- [x] T02 GREEN: single-line span regression — still produces 0 edges
+- [x] T03 GREEN: line numbers preserved after masking (newlines kept in mask output)
+- [x] T04 GREEN: 196/196 framework + 161/161 MCP regression passing
 
 ### Exit checks (BUILD)
-- [ ] C-build-tasks-green: every task is GREEN
+- [x] C-build-tasks-green: 4/4 tasks GREEN
 
 ## PHASE: SHIP
 
