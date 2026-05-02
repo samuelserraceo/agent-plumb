@@ -6637,6 +6637,7 @@ eval "$prev_nullglob"
 if [ "${#specs[@]}" -eq 0 ]; then
   ok "T141 no in-flight specs to lint (nothing to gate)"
 else
+  lint_exec_errors=0
   for spec in "${specs[@]}"; do
     feat=$(basename "$(dirname "$spec")")
     case "$feat" in
@@ -6646,13 +6647,23 @@ else
     esac
     nt_out=$(bash "$FRAMEWORK_ROOT/.sdd/scripts/lint-no-theatre.sh" "$spec" 2>&1)
     nt_ec=$?
-    if [ "$nt_ec" -ne 0 ]; then
+    # CR cycle 3: distinguish theatre findings (exit 1) from script
+    # execution errors (exit 2+). Both fail the gate but they need
+    # different debugging — a finding means "fix the spec"; an exec
+    # error means "the lint itself broke" (e.g. usage error, unreadable
+    # file, bash crash).
+    if [ "$nt_ec" -eq 1 ]; then
       new_spec_violations=$((new_spec_violations + 1))
       note "  T141: $feat → $nt_out"
+    elif [ "$nt_ec" -ne 0 ]; then
+      lint_exec_errors=$((lint_exec_errors + 1))
+      note "  T141: lint-no-theatre.sh failed on $feat (exit $nt_ec): $nt_out"
     fi
   done
-  if [ "$new_spec_violations" -eq 0 ]; then
+  if [ "$new_spec_violations" -eq 0 ] && [ "$lint_exec_errors" -eq 0 ]; then
     ok "T141 anti-theatre lint passes on every in-flight spec"
+  elif [ "$lint_exec_errors" -gt 0 ]; then
+    bad "T141 anti-theatre lint script execution failed" "$lint_exec_errors spec(s) had lint exec errors; $new_spec_violations theatre findings"
   else
     bad "T141 anti-theatre lint failed" "$new_spec_violations spec(s) with un-annotated theatre"
   fi
