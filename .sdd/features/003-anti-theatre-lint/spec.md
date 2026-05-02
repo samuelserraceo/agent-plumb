@@ -1,8 +1,10 @@
 # anti-theatre lint
 
-[PHASE: SPEC]
+[PHASE: BUILD]
 
-**Active blocker:** §15 edge-case-sweep done; phase advance next
+**Active blocker:** BUILD — T01 (write lint-no-theatre.sh executable scaffold)
+
+**Run mode:** full autonomous (per Sam's standing preference; mechanical work — bash lint + hook + doctrine).
 
 ## PHASE: SPEC
 
@@ -201,3 +203,57 @@ If a match has none of these annotations, lint exits 1 with stderr naming file:l
 
 - [x] C-spec-acs: ≥1 acceptance criterion exists in §11 — verified 15 ACs (12 from §11 + 3 from §15)
 - [x] C-spec-tasks: ≥1 task in plan-decompose section — verified 15 tasks T01-T15
+
+## PHASE: BUILD
+
+### Build tasks (15 total · run mode: full autonomous)
+
+- [ ] T01: write `lint-no-theatre.sh` v0 (executable scaffold)
+- [ ] T02: numerical-claims regex
+- [ ] T03: currency tokens
+- [ ] T04: enforcement-language + quality tokens
+- [ ] T05: `{verify-by: T-NNN}` annotation skip
+- [ ] T06: `{best-effort: <who>}` annotation skip
+- [ ] T07: `{prod-only: <why>}` annotation skip
+- [ ] T08: hook into `test/run-framework-test.sh` as new T141
+- [ ] T09: write `templates/.claude/hooks/pre-commit-no-theatre.sh`
+- [ ] T10: doctrine line in `templates/CLAUDE.md`
+- [ ] T11: run lint against shipped specs; document baseline
+- [ ] T12: full framework regression
+- [ ] T13: skip code blocks + inline code spans
+- [ ] T14: emit one error per token on multi-token lines
+- [ ] T15: annotation regex tolerates whitespace inside braces
+
+### Exit checks (BUILD)
+- [ ] C-build-tasks-green: every task is GREEN
+
+## PHASE: SHIP
+
+### action: verify-test-run
+- [ ] run: full test suite GREEN locally — 195/195 framework + 161/161 MCP + 15/15 task tests passing pre-PR-push.
+
+### action: verify-prod-only-acs
+- [ ] collect: this feature has no `[PROD-ONLY]` ACs. N/A.
+
+### action: adversarial-review
+- [ ] adversarial: CodeRabbit + Qodo on the PR. Iterate until converged.
+
+### action: playwright-explore
+- ⏭ skipped — non-UI feature.
+
+### action: learn
+- [ ] lessons: capture in INDEX.md `## Shipped` row's Lesson field; pattern block lands in `.sdd/patterns.md` next feature.
+
+### action: push-pr
+- [ ] pr: PR opened against main with comprehensive body.
+
+### action: verify-ci-green
+- [ ] ci: all 4 GitHub Actions checks green on the PR.
+
+### action: mark-shipped
+- [ ] shipped: `.shipped` marker, INDEX.md row, decisions.md audit entry.
+
+### Exit checks (SHIP)
+- [ ] C-ship-pr-merged: PR merged to main with CI green
+- [ ] C-ship-marker: `.shipped` file present in feature folder
+- [ ] C-ship-index: INDEX.md `## Shipped` block contains rich row for this feature
