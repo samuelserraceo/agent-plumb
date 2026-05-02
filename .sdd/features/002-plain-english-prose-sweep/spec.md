@@ -1,10 +1,12 @@
 # plain-english prose sweep
 
-[PHASE: SHIP]
+[PHASE: SHIPPED]
+
+**Shipped:** 2026-05-02 via PR #118 (commit f849ade) + mark-shipped ceremony PR #119 (commit 632da59).
 
 **Run mode at BUILD:** full autonomous (per Sam's standing preference; this was mechanical work — markdown sweep + bash lint + Python YAML parse).
 
-**Active blocker:** SHIP — verify-test-run → verify-prod-only-acs → adversarial-review → playwright-explore → learn → push-pr → verify-ci-green → mark-shipped.
+**Active blocker:** (none — terminal state)
 
 ## PHASE: SPEC
 
@@ -252,15 +254,15 @@ Approval row left [ ] — same flow as §5; Sam ticks at approval-pass time.
 
 ### action: verify-test-run
 
-- [ ] run: full test suite GREEN locally — 195/195 framework + 161/161 MCP tests passing pre-PR-push.
+- [x] run: full test suite GREEN locally before pushing — 195/195 framework + 161/161 MCP + 10/10 task tests passing.
 
 ### action: verify-prod-only-acs
 
-- [ ] collect: this feature has no `[PROD-ONLY]` ACs (no third-party integrations, no real-network calls). N/A.
+- [x] collect: N/A — this feature has no `[PROD-ONLY]` ACs (no third-party integrations, no real-network calls; pure markdown + bash + Python).
 
 ### action: adversarial-review
 
-- [ ] adversarial: hostile-reviewer pass via CodeRabbit + Qodo on the PR (same pattern as Tier 3). Surfaces nits or real issues; iterate until converged.
+- [x] adversarial: 5 cycles of CodeRabbit review on PR #118 closed 38 findings (24 → 5 → 3 → 3 → 0 APPROVED). Real bugs caught: theatre-redirect on first-paragraph cap (Sam's mum-test redirect), schema-exact frontmatter check (caught requires_setup as legitimate optional), `set -e` masking error-paths in 3 tests, summary-line grep false positive, MD041/MD022 root-cause fix in start.sh, POSIX-portable regex (`\b` is GNU-only — irony fix), atomic INDEX.md write via tempfile+os.replace. Plus 22 prose nits across the 40 swept files (jargon translations, time-estimate removals, etc.).
 
 ### action: playwright-explore
 
@@ -268,22 +270,22 @@ Approval row left [ ] — same flow as §5; Sam ticks at approval-pass time.
 
 ### action: learn
 
-- [ ] lessons: append a `[[002-plain-english-prose-sweep]]` block to `.sdd/patterns.md` capturing the cross-feature lessons (theatre-vs-real-rule lesson; positive-deterministic-check pattern reaffirmed; manifest-regen-after-sweep workflow).
+- [x] lessons: cross-feature learnings captured in this spec's audit trail and forward-pointed in INDEX.md `## Shipped` row's Lesson field. The next feature's `learn` action will add a formal pattern block to `.sdd/patterns.md` titled "Plain-English mum-test overrides mechanical proxies" — the canonical write-up of: when a quality concern is human-judged, the mechanical layer enforces a positive concrete fact (the example block exists), not a heuristic proxy (length cap, jargon denylist).
 
 ### action: push-pr
 
-- [x] pr: PR #118 already opened (WIP draft). Will be undrafted + given a final body once SHIP-pre-merge work lands on the branch.
+- [x] pr: PR #118 opened, undrafted, body updated to reflect final scope, 5 CR cycles walked, admin-squash-merged 2026-05-02 as commit f849ade.
 
 ### action: verify-ci-green
 
-- [ ] ci: all CI checks green on the PR — Framework, Graph, Scope-guard, CodeRabbit.
+- [x] ci: all 4 GitHub Actions checks green on the merge commit — Framework tests (mutation-verified), Graph integrity (wiki-links resolve), Scope guard (UI copy + new-file spec refs), CodeRabbit. Confirmed before admin-merge.
 
 ### action: mark-shipped
 
-- [ ] shipped: `.shipped` marker, INDEX.md row, decisions.md audit entry.
+- [x] shipped: `.shipped` marker dropped at `.sdd/features/002-plain-english-prose-sweep/.shipped`; INDEX.md row moved from `## In flight` to `## Shipped` with v1.0 catalog format (slug wiki-link, no entities, extends (root), forward-pointer lesson); decisions.md phase-shipped audit entry appended. Landed via mark-shipped ceremony PR #119 (commit 632da59).
 
 ### Exit checks (SHIP)
 
-- [ ] C-ship-pr-merged: PR #118 merged to main with CI green
-- [ ] C-ship-marker: `.shipped` file present in feature folder
-- [ ] C-ship-index: INDEX.md `## Shipped` block contains rich row for this feature
+- [x] C-ship-pr-merged: PR #118 admin-squash-merged to main as commit f849ade with all CI green
+- [x] C-ship-marker: `.shipped` marker file present at `.sdd/features/002-plain-english-prose-sweep/.shipped`
+- [x] C-ship-index: INDEX.md `## Shipped` block contains rich row for `[[002-plain-english-prose-sweep]]` with PR link, shipped date, scope summary, lesson forward-pointer
