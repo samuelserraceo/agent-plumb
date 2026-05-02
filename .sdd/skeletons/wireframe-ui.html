@@ -42,13 +42,13 @@
   <h2 class="text-2xl font-semibold mb-4">Screens</h2>
   <p class="text-stone-600 mb-6">One screen per user story. Label components, show real-looking copy (not Lorem Ipsum), mark interactive areas with click handlers + keyboard activation (Enter/Space).</p>
 
-  <!-- TODO: Screen 1 -->
-  <div class="screen mb-8" tabindex="0" role="region" aria-label="Screen 1">
-    <h3 class="text-lg font-medium mb-3">TODO: Screen 1 — name (e.g. "Signup form before submit")</h3>
+  <!-- TODO: Screen 1 — semantic <section>, no tabindex (it's a landmark, not focusable) -->
+  <section class="screen mb-8" aria-labelledby="screen-1-title">
+    <h3 id="screen-1-title" class="text-lg font-medium mb-3">TODO: Screen 1 — name (e.g. "Signup form before submit")</h3>
     <div class="border-2 border-dashed border-stone-300 rounded p-8 text-stone-500 text-center">
       TODO: Sketch the screen here. Form fields, buttons, copy.
     </div>
-  </div>
+  </section>
 
   <!-- TODO: Screen 2, 3, ... -->
 </section>
@@ -86,19 +86,25 @@
 
   <h3 class="text-lg font-medium mt-6 mb-2">Primary button</h3>
   <div class="flex gap-2 flex-wrap">
-    <button class="state-default px-4 py-2 rounded">Default</button>
-    <button class="state-hover px-4 py-2 rounded">Hover</button>
-    <button class="state-focus px-4 py-2 rounded">Focus</button>
-    <button class="state-active px-4 py-2 rounded">Active</button>
-    <button class="state-disabled px-4 py-2 rounded" disabled>Disabled</button>
-    <button class="state-error px-4 py-2 rounded">Error</button>
+    <button type="button" class="state-default px-4 py-2 rounded" aria-label="Primary button — default state">Default</button>
+    <button type="button" class="state-hover px-4 py-2 rounded" aria-label="Primary button — hover state">Hover</button>
+    <button type="button" class="state-focus px-4 py-2 rounded" aria-label="Primary button — focus state">Focus</button>
+    <button type="button" class="state-active px-4 py-2 rounded" aria-label="Primary button — active state">Active</button>
+    <button type="button" class="state-disabled px-4 py-2 rounded" aria-label="Primary button — disabled state" disabled>Disabled</button>
+    <button type="button" class="state-error px-4 py-2 rounded" aria-label="Primary button — error state">Error</button>
   </div>
 
   <h3 class="text-lg font-medium mt-6 mb-2">Form input</h3>
   <div class="grid grid-cols-2 md:grid-cols-3 gap-3 max-w-3xl">
-    <input class="state-default px-3 py-2 rounded" placeholder="Default" />
-    <input class="state-focus px-3 py-2 rounded" placeholder="Focus" />
-    <input class="state-error px-3 py-2 rounded" placeholder="Error: invalid email" />
+    <label class="text-sm">Default state
+      <input type="text" class="state-default px-3 py-2 rounded w-full mt-1" placeholder="example@email" />
+    </label>
+    <label class="text-sm">Focus state
+      <input type="text" class="state-focus px-3 py-2 rounded w-full mt-1" placeholder="example@email" />
+    </label>
+    <label class="text-sm">Error state
+      <input type="text" class="state-error px-3 py-2 rounded w-full mt-1" placeholder="not-a-valid-email" aria-invalid="true" />
+    </label>
     <!-- TODO: more inputs -->
   </div>
 

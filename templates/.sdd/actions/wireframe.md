@@ -23,16 +23,16 @@ The wireframe is often the only doc a non-technical reviewer can look at and dec
 
 **Pick one of two shapes based on the feature.**
 
-### Shape A — UI feature (form, page, button, screen, anything user-clicks)
+## Shape A — UI feature (form, page, button, screen, anything user-clicks)
 
 Copy the starter from `templates/.sdd/skeletons/wireframe-ui.html` into `.sdd/features/<id>/wireframe.html`, then fill the TODO sections:
 
 - **Screens** — every screen named in `user-stories`. Label components, show real-looking copy (not Lorem Ipsum), mark interactive areas (buttons, links, form fields). Keep rough — this is wireframe (layout + flow), not visual design.
-- **Design tokens** — colour palette, type scale, spacing, radii. References the project's `stack.md` if there's an established design system.
+- **Design tokens** — colour palette, type scale, spacing, radii. References the project's `.sdd/stack.md` if there's an established design system.
 - **Component states matrix** — for each interactive component: default / hover / focus / active / disabled / loading / error. One column per state, one row per component.
 - **Interaction details** — what happens between screens. Click X → goes to Y. Submit form with bad email → shows error inline.
 
-### Shape B — non-UI feature (backend job, library, CLI, API endpoint, data migration, framework rule)
+## Shape B — non-UI feature (backend job, library, CLI, API endpoint, data migration, framework rule)
 
 Copy the starter from `templates/.sdd/skeletons/wireframe-non-ui.html` into `.sdd/features/<id>/wireframe.html`, then fill the TODO sections:
 

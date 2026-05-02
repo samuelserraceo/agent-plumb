@@ -157,6 +157,21 @@
     'downstream': { t: 'TODO: Downstream', d: 'TODO: existing system this feature talks to.' },
   };
 
+  // Render via textContent (not innerHTML) so any user-supplied
+  // TODO content can't inject HTML. Build <p> elements explicitly.
+  function renderDetail(targetId, d) {
+    const target = document.getElementById(targetId);
+    target.textContent = ''; // clear previous
+    const title = document.createElement('p');
+    title.className = 'font-semibold text-stone-900 mb-1';
+    title.textContent = d.t;
+    const body = document.createElement('p');
+    body.className = 'text-sm text-stone-700 leading-relaxed';
+    body.textContent = d.d;
+    target.appendChild(title);
+    target.appendChild(body);
+  }
+
   function activateStep(g) {
     const s = g.dataset.step;
     const d = STEP_DETAIL[s];
@@ -164,9 +179,7 @@
     document.querySelectorAll('.step-box').forEach(b => b.classList.remove('active'));
     const box = g.querySelector('.step-box');
     if (box) box.classList.add('active');
-    document.getElementById('stepDetail').innerHTML =
-      '<p class="font-semibold text-stone-900 mb-1">' + d.t + '</p>' +
-      '<p class="text-sm text-stone-700 leading-relaxed">' + d.d + '</p>';
+    renderDetail('stepDetail', d);
   }
 
   function activateArch(g) {
@@ -176,9 +189,7 @@
     document.querySelectorAll('.arch-box').forEach(b => b.classList.remove('active'));
     const box = g.querySelector('.arch-box');
     if (box) box.classList.add('active');
-    document.getElementById('archDetail').innerHTML =
-      '<p class="font-semibold text-stone-900 mb-1">' + d.t + '</p>' +
-      '<p class="text-sm text-stone-700 leading-relaxed">' + d.d + '</p>';
+    renderDetail('archDetail', d);
   }
 
   document.querySelectorAll('.step-grp').forEach(g => {
