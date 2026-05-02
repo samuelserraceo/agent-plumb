@@ -13,10 +13,10 @@ if [ "$ec" -ne 0 ] || ! echo "$out" | grep -qE "RESULTS: [0-9]+/[0-9]+ passing";
 fi
 fwk=$(echo "$out" | grep "RESULTS:" | tail -1)
 
-cd extensions/sdd-mcp-server
+cd extensions/sdd-mcp-server || { echo "FAIL: cannot cd into extensions/sdd-mcp-server" >&2; exit 1; }
 mcp_out=$(python3 -m pytest tests/ -q 2>&1)
 mcp_ec=$?
-cd - >/dev/null
+cd - >/dev/null || { echo "FAIL: cannot cd back from extensions/sdd-mcp-server" >&2; exit 1; }
 if [ "$mcp_ec" -ne 0 ]; then
   echo "FAIL: MCP regression ec=$mcp_ec" >&2
   echo "$mcp_out" | tail -10 >&2
