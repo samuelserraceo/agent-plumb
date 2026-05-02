@@ -56,10 +56,11 @@ For every file in `templates/.sdd/actions/*.md` whose frontmatter has `tag: USER
 **Pass 2 — mechanical lint (BUILD task).**
 New script `.sdd/scripts/lint-action-prose.sh` that scans every `templates/.sdd/actions/*.md`. For files where the frontmatter `tag:` is `USER-LED` or `AGENT-LED`:
 
-- **Check 1:** body contains a literal `**What it looks like:**` heading (ASCII heuristic, deterministic — no jargon denylists).
-- **Check 2:** body's first non-frontmatter paragraph is ≤2 sentences AND ≤200 characters total. (The opening line is what shapes the agent's draft; long technical preambles are the failure mode we're catching.)
+- **Check 1 (the only check):** body contains a literal `**What it looks like:**` heading. Deterministic, no heuristics.
 
-The script exits non-zero with a plain-English error naming each violating file + which check failed. Hook into `test/run-framework-test.sh` as a new T-numbered gate; CI then catches future drift on every PR.
+**~~Check 2~~ DROPPED 2026-05-02 on Sam's redirect.** A previous draft included a 200-char / 2-sentence cap on the first paragraph. Sam called this out as theatre — the real rule is "plain English so simple my mum understands, with concrete examples to help visualise". That's a HUMAN judgement call (PR review by Sam), not a regex. Mechanical proxies for "is this prose plain English?" are heuristic and miss the point. Foundation 3 still holds: the lint enforces a *positive concrete fact* (the example block exists), and human review enforces the prose-quality bar.
+
+The script exits non-zero with a plain-English error naming each violating file. Hook into `test/run-framework-test.sh` as a new T-numbered gate; CI then catches future "forgot to ship the example block" drift on every PR.
 
 **Pass 3 — wire CLAUDE.md doctrine update.**
 Add a one-line rule under "Code-quality doctrine" pointing at the lint: *"Action prose ships plain-English-first. Verified by `lint-action-prose.sh` on every PR."*
@@ -133,7 +134,7 @@ Approval row left [ ] — same flow as §5; Sam ticks at approval-pass time.
 
 2. **Every qualifying action file has a `**What it looks like:**` block.** After sweep: for every file with `tag: USER-LED` or `tag: AGENT-LED`, `grep -F '**What it looks like:**' file` returns at least one match. → `tests/task-002.sh`
 
-3. **First paragraph cap.** After sweep: for every qualifying file, the first non-frontmatter paragraph is ≤2 sentences AND ≤200 characters total (sentences delimited by `. `, `! `, `? ` followed by capital letter or EOL). → `tests/task-003.sh`
+3. ~~**First paragraph cap.**~~ **DROPPED 2026-05-02 on Sam's redirect.** The original AC3 mechanically capped the first paragraph at ≤200 chars / ≤2 sentences. Sam called this out as theatre — the *real* test is "would a non-technical reader (Sam's 'mum test') understand this?", which only a human can judge. The lint stays positive: the example block must exist; prose quality is reviewed by Sam at PR time. The "first-paragraph length" notion was a proxy for the wrong thing.
 
 **Group 2 — Lint mechanics.**
 
@@ -181,7 +182,7 @@ Approval row left [ ] — same flow as §5; Sam ticks at approval-pass time.
 
   - [x] T01 GREEN: `lint-action-prose.sh` v0 with `--inventory` mode landed. 41 qualifying files identified.
   - [x] T02 GREEN: example-block check landed. Lint flags files missing `**What it looks like:**` with file path + check name in stderr.
-  - [x] T03 GREEN: first-paragraph cap landed (≤200 chars AND ≤2 sentences).
+  - ⏭ T03 DROPPED 2026-05-02 on Sam's redirect — first-paragraph cap was theatre. Lint now has only Check 1 (example block exists). Prose quality is human-judged at PR time per Sam's "mum test" rule. `tests/task-003.sh` removed; `lint-action-prose.sh` Check 2 removed.
   - [x] T04 GREEN: script is executable at `.sdd/scripts/lint-action-prose.sh` (chmod +x done in T01).
   - [ ] T05: sweep ALL `templates/.sdd/actions/*.md` files (the actual prose-rewrite). Each file gets the `**What it looks like:**` block + a tightened first paragraph. Test: `tests/task-005.sh` runs the full lint and asserts exit 0 + silent stderr.
   - [ ] T06: lint negative path — bad fixture without the block. Test: `tests/task-006.sh` builds a temp file in /tmp, runs lint with the temp path, asserts exit 1 + stderr contains `What it looks like` + the file path.
@@ -192,7 +193,7 @@ Approval row left [ ] — same flow as §5; Sam ticks at approval-pass time.
   - [ ] T11: assert frontmatter `prompt:` strings byte-identical to pre-sweep. Test: `tests/task-011.sh` snapshots the prompt strings before T05 and diffs after.
   - [ ] T12: full framework regression. Test: `tests/task-012.sh` runs `bash test/run-framework-test.sh` and asserts exit 0.
   - [ ] T13: lint refuses ambiguous `tag: USER-LED, AGENT-LED`. Test: `tests/task-013.sh` runs lint against a fixture with both tags + asserts exit 1 + stderr contains `ambiguous tag`.
-  - [ ] T14: first-paragraph counter handles blockquote + continuation. Test: `tests/task-014.sh` runs lint against 2 fixtures (blockquote opener; indented-continuation opener) at the 200-char threshold and asserts both classified correctly.
+  - ⏭ T14 DROPPED 2026-05-02 — was about the first-paragraph counter handling blockquote + continuation; that whole check was scrapped per Sam's redirect.
   - [ ] T15: cross-platform — POSIX-only commands; verified on macOS dev + Linux CI. Test: `tests/task-015.sh` runs the full lint via `bash` (no specific shell features), verifies portability on the framework's CI matrix.
 
   **Run mode:** *(asked at SPEC→BUILD entry per `run-mode-chosen.md`)*. For this feature: probably `full autonomous` — the work is highly mechanical (regex-find + structured-rewrite + bash lint), low risk per task, hits a halt-trigger only on real prose-design questions.
@@ -216,7 +217,7 @@ Approval row left [ ] — same flow as §5; Sam ticks at approval-pass time.
 
   13. **Lint refuses ambiguous tag.** If an action file's frontmatter has `tag:` matching BOTH `USER-LED` and `AGENT-LED` (e.g., `tag: USER-LED, AGENT-LED`), the lint exits 1 with stderr naming the file + the literal phrase `ambiguous tag`. → `tests/task-013.sh`
 
-  14. **First-paragraph counter handles blockquotes + continuation.** A blockquote line (`> ...`) starting the body counts as the first paragraph; an indented continuation (4-space-indent) is part of the same paragraph. Test: 2 fixtures, both with paragraphs at the threshold, both correctly classified. → `tests/task-014.sh`
+  14. ~~**First-paragraph counter handles blockquotes + continuation.**~~ **DROPPED 2026-05-02** — same redirect; the entire first-paragraph check was theatre.
 
   15. **Lint runs on both macOS and Linux.** No GNU-only sed flags; `wc -m` for char count (POSIX); `awk` regex compatible with both BSD-awk and GNU-awk. Test: framework CI runs on Linux runners; local macOS test of the same fixture set passes. → `tests/task-015.sh` (cross-platform sanity check on representative fixtures)
 
