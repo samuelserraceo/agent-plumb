@@ -43,7 +43,7 @@ import tempfile
 from typing import Any, Dict, List, Optional, Tuple
 
 
-_CACHE_VERSION = 1
+_CACHE_VERSION = 2  # bumped (closes #105) — multi-line code-span masking changed edge-extraction semantics; v1 caches must regenerate
 
 # Files under these subdirs aren't part of the searchable graph (agent-internal,
 # template scaffolds, gitignored).
@@ -270,6 +270,38 @@ def _build_nodes_and_edges(project_root: str, paths: List[str]) -> Tuple[List[Di
         r"|`[^`\n]+`"
     )
 
+    # CommonMark §6.1 also allows backtick spans to cross newlines.
+    # The single-line regex above stops at `\n` (correct for line-by-line
+    # walking), but that misses spans where the closing backtick is on a
+    # later line. Closes #105.
+    #
+    # `[\s\S]` matches anything including newlines (re.DOTALL would
+    # affect the whole pattern, including the inner negative lookahead
+    # which we don't want). Match the longest backtick run first (4, 3,
+    # 2, 1) so a 4-tick fence-style span isn't ended early by an inner
+    # 3-tick run.
+    _INLINE_CODE_MULTILINE_RE = re.compile(
+        r"(`{4})(?:(?!\1)[\s\S])+\1"
+        r"|(`{3})(?:(?!\2)[\s\S])+\2"
+        r"|(`{2})(?:(?!\3)[\s\S])+\3"
+        r"|`[^`]+`"
+    )
+
+    def _mask_inline_code_in_content(content: str) -> str:
+        """Replace inline-code spans (single OR multi-line) with same-
+        length whitespace BUT preserve newline characters within each
+        span — so the line-by-line walker downstream sees the right
+        line numbers. Closes #105.
+
+        Same masking discipline as `_strip_inline_code`: replace, don't
+        delete (otherwise `[[pa\`code\`tt]]` would synthesize a
+        spurious `[[patt]]` match).
+        """
+        def _mask(m: "re.Match[str]") -> str:
+            span = m.group()
+            return "".join(c if c == "\n" else " " for c in span)
+        return _INLINE_CODE_MULTILINE_RE.sub(_mask, content)
+
     def _strip_inline_code(line: str) -> str:
         """Mask `inline code` spans (any backtick count) with same-length
         whitespace so wiki-link / md-link regex matchers won't pick them
@@ -280,7 +312,15 @@ def _build_nodes_and_edges(project_root: str, paths: List[str]) -> Tuple[List[Di
         `[[pa\`code\`tt]]` becomes `[[patt]]` after deletion — a wiki-link
         that never existed in the source. Replacing with same-length
         whitespace preserves character positions so the wiki-link regex
-        can never match across a stripped span."""
+        can never match across a stripped span.
+
+        Note: this is the LINE-LEVEL pass that runs after
+        `_mask_inline_code_in_content` (which handles multi-line spans
+        on the full content). Single-line spans within one logical line
+        still need to be masked here because the multi-line pass
+        deliberately leaves newlines in place; an inline span starting
+        and ending on the same line within a multi-line file is
+        equally well caught by either pass."""
         return _INLINE_CODE_RE.sub(lambda m: " " * len(m.group()), line)
 
     # Fence delimiter pattern. CR cycle-2/3 — earlier code only tracked
@@ -353,13 +393,21 @@ def _build_nodes_and_edges(project_root: str, paths: List[str]) -> Tuple[List[Di
         # syntax (in CLAUDE.md, action prose, etc.) gets walked as a real
         # edge and trips invariant 8 / the CI graph-integrity gate.
         fenced_lines = _fenced_line_set(content)
+        # Closes #105 — pre-mask MULTI-LINE inline-code spans on the full
+        # content first. The line-by-line walker below can't see a span
+        # that crosses newlines (CommonMark §6.1 allows them), so a
+        # backtick that opens on line 5 and closes on line 7 would let
+        # any `[[…]]` between them be walked as a real edge. Masking on
+        # the full content with newlines preserved means line numbers
+        # downstream stay correct.
+        masked_content = _mask_inline_code_in_content(content)
         # Wiki-link edges. Normalise to lowercase for lookup so `[[Entity:User]]`
         # and `[[entity:user]]` both resolve to the same node.
         # v1.0 step 4 — walk line-by-line so we can strip inline `code`
         # spans before regex matching. Wiki-links inside inline code are
         # documentation examples (e.g. `[[entity:User]]` in prose), not
         # real edges.
-        for line_no, raw_line in enumerate(content.split("\n"), start=1):
+        for line_no, raw_line in enumerate(masked_content.split("\n"), start=1):
             if line_no in fenced_lines:
                 continue
             stripped_line = _strip_inline_code(raw_line)
