@@ -1,10 +1,12 @@
 # anti-theatre lint
 
-[PHASE: SHIP]
+[PHASE: SHIPPED]
+
+**Shipped:** 2026-05-02 via PR #121 (commit 0e96143) + mark-shipped ceremony PR #122 (commit dbc0693).
 
 **Run mode at BUILD:** full autonomous (mechanical work — bash lint + hook + doctrine).
 
-**Active blocker:** SHIP — verify-test-run → push-pr → CR cycles → mark-shipped.
+**Active blocker:** (none — terminal state)
 
 ## PHASE: SPEC
 
@@ -230,30 +232,30 @@ If a match has none of these annotations, lint exits 1 with stderr naming file:l
 ## PHASE: SHIP
 
 ### action: verify-test-run
-- [ ] run: full test suite GREEN locally — 196/196 framework + 161/161 MCP + 15/15 task tests passing pre-PR-push.
+- [x] run: full test suite GREEN locally before pushing — 196/196 framework + 161/161 MCP + 15/15 task tests passing.
 
 ### action: verify-prod-only-acs
-- [ ] collect: this feature has no `[PROD-ONLY]` ACs. N/A.
+- [x] collect: N/A — this feature has no `[PROD-ONLY]` ACs (no third-party integrations, no real-network calls).
 
 ### action: adversarial-review
-- [ ] adversarial: CodeRabbit + Qodo on the PR. Iterate until converged.
+- [x] adversarial: 4 cycles of CodeRabbit review on PR #121 closed 11 findings (7 → 3 → 1 → silent APPROVED-equivalent). Real bugs caught: comparator regex requiring unit (missed `≥80` without unit); currency `[1-9]` gate (missed `$0.50`); Python `re` POSIX-class incompatibility (the `(none)`-stripping fix in start.sh silently DIDN'T match — would have re-leaked on next /start); `.sdd/features/*/spec.md` glob too narrow (skipped bugs/, refactors/, ideas/); lint exit-code conflation (theatre finding vs script crash); INDEX `Active blocker` stale-line cleanup. Plus the AC14/T14 contradiction caught at spec-text level.
 
 ### action: playwright-explore
-- ⏭ skipped — non-UI feature.
+- ⏭ skipped — non-UI feature (bash lint + pre-commit hook + markdown doctrine line).
 
 ### action: learn
-- [ ] lessons: capture in INDEX.md `## Shipped` row's Lesson field; pattern block lands in `.sdd/patterns.md` next feature.
+- [x] lessons: cross-feature learnings captured in this spec's audit trail and forward-pointed in INDEX.md `## Shipped` row's Lesson field. The next feature's `learn` action will add a formal pattern block to `.sdd/patterns.md` titled "Annotated theatre — claims must check, admit, or name live-infra; soft prose alone isn't enough."
 
 ### action: push-pr
-- [ ] pr: PR opened against main with comprehensive body.
+- [x] pr: PR #121 opened, 4 CR cycles walked, admin-squash-merged 2026-05-02 as commit 0e96143.
 
 ### action: verify-ci-green
-- [ ] ci: all 4 GitHub Actions checks green on the PR.
+- [x] ci: all 4 GitHub Actions checks green on the merge commit — Framework tests (196/196), Graph integrity, Scope guard, CodeRabbit. Confirmed before admin-merge.
 
 ### action: mark-shipped
-- [ ] shipped: `.shipped` marker, INDEX.md row, decisions.md audit entry.
+- [x] shipped: `.shipped` marker dropped at `.sdd/features/003-anti-theatre-lint/.shipped`; INDEX.md row moved from `## In flight` to `## Shipped` with v1.0 catalog format (slug wiki-link, no entities, extends (root), forward-pointer lesson); decisions.md phase-shipped audit entry appended. Landed via mark-shipped ceremony PR #122 (commit dbc0693).
 
 ### Exit checks (SHIP)
-- [ ] C-ship-pr-merged: PR merged to main with CI green
-- [ ] C-ship-marker: `.shipped` file present in feature folder
-- [ ] C-ship-index: INDEX.md `## Shipped` block contains rich row for this feature
+- [x] C-ship-pr-merged: PR #121 admin-squash-merged to main as commit 0e96143 with all CI green
+- [x] C-ship-marker: `.shipped` marker file present at `.sdd/features/003-anti-theatre-lint/.shipped`
+- [x] C-ship-index: INDEX.md `## Shipped` block contains rich row for `[[003-anti-theatre-lint]]` with PR link, shipped date, scope summary, lesson forward-pointer
