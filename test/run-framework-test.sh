@@ -6625,24 +6625,34 @@ fi
 # ============================================================
 note "T141: anti-theatre lint passes on in-flight spec(s)"
 new_spec_violations=0
-for spec in "$FRAMEWORK_ROOT"/.sdd/features/*/spec.md; do
-  feat=$(basename "$(dirname "$spec")")
-  case "$feat" in
-    001-tier-3-llm-driven-synthesis|002-plain-english-prose-sweep)
-      # Pre-existing; covered by their own SHIP-cycle audit. Skip.
-      continue ;;
-  esac
-  nt_out=$(bash "$FRAMEWORK_ROOT/.sdd/scripts/lint-no-theatre.sh" "$spec" 2>&1)
-  nt_ec=$?
-  if [ "$nt_ec" -ne 0 ]; then
-    new_spec_violations=$((new_spec_violations + 1))
-    note "  T141: $feat → $nt_out"
-  fi
-done
-if [ "$new_spec_violations" -eq 0 ]; then
-  ok "T141 anti-theatre lint passes on every in-flight spec"
+# CR cycle 1: guard against empty-glob (would iterate the literal
+# pattern and crash). Use shopt -s nullglob; restore prior state after.
+prev_nullglob=$(shopt -p nullglob)
+shopt -s nullglob
+specs=( "$FRAMEWORK_ROOT"/.sdd/features/*/spec.md )
+eval "$prev_nullglob"
+if [ "${#specs[@]}" -eq 0 ]; then
+  ok "T141 no in-flight specs to lint (nothing to gate)"
 else
-  bad "T141 anti-theatre lint failed" "$new_spec_violations spec(s) with un-annotated theatre"
+  for spec in "${specs[@]}"; do
+    feat=$(basename "$(dirname "$spec")")
+    case "$feat" in
+      001-tier-3-llm-driven-synthesis|002-plain-english-prose-sweep)
+        # Pre-existing; covered by their own SHIP-cycle audit. Skip.
+        continue ;;
+    esac
+    nt_out=$(bash "$FRAMEWORK_ROOT/.sdd/scripts/lint-no-theatre.sh" "$spec" 2>&1)
+    nt_ec=$?
+    if [ "$nt_ec" -ne 0 ]; then
+      new_spec_violations=$((new_spec_violations + 1))
+      note "  T141: $feat → $nt_out"
+    fi
+  done
+  if [ "$new_spec_violations" -eq 0 ]; then
+    ok "T141 anti-theatre lint passes on every in-flight spec"
+  else
+    bad "T141 anti-theatre lint failed" "$new_spec_violations spec(s) with un-annotated theatre"
+  fi
 fi
 
 # ============================================================

@@ -129,8 +129,10 @@ for spec in "${TARGETS[@]}"; do
     # name what was found. Use grep -iE for case-insensitive matching
     # (catches `usd` in `cost_limit_usd:` as well as uppercase `USD`).
     found_token=""
-    # Numerical: byte/time/percent quantities
-    m=$(printf '%s' "$stripped" | grep -ioE '([0-9]+%|[<>≤≥][[:space:]]*[0-9]+[[:space:]]*(KB|MB|ms|sec|tokens?|bytes?)|at least [0-9]+)' | head -1)
+    # Numerical: byte/time/percent quantities. Unit is optional after
+    # comparator+number so `≥80` and `<5` (without explicit unit) also
+    # fire — bare numerical thresholds are theatre-shaped too.
+    m=$(printf '%s' "$stripped" | grep -ioE '([0-9]+%|[<>≤≥][[:space:]]*[0-9]+([[:space:]]*(KB|MB|ms|sec|tokens?|bytes?))?|at least [0-9]+)' | head -1)
     if [ -n "$m" ]; then
       found_token="$m"
     fi
@@ -141,7 +143,10 @@ for spec in "${TARGETS[@]}"; do
       #     and `cost_limit_usd` IS the canonical Sam example we want.
       #   - `cents?` — require non-letter boundary (otherwise matches
       #     inside `agent`, `recent`, `decent`).
-      m=$(printf '%s' "$stripped" | grep -ioE '\$[1-9][0-9]*(\.[0-9]+)?' | head -1)
+      # Currency $N — allow $0, $0.50 too (a "$0 cap" claim is still
+      # theatre about the cost). CR cycle 1: previous [1-9] gate
+      # missed valid theatre cases.
+      m=$(printf '%s' "$stripped" | grep -ioE '\$[0-9]+(\.[0-9]+)?' | head -1)
       if [ -n "$m" ]; then
         found_token="$m"
       fi

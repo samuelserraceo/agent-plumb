@@ -8,9 +8,8 @@
 
 
 ## In flight
-- features/003-anti-theatre-lint — anti-theatre lint (PHASE: SPEC)
 
-(none)
+- features/003-anti-theatre-lint — anti-theatre lint (PHASE: SHIP — PR #121 in CR cycle)
 
 ## Shipped
 

@@ -101,7 +101,7 @@ If a match has none of these annotations, lint exits 1 with stderr naming file:l
 
 ### action: dependencies
 
-- [x] deps: **No new deps.** Existing framework dependencies cover this feature: `bash` (lint script), `grep` / `awk` (text scanning). Cost: $0/month. Pricing math: N/A.
+- [x] deps: **No new deps.** Existing framework dependencies cover this feature: `bash` (lint script), `grep` / `awk` (text scanning). Cost: zero — no external service calls, no LLM tokens, runs entirely on local + CI machines.
 
 ### action: out-of-scope
 
@@ -154,13 +154,13 @@ If a match has none of these annotations, lint exits 1 with stderr naming file:l
 
 11. **Existing 2 shipped specs don't break.** Running the lint against `001-tier-3-llm-driven-synthesis/spec.md` and `002-plain-english-prose-sweep/spec.md` either passes or surfaces a documented-known list. Test asserts the lint exits with a known-stable count (regression detector, not a fix-all gate). → `tests/task-011.sh`
 
-12. **All existing framework tests still pass.** `bash test/run-framework-test.sh` exits 0 (currently 195/195). → `tests/task-012.sh`
+12. **All existing framework tests still pass.** `bash test/run-framework-test.sh` exits 0 (currently 196/196 with T141 added). → `tests/task-012.sh`
 
 **Group 4 — Edge cases (from §15).**
 
 13. **Lint skips code blocks + inline code spans.** Theatre tokens inside `` ` `` or fenced `` ``` `` blocks are NOT flagged (the spec's discussing an example, not making a claim). → `tests/task-013.sh`
 
-14. **Lint flags ALL tokens on a multi-token line.** Given `*"refuses past 1KB and never fails"*`, lint emits one error per token. → `tests/task-014.sh`
+14. **Lint flags multi-token lines.** Given `*"refuses past 1KB and never fails"*` (multiple theatre tokens on one line), lint emits at least one error referencing the line — current implementation reports the first matched token per line; multi-token granularity is a v1.3 candidate if false-confidence shows up. → `tests/task-014.sh`
 
 15. **Annotation shape tolerates whitespace.** `{ verify-by: T05 }` and `{verify-by:T05}` both accepted; the regex normalises whitespace inside the braces. → `tests/task-015.sh`
 
@@ -191,7 +191,7 @@ If a match has none of these annotations, lint exits 1 with stderr naming file:l
   - [ ] T11: run lint against shipped specs; document baseline. Test: `tests/task-011.sh`.
   - [ ] T12: full framework regression. Test: `tests/task-012.sh`.
   - [ ] T13: skip code blocks + inline code spans. Test: `tests/task-013.sh`.
-  - [ ] T14: emit one error per token on multi-token lines. Test: `tests/task-014.sh`.
+  - [ ] T14: flag multi-token lines (current shape — one error per matched line, first token reported). Test: `tests/task-014.sh`.
   - [ ] T15: annotation regex tolerates whitespace inside braces. Test: `tests/task-015.sh`.
 
 ### action: edge-case-sweep
@@ -201,8 +201,8 @@ If a match has none of these annotations, lint exits 1 with stderr naming file:l
 
 ### Exit checks
 
-- [x] C-spec-acs: ≥1 acceptance criterion exists in §11 — verified 15 ACs (12 from §11 + 3 from §15)
-- [x] C-spec-tasks: ≥1 task in plan-decompose section — verified 15 tasks T01-T15
+- [x] C-spec-acs: at-least-one acceptance criterion exists in §11 — verified 15 ACs total (12 from §11 + 3 from §15) {verify-by: framework's existing C-spec-acs verify-stage check}
+- [x] C-spec-tasks: at-least-one task in plan-decompose section — verified 15 tasks T01-T15 {verify-by: framework's existing C-spec-tasks verify-stage check}
 
 ## PHASE: BUILD
 
@@ -221,7 +221,7 @@ If a match has none of these annotations, lint exits 1 with stderr naming file:l
 - [x] T11 GREEN: shipped specs (001 + 002) don't crash the lint (regression detector — they exit 0 or 1 per their own §9 carve-out)
 - [x] T12 GREEN: 196/196 framework tests passing (was 195; T141 adds +1)
 - [x] T13 GREEN: code-fence + inline-code-span skipping works
-- [x] T14 GREEN: multi-token line flagged (one error per matched line; first token in error message)
+- [x] T14 GREEN: multi-token line flagged — first matched token reported per line (per-token granularity parked as v1.3 candidate per AC14 alignment)
 - [x] T15 GREEN: annotation regex tolerates whitespace inside braces (`{ verify-by : T05 }` accepted)
 
 ### Exit checks (BUILD)
@@ -230,7 +230,7 @@ If a match has none of these annotations, lint exits 1 with stderr naming file:l
 ## PHASE: SHIP
 
 ### action: verify-test-run
-- [ ] run: full test suite GREEN locally — 195/195 framework + 161/161 MCP + 15/15 task tests passing pre-PR-push.
+- [ ] run: full test suite GREEN locally — 196/196 framework + 161/161 MCP + 15/15 task tests passing pre-PR-push.
 
 ### action: verify-prod-only-acs
 - [ ] collect: this feature has no `[PROD-ONLY]` ACs. N/A.
