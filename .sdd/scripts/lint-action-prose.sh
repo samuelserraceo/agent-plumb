@@ -60,13 +60,28 @@ get_tag() {
 }
 
 is_qualifying() {
-  # Returns 0 if file's tag is USER-LED or AGENT-LED, 1 otherwise
+  # Returns 0 if file's tag is USER-LED or AGENT-LED, 1 otherwise.
+  # AMBIGUOUS tags (e.g. "USER-LED,AGENT-LED" or "USER-LED|AGENT-LED")
+  # exit the script non-zero — see check_ambiguous_tag() below.
   local tag
   tag=$(get_tag "$1")
   case "$tag" in
     USER-LED|AGENT-LED) return 0 ;;
     *) return 1 ;;
   esac
+}
+
+check_ambiguous_tag() {
+  # If a file's tag string contains BOTH "USER-LED" and "AGENT-LED"
+  # substrings (e.g. "USER-LED,AGENT-LED"), refuse: the action's
+  # mode is ambiguous. Exit 1 with a plain-English error.
+  local file="$1" tag
+  tag=$(get_tag "$file")
+  if echo "$tag" | grep -q "USER-LED" && echo "$tag" | grep -q "AGENT-LED"; then
+    echo "[lint-action-prose] $file — ambiguous tag '$tag' (USER-LED + AGENT-LED both declared; pick one — every action runs in exactly one mode)" >&2
+    return 1
+  fi
+  return 0
 }
 
 # ─── Inventory mode ──────────────────────────────────────────────────
@@ -90,6 +105,14 @@ fi
 violations=0
 for f in "${TARGETS[@]}"; do
   [ -f "$f" ] || continue
+
+  # Pre-check: refuse ambiguous tag declarations on every file (qualifying
+  # or not) — an ambiguous tag is itself a problem worth surfacing.
+  if ! check_ambiguous_tag "$f"; then
+    violations=$((violations + 1))
+    continue  # skip qualifying-check + main checks for this file
+  fi
+
   is_qualifying "$f" || continue
 
   # Check 1: body contains literal "**What it looks like:**" heading.

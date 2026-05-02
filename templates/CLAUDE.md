@@ -68,6 +68,8 @@ These eight rules apply across SPEC, BUILD, and SHIP. They are not configurable 
 
 8. **Plain English first** — every technical term gets a translation on first use; describe by what things DO for the user, not what they ARE.
 
+   **Mechanical enforcement (closes #110):** every USER-LED / AGENT-LED action file under `templates/.sdd/actions/` ships a `**What it looks like:**` block — a concrete plain-English example the agent can mirror when drafting its user-facing turn. The lint at `.sdd/scripts/lint-action-prose.sh` asserts the block exists. The PROSE QUALITY itself ("would mum understand this?") is reviewed by the user at PR-merge time — not by the lint.
+
 ---
 
 **SDD explicitly gives up:**

@@ -6597,6 +6597,22 @@ else
 fi
 
 # ============================================================
+# T140 — every USER-LED / AGENT-LED action ships a plain-English
+#   "**What it looks like:**" example block (closes #110, PR #118).
+#   The lint at .sdd/scripts/lint-action-prose.sh exits 0 silent
+#   when every qualifying file in templates/.sdd/actions/*.md has
+#   the block, exits 1 with file paths in stderr otherwise.
+# ============================================================
+note "T140: every USER-LED/AGENT-LED action ships **What it looks like:** plain-English example block"
+lint_out=$(bash "$FRAMEWORK_ROOT/.sdd/scripts/lint-action-prose.sh" 2>&1)
+lint_ec=$?
+if [ "$lint_ec" -eq 0 ] && [ -z "$lint_out" ]; then
+  ok "T140 plain-English-prose lint passes silent on framework's own action tree"
+else
+  bad "T140 plain-English-prose lint failed" "ec=$lint_ec; output:\n$lint_out"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
