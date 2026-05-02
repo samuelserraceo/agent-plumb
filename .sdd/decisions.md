@@ -208,3 +208,16 @@ Two PROD-ONLY ACs deferred to first-prod manual walk per §12 of the spec:
 Recorded in INDEX.md `## Pending production verification` block. When walked, tick `[x] PROD-VERIFIED`.
 
 Closes [#97](https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/97).
+
+
+## 2026-05-02T10:58:25Z  [[002-plain-english-prose-sweep]]  feature/mark-shipped
+
+SHIP phase complete. PR #118 admin-squash-merged to main as commit f849ade after 5 CodeRabbit review cycles (38 findings closed total: 24 → 5 → 3 → 3 → 0 APPROVED). All cycle findings landed: theatre-redirect on first-paragraph cap, schema-exact frontmatter, set-e mask in tests, summary-line grep false positives, MD041/MD022 fix at root cause (start.sh now places metadata after H1 always), POSIX-portable regex, atomic INDEX.md write, plus 22 prose nits across the 40 swept files.
+
+Final state: 195/195 framework tests + 161/161 MCP tests + 10/10 task tests + 4/4 GitHub Actions checks GREEN; CodeRabbit final review APPROVED.
+
+The feature shipped its driving rule INTO the framework: every USER-LED/AGENT-LED action now ships a concrete plain-English example. The lint at `.sdd/scripts/lint-action-prose.sh` runs as T140 on every PR going forward, catching drift the same hour it lands.
+
+Forward-pointer lesson: when a quality concern is human-judged ("would mum understand this?"), the mechanical layer enforces a *positive concrete fact* (the example block exists), not a *heuristic proxy* (length cap, jargon denylist). The full pattern will be captured in `.sdd/patterns.md` under `### Plain-English mum-test overrides mechanical proxies` once the next feature ships and the `learn` action runs.
+
+Closes [#110](https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/110).

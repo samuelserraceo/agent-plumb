@@ -1,17 +1,24 @@
 # SDD framework — INDEX
 
-**Active:** features/002-plain-english-prose-sweep
+**Active:** (none)
 **Playbook:** feature
-**Active blocker:** SHIP — PR #118 in CR cycle
+**Active blocker:** (none — last shipped: 002-plain-english-prose-sweep on 2026-05-02)
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
 
 ## In flight
 
-- features/002-plain-english-prose-sweep — plain-english prose sweep (PHASE: SHIP — PR #118 open)
+(none)
 
 ## Shipped
+
+- **[[002-plain-english-prose-sweep]]** — v1.2 plain-English prose sweep + lint: every USER-LED / AGENT-LED action file ships a concrete plain-English example block (`**What it looks like:**`) the agent can mirror; `lint-action-prose.sh` catches future drift on every PR.
+  - Shipped: 2026-05-02 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/118
+  - Data-model: (none — markdown sweep + bash lint, no new entities)
+  - Extends: (root)
+  - Lesson: forward-pointer to a future `[[pattern:plain-english-mum-test-overrides-mechanical-proxies]]` — when a quality concern is human-judged ("would mum understand this?"), the lint enforces a positive concrete fact (the example block exists), not a heuristic proxy (sentence count, char count, jargon denylist). Foundation 3 applied at the lint layer.
+  - 5 CR cycles, 38 findings closed (24 → 5 → 3 → 3 → 0). 195/195 framework + 10/10 task tests.
 
 - **[[001-tier-3-llm-driven-synthesis]]** — v1.1 Tier 3 LLM-driven synthesis: chat-style answers over `.sdd/` corpus with cite-checked `[[…]]` citations.
   - Shipped: 2026-05-01 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/114
