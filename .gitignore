@@ -10,3 +10,10 @@ node_modules/
 # whole `.sdd/` subtree which would have hidden any legitimate file added
 # under the extension. Only the cache dir is a test artefact.
 /extensions/sdd-mcp-server/.sdd/.cache/
+
+# Root-level CLAUDE.md — the framework's local working copy of the
+# canonical templates/CLAUDE.md. Stays untracked so each clone /
+# session can have its own (or copy from templates/CLAUDE.md on
+# first session). Without this, every commit cycle has a stale
+# 'Warning: 1 uncommitted change' on PR creation.
+/CLAUDE.md
