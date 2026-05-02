@@ -28,17 +28,54 @@
   .chat .cite { color: var(--accent); font-family: "SF Mono", Monaco, Consolas, monospace; font-size: 12.5px; padding: 1px 4px; background: var(--accent-bg); border-radius: 3px; cursor: pointer; transition: background .15s ease; }
   .chat .cite:hover { background: #c7d2fe; }
   .chat .cite:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .step-box { fill: #fff; stroke: var(--line-2); stroke-width: 1.5; cursor: pointer; transition: fill .15s ease, stroke .15s ease; }
+  .step-box { fill: #fff; stroke: var(--line-2); stroke-width: 1.5; cursor: pointer; transition: fill .15s ease, stroke .15s ease, stroke-width .15s ease; }
   .step-box:hover { fill: var(--accent-bg); stroke: var(--accent); }
   .step-box.active { fill: var(--accent-bg); stroke: var(--accent); stroke-width: 2.5; }
   .step-box.cache { fill: var(--green-bg); stroke: #86efac; }
   .step-box.fallback { fill: var(--rose-bg); stroke: #fca5a5; }
-  .arch-box { fill: #fff; stroke: var(--line-2); stroke-width: 1.5; cursor: pointer; transition: fill .15s ease, stroke .15s ease; }
+  .arch-box { fill: #fff; stroke: var(--line-2); stroke-width: 1.5; cursor: pointer; transition: fill .15s ease, stroke .15s ease, stroke-width .15s ease; }
   .arch-box:hover { fill: var(--accent-bg); stroke: var(--accent); }
   .arch-box.active { fill: var(--accent-bg); stroke: var(--accent); stroke-width: 2.5; }
   .arch-box.existing { fill: var(--slate-bg); stroke: #94a3b8; }
   .arch-box.new { fill: var(--accent-bg); stroke: var(--accent); }
   .arch-box.future { fill: var(--violet-bg); stroke: var(--violet); stroke-dasharray: 6 4; }
+  /* Keyboard focus styles (CR cycle 4): visible cue BEFORE activation
+     so keyboard users can see which interactive group has focus. The
+     <g class="step-grp"> wrapper holds tabindex/role; we style the
+     wrapper's :focus and :focus-visible to draw a 3-stroke focus ring
+     on the inner box. Modifier classes (.cache / .fallback / .existing /
+     .new / .future) keep their fill but get the same accent stroke + width. */
+  .step-grp:focus, .step-grp:focus-visible { outline: none; }
+  .step-grp:focus .step-box,
+  .step-grp:focus-visible .step-box {
+    stroke: var(--accent);
+    stroke-width: 3;
+    fill: var(--accent-bg);
+  }
+  .step-grp:focus .step-box.cache,
+  .step-grp:focus-visible .step-box.cache,
+  .step-grp:focus .step-box.fallback,
+  .step-grp:focus-visible .step-box.fallback {
+    /* Keep modifier fills; only override stroke + width. */
+    stroke: var(--accent);
+    stroke-width: 3;
+  }
+  .arch-grp:focus, .arch-grp:focus-visible { outline: none; }
+  .arch-grp:focus .arch-box,
+  .arch-grp:focus-visible .arch-box {
+    stroke: var(--accent);
+    stroke-width: 3;
+    fill: var(--accent-bg);
+  }
+  .arch-grp:focus .arch-box.existing,
+  .arch-grp:focus-visible .arch-box.existing,
+  .arch-grp:focus .arch-box.new,
+  .arch-grp:focus-visible .arch-box.new,
+  .arch-grp:focus .arch-box.future,
+  .arch-grp:focus-visible .arch-box.future {
+    stroke: var(--accent);
+    stroke-width: 3;
+  }
 </style>
 </head>
 <body class="p-8 max-w-6xl mx-auto">
