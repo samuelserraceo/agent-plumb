@@ -6,7 +6,12 @@ set -uo pipefail  # drop -e so error paths can run (CR cycle 2)
 LINT=".sdd/scripts/lint-action-prose.sh"
 
 # Check for known non-portable constructs
-if grep -E "^[^#]*(\bsed -i\b|\bsed --regex|\bgrep -P\b|\breadlink -f\b|\btest -ef\b)" "$LINT" >/dev/null; then
+# POSIX-safe word boundaries: `\b` is a GNU-grep extension and would
+# itself violate the portability claim this test asserts. Use
+# character-class anchors `(^|[^[:alnum:]_])` and `([^[:alnum:]_]|$)`.
+# CR cycle 3 catch.
+np_re='(^|[^[:alnum:]_])(sed -i|sed --regex|grep -P|readlink -f|test -ef)([^[:alnum:]_]|$)'
+if grep -E "$np_re" "$LINT" >/dev/null; then
   echo "FAIL: $LINT uses non-portable construct (sed -i / GNU-only flag)" >&2
   exit 1
 fi

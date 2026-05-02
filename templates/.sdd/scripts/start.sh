@@ -514,7 +514,11 @@ if "## Shipped" not in body:
 # cycle 2 catch — the previous form put metadata above the H1 and
 # tripped MD041/MD022 on every fresh `/start`.)
 body_clean = body.lstrip("\n")
-header_block = "\n".join(header_lines)
+# Normalise header_block to ALWAYS end with a single blank line so the
+# next content (a heading like `## In flight` or prose) is properly
+# separated. CR cycle 3: previous form could collapse the separator
+# when rest started with a heading, retripping MD022.
+header_block = "\n".join(header_lines).rstrip("\n") + "\n\n"
 m = re.match(r"^(#\s+[^\n]+)\n", body_clean)
 if m:
     h1 = m.group(1)
