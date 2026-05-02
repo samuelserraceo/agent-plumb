@@ -504,8 +504,13 @@ else:
             # left a contradictory marker after `/start` added the new
             # entry. Pattern: a line whose ONLY content is `(none)` (or
             # variants like `(none yet)`) inside the In flight section.
+            # Python `re` doesn't support POSIX bracket classes —
+            # use `\s` for whitespace + `[ \t]` for explicit horizontal
+            # whitespace. CR cycle 2 catch: previous form silently
+            # didn't match the placeholder line (POSIX classes are
+            # treated as literal char-class members).
             in_flight_section = re.sub(
-                r"(?m)^[[:space:]]*\(none(?:[[:space:]]+yet)?\)[[:space:]]*\n?",
+                r"(?m)^[ \t]*\(none(?:\s+yet)?\)[ \t]*\n?",
                 "",
                 in_flight_section,
             )

@@ -6629,7 +6629,10 @@ new_spec_violations=0
 # pattern and crash). Use shopt -s nullglob; restore prior state after.
 prev_nullglob=$(shopt -p nullglob)
 shopt -s nullglob
-specs=( "$FRAMEWORK_ROOT"/.sdd/features/*/spec.md )
+# Broader glob: includes features/, bugs/, refactors/, ideas/ — every
+# work-item folder shape the framework supports. CR cycle 2 catch:
+# previous narrow features/* glob silently skipped non-feature specs.
+specs=( "$FRAMEWORK_ROOT"/.sdd/*/*/spec.md )
 eval "$prev_nullglob"
 if [ "${#specs[@]}" -eq 0 ]; then
   ok "T141 no in-flight specs to lint (nothing to gate)"
