@@ -1,10 +1,10 @@
 # plain-english prose sweep
 
-[PHASE: BUILD]
+[PHASE: SHIP]
 
-**Active blocker:** BUILD — run-mode-chosen → T01 (write lint-action-prose.sh inventory pass)
+**Run mode at BUILD:** full autonomous (per Sam's standing preference; this was mechanical work — markdown sweep + bash lint + Python YAML parse).
 
-**Run mode:** full autonomous (Sam's standing preference per `feedback_full_autonomous_build.md`; this feature is mechanical so well-suited to it).
+**Active blocker:** SHIP — verify-test-run → verify-prod-only-acs → adversarial-review → playwright-explore → learn → push-pr → verify-ci-green → mark-shipped.
 
 ## PHASE: SPEC
 
@@ -224,3 +224,66 @@ Approval row left [ ] — same flow as §5; Sam ticks at approval-pass time.
 ### Exit checks
 - [x] C-spec-acs: ≥1 acceptance criterion exists in §11 — verified 15 ACs (12 from §11 + 3 from §15 edge-case-sweep)
 - [x] C-spec-tasks: ≥1 task in plan-decompose section — verified 15 tasks T01-T15 (1-1 with the ACs)
+
+## PHASE: BUILD
+
+### Build tasks (12 total — T01-T15 minus the 3 dropped · run mode: full autonomous)
+
+- [x] T01 GREEN: `lint-action-prose.sh` v0 with `--inventory` mode → `tests/task-001.sh` (41 qualifying files)
+- [x] T02 GREEN: example-block check (`**What it looks like:**` exists) → `tests/task-002.sh`
+- ⏭ T03 DROPPED 2026-05-02 (theatre redirect)
+- [x] T04 GREEN: lint executable at `.sdd/scripts/lint-action-prose.sh` → `tests/task-004.sh`
+- [x] T05 GREEN: sweep — 40 USER-LED/AGENT-LED action files now ship `**What it looks like:**` blocks; manifest regenerated
+- [x] T06 GREEN: covered by `tests/task-002.sh` (negative path — bad fixture missing block)
+- ⏭ T07 DROPPED 2026-05-02 (theatre redirect — was the long-paragraph fixture)
+- [x] T08 GREEN: lint hooked into `test/run-framework-test.sh` as T140 → `tests/task-008.sh`
+- [x] T09 GREEN: doctrine line in `templates/CLAUDE.md` → `tests/task-009.sh`
+- [x] T10 GREEN: 41/41 action frontmatters preserve all 12 required fields → `tests/task-010.sh`
+- [x] T11 GREEN: 10/10 prompt strings byte-identical to `origin/main` → `tests/task-011.sh`
+- [x] T12 GREEN: 195/195 framework tests passing → `tests/task-012.sh`
+- [x] T13 GREEN: lint refuses ambiguous tag → `tests/task-013.sh`
+- ⏭ T14 DROPPED 2026-05-02 (theatre redirect — blockquote/continuation paragraph counter)
+- [x] T15 GREEN: portable bash, no GNU-only / BSD-only constructs → `tests/task-015.sh`
+
+### Exit checks (BUILD)
+- [x] C-build-tasks-green: every non-dropped task is GREEN — verified 12/12 tasks GREEN; 3 tasks dropped with rationale (theatre redirect on first-paragraph cap).
+
+## PHASE: SHIP
+
+### action: verify-test-run
+
+- [ ] run: full test suite GREEN locally — 195/195 framework + 161/161 MCP tests passing pre-PR-push.
+
+### action: verify-prod-only-acs
+
+- [ ] collect: this feature has no `[PROD-ONLY]` ACs (no third-party integrations, no real-network calls). N/A.
+
+### action: adversarial-review
+
+- [ ] adversarial: hostile-reviewer pass via CodeRabbit + Qodo on the PR (same pattern as Tier 3). Surfaces nits or real issues; iterate until converged.
+
+### action: playwright-explore
+
+- ⏭ skipped — non-UI feature (markdown sweep + bash lint). Playwright explorer needs a deployed feature URL.
+
+### action: learn
+
+- [ ] lessons: append a `[[002-plain-english-prose-sweep]]` block to `.sdd/patterns.md` capturing the cross-feature lessons (theatre-vs-real-rule lesson; positive-deterministic-check pattern reaffirmed; manifest-regen-after-sweep workflow).
+
+### action: push-pr
+
+- [x] pr: PR #118 already opened (WIP draft). Will be undrafted + given a final body once SHIP-pre-merge work lands on the branch.
+
+### action: verify-ci-green
+
+- [ ] ci: all CI checks green on the PR — Framework, Graph, Scope-guard, CodeRabbit.
+
+### action: mark-shipped
+
+- [ ] shipped: `.shipped` marker, INDEX.md row, decisions.md audit entry.
+
+### Exit checks (SHIP)
+
+- [ ] C-ship-pr-merged: PR #118 merged to main with CI green
+- [ ] C-ship-marker: `.shipped` file present in feature folder
+- [ ] C-ship-index: INDEX.md `## Shipped` block contains rich row for this feature
