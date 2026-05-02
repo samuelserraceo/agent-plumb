@@ -161,6 +161,9 @@
   // TODO content can't inject HTML. Build <p> elements explicitly.
   function renderDetail(targetId, d) {
     const target = document.getElementById(targetId);
+    if (!target) return; // CR cycle 2: null-guard so a customised
+    // wireframe that removes / renames the detail panel doesn't
+    // throw on first interaction and disable the whole JS path.
     target.textContent = ''; // clear previous
     const title = document.createElement('p');
     title.className = 'font-semibold text-stone-900 mb-1';
