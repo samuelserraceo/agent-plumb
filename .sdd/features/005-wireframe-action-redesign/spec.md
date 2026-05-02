@@ -1,8 +1,10 @@
 # wireframe action redesign
 
-[PHASE: SPEC]
+[PHASE: BUILD]
 
-**Active blocker:** §15 done, phase advance next
+**Active blocker:** BUILD — T01 (rewrite wireframe.md action prose)
+
+**Run mode:** full autonomous.
 
 ## PHASE: SPEC
 
