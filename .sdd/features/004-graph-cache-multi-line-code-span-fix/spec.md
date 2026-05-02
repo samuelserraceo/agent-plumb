@@ -1,10 +1,12 @@
 # graph-cache multi-line code span fix
 
-[PHASE: SHIP]
+[PHASE: SHIPPED]
+
+**Shipped:** 2026-05-02 via PR #124 (commit 3b3edb2) + mark-shipped ceremony PR #126 (commit 46ee9bc).
 
 **Run mode at BUILD:** full autonomous.
 
-**Active blocker:** SHIP — push-pr → CR cycles → mark-shipped.
+**Active blocker:** (none — terminal state)
 
 ## PHASE: SPEC
 
@@ -137,30 +139,30 @@ Restructure `_strip_inline_code` to operate on the FULL content (not one line at
 ## PHASE: SHIP
 
 ### action: verify-test-run
-- [ ] run: framework + MCP + task tests passing.
+- [x] run: framework + MCP + task tests all GREEN before pushing — 196/196 framework + 161/161 MCP + 4/4 task tests.
 
 ### action: verify-prod-only-acs
-- [ ] collect: N/A — no `[PROD-ONLY]` ACs.
+- [x] collect: N/A — no `[PROD-ONLY]` ACs.
 
 ### action: adversarial-review
-- [ ] adversarial: CodeRabbit on the PR. Iterate until converged.
+- [x] adversarial: 3 cycles of CodeRabbit on PR #124 closed 6 findings (4 → 1 → silent APPROVED-equivalent). Real bugs caught: `_CACHE_VERSION` bump (parser semantics changed; old caches stale); smoke-test API signature `find_node(graph, slug)`; `|| true` masking framework + pytest exit codes; INDEX.md scaffold-default leak (PHASE: SPEC → SHIP); `cd` hop guards in task-004.
 
 ### action: playwright-explore
 - ⏭ skipped — non-UI feature.
 
 ### action: learn
-- [ ] lessons: lesson captured in INDEX.md `## Shipped` row's Lesson field.
+- [x] lessons: lesson captured in INDEX.md `## Shipped` row's Lesson field — when a parser is line-by-line by construction, content that crosses line boundaries needs a pre-mask pass on full content with newlines preserved. Position-preserving masks beat content-deleting strips.
 
 ### action: push-pr
-- [ ] pr: PR opened against main.
+- [x] pr: PR #124 opened, 3 CR cycles walked, admin-squash-merged 2026-05-02 as commit 3b3edb2.
 
 ### action: verify-ci-green
-- [ ] ci: all 4 GitHub Actions checks green.
+- [x] ci: all 4 GitHub Actions checks GREEN on the merge commit — Framework, Graph integrity, Scope guard, CodeRabbit.
 
 ### action: mark-shipped
-- [ ] shipped: `.shipped` marker, INDEX.md row, decisions.md audit.
+- [x] shipped: `.shipped` marker dropped at `.sdd/features/004-graph-cache-multi-line-code-span-fix/.shipped`; INDEX.md row added to `## Shipped`; decisions.md phase-shipped audit appended. Landed via mark-shipped ceremony PR #126 (commit 46ee9bc).
 
 ### Exit checks (SHIP)
-- [ ] C-ship-pr-merged: PR merged with CI green
-- [ ] C-ship-marker: `.shipped` present
-- [ ] C-ship-index: INDEX.md `## Shipped` row added
+- [x] C-ship-pr-merged: PR #124 admin-squash-merged to main as commit 3b3edb2 with all CI green
+- [x] C-ship-marker: `.shipped` marker present at `.sdd/features/004-graph-cache-multi-line-code-span-fix/.shipped`
+- [x] C-ship-index: INDEX.md `## Shipped` block contains rich row for `[[004-graph-cache-multi-line-code-span-fix]]`
