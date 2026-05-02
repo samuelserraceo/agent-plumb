@@ -234,3 +234,14 @@ The feature ships its own discipline: spec.md content carrying theatre-shaped cl
 Forward-pointer lesson: Foundation 3 applied at the SPEC layer. Every claim either checks, admits judgement, or names live-infra. Soft prose alone isn't enough to ship a guard-shaped sentence.
 
 Closes [#111](https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/111).
+
+
+## 2026-05-02T13:39:00Z  [[004-graph-cache-multi-line-code-span-fix]]  feature/mark-shipped
+
+SHIP phase complete. PR #124 admin-squash-merged to main as commit 3b3edb2 after 3 CodeRabbit review cycles (6 findings closed: 4 → 1 → silent APPROVED-equivalent). Real bugs caught: `_CACHE_VERSION` bump (parser semantics changed; old v1 caches stale), smoke-test API signature (`find_node(graph, slug)` not `find_node(slug)`), `|| true` masking framework + pytest exit codes, INDEX.md scaffold-default leak (PHASE: SPEC → SHIP), `cd` hop guards in task-004.
+
+Final state: 196/196 framework tests + 161/161 MCP tests + 4/4 task tests + 4/4 GitHub Actions checks GREEN.
+
+Forward-pointer lesson: when a parser is line-by-line by construction, content that crosses line boundaries (CommonMark §6.1 backtick spans being the canonical case) needs a pre-mask pass on the full content with newlines preserved. Position-preserving masks (replace span with same-length whitespace, keep newlines) beat content-deleting strips.
+
+Closes [#105](https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/105).

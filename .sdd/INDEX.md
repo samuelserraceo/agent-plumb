@@ -1,18 +1,24 @@
 # SDD framework — INDEX
 
-**Active:** features/004-graph-cache-multi-line-code-span-fix
+**Active:** (none)
 **Playbook:** feature
-**Active blocker:** SHIP — PR #124 in CR cycle
+**Active blocker:** (none — last shipped: 004-graph-cache-multi-line-code-span-fix on 2026-05-02)
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
 
 ## In flight
 
-- features/004-graph-cache-multi-line-code-span-fix — graph-cache multi-line code span fix (PHASE: SHIP — PR #124 in CR cycle)
-
+(none)
 
 ## Shipped
+
+- **[[004-graph-cache-multi-line-code-span-fix]]** — v1.2 graph-cache multi-line code span fix: `_INLINE_CODE_MULTILINE_RE` + `_mask_inline_code_in_content()` mask CommonMark backtick spans across newlines while preserving line numbers. `_CACHE_VERSION` bumped 1 → 2 so old caches regenerate.
+  - Shipped: 2026-05-02 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/124
+  - Data-model: (none — single-function rewrite + new helper)
+  - Extends: (root); narrow follow-up to PR #104's graph-integrity gate
+  - Lesson: when a parser is line-by-line by construction, content that crosses line boundaries needs a pre-mask pass on the full content with newlines preserved (so downstream line-by-line walkers still see correct line numbers). Position-preserving masks beat content-deleting strips.
+  - 3 CR cycles, 6 findings closed (4 → 1 → silent). 196/196 framework + 161/161 MCP + 4/4 task tests.
 
 - **[[003-anti-theatre-lint]]** — v1.2 anti-theatre lint + pre-commit hook + CI gate: spec.md content can't ship sentences that LOOK like enforced guards but aren't (`cost_limit_usd: 0.50`, `enforces 1KB`, `≥80% correctly`). The lint at `lint-no-theatre.sh` refuses theatre tokens unless an adjacent `{verify-by}` / `{best-effort}` / `{prod-only}` annotation is present.
   - Shipped: 2026-05-02 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/121
