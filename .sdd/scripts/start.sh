@@ -497,6 +497,23 @@ else:
         if "_(none yet)_" in in_flight_section:
             in_flight_section = in_flight_section.replace("_(none yet)_", new_entry, 1)
         else:
+            # CR cycle 1 (PR #121): also strip any standalone `(none)`
+            # placeholder line that mark-shipped writes when nothing is
+            # in flight. The earlier replace only handled `_(none yet)_`
+            # (italicised) — the bare-parens form leaked through and
+            # left a contradictory marker after `/start` added the new
+            # entry. Pattern: a line whose ONLY content is `(none)` (or
+            # variants like `(none yet)`) inside the In flight section.
+            # Python `re` doesn't support POSIX bracket classes —
+            # use `\s` for whitespace + `[ \t]` for explicit horizontal
+            # whitespace. CR cycle 2 catch: previous form silently
+            # didn't match the placeholder line (POSIX classes are
+            # treated as literal char-class members).
+            in_flight_section = re.sub(
+                r"(?m)^[ \t]*\(none(?:\s+yet)?\)[ \t]*\n?",
+                "",
+                in_flight_section,
+            )
             in_flight_section = re.sub(
                 r"(## In flight\b[^\n]*\n)((?:<!--[^>]*-->[^\n]*\n)?)",
                 r"\1\2" + new_entry + "\n",

@@ -6613,6 +6613,63 @@ else
 fi
 
 # ============================================================
+# T141 — anti-theatre lint passes on the in-flight spec (closes #111,
+#   PR #003). Theatre tokens (numerical bounds, currency, enforcement
+#   verbs, quality absolutes) without an adjacent verifier annotation
+#   are refused. The lint runs against ALL spec.md files in
+#   .sdd/features/*/spec.md and asserts NEW specs (anything past 002)
+#   pass clean. The 2 already-shipped specs (001-tier-3-llm-driven-
+#   synthesis, 002-plain-english-prose-sweep) are excluded — they were
+#   Sam-audited at their own SHIP cycle; back-fixing them is parked
+#   per #111 / 003's §9.
+# ============================================================
+note "T141: anti-theatre lint passes on in-flight spec(s)"
+new_spec_violations=0
+# CR cycle 1: guard against empty-glob (would iterate the literal
+# pattern and crash). Use shopt -s nullglob; restore prior state after.
+prev_nullglob=$(shopt -p nullglob)
+shopt -s nullglob
+# Broader glob: includes features/, bugs/, refactors/, ideas/ — every
+# work-item folder shape the framework supports. CR cycle 2 catch:
+# previous narrow features/* glob silently skipped non-feature specs.
+specs=( "$FRAMEWORK_ROOT"/.sdd/*/*/spec.md )
+eval "$prev_nullglob"
+if [ "${#specs[@]}" -eq 0 ]; then
+  ok "T141 no in-flight specs to lint (nothing to gate)"
+else
+  lint_exec_errors=0
+  for spec in "${specs[@]}"; do
+    feat=$(basename "$(dirname "$spec")")
+    case "$feat" in
+      001-tier-3-llm-driven-synthesis|002-plain-english-prose-sweep)
+        # Pre-existing; covered by their own SHIP-cycle audit. Skip.
+        continue ;;
+    esac
+    nt_out=$(bash "$FRAMEWORK_ROOT/.sdd/scripts/lint-no-theatre.sh" "$spec" 2>&1)
+    nt_ec=$?
+    # CR cycle 3: distinguish theatre findings (exit 1) from script
+    # execution errors (exit 2+). Both fail the gate but they need
+    # different debugging — a finding means "fix the spec"; an exec
+    # error means "the lint itself broke" (e.g. usage error, unreadable
+    # file, bash crash).
+    if [ "$nt_ec" -eq 1 ]; then
+      new_spec_violations=$((new_spec_violations + 1))
+      note "  T141: $feat → $nt_out"
+    elif [ "$nt_ec" -ne 0 ]; then
+      lint_exec_errors=$((lint_exec_errors + 1))
+      note "  T141: lint-no-theatre.sh failed on $feat (exit $nt_ec): $nt_out"
+    fi
+  done
+  if [ "$new_spec_violations" -eq 0 ] && [ "$lint_exec_errors" -eq 0 ]; then
+    ok "T141 anti-theatre lint passes on every in-flight spec"
+  elif [ "$lint_exec_errors" -gt 0 ]; then
+    bad "T141 anti-theatre lint script execution failed" "$lint_exec_errors spec(s) had lint exec errors; $new_spec_violations theatre findings"
+  else
+    bad "T141 anti-theatre lint failed" "$new_spec_violations spec(s) with un-annotated theatre"
+  fi
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
