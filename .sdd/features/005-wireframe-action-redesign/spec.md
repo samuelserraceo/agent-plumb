@@ -1,10 +1,10 @@
 # wireframe action redesign
 
-[PHASE: BUILD]
+[PHASE: SHIP]
 
-**Active blocker:** BUILD — T01 (rewrite wireframe.md action prose)
+**Run mode at BUILD:** full autonomous.
 
-**Run mode:** full autonomous.
+**Active blocker:** SHIP — push-pr → CR cycles → mark-shipped.
 
 ## PHASE: SPEC
 
@@ -179,19 +179,19 @@ Auto-updating `docs/walkthrough.html` on every `/ship` requires knowing the stru
 
 ### Build tasks (10 total · run mode: full autonomous)
 
-- [ ] T01: rewrite wireframe.md action prose
-- [ ] T02: branch-prose grep test
-- [ ] T03: example block grep test
-- [ ] T04: lint-action-prose.sh passes on rewritten file
-- [ ] T05: lint-no-theatre.sh passes on rewritten file
-- [ ] T06: UI skeleton
-- [ ] T07: non-UI skeleton
-- [ ] T08: a11y assertion on both skeletons
-- [ ] T09: existing shipped specs don't break
-- [ ] T10: framework regression
+- [x] T01 GREEN: wireframe.md rewritten — UI vs non-UI branch, SKIPPABLE tag dropped
+- [x] T02 GREEN: branch prose contains both "UI feature" and "non-UI feature"
+- [x] T03 GREEN: **What it looks like:** example block lands
+- [x] T04 GREEN: lint-action-prose passes
+- [x] T05 GREEN: lint-no-theatre passes
+- [x] T06 GREEN: UI skeleton (screens / design tokens / component states / interaction details)
+- [x] T07 GREEN: non-UI skeleton (example interactions / flow / architecture / new vs existing)
+- [x] T08 GREEN: a11y — tabindex + role=button + keydown + Enter/Space activation on interactive SVG groups
+- [x] T09 GREEN: lints don't crash on shipped specs
+- [x] T10 GREEN: 196/196 framework + 161/161 MCP regression
 
 ### Exit checks (BUILD)
-- [ ] C-build-tasks-green: every task is GREEN
+- [x] C-build-tasks-green: 10/10 tasks GREEN
 
 ## PHASE: SHIP
 
