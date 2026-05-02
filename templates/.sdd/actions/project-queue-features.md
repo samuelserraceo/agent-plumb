@@ -62,4 +62,10 @@ When the user later runs `/ship` on one feature, the framework offers: "Backlog 
 
 ---
 
+**What it looks like:**
+
+What's the first batch of features we'll build, in order?
+
+Example: *"v1.0: (1) feature playbook — the full SPEC→BUILD→SHIP loop, (2) MCP graph queries — get_neighbours / get_backlinks, (3) wireframe-as-HTML scaffold. v1.1: (4) Tier 3 LLM-driven synthesis. v1.2: (5) Playwright on framework's own walkthrough HTML."* I help you order by dependency + impact.
+
 **End the turn with:** `Run /next to advance to §7 — auto-start the first feature.`

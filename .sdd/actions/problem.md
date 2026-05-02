@@ -27,4 +27,11 @@ Ask the user: who has this problem, why now, and what breaks if we don't solve i
 
 **Output:** fill the three fields in `spec.md` under `### §1 Problem`. One short paragraph or 2-3 bullets per field. No assumptions; if you don't know, ask.
 
+**What it looks like:**
+
+Three quick questions for you:
+1. **Who has this problem?** Your customers? Your teammates? You? Be specific — "a recruiter who clicks our LinkedIn link", not "users".
+2. **Why are we solving it now and not next year?** What changed?
+3. **If we don't fix it, what goes wrong concretely?** People give up halfway through signup? Support emails pile up unanswered? Pick a real story.
+
 **End the turn with:** *"Run `/next` when you're ready to continue to §2 Success."*

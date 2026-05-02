@@ -29,4 +29,10 @@ Single USER-LED step: capture what's broken in one sentence. Bug fixes don't nee
 
 **Output:** replace the `- [ ] what: …` step row under `### action: bug-problem` with `- [x] what: <one-line summary of the answer>`. Long-form content (the paragraph or 2-3 bullets) goes under the action heading after the step row. No assumptions; if the description is vague, push back once.
 
+**What it looks like:**
+
+Tell me what's wrong, in plain English.
+
+Example: *"What broke? — 'the signup form shows the wrong error when the email is invalid'. Who saw it? — 'a customer who emailed support'. When? — 'started yesterday around 4pm'. What were they trying to do? — 'sign up for our waitlist'. What did they see? — a generic 'something went wrong, please try again' page (the technical name for that screen is a 503 server error, but they wouldn't recognise that). What should they have seen? — 'please use a valid email address'."* The more specific you are, the easier it is to reproduce.
+
 **End the turn with:** *"Run `/next` when you're ready to capture the repro steps in §2."*

@@ -52,4 +52,10 @@ You don't need to consult everyone — but you need to know they exist so a feat
 
 ---
 
+**What it looks like:**
+
+Who cares whether this project succeeds or fails?
+
+Example: *"(1) **You (Sam)** — you'll use it to ship your own startup faster. (2) **Future plugin-marketplace users** — non-technical people who want a less chaotic AI-coding workflow. (3) **AI-pair-programming Claude itself** — uses the framework to discipline its own output."* For each, what do they care about most?
+
 **End the turn with:** `Run /next to advance to BREAKDOWN — capability list.`

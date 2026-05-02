@@ -55,4 +55,10 @@ If the check passes (the user has a real answer in stack.md `## Running services
 
 **Output:** fill `spec.md` under `### push-pr` with `**PR URL:** <github-link>`.
 
+**What it looks like:**
+
+Time to open the pull request so the review tools can have at it.
+
+Example: *"I'll write a PR title (under 70 chars), a body that explains in 3 bullets what this changes and why, a test plan checklist for what reviewers should verify, and link to any issues this closes (#97, #112). Then I run `gh pr create` against `main` and give you the URL."*
+
 **End the turn with:** *"PR open at `<URL>`. CI is running. Run `/next` to verify CI green."*

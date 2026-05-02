@@ -150,4 +150,10 @@ This action **drives the deployed app in a real browser** and tries to break it.
 
 The cost ceiling is the bargain: at most a buck per run, at most 50 LLM calls, at most 200 browser actions. Predictable, bounded, repeatable. If the budget runs out, the explorer summarises what it found so far and exits cleanly — no runaway.
 
+**What it looks like:**
+
+Let me drive a real browser through the deployed feature and try weird inputs to find bugs you didn't think of.
+
+Example: *"I'll explore the signup form across 8 categories — empty submission, max-length input (5000-char email), special characters in the name, slow network, double-submit, signup-while-logged-in, mobile viewport at 320px, time-based (signup at 11:59pm crossing midnight). For each category I try 3 attempts. I report what crashed, what looked weird, and which AC each finding maps to."* Findings become new ACs in the next iteration.
+
 **End the turn with:** `Reply approve when triage complete.`

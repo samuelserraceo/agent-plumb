@@ -49,6 +49,12 @@ If multiple tasks cluster as L or XL, split them. *"Implement the entire payment
 
 **Output:** fill `spec.md` under `### plan-decompose` with the task list.
 
+**What it looks like:**
+
+Now I'll turn the checklist (acceptance criteria) into a concrete to-do list of build steps. Each step = one test + the code to make it pass + one commit.
+
+Example: *"T01 — write the signup form's HTML; T02 — submit form posts to /api/signup; T03 — invalid emails return a clear error; T04 — valid emails create a row in the database; T05 — confirmation email gets sent within 5 sec; ..."* You see the whole list before I start, and you pick the **run mode** (do you want to eye-check each step, or let me run all the way through?).
+
 **End the turn with:** *"SPEC is now complete. Reply `looks good` to advance to BUILD, or tell me what to reorder/split/merge. Then run `/next` to continue."*
 
 ---

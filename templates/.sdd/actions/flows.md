@@ -42,6 +42,12 @@ For each flow:
 
 **Output:** fill `spec.md` under `### §7 Flows` with 1-3 flows in this format.
 
+**What it looks like:**
+
+Let me draw out the most important journeys step by step, in plain English:
+
+Example for a signup feature: *"1. Person lands on the page → 2. Types email → 3. Hits submit → 4. Sees a 'check your inbox' message → 5. Clicks confirmation link in their email → 6. Sees a 'you're in' page."* For each step I'll note what could break (e.g. "step 5: their email might mark our message as spam").
+
 **End the turn with:** *"Reply `looks good` if these capture the flows correctly, or tell me what to add/change (e.g. 'add abandoned-cart flow', 'merge flows 1+2', 'failure path missing for X'). Then run `/next` to continue."*
 
 ---

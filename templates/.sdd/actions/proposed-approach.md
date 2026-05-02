@@ -31,6 +31,14 @@ Propose a concrete approach with reasoning, alternatives, and what's traded off.
 
 **On approval.** The framework hashes the §5 section content and writes the hash to `verification.json.approved_sections.proposed-approach`. After approval, edits to §5 are caught by the moat at phase-advance time (`"section §<slug> CHANGED since you approved it"`); `/next` then walks the user through inline re-approval — review the diff, reply `approve` to re-lock the new content. The earlier `/re-approve <slug>` slash command was retired in v0.9; the inline flow lives in `.claude/commands/next.md` (search "Re-approving a section after intentional edits"). Approved-section hashes are how the moat detects post-approval edits.
 
+**What it looks like:**
+
+Here's how I think we should build this — but I want to walk you through it before you commit.
+
+I'll show you **2 or 3 different ways** we could do it (e.g. "use the email tool we already have" vs "sign up for a new one" vs "do it ourselves"), with the trade-offs of each in plain English ("option A is faster to ship but costs more per email; option B saves money but takes a week longer").
+
+Then I'll recommend one and you say `looks good` or tell me what to change.
+
 **End the turn with:** *"Reply `approve` if this works, or tell me what to change (e.g. 'simpler', 'use Postgres instead of SQLite', 'explain the rate-limit risk in plain English')."*
 
 ---

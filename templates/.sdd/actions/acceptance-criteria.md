@@ -49,6 +49,12 @@ Each AC is a **concrete, testable assertion**. Each AC maps to **one task** in `
 
 **On approval (Theme 1.6 hook).** Hash recorded. Future edits to §11 require `/re-approve §11`.
 
+**What it looks like:**
+
+Let me write a checklist of every concrete thing that must work before we ship — in plain English, one bullet per check. Each bullet becomes one test we run.
+
+Example: *"(1) Submitting the form with a valid email shows a 'check your inbox' message within 2 seconds. (2) Submitting with a bad email (no @) shows a clear error like 'that doesn't look like an email yet'. (3) Clicking the confirmation link signs you in and sends you to /welcome. (4) The confirmation link stops working after 24 hours."* You can add, remove, or reword each one before I lock the list.
+
 **End the turn with:** *"Reply `approve` to lock the ACs (this section can't be silently softened after approval), or tell me what to add/remove/sharpen."*
 
 ---

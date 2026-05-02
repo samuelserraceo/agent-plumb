@@ -33,4 +33,10 @@ requires_user_approval: false
 
 **Output:** the HTML file at `.sdd/features/<id>/wireframe.html` + filled `Approved by user: [x]` in spec.md.
 
+**What it looks like:**
+
+I'll draw the screens (in plain HTML — no fancy build) so you can click through them in a browser and tell me what's wrong.
+
+Example: for a signup feature I'll make 3 screens: (1) the form before submit, (2) the 'check your inbox' message, (3) the 'you're in' page after they confirm. Each screen will have placeholder copy you can edit, and we'll iterate until you say `approved`.
+
 **End the turn with:** *"Drafting wireframe.html now. Open it with `open .sdd/features/<id>/wireframe.html`. Reply with feedback or `looks good` once it captures every screen — then run `/next` to continue."*

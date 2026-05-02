@@ -68,4 +68,10 @@ For each gap identified in Part 1, draft a new test that covers the behaviour. T
 
 **If §1's scope already has full coverage**, this step is short: *"All §1 behaviour is covered by existing tests; no new tests needed."* — that's a valid output. Don't manufacture tests just to fill the section.
 
+**What it looks like:**
+
+I'll list (Part 1) every existing test that already covers the refactor's scope, then (Part 2) draft any NEW tests needed to fill gaps.
+
+Example for §2.new-tests: *"Part 1 turned up a gap — there's no existing test that asserts the validate-email helper rejects empty strings. I'll add `tests/refactors/004-auth-split/test-validate-email-empty.spec.ts` that calls `validateEmail('')` and asserts it returns `{ok:false, reason:'empty'}`. Run with `npx playwright test tests/refactors/004-auth-split/`. The test passes on the current code AND must still pass after the refactor — that proves the refactor preserves the behaviour."* Targeted gap-fillers, not a full-suite rerun. (Full-suite reruns happen later, in `verify-test-run` and `regression-coverage`'s own §1 listing.)
+
 **End the turn with:** *"Reply `approve` to lock the regression coverage, or tell me what's missing. Then `/next` to draft the approach in §3."*

@@ -31,4 +31,10 @@ For every AC in `acceptance-criteria` tagged `[PROD-ONLY]`, the user walks throu
 
 **Output:** fill `spec.md` under `### verify-prod-only-acs` with one bullet per `[PROD-ONLY]` AC, ticked or carried forward.
 
+**What it looks like:**
+
+Some checks can only happen against the real production setup (e.g. real payment processor, real email provider, real DNS). I list those out so you can walk them by hand once we deploy.
+
+Example: *"Two checks tagged [PROD-ONLY]: (1) `AC18` — sending a real welcome email through Resend lands in the inbox within 30 sec, not spam folder. (2) `AC19` — Stripe webhook delivery confirms within 60 sec of charge."* These go into INDEX.md `## Pending production verification` and you tick them after first deploy.
+
 **End the turn with:** *"PROD-ONLY verification complete. Run `/next` to write the lesson summary."*

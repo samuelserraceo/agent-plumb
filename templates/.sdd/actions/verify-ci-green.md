@@ -33,4 +33,10 @@ Poll the PR's CI status until it resolves green or red.
 
 **Output:** fill `spec.md` under `### verify-ci-green` with `**CI green:** [x]`.
 
+**What it looks like:**
+
+Watch CI on the PR and only proceed once every check is green.
+
+Example: *"Checks running on the PR: (1) Framework tests, (2) Graph integrity (wiki-links resolve), (3) Scope guard (UI copy + spec refs), (4) CodeRabbit review. I tail them; if any goes red, I show you exactly which assertion failed and we fix on the branch."*
+
 **End the turn with:** `CI green.` (or BUG details if RED). On GREEN: *"Run `/next` to mark shipped."*

@@ -86,4 +86,10 @@ For now: append to `patterns.md` only. The cross-cutting topic-page split lands 
 
 **Commits with**: `spec.md` + `.sdd/patterns.md`.
 
+**What it looks like:**
+
+What did we learn building this that's worth remembering for the next feature?
+
+Example: *"Lessons from this signup feature: (1) Resend's free tier (the email-sending service we use) is plenty for our scale — don't pay for SendGrid yet; (2) the 'wait for confirmation' screen needs a clear retry button or people email support thinking they're stuck; (3) Neon (the database we use) gets cranky when many short-lived cloud functions all open their own connections — putting PgBouncer (a connection-pool tool) in front fixes it."* These get appended to `.sdd/patterns.md` and shape future feature designs.
+
 **End the turn with:** *"Lessons captured + synced to patterns.md. Run `/next` to push the PR."*

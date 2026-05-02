@@ -507,9 +507,48 @@ else:
 if "## Shipped" not in body:
     body += "\n## Shipped\n\n"
 
-new_index = "\n".join(header_lines) + body.lstrip("\n") + ("\n" if not body.endswith("\n") else "")
-with open(index_path, "w", encoding="utf-8") as f:
-    f.write(new_index)
+# MD041 (markdownlint): the file should start with a top-level H1
+# heading, not a metadata block. If the body already opens with
+# `# <heading>`, place the metadata block AFTER the H1 + a blank
+# line so the heading stays the first non-blank line. (CR PR #118
+# cycle 2 catch — the previous form put metadata above the H1 and
+# tripped MD041/MD022 on every fresh `/start`.)
+body_clean = body.lstrip("\n")
+# Normalise header_block to ALWAYS end with a single blank line so the
+# next content (a heading like `## In flight` or prose) is properly
+# separated. CR cycle 3: previous form could collapse the separator
+# when rest started with a heading, retripping MD022.
+header_block = "\n".join(header_lines).rstrip("\n") + "\n\n"
+m = re.match(r"^(#\s+[^\n]+)\n", body_clean)
+if m:
+    h1 = m.group(1)
+    rest = body_clean[m.end():].lstrip("\n")
+    new_index = h1 + "\n\n" + header_block + rest + ("\n" if not body.endswith("\n") else "")
+else:
+    new_index = header_block + body_clean + ("\n" if not body.endswith("\n") else "")
+
+# Atomic write — tempfile + os.replace in the same directory, mirroring
+# advance.sh's pattern. Prevents a partially-written INDEX.md if /start
+# is interrupted mid-write (Ctrl-C, OOM, disk full). CR cycle 4 catch.
+import os, tempfile
+index_dir = os.path.dirname(index_path) or "."
+fd, tmp_path = tempfile.mkstemp(prefix=".INDEX.md.tmp.", dir=index_dir)
+try:
+    with os.fdopen(fd, "w", encoding="utf-8") as tmpf:
+        tmpf.write(new_index)
+        tmpf.flush()
+        try:
+            os.fsync(tmpf.fileno())
+        except OSError:
+            pass  # fsync isn't critical; some filesystems refuse it
+    os.replace(tmp_path, index_path)
+except Exception:
+    # Clean up the temp file on any failure so we don't leave litter.
+    try:
+        os.unlink(tmp_path)
+    except OSError:
+        pass
+    raise
 
 # --- Plain-English success message to stdout ---
 print(f"[/start] scaffolded: {work_item_rel}")

@@ -1,15 +1,15 @@
 # SDD framework — INDEX
 
-**Active:** (none)
+**Active:** features/002-plain-english-prose-sweep
 **Playbook:** feature
-**Active blocker:** (none — last shipped: 001-tier-3-llm-driven-synthesis on 2026-05-01)
+**Active blocker:** SHIP — PR #118 in CR cycle
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
 
 ## In flight
 
-(none)
+- features/002-plain-english-prose-sweep — plain-english prose sweep (PHASE: SHIP — PR #118 open)
 
 ## Shipped
 

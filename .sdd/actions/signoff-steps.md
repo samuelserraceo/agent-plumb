@@ -38,4 +38,10 @@ Common patterns:
 
 **If everything is automated, that's fine.** Fill with `Automated tests sufficient — no manual sign-off needed.`
 
+**What it looks like:**
+
+What checks do **you** want to run yourself before we say it's shipped — beyond what tests cover?
+
+Example: *"(1) Open the deployed page on my phone, sign up, confirm the welcome email lands within 30 sec. (2) Try a fake email and confirm the error message reads well. (3) Open Mailgun's dashboard and check the welcome email isn't in any spam folder."* 1-5 bullets, each one a thing your eyes need to see.
+
 **End the turn with:** *"Run `/next` when you're ready to continue to the Wireframe section."*

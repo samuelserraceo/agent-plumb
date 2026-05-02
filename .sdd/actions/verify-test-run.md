@@ -34,3 +34,9 @@ All tasks should be GREEN by now. Run the **full test suite** to catch any regre
 **Output:** fill `spec.md` under `### verify-test-run` with `**All ACs pass (excluding PROD-ONLY):** [x]` (or `[ ]` + BUG task if any failed).
 
 **End the turn with one line:** `Test suite GREEN — N/N passing.` (or BUG details if any RED).
+
+**What it looks like:**
+
+Before opening the PR, let me prove the whole test suite passes locally.
+
+Example: *"Running `bash test/run-framework-test.sh` and the MCP test suite. All `<framework-passed>/<framework-total>` framework + `<mcp-passed>/<mcp-total>` MCP tests passing. If anything is RED I show you the exact failure and we fix it before pushing."* (The actual numbers go in the user-facing message; placeholders here keep the template from drifting as test counts grow.)
