@@ -65,6 +65,6 @@ User runs `/next` and starts working on the first feature.
 
 Of the features we listed, which one do we walk through `/start` FIRST — like, right now this session?
 
-Example: *"Pick one: 'I want to start with the email-signup form because that's the easiest to demo to friends and prove it works' or 'I want to start with the admin dashboard because nothing else is useful without it'."* Just one. We do that one start-to-ship before adding a second.
+Example: *"Pick one: 'I want to start with the email-signup form because that's the easiest to demo to friends and prove it works' or 'I want to start with the admin dashboard because nothing else is useful without it'."* You CAN have multiple features in flight at once on different branches — the framework supports parallel work — but pick one to **prioritise for the fastest end-to-end ship**. Get one all the way to SHIPPED first; that's what proves the loop works.
 
 **End the turn with:** `First feature is now active. Run /next to start its SPEC.`

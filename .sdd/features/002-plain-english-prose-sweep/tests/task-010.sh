@@ -14,6 +14,12 @@ REQUIRED = {
     "used_by", "references", "touches", "trust", "budget",
     "requires_user_approval",
 }
+# Optional fields some actions legitimately use (e.g. push-pr's
+# `requires_setup` lets the framework refuse to advance until a
+# deferred setup question is answered). Allowed but not mandated.
+OPTIONAL_KNOWN = {
+    "requires_setup",
+}
 
 actions_dir = "templates/.sdd/actions"
 failures = []
@@ -39,9 +45,15 @@ for fn in sorted(os.listdir(actions_dir)):
     if not isinstance(fm, dict):
         failures.append((path, f"frontmatter is {type(fm).__name__}, not dict"))
         continue
-    missing = REQUIRED - set(fm.keys())
+    keys = set(fm.keys())
+    missing = REQUIRED - keys
+    extra = keys - REQUIRED - OPTIONAL_KNOWN
     if missing:
         failures.append((path, f"missing required fields: {sorted(missing)}"))
+    if extra:
+        # CR feedback 2026-05-02: enforce schema — flag fields that
+        # are neither required nor in the optional-known list.
+        failures.append((path, f"unexpected top-level fields (schema regression): {sorted(extra)}"))
 
 if failures:
     print("FAIL: frontmatter regressions:", file=sys.stderr)

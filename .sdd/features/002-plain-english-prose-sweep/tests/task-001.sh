@@ -19,8 +19,10 @@ if [ "$ec" -ne 0 ]; then
   exit 1
 fi
 
-# Count qualifying files in output (heuristic: lines containing the path)
-count=$(echo "$out" | grep -c "templates/.sdd/actions/" || true)
+# Count qualifying files — match the literal "qualifying" tag lint-action-prose.sh
+# emits, NOT just any line with the path (skip-marked entries also include the
+# path and would inflate the count). CR feedback 2026-05-02.
+count=$(echo "$out" | grep -c "qualifying" || true)
 
 if [ "$count" -lt 10 ]; then
   echo "FAIL: expected ≥10 qualifying USER-LED/AGENT-LED files, got $count" >&2

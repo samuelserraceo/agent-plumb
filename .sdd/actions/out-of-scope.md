@@ -40,6 +40,6 @@ Ask: *"What are we explicitly NOT building this round? Anything related to §1-3
 
 What are we explicitly **not** doing this round? It's just as important to be clear about what's left out as what's in.
 
-Example: *"For this signup feature we are NOT building: (1) social login (Google/Apple) — saves ~2 days, can add later; (2) account-deletion UI — we'll handle requests by hand for now; (3) referral codes — separate feature, parked."* 1-5 bullets is plenty. Empty is fine if everything is in.
+Example: *"For this signup feature we are NOT building: (1) social login (Google/Apple) — keeps the scope smaller this round, can add later as its own feature; (2) account-deletion UI — we'll handle requests by hand for now; (3) referral codes — separate feature, parked."* 1-5 bullets is plenty. Empty is fine if everything is in.
 
 **End the turn with:** *"Reply `approve` to lock the out-of-scope list, or tell me what to add/remove."*

@@ -71,7 +71,7 @@ Add a one-line rule under "Code-quality doctrine" pointing at the lint: *"Action
 
 - **Alternative C — Structured frontmatter `plain_english_question:`.** Each action file's frontmatter gains a new field that the agent reads INSTEAD of the technical `prompt:`. The technical `prompt:` becomes implementation-internal. Rejected: doubles the maintenance surface (every action edit now updates both fields), forces a schema migration across 22 existing action files in one shot, and the existing `prompt:` is ALREADY in the user-shown chat — making it redundant. Foundation 1 (simplicity) prefers fixing the existing prose to *be* plain English over adding parallel fields.
 
-**Pattern reused:** [[pattern:never-assume-always-check]] — the lint enforces a *positive* deterministic check, not a heuristic guess.
+**Pattern reused:** the framework's foundation 3 *"never assume — always check"* — the lint enforces a *positive* deterministic check (the example block exists), not a heuristic guess about what counts as plain English. (Plain prose, not a wiki-link, because no `[[pattern:never-assume-always-check]]` node has been written to `.sdd/patterns.md` yet — when one lands, this link can be added.)
 
 ### action: data-contract
 
@@ -92,7 +92,7 @@ Approval row left [ ] — same flow as §5; Sam ticks at approval-pass time.
   ```text
   1. Agent runs next-action.sh → returns next [ ] step + the action file path
   2. Agent reads templates/.sdd/actions/<slug>.md
-  3. Agent's first paragraph (≤2 sentences, ≤200 chars) sets the tone
+  3. Agent's opening paragraph sets the tone the agent will mirror
   4. Agent finds the **What it looks like:** block — concrete plain-English example
   5. Agent drafts its user-facing turn mirroring the example block, NOT the technical prose around it
   6. User answers in 30 seconds (Story 2 + 3) → agent fills spec.md → commit
@@ -130,7 +130,7 @@ Approval row left [ ] — same flow as §5; Sam ticks at approval-pass time.
 
 **Group 1 — Inventory + sweep coverage.**
 
-1. **Audit completes.** A baseline run of `lint-action-prose.sh` against `templates/.sdd/actions/*.md` lists every file with `tag: USER-LED` or `tag: AGENT-LED` in its frontmatter, classifies each as compliant / non-compliant, and reports the count to stderr. → `tests/task-001.sh`
+1. **Audit completes.** Running `lint-action-prose.sh --inventory` against `templates/.sdd/actions/*.md` prints one stdout line per file (path + tag + `qualifying`/`skip`) AND emits a summary `[inventory] N qualifying / M total` line to stderr. The script exits 0 (inventory mode is informational, not a fail-on-noncompliance gate — that's `check` mode without `--inventory`). → `tests/task-001.sh`
 
 2. **Every qualifying action file has a `**What it looks like:**` block.** After sweep: for every file with `tag: USER-LED` or `tag: AGENT-LED`, `grep -F '**What it looks like:**' file` returns at least one match. → `tests/task-002.sh`
 
@@ -154,7 +154,7 @@ Approval row left [ ] — same flow as §5; Sam ticks at approval-pass time.
 
 **Group 4 — Don't-break-existing-shape.**
 
-10. **Frontmatter preserved.** After sweep: every action file's YAML frontmatter parses with PyYAML AND contains the original `type:`, `slug:`, `tag:`, `title:`, `steps:`, `used_by:`, `references:`, `touches:`, `trust:`, `budget:`, `requires_user_approval:` fields. No field added or removed; only body prose changed. → `tests/task-010.sh`
+10. **Frontmatter preserved.** After sweep: every action file's YAML frontmatter parses with PyYAML AND contains the original 12 required fields: `type:`, `slug:`, `tag:`, `title:`, `short_label:`, `steps:`, `used_by:`, `references:`, `touches:`, `trust:`, `budget:`, `requires_user_approval:`. No field added or removed; only body prose changed. → `tests/task-010.sh`
 
 11. **Action prompt fields unchanged.** After sweep: for every action file, the frontmatter `prompt:` field (if present in any `steps:` row) is byte-identical to the pre-sweep version. The technical agent-internal prompt that drives `next-action.sh` doesn't change shape — we're rewriting the BODY prose only. → `tests/task-011.sh`
 
@@ -209,7 +209,7 @@ Approval row left [ ] — same flow as §5; Sam ticks at approval-pass time.
   | A future contributor adds a NEW action file without the example block | **already covered** — AC8 wires the lint into CI; the new file fails the gate before merge |
   | macOS `sed` vs GNU `sed` quirks in the lint script | **add AC** — see AC15 below; tests must run on both runners |
   | Multi-paragraph "first paragraph" via continuation indentation | **add AC** — see AC14 below (same fix) |
-  | UTF-8 wide characters (em dashes, smart quotes) inflating the 200-char check | **drop** — characters are characters; if a paragraph is 200 chars, it's 200 chars regardless of glyph width. Anglo-saxon + em dashes are fine. |
+  | ~~UTF-8 wide characters inflating the 200-char check~~ | **moot** — the whole 200-char check was dropped 2026-05-02 (theatre redirect). Listed here for audit-trail completeness; not a present concern. |
   | `tag: USER-LED` with extra whitespace (e.g. `tag:  USER-LED  `) | **drop** — lint normalises with `tr -d ' '` before compare; defensive without spec change |
   | Action file with no body at all (just frontmatter) | **drop** — would already fail the example-block check; not worth a separate AC |
 

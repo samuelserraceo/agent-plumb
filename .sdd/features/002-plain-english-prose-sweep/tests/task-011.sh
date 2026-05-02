@@ -62,7 +62,10 @@ extract_prompts "$post/templates/.sdd/actions" "$post"
 
 # Diff
 if diff -r "$pre" "$post" --exclude="templates" >/dev/null 2>&1; then
-  count=$(ls "$post"/*.prompts 2>/dev/null | wc -l | tr -d ' ')
+  # CR feedback 2026-05-02: use find, not glob — under set -e a glob
+  # with no matches makes ls exit non-zero and aborts the script
+  # before the message prints (false negative on a passing test).
+  count=$(find "$post" -maxdepth 1 -type f -name '*.prompts' | wc -l | tr -d ' ')
   echo "PASS: AC11 — $count action files' prompt strings byte-identical to origin/main"
 else
   echo "FAIL: prompt strings drifted between origin/main and current tree:" >&2

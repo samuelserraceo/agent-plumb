@@ -70,8 +70,8 @@ For each gap identified in Part 1, draft a new test that covers the behaviour. T
 
 **What it looks like:**
 
-Make sure I didn't accidentally break something else while building this feature.
+I'll list (Part 1) every existing test that already covers the refactor's scope, then (Part 2) draft any NEW tests needed to fill gaps.
 
-Example: *"Re-running the full existing test suite — `bash test/run-framework-test.sh`. All 194/194 still pass. The new feature didn't break the old waitlist signup flow, the admin dashboard, or anything else."* If something went red, we fix that BEFORE shipping the new feature — never bury it.
+Example for §2.new-tests: *"Part 1 turned up a gap — there's no existing test that asserts the validate-email helper rejects empty strings. I'll add `tests/refactors/004-auth-split/test-validate-email-empty.spec.ts` that calls `validateEmail('')` and asserts it returns `{ok:false, reason:'empty'}`. Run with `npx playwright test tests/refactors/004-auth-split/`. The test passes on the current code AND must still pass after the refactor — that proves the refactor preserves the behaviour."* Targeted gap-fillers, not a full-suite rerun. (Full-suite reruns happen later, in `verify-test-run` and `regression-coverage`'s own §1 listing.)
 
 **End the turn with:** *"Reply `approve` to lock the regression coverage, or tell me what's missing. Then `/next` to draft the approach in §3."*

@@ -42,6 +42,6 @@ Find why the bug happens and write it as one plain-English sentence the user can
 
 Why is it happening — under the hood?
 
-Example: *"The signup endpoint checks email with a regex BEFORE database connection. The 503 came from a separate retry-loop bug: when the regex throws on weird input, we accidentally retry forever and timeout. Fix is to wrap the regex check in try/catch and return a clean 400 on bad input."* I describe the cause in plain English, then propose the fix.
+Example: *"The signup endpoint checks email with a regex (a pattern-matching rule) BEFORE the database connection. When the regex chokes on weird input it throws an error, and a separate retry-loop bug then keeps retrying forever until the request times out — that's why the user sees the generic error page."* I describe the cause in plain English, then wait for confirmation. The actual fix lives in the next action (§4 bug-fix).
 
 **End the turn with:** *"Reply `confirmed` if that's the right cause, or correct it. Then `/next` to draft the fix in §4."*

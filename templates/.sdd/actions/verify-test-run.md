@@ -39,4 +39,4 @@ All tasks should be GREEN by now. Run the **full test suite** to catch any regre
 
 Before opening the PR, let me prove the whole test suite passes locally.
 
-Example: *"Running `bash test/run-framework-test.sh` and the MCP test suite. All 194/194 framework + 161/161 MCP tests passing. If anything is RED I show you the exact failure and we fix it before pushing."*
+Example: *"Running `bash test/run-framework-test.sh` and the MCP test suite. All `<framework-passed>/<framework-total>` framework + `<mcp-passed>/<mcp-total>` MCP tests passing. If anything is RED I show you the exact failure and we fix it before pushing."* (The actual numbers go in the user-facing message; placeholders here keep the template from drifting as test counts grow.)

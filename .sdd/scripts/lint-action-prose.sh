@@ -14,11 +14,14 @@
 #   lint-action-prose.sh --inventory        — list every qualifying file + compliance state
 #   lint-action-prose.sh <one-or-more-paths>— check only the named files (used by tests)
 #
-# Two checks per qualifying file (frontmatter `tag:` is USER-LED or AGENT-LED):
-#   1. Body contains literal `**What it looks like:**` heading
-#   2. First non-frontmatter paragraph is ≤2 sentences AND ≤200 chars
+# One check per qualifying file (frontmatter `tag:` is USER-LED or AGENT-LED):
+#   1. Body (after frontmatter) contains literal `**What it looks like:**` heading.
 #
-# Foundation 3: positive deterministic checks. No jargon denylists.
+# A previous draft had a second check (first-paragraph length cap); Sam
+# called it out as theatre 2026-05-02 — the real "is this prose plain
+# English?" test is human-judged at PR review time, not via a regex.
+#
+# Foundation 3: positive deterministic check. No jargon denylists.
 
 set -uo pipefail
 
@@ -86,18 +89,24 @@ check_ambiguous_tag() {
 
 # ─── Inventory mode ──────────────────────────────────────────────────
 if [ "$MODE" = "inventory" ]; then
+  qual_count=0
+  total_count=0
   for f in "${TARGETS[@]}"; do
     [ -f "$f" ] || continue
+    total_count=$((total_count + 1))
     tag=$(get_tag "$f")
     case "$tag" in
       USER-LED|AGENT-LED)
         echo "$f  [tag=$tag]  qualifying"
+        qual_count=$((qual_count + 1))
         ;;
       *)
         echo "$f  [tag=$tag]  skip"
         ;;
     esac
   done
+  # Per AC1 — emit summary count to stderr so callers can grep for it
+  echo "[inventory] $qual_count qualifying / $total_count total" >&2
   exit 0
 fi
 
@@ -115,14 +124,27 @@ for f in "${TARGETS[@]}"; do
 
   is_qualifying "$f" || continue
 
-  # Check 1: body contains literal "**What it looks like:**" heading.
-  # That's the ONLY mechanical check. The quality of the prose itself —
+  # Check 1: BODY (after frontmatter) contains literal
+  # "**What it looks like:**" heading. The quality of the prose itself —
   # "would a non-technical reader (Sam's "mum test") understand this?" —
   # is reviewed by humans at PR time, not by a regex. Mechanical checks
   # for "is this plain English?" become heuristic theatre (see Sam's
   # 2026-05-02 redirect on this PR; the previous form had a 200-char +
   # 2-sentence cap that was a theatre-proxy for the real concern).
-  if ! grep -qF '**What it looks like:**' "$f"; then
+  #
+  # CR feedback (2026-05-02): scope grep to the body, not the whole
+  # file — otherwise a `What it looks like:` token in YAML frontmatter
+  # (e.g. as a `prompt:` field value) would falsely satisfy the check.
+  body=$(awk '
+    BEGIN { fm = 0; fm_seen = 0 }
+    /^---[[:space:]]*$/ {
+      if (!fm_seen) { fm = 1; fm_seen = 1; next }
+      else if (fm) { fm = 0; next }
+    }
+    fm { next }
+    { print }
+  ' "$f")
+  if ! printf '%s' "$body" | grep -qF '**What it looks like:**'; then
     echo "[lint-action-prose] $f — missing 'What it looks like:' example block (USER-LED/AGENT-LED actions must ship a concrete plain-English example the agent can mirror)" >&2
     violations=$((violations + 1))
   fi

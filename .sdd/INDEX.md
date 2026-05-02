@@ -8,9 +8,8 @@
 
 
 ## In flight
-- features/002-plain-english-prose-sweep — plain-english prose sweep (PHASE: SPEC)
 
-(none)
+- features/002-plain-english-prose-sweep — plain-english prose sweep (PHASE: SHIP — PR #118 open)
 
 ## Shipped
 

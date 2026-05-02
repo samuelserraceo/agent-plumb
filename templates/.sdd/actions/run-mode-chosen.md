@@ -48,6 +48,6 @@ Pick one:
 1. **One step at a time** — I do one task, show you the result, wait for `/next`. Best when you want to see every commit.
 2. **Checkpoint every 5 steps** — I do 5 tasks in a row, then pause for a thumbs-up. Good middle-ground.
 3. **Full autonomous** — I run all the way through to GREEN; you review at the end. Best when the work is mechanical.
-4. **Headless / Shell Ralph** — I write a script you run yourself in another terminal.
+4. **Headless / Shell Ralph** — you run the existing `./scripts/ralph.sh` in another terminal. Each task spawns a fresh Claude invocation, no token bloat. Best for 2+ hours unattended.
 
 **End the turn with:** the user's choice + *"Starting BUILD in <mode>. Run `/next` to begin T01."*

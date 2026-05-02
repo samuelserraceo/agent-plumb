@@ -137,7 +137,7 @@
       "trust": "framework"
     },
     "mark-shipped": {
-      "expected_sha256": "c07049eafd1c4486a99e2607948bbc1f28021ce5b05fdf391fd47f4b2d838b83",
+      "expected_sha256": "e595dae1b6449baf16bb27734746a8b01083deb42744726b5b28e57746e94b71",
       "path": ".sdd/actions/mark-shipped.md",
       "trust": "framework"
     },
@@ -147,7 +147,7 @@
       "trust": "framework"
     },
     "out-of-scope": {
-      "expected_sha256": "605bf9b9bf93d137cc2130cb90f4213cd4b9ace9d9bcf3846a6ca7d9aeb0a88c",
+      "expected_sha256": "85cd645006d6b513a970abdc39c0f4cb25a09bd8131828da09ce80a9b46545c4",
       "path": ".sdd/actions/out-of-scope.md",
       "trust": "framework"
     },
@@ -157,7 +157,7 @@
       "trust": "framework"
     },
     "edge-case-sweep": {
-      "expected_sha256": "9417d3fa63d1195b4ec84aa18679eba48b151e72e509b2e96ccf0e5ddd7ef245",
+      "expected_sha256": "5631398140efa7c7876f6d47588ba220b2ad114c5a62e218ae4cb404df04d8e8",
       "path": ".sdd/actions/edge-case-sweep.md",
       "trust": "framework"
     },
@@ -177,7 +177,7 @@
       "trust": "framework"
     },
     "run-mode-chosen": {
-      "expected_sha256": "b0e5f69cbe3e30fcd1c805d8bc8c867691b0f2d8ae531aa549353438d827145e",
+      "expected_sha256": "e28782c22ea6b41e4a1b2aa3e0c8f277b8304024616381add4223b419725a5fb",
       "path": ".sdd/actions/run-mode-chosen.md",
       "trust": "framework"
     },
@@ -212,7 +212,7 @@
       "trust": "framework"
     },
     "verify-test-run": {
-      "expected_sha256": "cc721ea87a39d9f5e49f30e9bd262c05a5b9ee0d6fda1ea41674f8200f23914e",
+      "expected_sha256": "24ead730f29584a3296dae14df1dcae27ec887ae0a2cc3278dc529839ff80769",
       "path": ".sdd/actions/verify-test-run.md",
       "trust": "framework"
     },
@@ -223,7 +223,7 @@
     },
     "learn": {
       "path": ".sdd/actions/learn.md",
-      "expected_sha256": "6cf80cfa625d53dd4c3d9bee655418c798b0b48e7e65466dba20b21439e76c1d"
+      "expected_sha256": "09a3686b89ac47ea2f82f6d4b85a8f8f4a6e346268f9317166b49dda370f4283"
     },
     "project-problem": {
       "expected_sha256": "219bc16d6b442bd2147b214384bdb8842bc801923170d7a1271f796ae88efa5a",
@@ -256,7 +256,7 @@
       "trust": "framework"
     },
     "project-start-first": {
-      "expected_sha256": "888e33661c239860b6aff3dbeb9d801a635db9feadadcddf675e7ad889c26bcd",
+      "expected_sha256": "69df0a0e4b6d63c508579b9db402dd7f7e9cad2591558e84c8a5e7fe11433541",
       "path": ".sdd/actions/project-start-first.md",
       "trust": "framework"
     },
@@ -268,7 +268,7 @@
     "bug-problem": {
       "path": ".sdd/actions/bug-problem.md",
       "trust": "framework",
-      "expected_sha256": "bff13759607111add819a6f27aee71f64ec84b8cc1725ffd8e3334035071d5e6"
+      "expected_sha256": "83c252ca4bcdaab99339c46e0073b93ef25724ee74c6a22671f7013fa6281197"
     },
     "bug-repro": {
       "path": ".sdd/actions/bug-repro.md",
@@ -278,7 +278,7 @@
     "bug-root-cause": {
       "path": ".sdd/actions/bug-root-cause.md",
       "trust": "framework",
-      "expected_sha256": "2c93a3d391e67df91ebcd57f6ef343b23aea7aaf90fb714bd411178498fde23c"
+      "expected_sha256": "ed08b973c1945bbb8fba59af4f496e2c03d6c0bb475cb66cfab323a0f6b70bb2"
     },
     "bug-fix": {
       "path": ".sdd/actions/bug-fix.md",
@@ -298,7 +298,7 @@
     "regression-coverage": {
       "path": ".sdd/actions/regression-coverage.md",
       "trust": "framework",
-      "expected_sha256": "a85a0b853197e51b28091ab531f6d5a545bc24c880722477377d6b4e7ed8853f"
+      "expected_sha256": "1d5ec7982887b6dbc002025b50d40c1a60afc53cb29af57936af622e9d874c39"
     },
     "refactor-approach": {
       "path": ".sdd/actions/refactor-approach.md",
