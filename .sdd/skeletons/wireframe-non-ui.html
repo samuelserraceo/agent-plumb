@@ -46,7 +46,7 @@
 <!-- TODO: Feature summary —————————————————————————————————————————————— -->
 <header class="mb-12">
   <h1 class="text-3xl font-bold mb-2">TODO: Feature title</h1>
-  <p class="text-stone-700">TODO: One-paragraph plain-English summary. Link back to <a href="../../docs/walkthrough.html" class="text-indigo-600 hover:underline">the global walkthrough</a> when relevant.</p>
+  <p class="text-stone-700">TODO: One-paragraph plain-English summary. Link back to <a href="../../../docs/walkthrough.html" class="text-indigo-600 hover:underline">the global walkthrough</a> when relevant. (Path is 3 levels up: from `.sdd/features/&lt;id&gt;/wireframe.html` → `.sdd/features/` → `.sdd/` → repo root.)</p>
 </header>
 
 <!-- TODO: Example interactions ——————————————————————————————————————— -->
@@ -85,8 +85,12 @@
     </g>
   </svg>
 
-  <!-- Detail panel populated by JS click/keyboard handler -->
-  <div id="stepDetail" class="mt-4 p-4 bg-white border border-stone-200 rounded text-sm text-stone-700">
+  <!-- Detail panel populated by JS click/keyboard handler.
+       aria-live="polite" + role="status" means screen readers announce
+       updates without interrupting; aria-atomic="true" means the whole
+       region is read on each update (not just the diff). -->
+  <div id="stepDetail" class="mt-4 p-4 bg-white border border-stone-200 rounded text-sm text-stone-700"
+       aria-live="polite" aria-atomic="true" role="status">
     Click any step above for plain-English details.
   </div>
 </section>
@@ -112,7 +116,8 @@
     </g>
   </svg>
 
-  <div id="archDetail" class="mt-4 p-4 bg-white border border-stone-200 rounded text-sm text-stone-700">
+  <div id="archDetail" class="mt-4 p-4 bg-white border border-stone-200 rounded text-sm text-stone-700"
+       aria-live="polite" aria-atomic="true" role="status">
     Click any box above for details.
   </div>
 </section>
