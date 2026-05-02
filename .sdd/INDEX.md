@@ -1,17 +1,24 @@
 # SDD framework — INDEX
 
-**Active:** features/003-anti-theatre-lint
+**Active:** (none)
 **Playbook:** feature
-**Active blocker:** SHIP — PR #121 in CR cycle
+**Active blocker:** (none — last shipped: 003-anti-theatre-lint on 2026-05-02)
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
 
 ## In flight
 
-- features/003-anti-theatre-lint — anti-theatre lint (PHASE: SHIP — PR #121 in CR cycle)
+(none)
 
 ## Shipped
+
+- **[[003-anti-theatre-lint]]** — v1.2 anti-theatre lint + pre-commit hook + CI gate: spec.md content can't ship sentences that LOOK like enforced guards but aren't (`cost_limit_usd: 0.50`, `enforces 1KB`, `≥80% correctly`). The lint at `lint-no-theatre.sh` refuses theatre tokens unless an adjacent `{verify-by}` / `{best-effort}` / `{prod-only}` annotation is present.
+  - Shipped: 2026-05-02 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/121
+  - Data-model: (none — bash lint + pre-commit hook, no new entities)
+  - Extends: (root)
+  - Lesson: forward-pointer to a future `[[pattern:annotated-theatre-instead-of-soft-prose]]` — Foundation 3 applied at the spec layer. Every claim either checks (`{verify-by}`), admits judgement (`{best-effort}`), or names live-infra (`{prod-only}`) — soft prose alone isn't enough.
+  - 4 CR cycles, 11 findings closed (7 → 3 → 1 → silent). 196/196 framework + 15/15 task tests.
 
 - **[[002-plain-english-prose-sweep]]** — v1.2 plain-English prose sweep + lint: every USER-LED / AGENT-LED action file ships a concrete plain-English example block (`**What it looks like:**`) the agent can mirror; `lint-action-prose.sh` catches future drift on every PR.
   - Shipped: 2026-05-02 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/118

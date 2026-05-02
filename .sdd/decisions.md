@@ -221,3 +221,16 @@ The feature shipped its driving rule INTO the framework: every USER-LED/AGENT-LE
 Forward-pointer lesson: when a quality concern is human-judged ("would mum understand this?"), the mechanical layer enforces a *positive concrete fact* (the example block exists), not a *heuristic proxy* (length cap, jargon denylist). The full pattern will be captured in `.sdd/patterns.md` under `### Plain-English mum-test overrides mechanical proxies` once the next feature ships and the `learn` action runs.
 
 Closes [#110](https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/110).
+
+
+## 2026-05-02T12:23:30Z  [[003-anti-theatre-lint]]  feature/mark-shipped
+
+SHIP phase complete. PR #121 admin-squash-merged to main as commit 0e96143 after 4 CodeRabbit review cycles (11 findings closed: 7 → 3 → 1 → silent APPROVED-equivalent). All cycle findings landed: comparator regex unit-optional, currency `$0` allowed, start.sh `(none)` placeholder stripping (with Python `re` POSIX-class fix), broader work-item glob in T141, lint-finding vs lint-exec-error distinction, INDEX `Active blocker` stale-line cleanup.
+
+Final state: 196/196 framework tests + 161/161 MCP tests + 15/15 task tests + 4/4 GitHub Actions checks GREEN; CodeRabbit's own status check GREEN.
+
+The feature ships its own discipline: spec.md content carrying theatre-shaped claims (numerical bounds, currency, enforcement verbs, quality absolutes) without an adjacent `{verify-by: T-NNN}` / `{best-effort: <who>}` / `{prod-only: <why>}` annotation are now MECHANICALLY refused — pre-commit hook + CI gate T141 + CLAUDE.md doctrine. Sam's most-repeated lesson, finally enforced.
+
+Forward-pointer lesson: Foundation 3 applied at the SPEC layer. Every claim either checks, admits judgement, or names live-infra. Soft prose alone isn't enough to ship a guard-shaped sentence.
+
+Closes [#111](https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/111).
