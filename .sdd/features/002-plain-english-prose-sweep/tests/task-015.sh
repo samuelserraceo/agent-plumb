@@ -11,7 +11,10 @@ LINT=".sdd/scripts/lint-action-prose.sh"
 # character-class anchors `(^|[^[:alnum:]_])` and `([^[:alnum:]_]|$)`.
 # CR cycle 3 catch.
 np_re='(^|[^[:alnum:]_])(sed -i|sed --regex|grep -P|readlink -f|test -ef)([^[:alnum:]_]|$)'
-if grep -E "$np_re" "$LINT" >/dev/null; then
+# Strip comment lines (whose first non-whitespace char is `#`) before
+# matching, so a comment in the script that mentions `sed -i` doesn't
+# false-positive. CR cycle 4 catch.
+if grep -vE '^[[:space:]]*#' "$LINT" | grep -E "$np_re" >/dev/null; then
   echo "FAIL: $LINT uses non-portable construct (sed -i / GNU-only flag)" >&2
   exit 1
 fi

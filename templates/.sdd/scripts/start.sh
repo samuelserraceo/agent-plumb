@@ -526,8 +526,29 @@ if m:
     new_index = h1 + "\n\n" + header_block + rest + ("\n" if not body.endswith("\n") else "")
 else:
     new_index = header_block + body_clean + ("\n" if not body.endswith("\n") else "")
-with open(index_path, "w", encoding="utf-8") as f:
-    f.write(new_index)
+
+# Atomic write — tempfile + os.replace in the same directory, mirroring
+# advance.sh's pattern. Prevents a partially-written INDEX.md if /start
+# is interrupted mid-write (Ctrl-C, OOM, disk full). CR cycle 4 catch.
+import os, tempfile
+index_dir = os.path.dirname(index_path) or "."
+fd, tmp_path = tempfile.mkstemp(prefix=".INDEX.md.tmp.", dir=index_dir)
+try:
+    with os.fdopen(fd, "w", encoding="utf-8") as tmpf:
+        tmpf.write(new_index)
+        tmpf.flush()
+        try:
+            os.fsync(tmpf.fileno())
+        except OSError:
+            pass  # fsync isn't critical; some filesystems refuse it
+    os.replace(tmp_path, index_path)
+except Exception:
+    # Clean up the temp file on any failure so we don't leave litter.
+    try:
+        os.unlink(tmp_path)
+    except OSError:
+        pass
+    raise
 
 # --- Plain-English success message to stdout ---
 print(f"[/start] scaffolded: {work_item_rel}")

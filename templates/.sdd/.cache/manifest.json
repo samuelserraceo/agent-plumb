@@ -44,7 +44,7 @@
       "trust": "framework"
     },
     "start.sh": {
-      "expected_sha256": "b39fe040e2c61a6052135f890159babb62b9131aa575fcc0f4c0c4265a6d5304",
+      "expected_sha256": "a50764823fab70a651273cd14392537501cdee8271c9922087accf95606aea40",
       "path": ".sdd/scripts/start.sh",
       "trust": "framework"
     },
