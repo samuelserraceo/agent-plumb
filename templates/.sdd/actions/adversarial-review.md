@@ -141,4 +141,10 @@ Reflect any new tasks in plan-decompose (with the `[BUG]` or `[REFACTOR]` tag), 
 
 ---
 
+**What it looks like:**
+
+Now I put on my paranoid hat and try to find what's wrong with what we built.
+
+Example: *"Things I'd attack: (1) what if someone sends 1000 signup requests in 10 seconds — does the form rate-limit them? (2) what if the confirmation email's link is just a numeric ID — could someone guess valid IDs and confirm random people? (3) what if the welcome page is cacheable — could a stranger see someone else's signup confirmation?"* I list the worries, then we decide which become bug fixes vs known-acceptable.
+
 **End the turn with:** `Reply approve when triage complete.`

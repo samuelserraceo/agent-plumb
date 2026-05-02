@@ -59,4 +59,10 @@ If there's no deadline, set a "first-capability" target using framework-native s
 
 ---
 
+**What it looks like:**
+
+How will you know this PROJECT (not just a feature) is succeeding?
+
+Example: *"Quarter 1: 50 indie founders use it to ship at least one feature. Quarter 2: I (Sam) ship 10 of my own features through it. Year 1: it's listed on the Anthropic plugin marketplace and has 500 active users."* Numbers + dates, even if rough.
+
 **End the turn with:** `Run /next to continue to §3 — Stakeholders.`

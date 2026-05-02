@@ -34,4 +34,15 @@ requires_user_approval: true
 
 **Output:** fill `spec.md` under `### §4 UX & Design brief` with the user's chosen options.
 
+**What it looks like:**
+
+What should this look and feel like? Pick a vibe (or describe your own):
+
+- **Calm and minimal** — lots of whitespace, like Notion or Linear
+- **Bold and bright** — playful, like Duolingo or Stripe's marketing pages
+- **Serious and businessy** — quiet, conservative, like a bank
+- **Warm and friendly** — round corners, soft colours, like Headspace
+
+I'll suggest 2-3 reference sites that match the vibe so you can point at exactly what you mean. We'll also pick: **mobile-first** (most people on phones) or **desktop-first** (most on a laptop). I'll make the primary one perfect first.
+
 **End the turn with:** *"Reply `looks good` if this works, or tell me what to change (e.g. 'tone too formal', 'mobile-first instead', 'add dark mode'). Then run `/next` to continue."*

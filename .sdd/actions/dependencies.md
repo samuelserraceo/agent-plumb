@@ -29,4 +29,10 @@ requires_user_approval: true
 
 **Output:** fill `spec.md` under `### §8 Dependencies` with one sub-section per service.
 
+**What it looks like:**
+
+What outside services do we need to pay for or sign up to?
+
+Example: *"For this feature we'll need: (1) **Resend** (~$0/mo at 200 signups/mo) — sends the welcome email, (2) **Neon Postgres** (~$0/mo at our size) — stores the signups, (3) **Cloudflare Turnstile** (free) — blocks bots from spamming the form."* I'll always show you the math: how many emails we'll send × cost per email = total. If anything's surprising you tell me and we redo it.
+
 **End the turn with:** *"Reply `looks good` if these dependencies look right, or tell me what's wrong (e.g. 'we're not using Stripe, just Lemon Squeezy', 'add Cloudflare Turnstile', 'pricing math is off — we expect 5x that volume'). Then run `/next` to continue."*

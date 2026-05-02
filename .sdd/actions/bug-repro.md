@@ -38,4 +38,10 @@ Capture an exact, deterministic sequence that reproduces the bug. Without a reli
 
 **Output:** replace the `- [ ] steps: …` step row under `### action: bug-repro` with `- [x] steps: <one-line summary>`. The numbered steps + expected vs actual go under the action heading after the step row.
 
+**What it looks like:**
+
+Let me reduce the bug to the **smallest set of steps** that triggers it.
+
+Example: *"To reproduce: (1) open https://oursite.com/signup, (2) type `not-an-email` in the email field, (3) click submit. Expected: 'please use a valid email'. Actual: 503 error page. Reliably reproduces on Chrome 120 and Safari 17."* If we can't reliably reproduce, we don't fully understand the bug yet.
+
 **End the turn with:** *"Run `/next` to capture root cause in §3."*

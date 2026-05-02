@@ -33,4 +33,10 @@ Capture exactly what code is in scope for this refactor. The narrower the scope,
 
 **Output:** fill `spec.md` under `### §1.scope` with file paths + ranges + behaviour-preserved + out-of-scope.
 
+**What it looks like:**
+
+Tell me what's getting moved or renamed, and what's NOT.
+
+Example: *"Refactoring `lib/auth.ts` → `lib/auth/{tokens,session,middleware}.ts`. NOT touching: API endpoints (they keep importing the same exported names), tests (they exercise behaviour, not file paths), public types (re-exported from the new files)."* Be specific — if a refactor touches more than one module + has more than one caller, we slow down and discuss.
+
 **End the turn with:** *"Run `/next` to capture regression coverage in §2."*

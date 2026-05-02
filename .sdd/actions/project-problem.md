@@ -61,4 +61,10 @@ Examples:
 
 ---
 
+**What it looks like:**
+
+What's the high-level problem THIS PROJECT exists to solve?
+
+Example: *"Indie founders waste 2 hours per feature writing specs that go stale 3 days later. They want to ship; their spec rots. We're building a tool that keeps the spec, the code, and the tests in lockstep so the spec is always alive and reviewable."* One paragraph. The thing that, if it didn't exist, the project would have no reason to be.
+
 **End the turn with:** `Run /next to continue to §2 — Project success.`

@@ -68,4 +68,10 @@ The first capability is what you start working on. The rest sit in INDEX.md back
 
 ---
 
+**What it looks like:**
+
+If you could only ship one thing this quarter, what would it be?
+
+Example: *"(1) **MUST** — non-technical users can run /sdd-setup and have a working SPEC walk in 30 minutes. (2) **SHOULD** — every feature ships with auto-generated tests. (3) **NICE** — Cypress + visual regression. We'd hate to lose (1) over a 'nicer' (3)."* I help you sort by what would hurt most if missing.
+
 **End the turn with:** `Reply approve when the priority + build order look right.`

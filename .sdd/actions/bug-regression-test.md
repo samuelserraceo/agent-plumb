@@ -35,4 +35,10 @@ Draft the regression test that turns "the bug is fixed" from a vibe-check into a
 
 **On approval.** Hashed into `verification.json.approved_sections.bug-regression-test`. Moat refuses commits if §5 content drifts post-approval — guards against the test being weakened during BUILD ("oh, this assertion is failing for an unrelated reason, let me just remove it").
 
+**What it looks like:**
+
+Now I write a test that proves this exact bug stays fixed forever.
+
+Example: *"`tests/regression-bug-NNN.spec.ts` — submits the form with `not-an-email`, asserts response is 400 (not 503), asserts the error message contains 'please use a valid email'. Runs on every PR going forward — if anyone reverts the fix, CI catches it the same hour."*
+
 **End the turn with:** *"Reply `approve` to lock the regression test. Then `/next` to advance to BUILD — the agent will run the test (RED), apply the §4 fix, and confirm GREEN."*

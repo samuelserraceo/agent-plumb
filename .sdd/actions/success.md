@@ -30,4 +30,10 @@ User picks one or two and gives target numbers. If they say "it works well," ask
 
 **Output:** fill `spec.md` under `### §2 Success` with one short paragraph per metric chosen — include the target number AND the current baseline if known. Capture the user's words; don't reframe.
 
+**What it looks like:**
+
+How will we know this worked? Give me a number, not a vibe.
+
+Common patterns: **volume** (signups per month), **speed** (time from landing on the page to completing checkout), **quality** (NPS score, support-ticket rate), **engagement** (people coming back next week). Pick one or two and say where we are today (the baseline) and where we want to get to (the target). Or describe your own.
+
 **End the turn with:** *"Run `/next` when you're ready to continue to §3 User stories."*

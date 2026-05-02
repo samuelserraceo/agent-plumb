@@ -61,4 +61,10 @@ User runs `/next` and starts working on the first feature.
 
 ---
 
+**What it looks like:**
+
+Of the features we listed, which one do we walk through `/start` FIRST — like, right now this session?
+
+Example: *"Pick one: 'I want to start with the email-signup form because that's the easiest to demo to friends and prove it works' or 'I want to start with the admin dashboard because nothing else is useful without it'."* Just one. We do that one start-to-ship before adding a second.
+
 **End the turn with:** `First feature is now active. Run /next to start its SPEC.`

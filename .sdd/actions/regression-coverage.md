@@ -68,4 +68,10 @@ For each gap identified in Part 1, draft a new test that covers the behaviour. T
 
 **If §1's scope already has full coverage**, this step is short: *"All §1 behaviour is covered by existing tests; no new tests needed."* — that's a valid output. Don't manufacture tests just to fill the section.
 
+**What it looks like:**
+
+Make sure I didn't accidentally break something else while building this feature.
+
+Example: *"Re-running the full existing test suite — `bash test/run-framework-test.sh`. All 194/194 still pass. The new feature didn't break the old waitlist signup flow, the admin dashboard, or anything else."* If something went red, we fix that BEFORE shipping the new feature — never bury it.
+
 **End the turn with:** *"Reply `approve` to lock the regression coverage, or tell me what's missing. Then `/next` to draft the approach in §3."*

@@ -104,6 +104,12 @@ N files changed, X insertions(+), Y deletions(-)
 
 **Output:** fill `spec.md` under `### §4.delta` with the shortstat numbers, the delta, and either "advance to BUILD" or "halt — see options 1/2/3 above".
 
+**What it looks like:**
+
+Quick check: is the diff I'm shipping the smallest one that does the job?
+
+Example: *"`git diff main...HEAD` is +120 lines / -8 lines across 4 files. I scanned it: no unrelated refactors, no whitespace-only renames, no auto-format churn. Every line traces back to an AC."* If I see noise (e.g. a 50-line whitespace re-flow) I clean it before opening the PR.
+
 **End the turn with:**
 - *On clean delta:* *"Diff is minimal (delta: $delta). Run `/next` to advance to BUILD — the agent will run the regression tests and apply the §3 approach."*
 - *On positive delta:* *"⚠️ HALT — refactor grew by $delta lines. Reply with one of: `trim` (re-open §3), `switch` (this is feature work), `override <reason>` (genuine growth, captured)."*

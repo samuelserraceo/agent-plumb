@@ -38,4 +38,10 @@ Find why the bug happens and write it as one plain-English sentence the user can
 
 **Output:** replace the `- [ ] cause: …` step row under `### action: bug-root-cause` with `- [x] cause: <the 1-3 sentences>` (or a one-line summary with the full cause prose under the action heading if the sentences are long).
 
+**What it looks like:**
+
+Why is it happening — under the hood?
+
+Example: *"The signup endpoint checks email with a regex BEFORE database connection. The 503 came from a separate retry-loop bug: when the regex throws on weird input, we accidentally retry forever and timeout. Fix is to wrap the regex check in try/catch and return a clean 400 on bad input."* I describe the cause in plain English, then propose the fix.
+
 **End the turn with:** *"Reply `confirmed` if that's the right cause, or correct it. Then `/next` to draft the fix in §4."*

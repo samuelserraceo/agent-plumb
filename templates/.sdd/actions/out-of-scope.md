@@ -36,4 +36,10 @@ Ask: *"What are we explicitly NOT building this round? Anything related to §1-3
 
 **On approval (Theme 1.6 hook).** This section gets hash-locked because it's a *commitment about what we WILL NOT do*. Silent expansion (e.g., agent adding "deferred" items mid-build) is a real attack class. Hash on approval; future edits require `/re-approve §9`.
 
+**What it looks like:**
+
+What are we explicitly **not** doing this round? It's just as important to be clear about what's left out as what's in.
+
+Example: *"For this signup feature we are NOT building: (1) social login (Google/Apple) — saves ~2 days, can add later; (2) account-deletion UI — we'll handle requests by hand for now; (3) referral codes — separate feature, parked."* 1-5 bullets is plenty. Empty is fine if everything is in.
+
 **End the turn with:** *"Reply `approve` to lock the out-of-scope list, or tell me what to add/remove."*

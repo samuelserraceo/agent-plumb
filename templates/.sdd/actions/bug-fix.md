@@ -32,4 +32,10 @@ Propose the **smallest** change that fixes the bug. Bugs aren't a refactor oppor
 
 **On approval.** Hashed into `verification.json.approved_sections.bug-fix`. The moat refuses commits where §4 content has changed without re-approval — guards against silent fix-creep during BUILD.
 
+**What it looks like:**
+
+Here's the smallest, safest change that fixes the root cause.
+
+Example: *"3 lines added to `app/api/signup/route.ts` — wrap the email regex in try/catch, return 400 with the message 'please use a valid email' on the catch. No other code touched."* Then a regression test that asserts the bad-email case returns 400 + the user-friendly message — so this exact bug can never silently come back.
+
 **End the turn with:** *"Reply `approve` to lock the fix, or tell me what to change ('smaller', 'don't touch X', 'try Y instead')."*

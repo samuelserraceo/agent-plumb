@@ -33,4 +33,10 @@ Propose the new code shape. The smallest, clearest change that achieves the refa
 
 **On approval.** Hashed into `verification.json.approved_sections.refactor-approach`. Future edits to §3 require re-approval — guards against silent shape-creep during BUILD.
 
+**What it looks like:**
+
+Here's the safest order to do this without ever leaving the codebase in a broken state.
+
+Example: *"Step 1: create the new files with copies of the relevant code (everything still imports from the old place — green). Step 2: switch imports one caller at a time (green between each). Step 3: delete the old file once nothing imports it (green). One commit per step; never bundle."* No big-bang refactors.
+
 **End the turn with:** *"Reply `approve` to lock the approach, or tell me what to change ('smaller helper', 'don't move the file', 'inline at call site instead'). Then `/next` to verify the diff is minimal in §4."*

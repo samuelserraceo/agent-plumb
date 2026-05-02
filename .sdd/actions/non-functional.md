@@ -31,4 +31,10 @@ requires_user_approval: true
 
 **Output:** fill `spec.md` under `### §10 Non-functional`.
 
+**What it looks like:**
+
+Beyond the feature itself, are there any constraints we need to respect?
+
+Example: *"This signup page must (1) load in under 2 seconds on a phone with average 4G; (2) keep the email and confirmation token off any third-party tracker; (3) work for someone using a screen reader. We don't need GDPR consent banners because we already have one site-wide."* I propose, you correct.
+
 **End the turn with:** *"Reply `looks good` if these NFRs match what you actually need, or tell me what to tighten/loosen ('faster', 'add audit log', 'we don't care about EU users yet'). Then run `/next` to continue."*

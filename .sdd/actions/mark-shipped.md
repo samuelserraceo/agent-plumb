@@ -53,4 +53,10 @@ Final SHIP action. Move the work item from `## In flight` to `## Shipped` in IND
 
 **Output:** fill `spec.md` under `### mark-shipped` with `**Shipped:** [x]`.
 
+**What it looks like:**
+
+We're done — let me record it formally.
+
+Example: *"Move the row from `## In flight` to `## Shipped` in INDEX.md (with the PR link, the date, what it depends on). Drop a `.shipped` marker in the feature folder so future sessions know not to re-read it. Append a one-line audit entry to decisions.md."* You don't have to do anything — I just confirm it's all written down.
+
 **End the turn with:** `Feature <id>-<slug> shipped. SHIP phase complete.` Optional one-line celebration. Then auto-end the session — the user typically runs `/start` for the next feature when they're ready.

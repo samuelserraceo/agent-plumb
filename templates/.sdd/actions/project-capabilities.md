@@ -69,4 +69,10 @@ You'll iterate with the agent: maybe split a capability, merge two, adjust prior
 
 ---
 
+**What it looks like:**
+
+What can the project DO at a high level — what are the verbs?
+
+Example: *"This project can: (1) take a one-line feature description and turn it into a full SPEC ceremony, (2) run BUILD test-first per task, (3) push PRs with auto-generated descriptions, (4) audit-log every approval. It cannot (yet): generate React components from wireframes, run visual-regression tests, integrate with non-GitHub forges."*
+
 **End the turn with:** `Reply approve when the capability list looks right, or describe what to adjust (split X, merge Y, drop Z, add W).`

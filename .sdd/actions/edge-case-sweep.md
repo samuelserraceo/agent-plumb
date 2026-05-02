@@ -73,6 +73,12 @@ A spec that only tests the happy path is a spec that lies — it claims the feat
 
 The candidates and the user's picks are all recorded in `spec.md` under §11.5 (the section the action's `touches` field declares). The user's `take` / `skip` / `defer` calls become part of the section's content — written into spec.md alongside the AC list — so future readers can see what was considered and what was deliberately set aside. The action does NOT separately append to `decisions.md`; that file's entries come from the standard section-approval flow when §11 itself is re-approved (see CLAUDE.md "Audit log" doctrine).
 
+**What it looks like:**
+
+Before we move from planning to building, let me think about weird cases that could break this — things you might not have thought of when describing the feature.
+
+Example: *"For the signup form: what if someone signs up with the same email twice? what if their email provider is offline when we try to send the confirmation? what if they click the confirmation link from a different browser than they signed up in? what if they paste a really long fake email like 'a' × 10000?"* I'll list maybe 8-10 of these. For each I'll mark: (a) we already cover it (which AC), (b) we should add a new check, or (c) we'll explicitly skip with a reason.
+
 **End the turn with:** *"Reply with which to take/skip/defer (e.g. `take 1,2,5; skip 3,4; defer 6`). Each `take` becomes a new AC + task. Each `skip` is dropped. Each `defer` is recorded for next iteration."*
 
 ---
