@@ -43,7 +43,7 @@ import tempfile
 from typing import Any, Dict, List, Optional, Tuple
 
 
-_CACHE_VERSION = 1
+_CACHE_VERSION = 2  # bumped (closes #105) — multi-line code-span masking changed edge-extraction semantics; v1 caches must regenerate
 
 # Files under these subdirs aren't part of the searchable graph (agent-internal,
 # template scaffolds, gitignored).

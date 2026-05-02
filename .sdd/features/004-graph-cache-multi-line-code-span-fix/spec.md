@@ -94,7 +94,7 @@ Restructure `_strip_inline_code` to operate on the FULL content (not one line at
 
 ### action: signoff-steps
 
-- [x] manual-steps: Single smoke. Build the graph against a fresh fixture file with a multi-line span containing `[[pattern:fake]]` and confirm `_graph_cache.find_node("pattern:fake")` returns None (no phantom edge).
+- [x] manual-steps: Single smoke. Build the graph against a fresh fixture file with a multi-line span containing `[[pattern:fake]]` and confirm `_graph_cache.find_node(graph, "pattern:fake")` returns None (matches the actual `find_node(graph, slug)` API signature; no phantom edge).
 
 ### action: wireframe [SKIPPED]
 
