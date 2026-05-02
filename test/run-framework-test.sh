@@ -6613,6 +6613,39 @@ else
 fi
 
 # ============================================================
+# T141 — anti-theatre lint passes on the in-flight spec (closes #111,
+#   PR #003). Theatre tokens (numerical bounds, currency, enforcement
+#   verbs, quality absolutes) without an adjacent verifier annotation
+#   are refused. The lint runs against ALL spec.md files in
+#   .sdd/features/*/spec.md and asserts NEW specs (anything past 002)
+#   pass clean. The 2 already-shipped specs (001-tier-3-llm-driven-
+#   synthesis, 002-plain-english-prose-sweep) are excluded — they were
+#   Sam-audited at their own SHIP cycle; back-fixing them is parked
+#   per #111 / 003's §9.
+# ============================================================
+note "T141: anti-theatre lint passes on in-flight spec(s)"
+new_spec_violations=0
+for spec in "$FRAMEWORK_ROOT"/.sdd/features/*/spec.md; do
+  feat=$(basename "$(dirname "$spec")")
+  case "$feat" in
+    001-tier-3-llm-driven-synthesis|002-plain-english-prose-sweep)
+      # Pre-existing; covered by their own SHIP-cycle audit. Skip.
+      continue ;;
+  esac
+  nt_out=$(bash "$FRAMEWORK_ROOT/.sdd/scripts/lint-no-theatre.sh" "$spec" 2>&1)
+  nt_ec=$?
+  if [ "$nt_ec" -ne 0 ]; then
+    new_spec_violations=$((new_spec_violations + 1))
+    note "  T141: $feat → $nt_out"
+  fi
+done
+if [ "$new_spec_violations" -eq 0 ]; then
+  ok "T141 anti-theatre lint passes on every in-flight spec"
+else
+  bad "T141 anti-theatre lint failed" "$new_spec_violations spec(s) with un-annotated theatre"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'

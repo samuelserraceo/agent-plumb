@@ -70,6 +70,8 @@ These eight rules apply across SPEC, BUILD, and SHIP. They are not configurable 
 
    **Mechanical enforcement (closes #110):** every USER-LED / AGENT-LED action file under `templates/.sdd/actions/` ships a `**What it looks like:**` block — a concrete plain-English example the agent can mirror when drafting its user-facing turn. The lint at `.sdd/scripts/lint-action-prose.sh` asserts the block exists. The PROSE QUALITY itself ("would mum understand this?") is reviewed by the user at PR-merge time — not by the lint.
 
+   **Mechanical enforcement (closes #111 — anti-theatre):** spec.md content can't ship sentences that LOOK like enforced guards but aren't. The lint at `.sdd/scripts/lint-no-theatre.sh` scans for theatre tokens (numerical bounds like `<1KB` / `≥80%`, currency like `USD` / `$0.50`, enforcement verbs like `enforces` / `guarantees`, quality absolutes like `correctly` / `always`) and refuses each match unless an adjacent annotation is present: `{verify-by: T-NNN}` (points at a test), `{best-effort: <who>}` (admits judgement-based), or `{prod-only: <why>}` (live-infra-only). Wired as the pre-commit hook `pre-commit-no-theatre.sh` + the framework-test gate T141. Foundation 3 applied at the spec layer: every claim either checks or is explicitly softened.
+
 ---
 
 **SDD explicitly gives up:**
