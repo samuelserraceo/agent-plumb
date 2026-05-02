@@ -44,7 +44,7 @@
       "trust": "framework"
     },
     "start.sh": {
-      "expected_sha256": "774f824f72cee35bf0f3030efe2bd5f0eb724c145971b74210322d063d0dc759",
+      "expected_sha256": "8a8ea23a5ccb4902a42b644d6de2934160c01dfe7fd8e2702e3ce3a56816bda0",
       "path": ".sdd/scripts/start.sh",
       "trust": "framework"
     },
@@ -157,7 +157,7 @@
       "trust": "framework"
     },
     "edge-case-sweep": {
-      "expected_sha256": "5631398140efa7c7876f6d47588ba220b2ad114c5a62e218ae4cb404df04d8e8",
+      "expected_sha256": "33d1f25404a6fcb8825e18fb6ef942734776e0c284608e67bdee7c6069940672",
       "path": ".sdd/actions/edge-case-sweep.md",
       "trust": "framework"
     },

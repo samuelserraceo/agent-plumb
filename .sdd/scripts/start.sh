@@ -507,7 +507,21 @@ else:
 if "## Shipped" not in body:
     body += "\n## Shipped\n\n"
 
-new_index = "\n".join(header_lines) + body.lstrip("\n") + ("\n" if not body.endswith("\n") else "")
+# MD041 (markdownlint): the file should start with a top-level H1
+# heading, not a metadata block. If the body already opens with
+# `# <heading>`, place the metadata block AFTER the H1 + a blank
+# line so the heading stays the first non-blank line. (CR PR #118
+# cycle 2 catch — the previous form put metadata above the H1 and
+# tripped MD041/MD022 on every fresh `/start`.)
+body_clean = body.lstrip("\n")
+header_block = "\n".join(header_lines)
+m = re.match(r"^(#\s+[^\n]+)\n", body_clean)
+if m:
+    h1 = m.group(1)
+    rest = body_clean[m.end():].lstrip("\n")
+    new_index = h1 + "\n\n" + header_block + rest + ("\n" if not body.endswith("\n") else "")
+else:
+    new_index = header_block + body_clean + ("\n" if not body.endswith("\n") else "")
 with open(index_path, "w", encoding="utf-8") as f:
     f.write(new_index)
 

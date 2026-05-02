@@ -2,7 +2,9 @@
 # spec: features/002-plain-english-prose-sweep §11.AC1 — inventory pass
 # Test: lint-action-prose.sh --inventory lists ≥10 qualifying USER-LED/AGENT-LED files
 
-set -euo pipefail
+# CR cycle 2: drop -e so the `if [ "$ec" -ne 0 ]` branch can run.
+# `-uo pipefail` keeps us strict on undefined vars + pipe failures.
+set -uo pipefail
 
 LINT=".sdd/scripts/lint-action-prose.sh"
 
@@ -19,10 +21,11 @@ if [ "$ec" -ne 0 ]; then
   exit 1
 fi
 
-# Count qualifying files — match the literal "qualifying" tag lint-action-prose.sh
-# emits, NOT just any line with the path (skip-marked entries also include the
-# path and would inflate the count). CR feedback 2026-05-02.
-count=$(echo "$out" | grep -c "qualifying" || true)
+# Count qualifying entry lines only — anchored regex that matches each
+# per-file inventory line shape `[tag=USER-LED] qualifying` or
+# `[tag=AGENT-LED] qualifying`. Excludes the `[inventory] N qualifying / M total`
+# summary line (CR cycle 2 catch).
+count=$(echo "$out" | grep -cE '\[tag=(USER-LED|AGENT-LED)\][[:space:]]+qualifying$' || true)
 
 if [ "$count" -lt 10 ]; then
   echo "FAIL: expected ≥10 qualifying USER-LED/AGENT-LED files, got $count" >&2

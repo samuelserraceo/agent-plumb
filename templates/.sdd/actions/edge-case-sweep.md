@@ -77,7 +77,7 @@ The candidates and the user's picks are all recorded in `spec.md` under §11.5 (
 
 Before we move from planning to building, let me think about weird cases that could break this — things you might not have thought of when describing the feature.
 
-Example: *"For the signup form: what if someone signs up with the same email twice? what if their email provider is offline when we try to send the confirmation? what if they click the confirmation link from a different browser than they signed up in? what if they paste a really long fake email like 'a' × 10000?"* I'll list maybe 8-10 of these. For each you reply with one of three outcomes — **`take`** (add it as a new AC + task), **`skip`** (not worth covering, drop it), or **`defer`** (real concern, but parked under "Deferred edge cases" for a later iteration).
+Example: *"For the signup form: what if someone signs up with the same email twice? Suppose their email provider is offline when we try to send the confirmation. Imagine they click the confirmation link from a different browser than the one they signed up in. Consider someone pasting a really long fake email like 'a' × 10000."* I'll list maybe 8-10 of these. For each you reply with one of three outcomes — **`take`** (add it as a new acceptance criterion (AC) + task), **`skip`** (not worth covering, drop it), or **`defer`** (real concern, but parked under "Deferred edge cases" for a later iteration).
 
 **End the turn with:** *"Reply with which to take/skip/defer (e.g. `take 1,2,5; skip 3,4; defer 6`). Each `take` becomes a new AC + task. Each `skip` is dropped. Each `defer` is recorded for next iteration."*
 

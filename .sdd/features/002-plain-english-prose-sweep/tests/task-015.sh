@@ -2,7 +2,7 @@
 # spec: features/002-plain-english-prose-sweep §11.AC15 — cross-platform sanity
 # Test: lint-action-prose.sh uses no GNU-only or BSD-only constructs.
 
-set -euo pipefail
+set -uo pipefail  # drop -e so error paths can run (CR cycle 2)
 LINT=".sdd/scripts/lint-action-prose.sh"
 
 # Check for known non-portable constructs
