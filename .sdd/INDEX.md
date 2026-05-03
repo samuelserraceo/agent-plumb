@@ -1,18 +1,25 @@
 # SDD framework — INDEX
 
-**Active:** bugs/002-safety-hook-still-blocks-framework-updates-after-138-fix
-**Playbook:** bug
-**Active blocker:** SHIP (BUILD done; T01 + T02 GREEN; 200/200 framework tests passing)
+**Active:** _(none)_
+**Playbook:** feature
+**Active blocker:** _(none — last shipped: bugs/002-safety-hook-still-blocks-framework-updates-after-138-fix on 2026-05-03)_
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
 
 ## In flight
 
-- bugs/002-safety-hook-still-blocks-framework-updates-after-138-fix — safety hook still blocks framework updates after 138 fix (PHASE: SPEC, BUILD done, SHIP in progress via PR #147)
+- (none)
 
 
 ## Shipped
+
+- **bugs/002-safety-hook-still-blocks-framework-updates-after-138-fix** — closes 3 false-positive paths in the safety hook that #138 didn't cover. Bug A: tightens the staged-manifest path regex so it doesn't match both live + template copies. Bug B: skips the per-file HEAD content check ONLY when the manifest is being repinned AND the file is staged in the same commit (closes the cross-commit attack false-positive on legitimate framework updates while still firing on real attacks). Bug D: the trust-baseline marker check defers to commit-msg whenever the message isn't readable from the cmd (no -m / -F, or stdin-backed -F -, or compound-command false-positives). Validated end-to-end by Tier 0 lego cleanup committing cleanly through the fixed hook.
+  - Shipped: 2026-05-03 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/147
+  - Data-model: (none — single-file hook fix + 3 new regression tests)
+  - Extends: bugs/001 (#138 fix); narrow follow-up surfacing the 3 sibling bugs that #138's verification didn't catch
+  - Lesson: forward-pointer to a future `[[pattern:gate-on-parsed-result-not-raw-input]]` — when an early gate decides whether a parser runs, prefer scoping the gate's regex to the same segment the parser will examine (not the raw input string). Raw-input regex false-positives on tool-prefix flags + edge cases like stdin-backed files; segment-scoped + edge-stripped regex aligns the gate with the parser's actual capabilities. Plus: when refining a guard, use existing tests (T45) to verify the refinement doesn't regress the original defence — single-condition fixes are tempting but break attack scenarios; dual-condition fixes are safer.
+  - 3 CR cycles, 6 findings closed (3 → 2 → 1 → silent). 200/200 framework tests + 31/31 claims audit + relevant MCP tests.
 
 - **bugs/001-safety-hook-blocks-legitimate-framework-updates** — moves the manifest-repin marker check from pre-commit to a new commit-msg hook so legitimate `git commit -m '[SDD] manifest: repin — ...'` from the terminal works (native git pre-commit fundamentally cannot see -m text — verified empirically). _(plain text — wiki-link form blocked by graph-cache resolver only walking `.sdd/features/`; bugs/refactors handling tracked separately)_
   - Shipped: 2026-05-03 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/144
