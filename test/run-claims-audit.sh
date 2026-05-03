@@ -701,6 +701,123 @@ claim_only_pyyaml_python_dep() {
 }
 
 # ============================================================
+# CLAIM: every framework script in templates/.sdd/scripts/ is executable
+# Source: scripts/init.sh — script-copy contract
+# Quote: "chmod +x \"$TARGET/.claude/hooks/\"*.sh 2>/dev/null || true"
+# Note: init.sh chmod's hooks at install time. The CLAIM is that the
+# templates ship with the executable bit ALREADY set so chmod is
+# defensive, not corrective. Catches the real bug where a contributor
+# adds a script without `chmod +x` and downstream users get permission
+# errors that init.sh's chmod || true silently hides.
+# ============================================================
+claim_framework_scripts_are_executable() {
+  local missing=0
+  for f in templates/.sdd/scripts/*.sh templates/.claude/hooks/*.sh templates/.claude/hooks/pre-commit; do
+    [ -f "$f" ] || continue
+    if [ ! -x "$f" ]; then
+      missing=$((missing + 1))
+    fi
+  done
+  [ "$missing" -eq 0 ]
+}
+
+# ============================================================
+# CLAIM: broken wiki-link detection fires on staged content
+# Source: templates/CLAUDE.md — Wiki-links section
+# Quote: "every `[[…]]` must resolve to a known node, or the turn ends with a violation"
+# Source 2: templates/.claude/hooks/post-stop-lint.sh — invariant 8
+# ============================================================
+claim_broken_wikilink_caught_by_lint() {
+  # Static check that invariant 8 (broken wiki-link) is wired in
+  # post-stop-lint.sh — the stop-hook runs at turn boundary and refuses
+  # the turn if a wiki-link target doesn't resolve.
+  # The full dynamic test (run hook with a fake slug) lives in T136 of
+  # run-framework-test.sh; this audit claim asserts the wiring is
+  # present so a future refactor doesn't silently remove it.
+  grep -qE 'invariant.*8|broken.*wiki-link|resolve.*\[\[' templates/.claude/hooks/post-stop-lint.sh
+}
+
+# ============================================================
+# CLAIM: every shipped feature's PR is MERGED on GitHub
+# Source: templates/CLAUDE.md — mark-shipped's catalog format
+# Quote: "Shipped: <YYYY-MM-DD> · PR: <URL>"
+# Note: a renamed/deleted PR would silently break the marketplace
+# experience — this catch fires if any PR is closed-without-merge or
+# missing. Uses `gh` CLI (already a framework dep per CLAUDE.md
+# "Framework deps: bash + python3 + PyYAML + git + gh") so the check
+# works on private repos too. Skips cleanly when gh isn't authenticated.
+# ============================================================
+claim_shipped_pr_links_merged() {
+  command -v gh >/dev/null 2>&1 || return 0  # gh missing — skip
+  # Verify gh is authed; otherwise skip rather than false-fail.
+  gh auth status >/dev/null 2>&1 || return 0
+  # Extract PR numbers from the ## Shipped section.
+  local pr_numbers
+  pr_numbers=$(python3 -c "
+import re, sys
+with open('.sdd/INDEX.md') as f:
+    text = f.read()
+m = re.search(r'## Shipped\n(.*?)(?=\n## |\Z)', text, re.DOTALL)
+if not m:
+    sys.exit(0)
+block = m.group(1)
+nums = re.findall(r'PR: https://github\.com/[^\s/]+/[^\s/]+/pull/([0-9]+)', block)
+print('\n'.join(nums))
+")
+  [ -z "$pr_numbers" ] && return 0  # no shipped rows yet — pass
+  local failed=""
+  while IFS= read -r num; do
+    [ -z "$num" ] && continue
+    local state
+    state=$(gh pr view "$num" --json state --jq '.state' 2>/dev/null) || {
+      failed="${failed}#${num} (gh view failed) "
+      continue
+    }
+    if [ "$state" != "MERGED" ]; then
+      failed="${failed}#${num} (state=$state) "
+    fi
+  done <<<"$pr_numbers"
+  if [ -n "$failed" ]; then
+    echo "Shipped PRs not in MERGED state: $failed" >&2
+    return 1
+  fi
+  return 0
+}
+
+# ============================================================
+# CLAIM: every action's `slug:` field matches its filename
+# Source: templates/.sdd/scripts/load-playbook.sh — frontmatter validator
+# Quote: "slug must equal filename without .md (config.md §1.5/§2.6)"
+# ============================================================
+claim_action_slug_matches_filename() {
+  python3 -c "
+import re, sys, os
+
+bad = []
+for fname in sorted(os.listdir('templates/.sdd/actions')):
+    if not fname.endswith('.md'):
+        continue
+    expected = fname[:-3]  # strip .md
+    p = os.path.join('templates/.sdd/actions', fname)
+    with open(p) as f:
+        text = f.read()
+    m = re.search(r'^slug:[ \t]+([a-z0-9-]+)', text, re.MULTILINE)
+    if not m:
+        bad.append(f'{fname}: no slug declared')
+        continue
+    if m.group(1) != expected:
+        bad.append(f'{fname}: slug={m.group(1)!r} (filename suggests {expected!r})')
+
+if bad:
+    print('Slug/filename mismatches:', file=sys.stderr)
+    for b in bad:
+        print(f'  - {b}', file=sys.stderr)
+    sys.exit(1)
+sys.exit(0)
+"
+}
+
+# ============================================================
 # Orchestrator
 # ============================================================
 
@@ -743,6 +860,10 @@ CLAIMS=(
   "indexmd_active_line_canonical|INDEX.md **Active:** line is canonical shape|post-stop-lint invariant"
   "three_test_harnesses_present|All three test harnesses present (framework + audit + playwright)|README.md three layers of dogfood"
   "only_pyyaml_python_dep|Only PyYAML required as Python dep at framework root|CLAUDE.md design philosophy"
+  "framework_scripts_are_executable|Every framework script ships with executable bit set|init.sh script-copy contract"
+  "broken_wikilink_caught_by_lint|Broken wiki-link detection wired in post-stop-lint|CLAUDE.md Wiki-links + invariant 8"
+  "shipped_pr_links_merged|Every shipped PR is MERGED on GitHub|mark-shipped catalog format"
+  "action_slug_matches_filename|Every action's slug matches its filename|load-playbook.sh validator"
 )
 
 for entry in "${CLAIMS[@]}"; do
