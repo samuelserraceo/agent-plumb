@@ -14,7 +14,7 @@
 
 ## Shipped
 
-- **[[bugs/001-safety-hook-blocks-legitimate-framework-updates]]** — moves the manifest-repin marker check from pre-commit to a new commit-msg hook so legitimate `git commit -m '[SDD] manifest: repin — ...'` from the terminal works (native git pre-commit fundamentally cannot see -m text — verified empirically).
+- **bugs/001-safety-hook-blocks-legitimate-framework-updates** — moves the manifest-repin marker check from pre-commit to a new commit-msg hook so legitimate `git commit -m '[SDD] manifest: repin — ...'` from the terminal works (native git pre-commit fundamentally cannot see -m text — verified empirically). _(plain text — wiki-link form blocked by graph-cache resolver only walking `.sdd/features/`; bugs/refactors handling tracked separately)_
   - Shipped: 2026-05-03 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/144
   - Data-model: (none — adds new `templates/.claude/hooks/commit-msg`, gates existing pre-commit marker block behind `git_commit_cmd` non-empty)
   - Extends: (root); narrow follow-up to #137's framework-self-hosts-hooks
