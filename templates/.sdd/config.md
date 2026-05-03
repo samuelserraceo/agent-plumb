@@ -105,6 +105,8 @@ folder_rules:
     - "package-lock.json"
     - "node_modules"
     - "tsconfig.json"
+    - "playwright.config.ts"
+    - "playwright.config.js"
     - "Makefile"
     - "Dockerfile"
     - "docs"
@@ -113,6 +115,7 @@ folder_rules:
     - "tests"
     - "templates"
     - ".github"
+    - "extensions"
 scope_guard:
   # Per-project scope-guard configuration (closes #16). The CI's scope-guard
   # job checks that newly-added UI copy strings (≥ copy_min_chars) appear in

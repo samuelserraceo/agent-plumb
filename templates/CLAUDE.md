@@ -213,6 +213,10 @@ Once the feature is identified, hand off to the right slash command:
 <project-root>/
 ├── CLAUDE.md                         ← agent discipline (this file)
 ├── README.md                         ← user-facing project README
+├── package.json                      ← Node deps (Playwright extension only) — appears once Playwright is enabled
+├── playwright.config.ts              ← Playwright config (browser tests for UI artefacts) — appears once Playwright is enabled
+├── tests/playwright/<name>.spec.ts   ← per-project browser tests (Playwright extension; opt-in via enable.sh)
+├── .github/workflows/<name>.yml      ← CI workflow files (sdd-ci.yml ships always; playwright.yml when Playwright enabled)
 ├── .sdd/                             ← FRAMEWORK HOME — everything SDD lives here
 │   ├── INDEX.md                      ← work-item catalog (Active + Shipped sections)
 │   ├── config.md                     ← project config (parameters, events, file_classes, file_rules)
