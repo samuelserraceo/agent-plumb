@@ -28,7 +28,7 @@ For each flow:
 
 **Format:**
 
-```
+```markdown
 ### Flow 1 — First-time signup (US2)
 
 1. User lands on /signup

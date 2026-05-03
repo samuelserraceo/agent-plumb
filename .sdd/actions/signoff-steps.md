@@ -30,7 +30,7 @@ Common patterns:
 
 **Format:** 1-5 bullets. Each step: one sentence, action-oriented.
 
-```
+```text
 - Sign up via the live prod URL, check email inbox for confirmation
 - Ask 1 real user to walk through the signup flow end-to-end
 - Check Cloudflare dashboard shows zero blocked-but-legit requests for 24h

@@ -31,7 +31,8 @@ If §11 already covers every §4 constraint, skip step (a) and go straight to st
 **Map ACs → tasks 1:1.** T1 → AC1, T2 → AC2, etc. Order matters: dependencies first (e.g., schema migration before form), then features.
 
 **Format:**
-```
+
+```markdown
 - [ ] T01: User form submission and email dispatch
   Test path: features/<id>/tests/task-001.mjs
   Effort: S

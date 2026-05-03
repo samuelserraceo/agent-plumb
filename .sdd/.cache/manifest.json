@@ -2,7 +2,7 @@
   "extensions": {},
   "playbooks": {
     "feature": {
-      "expected_sha256": "932048322a09eddd2254024d2ed36273e2695eded38cec7a49698cf20e207c19",
+      "expected_sha256": "111cf0ed8690da5e17ff76f204251aa236fde3e5646008388d59889cbff60b13",
       "path": ".sdd/playbooks/feature.md",
       "trust": "framework"
     },
@@ -34,27 +34,27 @@
       "trust": "framework"
     },
     "load-playbook.sh": {
-      "expected_sha256": "8ff9ee8b96954731d5132bf06ba2ca51d2153b12769f30069c8fa425d78d38be",
+      "expected_sha256": "a8b266865085ebb6c4e8ee019f19f0419f8dc544ec2a1c636a52a7d0a7db15cf",
       "path": ".sdd/scripts/load-playbook.sh",
       "trust": "framework"
     },
     "reapprove.sh": {
-      "expected_sha256": "3895b148e65dcca6c440ad904b0d332d196f0f4ba58326a0f880bfad5dbfc070",
+      "expected_sha256": "ba510f673de549638ed8eaaa2985c28f44600d0f18be794e9fc138b2c5444d9a",
       "path": ".sdd/scripts/reapprove.sh",
       "trust": "framework"
     },
     "start.sh": {
-      "expected_sha256": "795ef16a5dd8357cf543626cd4b9803cb55ecbef7169735fa416be0f11d32d7c",
+      "expected_sha256": "0de5ae55438b10f51cda9782f9f479317a7a8cfa06afd50b1dfc8abfa8fc7de8",
       "path": ".sdd/scripts/start.sh",
       "trust": "framework"
     },
     "resolve-parameters.sh": {
-      "expected_sha256": "c8c384fedd902428526414adbd9355d545a8c74ff3c793616041ad5129cdf98e",
+      "expected_sha256": "5ae0749cdad9dc9699f8b660db9444acdabe15ac845e8a0d091612c21672a04c",
       "path": ".sdd/scripts/resolve-parameters.sh",
       "trust": "framework"
     },
     "read-events.sh": {
-      "expected_sha256": "b35550dda478a092470aa323b5f00804f0b27319445c8e159ca5c84eb92fef7c",
+      "expected_sha256": "a031012ea1e06534f14f252ac723156e9a922d6d3df36c4919274a5f70f4f408",
       "path": ".sdd/scripts/read-events.sh",
       "trust": "framework"
     },
@@ -112,7 +112,7 @@
       "trust": "framework"
     },
     "adversarial-review": {
-      "expected_sha256": "b56d47a38fc4c6759cde09c3b014b2ccb6dcb4d425f9c1a7dbe632e60b88996d",
+      "expected_sha256": "73cefcfa2bcc6eaadb79316f841c3b2500b5a5103dcaef87b8c4b39094770c6b",
       "path": ".sdd/actions/adversarial-review.md",
       "trust": "framework"
     },
@@ -132,7 +132,7 @@
       "trust": "framework"
     },
     "flows": {
-      "expected_sha256": "ff770c728eb9d4759820cf125dab9036b384dd43ea4e48b80dcee34347642d08",
+      "expected_sha256": "b3d1786604f638d3536b21b65aa56a8acb8ee64eca9764e64f7232429e6e91d3",
       "path": ".sdd/actions/flows.md",
       "trust": "framework"
     },
@@ -152,7 +152,7 @@
       "trust": "framework"
     },
     "plan-decompose": {
-      "expected_sha256": "b557c6ce42093808b8401e829e7e56176cb397247b1c471ff01f46d42e6288ea",
+      "expected_sha256": "a74c502720a98e2d3bce94d9bb9e2d0e0ceb7e7ac790518f5b1a4dc81eb2d9ce",
       "path": ".sdd/actions/plan-decompose.md",
       "trust": "framework"
     },
@@ -172,7 +172,7 @@
       "trust": "framework"
     },
     "push-pr": {
-      "expected_sha256": "143e13259d09a436917ef4f580f29ddba956d679a19124a456f2473641e96f41",
+      "expected_sha256": "3ff26049931bde92365302a405cbe5e9d5c1b9b397d34aabceeec34c6c910273",
       "path": ".sdd/actions/push-pr.md",
       "trust": "framework"
     },
@@ -182,7 +182,7 @@
       "trust": "framework"
     },
     "signoff-steps": {
-      "expected_sha256": "94b421ddc4d0f4b4a07e2b9861c7997328fc18af0f6675830b2cd092e5959663",
+      "expected_sha256": "de17f3477da5439838655532f81520f6fcf8c77dedab0145187df2accfa5450c",
       "path": ".sdd/actions/signoff-steps.md",
       "trust": "framework"
     },
@@ -192,7 +192,7 @@
       "trust": "framework"
     },
     "user-stories": {
-      "expected_sha256": "d361dffb2fd03b8c262ef6d52e2eda7fa19798319ca096e02bede85e4b2e354f",
+      "expected_sha256": "c62171d7f14c41e723aab5401fb90f794ab040f9c98dd137c1b9b62e869799e1",
       "path": ".sdd/actions/user-stories.md",
       "trust": "framework"
     },
