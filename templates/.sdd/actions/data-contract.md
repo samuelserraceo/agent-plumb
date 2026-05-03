@@ -8,7 +8,7 @@ steps:
   - { id: approval, action: "draft the data contract, iterate with the user, sync data-model.md, get approval", field: "§6", triggers: [section_approved] }
 used_by: [feature]
 references: [problem, success, user-stories, proposed-approach]
-touches: [.sdd/data-model.md]
+touches: [".sdd/<work-item>/spec.md", ".sdd/data-model.md"]
 trust: framework
 budget:
   max_minutes: 30
