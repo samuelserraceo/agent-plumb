@@ -423,7 +423,7 @@ claim_196_framework_tests_pass() {
   bash test/run-framework-test.sh >"$logfile" 2>&1
   local ec=$?
   local matched=0
-  if grep -qE 'RESULTS: 19[6-9]/[0-9]+ passing' "$logfile"; then
+  if grep -qE 'RESULTS: (19[6-9]|2[0-9][0-9])/[0-9]+ passing' "$logfile"; then
     matched=1
   fi
   rm -f "$logfile"
