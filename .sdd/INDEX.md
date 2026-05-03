@@ -1,15 +1,15 @@
 # SDD framework — INDEX
 
-**Active:** _(none)_
-**Playbook:** feature
-**Active blocker:** _(none — last shipped: bugs/001-safety-hook-blocks-legitimate-framework-updates on 2026-05-03)_
+**Active:** bugs/002-safety-hook-still-blocks-framework-updates-after-138-fix
+**Playbook:** bug
+**Active blocker:** SHIP (BUILD done; T01 + T02 GREEN; 200/200 framework tests passing)
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
 
 ## In flight
 
-- (none)
+- bugs/002-safety-hook-still-blocks-framework-updates-after-138-fix — safety hook still blocks framework updates after 138 fix (PHASE: SPEC, BUILD done, SHIP in progress via PR #147)
 
 
 ## Shipped

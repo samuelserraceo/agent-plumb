@@ -2,7 +2,7 @@
 
 [PHASE: SPEC]
 
-**Active blocker:** SHIP (BUILD done; T01 GREEN; 199/199 framework tests passing)
+**Active blocker:** SHIP (BUILD done; T01 + T02 GREEN; 200/200 framework tests passing)
 
 ## PHASE: SPEC
 
@@ -74,6 +74,7 @@
   Both tests verify RED before fix and GREEN after, per the framework's mutation-verified test discipline.
 
 ### Exit checks
+
 - [x] C-spec-repro: repro steps captured in §2
 - [x] C-spec-cause: root cause captured in §3
 - [x] C-spec-fix: proposed fix recorded in §4
@@ -87,4 +88,5 @@
 - [x] T02 GREEN: T145 added. Bug D (4th bug surfaced during real-world Tier 0 validation) fixed. The native-git shim sends synthetic `{"tool_input":{"command":"git commit"}}` (non-empty but no -m / -F visible). The #138 fix gated the trust-baseline marker check behind `git_commit_cmd` truthy, but synthetic is truthy too, so legitimate terminal repins still got refused. Fix: also require a message-flag (-m / -F / --message / --file) in the cmd before running the marker check; defer to commit-msg when absent. Verified RED before fix (T145 failed with "manifest repin refused"), GREEN after. Full suite 200/200 passing.
 
 ### Exit checks (BUILD)
+
 - [x] C-build-task-green: 2/2 tasks GREEN — 200/200 framework tests passing.
