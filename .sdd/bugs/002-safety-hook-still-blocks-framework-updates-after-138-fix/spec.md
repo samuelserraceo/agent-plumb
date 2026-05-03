@@ -2,7 +2,7 @@
 
 [PHASE: SPEC]
 
-**Active blocker:** §5 (next action: bug-regression-test)
+**Active blocker:** BUILD (all SPEC sections filled; running tests-then-fix mode)
 
 ## PHASE: SPEC
 
@@ -57,10 +57,24 @@
 
 ### action: bug-regression-test
 
-- [ ] approval: draft a test that fails before the fix and passes after, get user approval
+- [x] approval: T143 (Bug A) + T144 (Bug B) in `test/run-framework-test.sh`. Approved by Sam on 2026-05-03.
+
+  **T143 — Bug A regression** (multi-manifest path)
+  - Fixture: temp project via `mkproj_v08`. Edit a tracked framework file. Recompute its fingerprint. Write the new value into BOTH `.sdd/.cache/manifest.json` AND `templates/.sdd/.cache/manifest.json`. Stage all three.
+  - Run: `pre-commit-stage-verified.sh` with synthetic stdin `{"tool_input":{"command":"git commit -m '[SDD] manifest: repin — testing'"}}`.
+  - Before fix: exit non-zero, stderr contains `cannot extract staged manifest blob from index`.
+  - After fix: exit 0, no stderr.
+
+  **T144 — Bug B regression** (HEAD content vs new fingerprint)
+  - Fixture: temp project. Edit a tracked framework file. Recompute its fingerprint. Write the new value into JUST `.sdd/.cache/manifest.json`. Stage the file edit + the live manifest update only.
+  - Run: same hook, same synthetic command with the marker.
+  - Before fix: exit non-zero, stderr contains `hash mismatch — HEAD (cross-commit attack`.
+  - After fix: exit 0, no stderr.
+
+  Both tests verify RED before fix and GREEN after, per the framework's mutation-verified test discipline.
 
 ### Exit checks
-- [ ] C-spec-repro: repro steps captured in §2
-- [ ] C-spec-cause: root cause captured in §3
-- [ ] C-spec-fix: proposed fix recorded in §4
-- [ ] C-spec-regression: regression test drafted in §5
+- [x] C-spec-repro: repro steps captured in §2
+- [x] C-spec-cause: root cause captured in §3
+- [x] C-spec-fix: proposed fix recorded in §4
+- [x] C-spec-regression: regression test drafted in §5
