@@ -8,7 +8,7 @@ steps:
   - { id: prod-walk, prompt: "For each [PROD-ONLY] AC in §11: walk through it manually post-deploy. Tick or carry forward.", field: "§verify-prod-only-acs" }
 used_by: [feature]
 references: [acceptance-criteria, signoff-steps]
-touches: []
+touches: [".sdd/<work-item>/spec.md"]
 trust: framework
 budget:
   max_minutes: 30

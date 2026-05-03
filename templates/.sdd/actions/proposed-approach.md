@@ -8,7 +8,7 @@ steps:
   - { id: approval, action: "draft the approach with 2 alternatives and tradeoffs, iterate with the user, get approval", field: "§5", triggers: [section_approved] }
 used_by: [feature]
 references: [problem, success, user-stories, ux-brief]
-touches: []
+touches: [".sdd/<work-item>/spec.md", ".sdd/<work-item>/wireframe.html"]
 trust: framework
 budget:
   max_minutes: 30

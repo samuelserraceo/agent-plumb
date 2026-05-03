@@ -8,7 +8,7 @@ steps:
   - { id: full-suite, action: "run the full test suite, mark all ACs as passing, or open a bug", field: "§verify-test-run" }
 used_by: [feature]
 references: [acceptance-criteria, plan-decompose]
-touches: []
+touches: [".sdd/<work-item>/spec.md"]
 trust: framework
 budget:
   max_minutes: 15

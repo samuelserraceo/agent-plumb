@@ -8,7 +8,7 @@ steps:
   - { id: constraints, action: "draft performance, security, and compliance constraints", field: "§10" }
 used_by: [feature]
 references: [problem, success, user-stories, proposed-approach]
-touches: []
+touches: [".sdd/<work-item>/spec.md"]
 trust: framework
 budget:
   max_minutes: 15

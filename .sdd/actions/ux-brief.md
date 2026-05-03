@@ -8,7 +8,7 @@ steps:
   - { id: brief, action: "infer the UX direction from problem, success, and user stories", field: "§4" }
 used_by: [feature]
 references: [problem, success, user-stories]
-touches: []
+touches: [".sdd/<work-item>/spec.md", ".sdd/<work-item>/wireframe.html"]
 trust: framework
 budget:
   max_minutes: 20

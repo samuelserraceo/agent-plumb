@@ -8,7 +8,7 @@ steps:
   - { id: tasks, action: "convert acceptance criteria into ordered build tasks (one test file per task)", field: "BUILD.tasks" }
 used_by: [feature]
 references: [acceptance-criteria, success, user-stories, ux-brief]
-touches: []
+touches: [".sdd/<work-item>/spec.md"]
 trust: framework
 budget:
   max_minutes: 30
