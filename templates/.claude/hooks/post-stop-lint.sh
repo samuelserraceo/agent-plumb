@@ -728,7 +728,11 @@ check_shipped_rows_have_marker() {
   local index=".sdd/INDEX.md"
   [ -f "$index" ] || return 0
   local result
-  result=$(INDEX="$index" PROJECT_DIR="$PROJECT_DIR" python3 <<'PYEOF' 2>/dev/null || true
+  # CR cycle 1 fix: drop the `2>/dev/null || true` swallow so unexpected
+  # parser exceptions emit an ERROR sentinel instead of silently
+  # disabling the check. The python block now catches exceptions
+  # explicitly and emits ERROR: lines for the bash side to surface.
+  result=$(INDEX="$index" PROJECT_DIR="$PROJECT_DIR" python3 <<'PYEOF' 2>&1
 import os, re, sys
 
 index = os.environ["INDEX"]
@@ -739,55 +743,98 @@ try:
         text = f.read()
 except OSError:
     sys.exit(0)
-
-# Find the ## Shipped section body. Stops at the next top-level
-# heading (so blocks like ## Pending production verification or
-# ## Shipped via ad-hoc PRs don't get treated as shipped rows).
-m = re.search(r"^##\s+Shipped\s*\n(.*?)(?=^##\s+|\Z)",
-              text, re.MULTILINE | re.DOTALL)
-if not m:
+except Exception as e:
+    print(f"ERROR:read-failed:{type(e).__name__}:{e}")
     sys.exit(0)
-body = m.group(1)
 
-# Two row formats both seen in INDEX.md:
-#   - **bugs/002-...** — ...   (plain-text, post-bugs/002 shape)
-#   - **[[005-...]]** — ...    (wiki-link form, older format)
-#
-# For wiki-link form, the slug resolves to a feature folder under
-# .sdd/features/. For plain-text form the path is explicit.
-plain_re = re.compile(r"^\s*-\s+\*\*([a-z][a-z0-9_-]*/[a-zA-Z0-9][a-zA-Z0-9._-]*)\*\*", re.MULTILINE)
-wiki_re  = re.compile(r"^\s*-\s+\*\*\[\[([a-zA-Z0-9][a-zA-Z0-9._-]*)\]\]\*\*", re.MULTILINE)
+try:
+    m = re.search(r"^##\s+Shipped\s*\n(.*?)(?=^##\s+|\Z)",
+                  text, re.MULTILINE | re.DOTALL)
+    if not m:
+        sys.exit(0)
+    body = m.group(1)
 
-paths_to_check = set()
-for m2 in plain_re.finditer(body):
-    paths_to_check.add(m2.group(1))
-for m2 in wiki_re.finditer(body):
-    slug = m2.group(1)
-    # Wiki-link form resolves to features/ (the historical default
-    # before bugs/refactors got their own row format).
-    paths_to_check.add(f"features/{slug}")
+    # Two row formats both seen in INDEX.md:
+    #   - **bugs/002-...** — ...   (plain-text, post-bugs/002 shape)
+    #   - **[[005-...]]** — ...    (wiki-link form, older format)
+    plain_re = re.compile(r"^\s*-\s+\*\*([a-z][a-z0-9_-]*/[a-zA-Z0-9][a-zA-Z0-9._-]*)\*\*", re.MULTILINE)
+    wiki_re  = re.compile(r"^\s*-\s+\*\*\[\[([a-zA-Z0-9][a-zA-Z0-9._-]*)\]\]\*\*", re.MULTILINE)
+    # CR cycle 1 fix #2: any bullet under ## Shipped that *looks like*
+    # a shipped row but doesn't match either format gets treated as a
+    # violation (fail closed). Otherwise a malformed row evades the
+    # marker check entirely.
+    bullet_re = re.compile(r"^\s*-\s+\*\*")
 
-missing = []
-for p in sorted(paths_to_check):
-    folder = os.path.join(project_dir, ".sdd", p)
-    marker = os.path.join(folder, ".shipped")
-    if not os.path.isfile(marker):
-        missing.append(p)
+    paths_to_check = set()
+    for m2 in plain_re.finditer(body):
+        paths_to_check.add(m2.group(1))
+    for m2 in wiki_re.finditer(body):
+        # Wiki-link form resolves to features/ (the historical default).
+        paths_to_check.add(f"features/{m2.group(1)}")
 
-if missing:
-    print("MISSING:" + ",".join(missing))
+    unparseable = []
+    for line in body.split("\n"):
+        if not bullet_re.match(line):
+            continue
+        if plain_re.match(line) or wiki_re.match(line):
+            continue
+        unparseable.append(line.strip()[:80])
+
+    missing = []
+    for p in sorted(paths_to_check):
+        folder = os.path.join(project_dir, ".sdd", p)
+        marker = os.path.join(folder, ".shipped")
+        if not os.path.isfile(marker):
+            missing.append(p)
+
+    if missing:
+        print("MISSING:" + ",".join(missing))
+    if unparseable:
+        # Pipe-separated; bash side splits on |.
+        print("UNPARSEABLE:" + "|".join(unparseable))
+except Exception as e:
+    print(f"ERROR:parse-failed:{type(e).__name__}:{e}")
+    sys.exit(0)
 PYEOF
 )
-  if [ -n "$result" ] && [[ "$result" == MISSING:* ]]; then
-    local missing_list
-    missing_list="${result#MISSING:}"
-    local pretty
-    pretty=$(echo "$missing_list" | tr ',' '\n' | sed 's|^|    .sdd/|')
-    add_violation "[stop-lint] .sdd/INDEX.md ## Shipped rows missing .shipped marker:
+  # Walk every line in $result so MISSING / UNPARSEABLE / ERROR each
+  # produce their own violation. Earlier shape only checked MISSING:*
+  # prefix and dropped UNPARSEABLE / ERROR silently.
+  if [ -n "$result" ]; then
+    while IFS= read -r line; do
+      [ -z "$line" ] && continue
+      case "$line" in
+        MISSING:*)
+          local missing_list pretty
+          missing_list="${line#MISSING:}"
+          pretty=$(echo "$missing_list" | tr ',' '\n' | sed 's|^|    .sdd/|')
+          add_violation "[stop-lint] .sdd/INDEX.md ## Shipped rows missing .shipped marker:
 $pretty
   Fix: either create the marker (touch .sdd/<path>/.shipped) if
        the work item really is shipped, or remove / move the row
        out of ## Shipped if it isn't ready yet."
+          ;;
+        UNPARSEABLE:*)
+          local unparse_list unparse_pretty
+          unparse_list="${line#UNPARSEABLE:}"
+          unparse_pretty=$(echo "$unparse_list" | tr '|' '\n' | sed 's|^|    |')
+          add_violation "[stop-lint] .sdd/INDEX.md ## Shipped has rows that don't match a known format:
+$unparse_pretty
+  Fix: shipped rows must start with one of:
+         - **<playbook>/<id>-<slug>** — ... (plain-text)
+         - **[[<id>-<slug>]]** — ...        (wiki-link form, resolves to features/)
+       This rule fails closed — any other shape could evade the
+       marker check and let a 'claimed shipped' row slip past unverified."
+          ;;
+        ERROR:*)
+          add_violation "[stop-lint] invariant 10 (Shipped marker check) raised an error:
+    ${line#ERROR:}
+  The check did not run cleanly on this turn. Treat as a hard
+  failure — fix the underlying error before assuming Shipped
+  state is consistent."
+          ;;
+      esac
+    done <<< "$result"
   fi
 }
 
