@@ -43,7 +43,7 @@ import tempfile
 from typing import Any, Dict, List, Optional, Tuple
 
 
-_CACHE_VERSION = 2  # bumped (closes #105) — multi-line code-span masking changed edge-extraction semantics; v1 caches must regenerate
+_CACHE_VERSION = 3  # bumped — node set now includes bug + refactor work-item slugs (was features-only); v2 caches must regenerate
 
 # Files under these subdirs aren't part of the searchable graph (agent-internal,
 # template scaffolds, gitignored).
@@ -133,15 +133,27 @@ def _build_nodes_and_edges(project_root: str, paths: List[str]) -> Tuple[List[Di
     edges: List[Dict[str, Any]] = []
     sdd_root = os.path.join(project_root, ".sdd")
 
-    # Collect feature folder nodes (priority 1).
-    features_root = os.path.join(sdd_root, "features")
-    if os.path.isdir(features_root):
-        for entry in sorted(os.listdir(features_root)):
-            full = os.path.join(features_root, entry)
+    # Collect work-item folder nodes (priority 1) — features, bugs,
+    # refactors. Each work-item folder is keyed by its slug; the kind
+    # tag carries which playbook produced it. v1.0 added bug + refactor
+    # playbooks alongside feature; this resolver was originally
+    # features-only and silently dropped bugs/refactors slugs (caught
+    # in INDEX.md after the first SDD-shipped bug landed — bugs/001).
+    work_item_roots = {
+        "features": "feature",
+        "bugs": "bug",
+        "refactors": "refactor",
+    }
+    for sub, kind in work_item_roots.items():
+        root = os.path.join(sdd_root, sub)
+        if not os.path.isdir(root):
+            continue
+        for entry in sorted(os.listdir(root)):
+            full = os.path.join(root, entry)
             if os.path.isdir(full) and not entry.startswith("_") and not entry.startswith("."):
                 nodes.append({
                     "slug": entry,
-                    "kind": "feature",
+                    "kind": kind,
                     "path": os.path.relpath(os.path.join(full, "spec.md"), project_root),
                     "priority": 1,
                 })
