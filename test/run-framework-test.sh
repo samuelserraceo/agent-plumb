@@ -4932,6 +4932,112 @@ else
 fi
 
 # ============================================================
+# T146 — post-stop-lint refuses ## Shipped rows that don't have a
+#        corresponding .shipped marker (invariant 10 — Wave 1 must-fix
+#        from v1.3 audit). Catches the lying-about-shipped-state drift
+#        the framework can't detect today.
+# ============================================================
+note "T146: post-stop-lint refuses ## Shipped row without .shipped marker"
+d=$(mkproj_v08)
+if ! cd "$d"; then
+  bad "T146 setup failed" "cannot cd into temp project at $d"
+else
+  mkdir -p .sdd/features/777-real-shipped .sdd/features/888-fake-shipped
+  touch .sdd/features/777-real-shipped/.shipped
+  # 888-fake-shipped intentionally has no marker
+  cat > .sdd/INDEX.md <<'IDX'
+# Project Index
+
+**Active:** _(none)_
+
+## In flight
+- (none)
+
+## Shipped
+- **features/777-real-shipped** — actually shipped
+- **features/888-fake-shipped** — claimed shipped but no marker
+IDX
+  ec=0
+  err=$(echo '{"hook_event_name":"Stop"}' | bash .claude/hooks/post-stop-lint.sh 2>&1 1>/dev/null) || ec=$?
+  cd - >/dev/null
+  rm -rf "$d"
+  # Positive control: 777-real-shipped (with marker) must NOT appear
+  # in violations. Negative control: 888-fake-shipped (no marker) must.
+  if [ "$ec" -eq 2 ] && echo "$err" | grep -q "888-fake-shipped" && ! echo "$err" | grep -q "777-real-shipped"; then
+    ok "T146 hook refused Shipped row without .shipped marker (invariant 10)"
+  else
+    bad "T146 hook missed lying-about-shipped drift" "ec=$ec; err='$err'"
+  fi
+fi
+
+# T146b — wiki-link form `[[<id>-<slug>]]` rows in ## Shipped get
+# the same treatment (resolved to features/<slug>). CR cycle 1 fix:
+# include a positive control so a buggy implementation that rejects
+# every wiki-link row would be caught.
+note "T146b: post-stop-lint applies invariant 10 to wiki-link form rows (with positive control)"
+d=$(mkproj_v08)
+if ! cd "$d"; then
+  bad "T146b setup failed" "cannot cd into temp project at $d"
+else
+  mkdir -p .sdd/features/777-wiki-real .sdd/features/999-wiki-fake
+  touch .sdd/features/777-wiki-real/.shipped
+  # 999-wiki-fake intentionally has no marker
+  cat > .sdd/INDEX.md <<'IDX'
+# Project Index
+
+**Active:** _(none)_
+
+## In flight
+- (none)
+
+## Shipped
+- **[[777-wiki-real]]** — wiki-link form, has marker (positive control)
+- **[[999-wiki-fake]]** — wiki-link form, no marker
+IDX
+  ec=0
+  err=$(echo '{"hook_event_name":"Stop"}' | bash .claude/hooks/post-stop-lint.sh 2>&1 1>/dev/null) || ec=$?
+  cd - >/dev/null
+  rm -rf "$d"
+  # Negative control: 999-wiki-fake must be reported. Positive control:
+  # 777-wiki-real must NOT be reported.
+  if [ "$ec" -eq 2 ] && echo "$err" | grep -q "999-wiki-fake" && ! echo "$err" | grep -q "777-wiki-real"; then
+    ok "T146b hook refused wiki-link Shipped row without marker (positive control passes too)"
+  else
+    bad "T146b hook missed wiki-link Shipped drift" "ec=$ec; err='$err'"
+  fi
+fi
+
+# T146c — fail-closed on unparseable shipped row format. CR cycle 1
+# fix #2: any bullet under ## Shipped that doesn't match plain-text
+# or wiki-link form must produce a violation, not silently slip past.
+note "T146c: post-stop-lint refuses unparseable ## Shipped row formats"
+d=$(mkproj_v08)
+if ! cd "$d"; then
+  bad "T146c setup failed" "cannot cd into temp project at $d"
+else
+  cat > .sdd/INDEX.md <<'IDX'
+# Project Index
+
+**Active:** _(none)_
+
+## In flight
+- (none)
+
+## Shipped
+- **garbled-no-slash-no-brackets** — neither plain-text nor wiki-link form
+IDX
+  ec=0
+  err=$(echo '{"hook_event_name":"Stop"}' | bash .claude/hooks/post-stop-lint.sh 2>&1 1>/dev/null) || ec=$?
+  cd - >/dev/null
+  rm -rf "$d"
+  if [ "$ec" -eq 2 ] && echo "$err" | grep -q "don't match a known format"; then
+    ok "T146c hook refused unparseable Shipped row format (fail-closed)"
+  else
+    bad "T146c unparseable shipped row slipped past" "ec=$ec; err='$err'"
+  fi
+fi
+
+# ============================================================
 # T119c — post-stop-lint refuses spec.md with two [PHASE: X] lines
 #         (invariant 3).
 # ============================================================

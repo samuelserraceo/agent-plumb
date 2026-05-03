@@ -13,7 +13,7 @@
 # English fix path if any drifted. Foundation 3 (never assume — always
 # check) applied at turn boundary, not just commit boundary.
 #
-# The 9 invariants checked:
+# The 10 invariants checked:
 #   1. .sdd/INDEX.md has exactly one **Active:** line
 #   2. .sdd/INDEX.md ## In flight lines all point at existing feature folders
 #   3. Active feature's spec.md has a single [PHASE: X] line
@@ -25,6 +25,9 @@
 #   8. Wiki-links [[slug]] in .sdd/ markdown all resolve to known nodes
 #      (v1.0 graph layer; opt-in via the MCP server extension)
 #   9. No NUL bytes in any tracked .sdd/ file (binary contamination)
+#  10. Every row under ## Shipped in INDEX.md has a corresponding
+#      .shipped marker file (catches "claimed shipped but not actually
+#      shipped" drift — the framework's own credibility check).
 #
 # Wires up as a Claude Code Stop hook in settings.json. Stop hooks
 # receive a JSON payload on stdin describing the session state, but
@@ -713,6 +716,129 @@ $samples
 }
 
 # ============================================================
+# Invariant 10 — every row under ## Shipped in INDEX.md has a
+# corresponding .shipped marker file in the work-item folder.
+# Catches the "claimed shipped but not actually shipped" drift —
+# the framework's own credibility check. Surfaced by the v1.3
+# audit (Wave 1 must-fix #3) which flagged that any contributor
+# could add a row in `## Shipped` without the folder having a
+# `.shipped` marker; the lie would ship.
+# ============================================================
+check_shipped_rows_have_marker() {
+  local index=".sdd/INDEX.md"
+  [ -f "$index" ] || return 0
+  local result
+  # CR cycle 1 fix: drop the `2>/dev/null || true` swallow so unexpected
+  # parser exceptions emit an ERROR sentinel instead of silently
+  # disabling the check. The python block now catches exceptions
+  # explicitly and emits ERROR: lines for the bash side to surface.
+  result=$(INDEX="$index" PROJECT_DIR="$PROJECT_DIR" python3 <<'PYEOF' 2>&1
+import os, re, sys
+
+index = os.environ["INDEX"]
+project_dir = os.environ["PROJECT_DIR"]
+
+try:
+    with open(index, encoding="utf-8") as f:
+        text = f.read()
+except OSError:
+    sys.exit(0)
+except Exception as e:
+    print(f"ERROR:read-failed:{type(e).__name__}:{e}")
+    sys.exit(0)
+
+try:
+    m = re.search(r"^##\s+Shipped\s*\n(.*?)(?=^##\s+|\Z)",
+                  text, re.MULTILINE | re.DOTALL)
+    if not m:
+        sys.exit(0)
+    body = m.group(1)
+
+    # Two row formats both seen in INDEX.md:
+    #   - **bugs/002-...** — ...   (plain-text, post-bugs/002 shape)
+    #   - **[[005-...]]** — ...    (wiki-link form, older format)
+    plain_re = re.compile(r"^\s*-\s+\*\*([a-z][a-z0-9_-]*/[a-zA-Z0-9][a-zA-Z0-9._-]*)\*\*", re.MULTILINE)
+    wiki_re  = re.compile(r"^\s*-\s+\*\*\[\[([a-zA-Z0-9][a-zA-Z0-9._-]*)\]\]\*\*", re.MULTILINE)
+    # CR cycle 1 fix #2: any bullet under ## Shipped that *looks like*
+    # a shipped row but doesn't match either format gets treated as a
+    # violation (fail closed). Otherwise a malformed row evades the
+    # marker check entirely.
+    bullet_re = re.compile(r"^\s*-\s+\*\*")
+
+    paths_to_check = set()
+    for m2 in plain_re.finditer(body):
+        paths_to_check.add(m2.group(1))
+    for m2 in wiki_re.finditer(body):
+        # Wiki-link form resolves to features/ (the historical default).
+        paths_to_check.add(f"features/{m2.group(1)}")
+
+    unparseable = []
+    for line in body.split("\n"):
+        if not bullet_re.match(line):
+            continue
+        if plain_re.match(line) or wiki_re.match(line):
+            continue
+        unparseable.append(line.strip()[:80])
+
+    missing = []
+    for p in sorted(paths_to_check):
+        folder = os.path.join(project_dir, ".sdd", p)
+        marker = os.path.join(folder, ".shipped")
+        if not os.path.isfile(marker):
+            missing.append(p)
+
+    if missing:
+        print("MISSING:" + ",".join(missing))
+    if unparseable:
+        # Pipe-separated; bash side splits on |.
+        print("UNPARSEABLE:" + "|".join(unparseable))
+except Exception as e:
+    print(f"ERROR:parse-failed:{type(e).__name__}:{e}")
+    sys.exit(0)
+PYEOF
+)
+  # Walk every line in $result so MISSING / UNPARSEABLE / ERROR each
+  # produce their own violation. Earlier shape only checked MISSING:*
+  # prefix and dropped UNPARSEABLE / ERROR silently.
+  if [ -n "$result" ]; then
+    while IFS= read -r line; do
+      [ -z "$line" ] && continue
+      case "$line" in
+        MISSING:*)
+          local missing_list pretty
+          missing_list="${line#MISSING:}"
+          pretty=$(echo "$missing_list" | tr ',' '\n' | sed 's|^|    .sdd/|')
+          add_violation "[stop-lint] .sdd/INDEX.md ## Shipped rows missing .shipped marker:
+$pretty
+  Fix: either create the marker (touch .sdd/<path>/.shipped) if
+       the work item really is shipped, or remove / move the row
+       out of ## Shipped if it isn't ready yet."
+          ;;
+        UNPARSEABLE:*)
+          local unparse_list unparse_pretty
+          unparse_list="${line#UNPARSEABLE:}"
+          unparse_pretty=$(echo "$unparse_list" | tr '|' '\n' | sed 's|^|    |')
+          add_violation "[stop-lint] .sdd/INDEX.md ## Shipped has rows that don't match a known format:
+$unparse_pretty
+  Fix: shipped rows must start with one of:
+         - **<playbook>/<id>-<slug>** — ... (plain-text)
+         - **[[<id>-<slug>]]** — ...        (wiki-link form, resolves to features/)
+       This rule fails closed — any other shape could evade the
+       marker check and let a 'claimed shipped' row slip past unverified."
+          ;;
+        ERROR:*)
+          add_violation "[stop-lint] invariant 10 (Shipped marker check) raised an error:
+    ${line#ERROR:}
+  The check did not run cleanly on this turn. Treat as a hard
+  failure — fix the underlying error before assuming Shipped
+  state is consistent."
+          ;;
+      esac
+    done <<< "$result"
+  fi
+}
+
+# ============================================================
 # Run all checks. Each adds to $violations on drift; nothing exits
 # early — we want the user to see the whole picture in one pass.
 # ============================================================
@@ -726,6 +852,7 @@ check_manifest_json
 check_ticked_rows_have_answers
 check_wiki_links_resolve
 check_no_nul_bytes
+check_shipped_rows_have_marker
 
 # Happy path: no violations → silent allow.
 [ -z "$violations" ] && exit 0
