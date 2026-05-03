@@ -3,6 +3,14 @@
 node_modules/
 /.claude/
 
+# Playwright test artefacts (closes #116). The framework dogfoods its
+# own Playwright extension on docs/walkthrough.html + Tier 3 wireframe.
+# These directories regenerate on every test run; not for committing.
+/playwright-report/
+/test-results/
+/playwright/.cache/
+
+
 # Local Obsidian vault state (templates/.obsidian/ is shipped; root .obsidian/ is per-user)
 /.obsidian/
 # Stale per-project graph cache that the test suite occasionally writes

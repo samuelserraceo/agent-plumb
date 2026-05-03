@@ -630,6 +630,8 @@ Exception: if a refactor is genuinely the step's purpose (e.g., a Phase-C rename
 - Label components, show placeholder text, mark interactive areas.
 - Iterate with the user until they say "approved". Then tick the `approved` box.
 
+**Mechanical enforcement (closes #116):** the framework dogfoods its own Playwright extension on its own walkthrough HTML + per-feature wireframes. Browser tests at `tests/playwright/*.spec.ts` and a CI workflow at `.github/workflows/playwright.yml` run on every PR — keyboard a11y (Enter/Space activate clickable elements, Escape closes modals, focus is visible), key-section presence on `docs/walkthrough.html`, and copy-paste artefact absence. Downstream projects can read `templates/.sdd/extensions/playwright/` (and `enable.sh`) to add the same coverage to their own wireframes. The framework's `playwright.config.ts` at root is a working reference.
+
 ## Hooks (enforcement layer)
 
 These run without your involvement. If a hook blocks you, fix the blocker — don't work around.
