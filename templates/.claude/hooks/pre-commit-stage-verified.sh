@@ -344,8 +344,17 @@ except Exception as e:
 # repins via the shim still got refused. With this guard, when the
 # message is unreadable (no -m / -F / --message / --file in cmd) the
 # block defers to commit-msg which DOES receive the message file path.
+#
+# CR cycle-2 refinements: scope the regex to text AFTER "git commit"
+# in the cmd, so tool-prefix flags don't false-positive on a compound
+# command (`tool -m ... && git commit ...`). Also strip `-F -` /
+# `--file -` (stdin-backed file) before matching — those are NOT
+# readable from this hook layer, so they should defer to commit-msg.
+_gc_idx = git_commit_cmd.find("git commit") if git_commit_cmd else -1
+_after_gc = git_commit_cmd[_gc_idx:] if _gc_idx >= 0 else ""
+_after_gc_no_stdin = re.sub(r"(^|\s)(-F|--file)\s+-(?=\s|$)", " ", _after_gc)
 _msg_flag_re = re.compile(r"(^|\s)(-m|-F|--message|--file)([=\s]|$)")
-_has_msg_flag = bool(_msg_flag_re.search(git_commit_cmd))
+_has_msg_flag = bool(_msg_flag_re.search(_after_gc_no_stdin))
 if staged_manifest_path and git_commit_cmd and _has_msg_flag:
     # Step 1 (PR #61 cycle-3 refactor): parse the actual commit message
     # FIRST — before any trust-baseline gate runs — so the same parsed
