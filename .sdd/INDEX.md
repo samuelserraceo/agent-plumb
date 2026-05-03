@@ -1,19 +1,25 @@
 # SDD framework — INDEX
 
-**Active:** bugs/001-safety-hook-blocks-legitimate-framework-updates
-**Playbook:** bug
-**Active blocker:** §1 (first action: bug-problem)
+**Active:** _(none)_
+**Playbook:** feature
+**Active blocker:** _(none — last shipped: bugs/001-safety-hook-blocks-legitimate-framework-updates on 2026-05-03)_
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
 
 ## In flight
-- bugs/001-safety-hook-blocks-legitimate-framework-updates — safety hook blocks legitimate framework updates (PHASE: SPEC)
 
 - (none)
 
 
 ## Shipped
+
+- **bugs/001-safety-hook-blocks-legitimate-framework-updates** — moves the manifest-repin marker check from pre-commit to a new commit-msg hook so legitimate `git commit -m '[SDD] manifest: repin — ...'` from the terminal works (native git pre-commit fundamentally cannot see -m text — verified empirically). _(plain text — wiki-link form blocked by graph-cache resolver only walking `.sdd/features/`; bugs/refactors handling tracked separately)_
+  - Shipped: 2026-05-03 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/144
+  - Data-model: (none — adds new `templates/.claude/hooks/commit-msg`, gates existing pre-commit marker block behind `git_commit_cmd` non-empty)
+  - Extends: (root); narrow follow-up to #137's framework-self-hosts-hooks
+  - Lesson: forward-pointer to a future `[[pattern:hook-stage-must-match-data-availability]]` — when a hook needs to see commit message text, it must run at commit-msg time, not pre-commit. Pre-commit is for staged-content checks; commit-msg is for message-context checks.
+  - Filed 2 sibling bugs surfaced during this fix's verification: Bug A (multi-manifest path regex breaks `git show`); Bug B (HEAD content check fires false-positive cross-commit-attack on every legitimate repin). Tracked as the in-flight bugs/002 follow-up. T142 regression test covers the commit-msg flow.
 
 - **[[005-wireframe-action-redesign]]** — v1.2 wireframe action redesign: drops `[SKIPPABLE: non-UI features]`, branches on UI vs non-UI shape with two skeleton starters (`wireframe-ui.html` + `wireframe-non-ui.html`). Non-UI features now ship a flow + architecture diagram + concrete chat/CLI examples — visualisation a non-technical reviewer can read end-to-end without reading code.
   - Shipped: 2026-05-03 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/128

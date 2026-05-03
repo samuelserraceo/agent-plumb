@@ -254,3 +254,14 @@ What landed: wireframe action prose rewritten to drop `[SKIPPABLE: non-UI featur
 The non-UI skeleton went through three accessibility hardening cycles: `.cite` spans dropped misleading `role="button"` + `tabindex="0"` (the handler was a no-op); `.step-grp` and `.arch-grp` SVG groups got proper toggle-button semantics (`aria-pressed`, peer-toggle on activation, focus styles before activation); detail panels got `aria-live="polite"` + `aria-atomic="true"` + `role="status"` so screen readers announce content swaps; XSS surface eliminated via `createElement` + `textContent` instead of `innerHTML`; null-guards added to `renderDetail(targetId, d)` so the skeleton degrades gracefully if a downstream user removes a panel.
 
 Exit checks (T140 plain-English lint + T141 anti-theatre lint + 196/196 framework + 161/161 MCP + 10/10 task tests) all GREEN on cycle 5. Foundation 3 applied at the visualisation layer: every feature ships a wireframe, no escape hatch.
+
+## 2026-05-03T16:00:00Z  [[bugs/001-safety-hook-blocks-legitimate-framework-updates]]  bug/mark-shipped
+**Phase: SHIP → SHIPPED.** Moves the manifest-repin marker check from pre-commit to a new commit-msg hook. Closes #138.
+
+What landed: `templates/.claude/hooks/commit-msg` (new — extension-less native git hook) reads the message file directly and runs the same trust-baseline diff (path-keyed comparison of staged vs HEAD manifest) the marker block used to do in pre-commit. Pre-commit's marker block now gated behind `git_commit_cmd` non-empty so it only fires on the PreToolUse path; native-git path defers to commit-msg. Defence in depth preserved: PreToolUse path gates via pre-commit (early), native-git path gates via commit-msg (correct stage). Either path eventually refuses without the marker.
+
+Verified locally: T142 (new regression test) simulates a real manifest repin and exercises the commit-msg hook with two messages — without marker → exit 1 + plain-English refusal; with marker → exit 0. mkproj_v08 fixture extended to copy the new commit-msg hook.
+
+Two sibling bugs surfaced during verification (other-session Sam paranoid-review): Bug A (multi-manifest path regex, two-line staged_manifest breaks `git show`); Bug B (HEAD content check fires cross-commit-attack false-positive on every legitimate repin because head_actual=OLD content but expected=NEW manifest hash). #138 fix doesn't close them — they're sibling issues in the same area. Tracked as bugs/002.
+
+PR #144 admin-merged 2026-05-03. CR converged after one re-run (the framework's own anti-theatre lint caught 4 theatre tokens in this very spec — fixed with `{verify-by: T142}` annotations + soften, exact dogfood the audit was built for).
