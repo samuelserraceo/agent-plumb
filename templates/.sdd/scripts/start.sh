@@ -414,8 +414,12 @@ for i, sa_slug in enumerate(sub_slugs, start=1):
                 spec_lines.append(f"- [ ] {sid}")
     else:
         # No steps declared (legacy action file) — fall back to single
-        # placeholder. Should not happen for v0.9 actions.
-        spec_lines.append("[ ]  (waiting for /next to populate)")
+        # placeholder. Should not happen for v0.9 actions. Closes #95:
+        # the placeholder MUST start with `- ` so next-action.sh's row
+        # parser still recognises it as an open step. Earlier the
+        # leading dash was missing and next-action.sh silently skipped
+        # the placeholder, leaving the action with no advance-able row.
+        spec_lines.append("- [ ] (waiting for /next to populate)")
     spec_lines.append("")
 
 # Exit checks block
