@@ -458,6 +458,249 @@ claim_161_mcp_tests_pass() {
 }
 
 # ============================================================
+# CLAIM: pre-commit-no-assumed-markers refuses (assumed) tokens
+# Source: templates/CLAUDE.md — rule 1 mechanical-enforcement (closes #72)
+# Quote: "the `pre-commit-no-assumed-markers.sh` hook scans staged spec.md content for placeholder tokens — `(assumed)`, `(TBD)`, `(?)` ... and refuses any commit that contains them"
+# ============================================================
+claim_assumed_markers_lint_refuses_paren_assumed() {
+  # Static check: the hook script contains the placeholder-token list.
+  # A direct subprocess test would need a fake git repo + staged file
+  # — too heavy for the audit's per-PR runtime. The static check
+  # asserts the regex/list is wired; the moat already runs the hook
+  # in CI via PreToolUse so dynamic enforcement is covered there.
+  grep -qE '\(assumed\)' templates/.claude/hooks/pre-commit-no-assumed-markers.sh && \
+    grep -qE '\(TBD\)' templates/.claude/hooks/pre-commit-no-assumed-markers.sh && \
+    grep -qE '<TODO>' templates/.claude/hooks/pre-commit-no-assumed-markers.sh
+}
+
+# ============================================================
+# CLAIM: every action's `tag` is from the closed enum
+# Source: templates/.claude/hooks/pre-commit-rules.sh + load-playbook.sh
+# Quote: "VALID_TAGS = {USER-LED, AGENT-LED, BUILD-TASK, BUILD-SPIKE, TRANSITION}"
+# ============================================================
+claim_every_action_tag_in_closed_enum() {
+  python3 -c "
+import re, sys, os
+VALID = {'USER-LED', 'AGENT-LED', 'BUILD-TASK', 'BUILD-SPIKE', 'TRANSITION'}
+bad = []
+for fname in sorted(os.listdir('templates/.sdd/actions')):
+    if not fname.endswith('.md'):
+        continue
+    p = os.path.join('templates/.sdd/actions', fname)
+    with open(p) as f:
+        text = f.read()
+    m = re.search(r'^tag:[ \t]+([A-Z-]+)', text, re.MULTILINE)
+    if not m:
+        bad.append(f'{fname}: no tag declared')
+        continue
+    if m.group(1) not in VALID:
+        bad.append(f'{fname}: tag={m.group(1)!r} not in closed enum')
+if bad:
+    print('Tag violations:', file=sys.stderr)
+    for b in bad:
+        print(f'  - {b}', file=sys.stderr)
+    sys.exit(1)
+sys.exit(0)
+"
+}
+
+# ============================================================
+# CLAIM: every playbook frontmatter declares stages with actions + exit_checks
+# Source: templates/CLAUDE.md — Canonical playbook section
+# Quote: "The frontmatter declares the stages (SPEC → BUILD → SHIP) and the action sequence per stage"
+# ============================================================
+claim_every_playbook_has_stages_actions_exit_checks() {
+  python3 -c "
+import re, sys, os
+try:
+    import yaml
+except ImportError:
+    print('PyYAML missing', file=sys.stderr)
+    sys.exit(1)
+
+bad = []
+for fname in sorted(os.listdir('templates/.sdd/playbooks')):
+    if not fname.endswith('.md'):
+        continue
+    p = os.path.join('templates/.sdd/playbooks', fname)
+    with open(p) as f:
+        text = f.read()
+    m = re.match(r'^---\n(.*?)\n---', text, re.DOTALL)
+    if not m:
+        bad.append(f'{fname}: no frontmatter')
+        continue
+    fm = yaml.safe_load(m.group(1)) or {}
+    stages = fm.get('stages')
+    if not isinstance(stages, list) or not stages:
+        bad.append(f'{fname}: missing stages')
+        continue
+    for s in stages:
+        if not isinstance(s, dict):
+            bad.append(f'{fname}: stage is not a dict')
+            continue
+        if 'actions' not in s:
+            bad.append(f'{fname}: stage {s.get(\"id\", \"?\")} missing actions')
+        if 'exit_checks' not in s:
+            bad.append(f'{fname}: stage {s.get(\"id\", \"?\")} missing exit_checks')
+
+if bad:
+    print('Playbook shape violations:', file=sys.stderr)
+    for b in bad:
+        print(f'  - {b}', file=sys.stderr)
+    sys.exit(1)
+sys.exit(0)
+"
+}
+
+# ============================================================
+# CLAIM: every shipped feature has .shipped marker
+# Source: templates/CLAUDE.md — "Shipped features are cold"
+# Quote: "Once a feature ships, .sdd/features/<id>/.shipped exists in its folder"
+# ============================================================
+claim_every_shipped_feature_has_marker() {
+  python3 -c "
+import re, sys, os
+
+with open('.sdd/INDEX.md') as f:
+    text = f.read()
+
+# Find the ## Shipped section (between '## Shipped' header and next '## ').
+m = re.search(r'## Shipped\n(.*?)(?=\n## |\Z)', text, re.DOTALL)
+if not m:
+    sys.exit(0)  # no shipped section yet
+shipped_block = m.group(1)
+
+# Extract feature slugs from the **[[<slug>]]** rows.
+slugs = re.findall(r'\*\*\[\[([0-9]{3}-[a-z0-9-]+)\]\]\*\*', shipped_block)
+
+missing = []
+for slug in slugs:
+    candidates = [
+        f'.sdd/features/{slug}/.shipped',
+        f'.sdd/bugs/{slug}/.shipped',
+        f'.sdd/refactors/{slug}/.shipped',
+    ]
+    if not any(os.path.isfile(c) for c in candidates):
+        missing.append(slug)
+
+if missing:
+    print('Shipped features missing .shipped marker: ' + ', '.join(missing), file=sys.stderr)
+    sys.exit(1)
+sys.exit(0)
+"
+}
+
+# ============================================================
+# CLAIM: every shipped feature row in INDEX.md has a PR link
+# Source: templates/CLAUDE.md — mark-shipped action's catalog format
+# Quote: "Shipped: <YYYY-MM-DD> · PR: <URL>"
+# ============================================================
+claim_every_shipped_row_has_pr_link() {
+  python3 -c "
+import re, sys
+
+with open('.sdd/INDEX.md') as f:
+    text = f.read()
+
+m = re.search(r'## Shipped\n(.*?)(?=\n## |\Z)', text, re.DOTALL)
+if not m:
+    sys.exit(0)
+block = m.group(1)
+
+# Each shipped entry block: starts with '- **[[<slug>]]**' line, then
+# indented sub-bullets including 'Shipped: ... · PR: <URL>'.
+entries = re.split(r'\n(?=- \*\*\[\[[0-9]{3}-)', block)
+missing_pr = []
+for e in entries:
+    e = e.strip()
+    if not e.startswith('- **[['):
+        continue
+    if 'PR:' not in e:
+        slug_m = re.search(r'\[\[([0-9]{3}-[a-z0-9-]+)\]\]', e)
+        slug = slug_m.group(1) if slug_m else '<unknown>'
+        missing_pr.append(slug)
+
+if missing_pr:
+    print('Shipped rows missing PR link: ' + ', '.join(missing_pr), file=sys.stderr)
+    sys.exit(1)
+sys.exit(0)
+"
+}
+
+# ============================================================
+# CLAIM: native git pre-commit shim is wired
+# Source: templates/.claude/hooks/pre-commit (the shim)
+# Quote: "Set `git config core.hooksPath .claude/hooks` once per project"
+# ============================================================
+claim_native_git_pre_commit_shim_wired() {
+  # Two facets to verify:
+  #   1. The shim file exists in templates (always tracked)
+  #   2. The shim is intentionally extension-less (git contract)
+  [ -f templates/.claude/hooks/pre-commit ] && \
+    [ ! -f templates/.claude/hooks/pre-commit.sh ]
+}
+
+# ============================================================
+# CLAIM: plugin manifest's keywords array is non-empty
+# Source: .claude-plugin/plugin.json — keyword surface for marketplace search
+# Quote: (implicit — marketplace listing requires searchable keywords)
+# ============================================================
+claim_plugin_manifest_has_keywords() {
+  python3 -c "
+import json, sys
+with open('.claude-plugin/plugin.json') as f:
+    m = json.load(f)
+kws = m.get('keywords', [])
+sys.exit(0 if isinstance(kws, list) and len(kws) > 0 else 1)
+"
+}
+
+# ============================================================
+# CLAIM: INDEX.md `**Active:**` line is canonical shape
+# Source: templates/.claude/hooks/post-stop-lint.sh (invariant the hook caught at #137)
+# Quote: "Expected shape: `<playbook>/<id-slug>` (e.g. `features/001-auth`). Or use the placeholder `**Active:** _(none)_`"
+# ============================================================
+claim_indexmd_active_line_canonical() {
+  local line
+  line=$(grep -E '^\*\*Active:\*\*' .sdd/INDEX.md | head -1)
+  if [ -z "$line" ]; then
+    return 1
+  fi
+  # Valid: `**Active:** _(none)_` OR `**Active:** <playbook>/<id>-<slug>`
+  echo "$line" | grep -qE '^\*\*Active:\*\* (_\(none\)_$|[a-z]+/[0-9]{3}-[a-z0-9-]+)'
+}
+
+# ============================================================
+# CLAIM: framework's three test harnesses all exist
+# Source: README.md / walkthrough.html / various PR descriptions
+# Quote: "three layers of dogfood: framework tests + claims audit + Playwright browser tests"
+# ============================================================
+claim_three_test_harnesses_present() {
+  [ -f test/run-framework-test.sh ] && \
+    [ -f test/run-claims-audit.sh ] && \
+    [ -f .github/workflows/sdd-ci.yml ] && \
+    [ -f .github/workflows/playwright.yml ]
+}
+
+# ============================================================
+# CLAIM: PyYAML is the only Python dep — installable via pip
+# Source: templates/CLAUDE.md — design philosophy
+# Quote: "Framework deps: bash + python3 + PyYAML + git + gh"
+# ============================================================
+claim_only_pyyaml_python_dep() {
+  # Check that the framework doesn't ship a requirements.txt with extra
+  # heavy deps (numpy, pandas, etc.) at the framework root. Sub-extensions
+  # like sdd-mcp-server can have their own deps — the CLAIM is about
+  # framework core.
+  if [ -f requirements.txt ]; then
+    # If it exists, only PyYAML is allowed
+    grep -vE '^[[:space:]]*$|^#|^[Pp]y[Yy][Aa][Mm][Ll]' requirements.txt | grep -q . && return 1
+  fi
+  # And python3 + PyYAML actually work
+  python3 -c 'import yaml' 2>/dev/null
+}
+
+# ============================================================
 # Orchestrator
 # ============================================================
 
@@ -490,6 +733,16 @@ CLAIMS=(
   "indexmd_wiki_links_resolve|Every wiki-link in INDEX.md resolves|CLAUDE.md Wiki-links"
   "196_framework_tests_pass|196 framework tests pass|walkthrough.html footer"
   "161_mcp_tests_pass|161 MCP unit tests pass|walkthrough.html footer"
+  "assumed_markers_lint_refuses_paren_assumed|Assumed-markers lint catches (assumed)/(TBD)/<TODO>|CLAUDE.md rule 1"
+  "every_action_tag_in_closed_enum|Every action's tag is from the closed enum|load-playbook.sh VALID_TAGS"
+  "every_playbook_has_stages_actions_exit_checks|Every playbook frontmatter has stages + actions + exit_checks|CLAUDE.md Canonical playbook"
+  "every_shipped_feature_has_marker|Every shipped feature has .shipped marker|CLAUDE.md Shipped features cold"
+  "every_shipped_row_has_pr_link|Every shipped row in INDEX.md has a PR link|mark-shipped action format"
+  "native_git_pre_commit_shim_wired|Native git pre-commit shim is wired (extension-less)|.claude/hooks/pre-commit"
+  "plugin_manifest_has_keywords|Plugin manifest declares non-empty keywords array|.claude-plugin/plugin.json"
+  "indexmd_active_line_canonical|INDEX.md **Active:** line is canonical shape|post-stop-lint invariant"
+  "three_test_harnesses_present|All three test harnesses present (framework + audit + playwright)|README.md three layers of dogfood"
+  "only_pyyaml_python_dep|Only PyYAML required as Python dep at framework root|CLAUDE.md design philosophy"
 )
 
 for entry in "${CLAIMS[@]}"; do
