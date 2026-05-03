@@ -41,6 +41,10 @@
           {
             "type": "command",
             "command": ".claude/hooks/pre-commit-no-assumed-markers.sh"
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/pre-commit-no-theatre.sh"
           }
         ]
       }

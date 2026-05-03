@@ -4742,32 +4742,60 @@ fi
 # flagged the collision.
 # ============================================================
 note "T120: framework's root .sdd/ stays in sync with templates/.sdd/"
-if [ -d "$FRAMEWORK_ROOT/.sdd/playbooks" ] && [ -d "$FRAMEWORK_ROOT/.sdd/actions" ] && [ -d "$FRAMEWORK_ROOT/.sdd/scripts" ]; then
+# Closes #95: scan whichever subdirs DO exist in root .sdd/, instead of
+# requiring all 3 (playbooks + actions + scripts) before the test runs.
+# Earlier behaviour silently skipped partially-bootstrapped repos. Now:
+# walks the per-subdir intersection of (templates has it) AND
+# (either templates OR root has it), so partial bootstraps still surface
+# real drift. Only when NONE of the 3 root subdirs exist do we skip
+# (still assumes the contributor never ran init.sh).
+if [ -d "$FRAMEWORK_ROOT/.sdd/playbooks" ] || [ -d "$FRAMEWORK_ROOT/.sdd/actions" ] || [ -d "$FRAMEWORK_ROOT/.sdd/scripts" ]; then
   drift=""
   for sub in playbooks actions scripts; do
-    while IFS= read -r tpl_file; do
-      [ -z "$tpl_file" ] && continue
-      rel="${tpl_file#$FRAMEWORK_ROOT/templates/.sdd/$sub/}"
-      root_file="$FRAMEWORK_ROOT/.sdd/$sub/$rel"
-      if [ ! -f "$root_file" ]; then
-        drift="${drift}MISSING: .sdd/$sub/$rel
+    tpl_dir="$FRAMEWORK_ROOT/templates/.sdd/$sub"
+    root_dir="$FRAMEWORK_ROOT/.sdd/$sub"
+
+    # Forward scan: every templates/ file must exist + match in root/.
+    if [ -d "$tpl_dir" ]; then
+      while IFS= read -r tpl_file; do
+        [ -z "$tpl_file" ] && continue
+        rel="${tpl_file#$tpl_dir/}"
+        root_file="$root_dir/$rel"
+        if [ ! -f "$root_file" ]; then
+          drift="${drift}MISSING: .sdd/$sub/$rel
 "
-        continue
-      fi
-      if ! diff -q "$tpl_file" "$root_file" >/dev/null 2>&1; then
-        drift="${drift}DIFF: .sdd/$sub/$rel
+          continue
+        fi
+        if ! diff -q "$tpl_file" "$root_file" >/dev/null 2>&1; then
+          drift="${drift}DIFF: .sdd/$sub/$rel
 "
-      fi
-    done < <(find "$FRAMEWORK_ROOT/templates/.sdd/$sub" -type f \( -name '*.md' -o -name '*.sh' \) 2>/dev/null)
+        fi
+      done < <(find "$tpl_dir" -type f \( -name '*.md' -o -name '*.sh' \) 2>/dev/null)
+    fi
+
+    # Reverse scan: every root/ file must exist in templates/. Catches
+    # drift the other direction — orphan files in root .sdd/ that have
+    # no source in templates/.sdd/. Closes #95: bidirectional T118.
+    if [ -d "$root_dir" ]; then
+      while IFS= read -r root_file; do
+        [ -z "$root_file" ] && continue
+        rel="${root_file#$root_dir/}"
+        tpl_file="$tpl_dir/$rel"
+        if [ ! -f "$tpl_file" ]; then
+          drift="${drift}EXTRA: .sdd/$sub/$rel (no source in templates/.sdd/$sub/)
+"
+        fi
+      done < <(find "$root_dir" -type f \( -name '*.md' -o -name '*.sh' \) 2>/dev/null)
+    fi
   done
   if [ -z "$drift" ]; then
-    ok "T120 root .sdd/ stays in sync with templates/.sdd/ (playbooks + actions + scripts)"
+    ok "T120 root .sdd/ stays in sync with templates/.sdd/ (bidirectional: missing + diff + extra)"
   else
     bad "T120 framework self-host drift detected" "$drift"
   fi
 else
-  # Self-host hasn't bootstrapped yet (fresh contributor clone before
-  # init.sh has been run) — skip cleanly so this doesn't false-fail.
+  # No subdirs exist in root .sdd/ at all — fresh contributor clone
+  # before init.sh has been run. Skip cleanly so this doesn't false-fail.
   ok "T120 root .sdd/ not bootstrapped yet — skipping (run scripts/init.sh to enable)"
 fi
 
