@@ -8,7 +8,7 @@ steps:
   - { id: deps, action: "draft external services + pricing math scaled to success-volume targets", field: "§8" }
 used_by: [feature]
 references: [success, proposed-approach]
-touches: []
+touches: [".sdd/<work-item>/spec.md"]
 trust: framework
 budget:
   max_minutes: 15

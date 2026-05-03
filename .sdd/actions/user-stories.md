@@ -8,7 +8,7 @@ steps:
   - { id: stories, prompt: "Which personas matter? For each: 'As <persona>, I want <action>, so that <outcome>.' 1-5 stories total.", field: "§3.stories" }
 used_by: [feature]
 references: [problem, success]
-touches: []
+touches: [".sdd/<work-item>/spec.md"]
 trust: framework
 budget:
   max_minutes: 5

@@ -6,9 +6,9 @@ title: "verify-ci-green"
 short_label: "CI green"
 steps:
   - { id: poll-ci, action: "poll PR CI until green; if red, open a bug", field: "§verify-ci-green" }
-used_by: [feature]
+used_by: [feature, bug, refactor]
 references: [push-pr]
-touches: []
+touches: [".sdd/<work-item>/spec.md"]
 trust: framework
 budget:
   max_minutes: 15

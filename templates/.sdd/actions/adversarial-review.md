@@ -8,7 +8,7 @@ steps:
   - { id: ar-findings, action: draft, field: "§13.findings" }
   - { id: ar-triage, action: ask, field: "§13.triage" }
 used_by: [feature]
-references: [verify-test-run, learn]
+references: [verify-test-run]
 touches: [".sdd/<work-item>/spec.md", ".sdd/<work-item>/wireframe.html"]
 trust: framework
 budget:

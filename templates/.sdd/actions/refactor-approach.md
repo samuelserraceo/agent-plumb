@@ -8,7 +8,7 @@ steps:
   - { id: approval, action: "draft the proposed new code shape (helper signature, file moves, call-site list), get user approval", field: "§3", triggers: [section_approved] }
 used_by: [refactor]
 references: [refactor-scope, regression-coverage]
-touches: []
+touches: [".sdd/<work-item>/spec.md"]
 trust: framework
 budget:
   max_minutes: 30

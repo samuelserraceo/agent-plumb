@@ -8,7 +8,7 @@ steps:
   - { id: approval, action: "draft the minimal-diff fix, name files touched, get user approval", field: "§4", triggers: [section_approved] }
 used_by: [bug]
 references: [bug-problem, bug-repro, bug-root-cause]
-touches: []
+touches: [".sdd/<work-item>/spec.md"]
 trust: framework
 budget:
   max_minutes: 30

@@ -8,7 +8,7 @@ steps:
   - { id: approval, action: "draft a test that fails before the fix and passes after, get user approval", field: "§5", triggers: [section_approved] }
 used_by: [bug]
 references: [bug-repro, bug-root-cause, bug-fix]
-touches: []
+touches: [".sdd/<work-item>/spec.md"]
 trust: framework
 budget:
   max_minutes: 20

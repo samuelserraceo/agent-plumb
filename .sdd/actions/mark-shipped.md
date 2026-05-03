@@ -6,7 +6,7 @@ title: "mark-shipped"
 short_label: "Shipped"
 steps:
   - { id: mark, action: "write the .shipped marker and update INDEX.md's Shipped block", field: ".shipped", triggers: [ship_complete] }
-used_by: [feature]
+used_by: [feature, bug, refactor]
 references: [push-pr, verify-ci-green]
 touches: [".sdd/INDEX.md", ".sdd/<work-item>/.shipped"]
 trust: framework

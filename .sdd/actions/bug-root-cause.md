@@ -8,7 +8,7 @@ steps:
   - { id: cause, action: "investigate the repro, propose a one-line root cause in plain English, get user confirmation", field: "§3.cause" }
 used_by: [bug]
 references: [bug-problem, bug-repro]
-touches: []
+touches: [".sdd/<work-item>/spec.md"]
 trust: framework
 budget:
   max_minutes: 30

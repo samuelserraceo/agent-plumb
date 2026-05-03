@@ -8,7 +8,7 @@ steps:
   - { id: manual-steps, prompt: "What manual smoke tests do YOU need to do before SHIP, beyond the automated tests? 1-5 bullets.", field: "§12.manual-steps" }
 used_by: [feature]
 references: [success, acceptance-criteria]
-touches: []
+touches: [".sdd/<work-item>/spec.md"]
 trust: framework
 budget:
   max_minutes: 5
