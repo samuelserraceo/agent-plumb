@@ -2,7 +2,7 @@
 
 [PHASE: SPEC]
 
-**Active blocker:** BUILD (all SPEC sections filled; running tests-then-fix mode)
+**Active blocker:** SHIP (BUILD done; T01 GREEN; 199/199 framework tests passing)
 
 ## PHASE: SPEC
 
@@ -78,3 +78,12 @@
 - [x] C-spec-cause: root cause captured in §3
 - [x] C-spec-fix: proposed fix recorded in §4
 - [x] C-spec-regression: regression test drafted in §5
+
+## PHASE: BUILD
+
+### Build tasks (1 total · run mode: tests-then-fix)
+
+- [x] T01 GREEN: T143 + T144 land in `test/run-framework-test.sh`; Bug A regex tightening + Bug B staged-files guard applied to `templates/.claude/hooks/pre-commit-stage-verified.sh`; mirror copied to `.claude/hooks/`. Verified RED before the fix (both new tests failed on the original hook with their expected error strings), then GREEN after — full suite 199/199 passing, including T45 cross-commit attack defence still firing on the genuine-attack scenario.
+
+### Exit checks (BUILD)
+- [x] C-build-task-green: 1/1 task GREEN — 199/199 framework tests passing.
