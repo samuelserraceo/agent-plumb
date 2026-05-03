@@ -2051,16 +2051,24 @@ else
 **How to apply:** UTC for storage; local-zone conversion at the UI layer only.
 **Adopted:** 2026-05-03
 PRIN
+  cat > .sdd/patterns.md <<'PAT'
+# Patterns
+PAT
   out=$(bash "$FRAMEWORK_ROOT/templates/.claude/hooks/user-prompt-submit.sh" 2>&1)
   ec=$?
   cd - >/dev/null
   rm -rf "$d"
+  # CR cycle 2 fix: assert ordering — principles.md before patterns.md.
+  prin_line=$(echo "$out" | grep -n "\.sdd/principles\.md ---" | head -1 | cut -d: -f1)
+  patterns_line=$(echo "$out" | grep -n "\.sdd/patterns\.md ---" | head -1 | cut -d: -f1)
   if [ "$ec" -eq 0 ] \
      && echo "$out" | grep -q "\.sdd/principles\.md ---" \
-     && echo "$out" | grep -q "All dates stored in UTC"; then
-    ok "T149 principles.md injected per turn (header + content visible)"
+     && echo "$out" | grep -q "All dates stored in UTC" \
+     && [ -n "$prin_line" ] && [ -n "$patterns_line" ] \
+     && [ "$prin_line" -lt "$patterns_line" ]; then
+    ok "T149 principles.md injected per turn (header + content + ordering before patterns)"
   else
-    bad "T149 principles.md not auto-injected" "exit=$ec; has-header=$(echo "$out" | grep -c "principles\.md"); has-content=$(echo "$out" | grep -c 'All dates')"
+    bad "T149 principles.md not auto-injected or ordering wrong" "exit=$ec; has-header=$(echo "$out" | grep -c "principles\.md"); has-content=$(echo "$out" | grep -c 'All dates'); prin_line=$prin_line; patterns_line=$patterns_line"
   fi
 fi
 
