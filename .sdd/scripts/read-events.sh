@@ -42,12 +42,23 @@ config_path = os.path.join(proj, ".sdd", "config.md")
 events = {}
 
 if os.path.isfile(config_path):
+    # PyYAML import sits OUTSIDE the parse-try so an `ImportError`
+    # (PyYAML not installed) doesn't get reported as "frontmatter parse
+    # failure" — the user gets a clear "PyYAML missing" diagnostic
+    # instead of a misleading config-file error. Closes #95.
+    try:
+        import yaml
+    except ImportError:
+        sys.stderr.write(json.dumps({
+            "error": "PyYAML not installed — run `pip install pyyaml` "
+                     "(SDD framework dependency)"
+        }) + "\n")
+        sys.exit(1)
     try:
         with open(config_path, encoding="utf-8") as f:
             text = f.read()
         m = re.match(r'^---\n(.*?)\n---', text, re.DOTALL)
         if m:
-            import yaml
             fm = yaml.safe_load(m.group(1)) or {}
             events = fm.get("events") or {}
             # Shape guard: `events:` must be a mapping (dict). A malformed

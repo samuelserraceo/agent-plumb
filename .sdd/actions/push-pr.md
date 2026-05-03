@@ -38,10 +38,10 @@ If the check passes (the user has a real answer in stack.md `## Running services
 1. `git push -u origin <feature-branch>` — push the branch
 2. Auto-generate PR title from §1 Problem (one-line summary). Title must be plain alphanumeric + spaces — strip any backticks, quotes, or shell-meaningful characters
 3. Auto-generate PR body from §1, §2, §3, plan-decompose summary
-4. **Write the body to a tempfile** at `.sdd/features/<id>/pr-body.tmp` — never inline body content into the shell command (spec content is user-controlled, so inlining risks shell-injection / quoting breaks)
-5. `gh pr create --title "<plain-title>" --body-file .sdd/features/<id>/pr-body.tmp` (always `--body-file`, never `--body`)
+4. **Write the body to a tempfile** at `.sdd/<work-item>/pr-body.tmp` (where `<work-item>` is the actual feature folder shape `features/<id>-<slug>` / `bugs/<id>-<slug>` / `refactors/<id>-<slug>` — match the shape used by spec.md, never just `<id>`) — never inline body content into the shell command (spec content is user-controlled, so inlining risks shell-injection / quoting breaks)
+5. `gh pr create --title "<plain-title>" --body-file .sdd/<work-item>/pr-body.tmp` (always `--body-file`, never `--body`)
 6. Capture the PR URL from gh's output
-7. Delete the tempfile: `rm .sdd/features/<id>/pr-body.tmp`
+7. Delete the tempfile: `rm .sdd/<work-item>/pr-body.tmp`
 8. Tell the user the PR is open + the URL
 
 **Required PR body sections:**

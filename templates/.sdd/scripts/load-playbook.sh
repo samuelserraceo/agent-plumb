@@ -170,11 +170,27 @@ def parse_frontmatter(path, text):
 def simple_yaml_parse(text, path):
     """Minimal YAML-ish parser fallback when PyYAML isn't installed.
     Handles top-level scalars and inline lists/dicts in flow style.
-    Sufficient for the limited shapes config.md uses."""
+    Sufficient for the limited shapes config.md uses.
+
+    Block-style sequences (`- item` lines under a key) are NOT supported
+    in this fallback — install PyYAML for those. Closes #95: the
+    fallback used to silently produce an empty value for block-style
+    keys; now it warns to stderr so the failure surfaces.
+    """
     out = {}
-    for line in text.split("\n"):
+    lines = text.split("\n")
+    saw_block_seq = False
+    for i, line in enumerate(lines):
         if not line.strip() or line.lstrip().startswith("#"):
             continue
+        # Detect block-style sequence: a line that's whitespace + "- ..."
+        # following a key with empty inline value. The fallback won't
+        # capture it; emit a clear warning once per file.
+        if re.match(r"^\s+-\s+\S", line) and not saw_block_seq:
+            err(f"[simple_yaml_parse] {path}: block-style sequences "
+                f"(lines starting with '- ') are not supported in the "
+                f"PyYAML-less fallback. Install PyYAML for full parsing.")
+            saw_block_seq = True
         m = re.match(r"^([a-zA-Z_][a-zA-Z0-9_-]*)\s*:\s*(.*)$", line)
         if not m:
             continue

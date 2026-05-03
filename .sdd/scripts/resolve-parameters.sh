@@ -77,17 +77,35 @@ action = os.environ["ACTION_SLUG"]
 step   = os.environ["STEP_ID"]
 
 def read_frontmatter(path):
+    """Return the YAML frontmatter of `path` as a dict, or `{}` on a
+    missing file / missing frontmatter / parse error.
+
+    Note (closes #95): earlier versions used a single bare `except` that
+    swallowed `ImportError` (PyYAML missing) the same as a parse error
+    or a missing-file case. PyYAML is a hard framework dependency — if
+    it's not installed, fail loud rather than masquerade as "no config
+    found". The other failure modes (missing file, no `---` block,
+    malformed YAML) genuinely should fall back to an empty dict so the
+    caller can layer further sources on top.
+    """
     if not os.path.isfile(path):
         return {}
+    try:
+        import yaml
+    except ImportError:
+        sys.stderr.write(
+            "[resolve-parameters] PyYAML not installed — run "
+            "`pip install pyyaml` (SDD framework dependency)\n"
+        )
+        sys.exit(1)
     try:
         with open(path, encoding="utf-8") as f:
             t = f.read()
         m = re.match(r'^---\n(.*?)\n---', t, re.DOTALL)
         if not m:
             return {}
-        import yaml
         return yaml.safe_load(m.group(1)) or {}
-    except Exception:
+    except (yaml.YAMLError, OSError):
         return {}
 
 def deep_merge(base, overlay, source_label, provenance, prefix=""):

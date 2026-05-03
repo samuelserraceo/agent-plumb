@@ -120,7 +120,7 @@ HASH_SECTION="$PROJECT_DIR/.sdd/scripts/hash-section.sh"
 # subshell via a different mechanism.
 new_hash=$(bash "$HASH_SECTION" "$spec" "$sa_path") || hs_ec=$?
 hs_ec=${hs_ec:-0}
-if [ $hs_ec -ne 0 ] || [ -z "$new_hash" ]; then
+if [ "$hs_ec" -ne 0 ] || [ -z "$new_hash" ]; then
   echo "reapprove: hash-section.sh failed for slug '$slug' (exit $hs_ec)" >&2
   exit 1
 fi

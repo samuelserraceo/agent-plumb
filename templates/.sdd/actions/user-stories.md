@@ -5,7 +5,7 @@ tag: USER-LED
 title: "§3 User stories"
 short_label: "User stories"
 steps:
-  - { id: stories, prompt: "Which personas matter? For each: 'As <persona>, I want <action>, so that <outcome>.' 2-5 stories total.", field: "§3.stories" }
+  - { id: stories, prompt: "Which personas matter? For each: 'As <persona>, I want <action>, so that <outcome>.' 1-5 stories total.", field: "§3.stories" }
 used_by: [feature]
 references: [problem, success]
 touches: []
@@ -28,7 +28,7 @@ For each persona the user picks, ask what they want to do and why. Structure eac
 
 **Push back on scope creep.** If the user picks 6+ personas for one feature, say: *"That's a lot of personas. Which 2-3 are highest priority? The others can be a follow-up feature."*
 
-**Output:** fill `spec.md` under `### §3 User stories` with 2-5 stories, one per line, in the standard format.
+**Output:** fill `spec.md` under `### §3 User stories` with 1-5 stories, one per line, in the standard format.
 
 **What it looks like:**
 
@@ -36,6 +36,6 @@ Who's going to use this, and what do they want to do?
 
 Common types: **new visitor**, **signed-up user**, **returning customer**, **admin or operator**, **billing person**, **customer support**, or **describe your own**.
 
-For each type, fill in the blanks: *"As a `<type of person>`, I want to `<do something>`, so that `<I get the outcome I want>`."* 2 to 5 of these — no more.
+For each type, fill in the blanks: *"As a `<type of person>`, I want to `<do something>`, so that `<I get the outcome I want>`."* 1 to 5 of these — one is fine for tightly-scoped features.
 
 **End the turn with:** *"Run `/next` when ready to continue to §4 UX & Design brief."*

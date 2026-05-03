@@ -25,9 +25,12 @@ fi
 # framework's own work-items. Existing root-level files (like
 # decisions.md from the framework's own history) are preserved by
 # copy_if_absent.
-SELF_HOST=0
+#
+# Closes #95: previously assigned to a `SELF_HOST` variable that was
+# then never read. The mode is purely informational at install time —
+# branching has nothing to gate on, so just print the notice when the
+# condition holds.
 if [ "$TARGET" = "$REPO_ROOT" ] && [ -d "$TEMPLATES/.sdd" ]; then
-  SELF_HOST=1
   echo "  (self-host mode: framework repo is its own consumer)"
 fi
 
