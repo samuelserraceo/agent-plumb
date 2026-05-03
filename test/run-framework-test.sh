@@ -1940,6 +1940,139 @@ else
 fi
 
 # ============================================================
+# T147 — user-prompt-submit auto-injects .sdd/stack.md when present.
+#        Wave 2 #1 (v1.3 audit follow-up): the AI was supposed to read
+#        stack.md on session start per CLAUDE.md, but session-start is
+#        unreliable; inject every turn instead so the AI doesn't propose
+#        services that contradict the project's stack.
+# ============================================================
+note "T147: user-prompt-submit injects .sdd/stack.md when present"
+d=$(mkproj_v08)
+if ! cd "$d"; then
+  bad "T147 setup failed" "cannot cd into temp project at $d"
+else
+  echo '**Active:** _(none)_' > .sdd/INDEX.md
+  cat > .sdd/stack.md <<'STK'
+## Stack
+
+- Database: Supabase (Postgres-compatible)
+- Hosting: Vercel
+- Email: Resend
+STK
+  cat > .sdd/patterns.md <<'PAT'
+# Patterns
+PAT
+  out=$(bash "$FRAMEWORK_ROOT/templates/.claude/hooks/user-prompt-submit.sh" 2>&1)
+  ec=$?
+  cd - >/dev/null
+  rm -rf "$d"
+  # CR cycle 1 fix: assert ordering — stack.md header appears BEFORE
+  # patterns.md header. The ordering matters because the AI reads
+  # injected context top-down; patterns.md should come last so it
+  # doesn't push earlier (more authoritative) context out of view
+  # when truncation kicks in.
+  stack_line=$(echo "$out" | grep -n "\.sdd/stack\.md ---" | head -1 | cut -d: -f1)
+  patterns_line=$(echo "$out" | grep -n "\.sdd/patterns\.md ---" | head -1 | cut -d: -f1)
+  if [ "$ec" -eq 0 ] \
+     && echo "$out" | grep -q "\.sdd/stack\.md ---" \
+     && echo "$out" | grep -q "Supabase" \
+     && [ -n "$stack_line" ] && [ -n "$patterns_line" ] \
+     && [ "$stack_line" -lt "$patterns_line" ]; then
+    ok "T147 stack.md injected per turn (header + content + ordering before patterns)"
+  else
+    bad "T147 stack.md not auto-injected or ordering wrong" "exit=$ec; has-header=$(echo "$out" | grep -c "stack\.md"); has-content=$(echo "$out" | grep -c Supabase); stack_line=$stack_line; patterns_line=$patterns_line"
+  fi
+fi
+
+# ============================================================
+# T148 — user-prompt-submit auto-injects .sdd/data-model.md when present.
+#        Wave 2 #2 (v1.3 audit follow-up): the AI was supposed to read
+#        data-model.md on demand, but discoverability was poor. Inject
+#        every turn so the AI doesn't duplicate entity definitions or
+#        invent entity names that already exist.
+# ============================================================
+note "T148: user-prompt-submit injects .sdd/data-model.md when present"
+d=$(mkproj_v08)
+if ! cd "$d"; then
+  bad "T148 setup failed" "cannot cd into temp project at $d"
+else
+  echo '**Active:** _(none)_' > .sdd/INDEX.md
+  cat > .sdd/data-model.md <<'DM'
+# Data model
+
+## User
+- id: uuid
+- email: citext (unique)
+
+## Subscription
+- id: uuid
+- user_id: → User
+- tier: text (free | pro)
+DM
+  cat > .sdd/patterns.md <<'PAT'
+# Patterns
+PAT
+  out=$(bash "$FRAMEWORK_ROOT/templates/.claude/hooks/user-prompt-submit.sh" 2>&1)
+  ec=$?
+  cd - >/dev/null
+  rm -rf "$d"
+  # CR cycle 1 fix: assert ordering — data-model.md before patterns.md.
+  dm_line=$(echo "$out" | grep -n "\.sdd/data-model\.md ---" | head -1 | cut -d: -f1)
+  patterns_line=$(echo "$out" | grep -n "\.sdd/patterns\.md ---" | head -1 | cut -d: -f1)
+  if [ "$ec" -eq 0 ] \
+     && echo "$out" | grep -q "\.sdd/data-model\.md ---" \
+     && echo "$out" | grep -q "Subscription" \
+     && [ -n "$dm_line" ] && [ -n "$patterns_line" ] \
+     && [ "$dm_line" -lt "$patterns_line" ]; then
+    ok "T148 data-model.md injected per turn (header + content + ordering before patterns)"
+  else
+    bad "T148 data-model.md not auto-injected or ordering wrong" "exit=$ec; has-header=$(echo "$out" | grep -c "data-model\.md"); has-content=$(echo "$out" | grep -c Subscription); dm_line=$dm_line; patterns_line=$patterns_line"
+  fi
+fi
+
+# ============================================================
+# T149 — user-prompt-submit auto-injects .sdd/principles.md when present.
+#        Wave 2 #3 (v1.3 audit follow-up): adds an ADR-style layer for
+#        project-wide non-negotiable rules. The AI reads them on every
+#        turn so design decisions don't drift from the principles.
+# ============================================================
+note "T149: user-prompt-submit injects .sdd/principles.md when present"
+d=$(mkproj_v08)
+if ! cd "$d"; then
+  bad "T149 setup failed" "cannot cd into temp project at $d"
+else
+  echo '**Active:** _(none)_' > .sdd/INDEX.md
+  cat > .sdd/principles.md <<'PRIN'
+# Principles
+
+## All dates stored in UTC
+
+**Why:** consistency across services and timezones.
+**How to apply:** UTC for storage; local-zone conversion at the UI layer only.
+**Adopted:** 2026-05-03
+PRIN
+  cat > .sdd/patterns.md <<'PAT'
+# Patterns
+PAT
+  out=$(bash "$FRAMEWORK_ROOT/templates/.claude/hooks/user-prompt-submit.sh" 2>&1)
+  ec=$?
+  cd - >/dev/null
+  rm -rf "$d"
+  # CR cycle 2 fix: assert ordering — principles.md before patterns.md.
+  prin_line=$(echo "$out" | grep -n "\.sdd/principles\.md ---" | head -1 | cut -d: -f1)
+  patterns_line=$(echo "$out" | grep -n "\.sdd/patterns\.md ---" | head -1 | cut -d: -f1)
+  if [ "$ec" -eq 0 ] \
+     && echo "$out" | grep -q "\.sdd/principles\.md ---" \
+     && echo "$out" | grep -q "All dates stored in UTC" \
+     && [ -n "$prin_line" ] && [ -n "$patterns_line" ] \
+     && [ "$prin_line" -lt "$patterns_line" ]; then
+    ok "T149 principles.md injected per turn (header + content + ordering before patterns)"
+  else
+    bad "T149 principles.md not auto-injected or ordering wrong" "exit=$ec; has-header=$(echo "$out" | grep -c "principles\.md"); has-content=$(echo "$out" | grep -c 'All dates'); prin_line=$prin_line; patterns_line=$patterns_line"
+  fi
+fi
+
+# ============================================================
 # T59 — advance.sh appends to .sdd/metrics.md (Theme 12 — token instrumentation)
 #   RED: advance.sh updates INDEX.md but never logs the iteration. Sam can't
 #        answer "is this framework earning its keep?" with data.

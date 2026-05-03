@@ -96,6 +96,39 @@ emit_state() {
     echo ""
   fi
 
+  # bugs/002 follow-up (Wave 2 #3): inject principles.md per turn so the
+  # AI sees project-wide non-negotiables (e.g. "all dates UTC", "never
+  # store secrets in code") on every action and doesn't drift away from
+  # them in proposed approaches. ADR-style layer.
+  if [ -f .sdd/principles.md ]; then
+    echo "--- .sdd/principles.md ---"
+    cat .sdd/principles.md
+    echo ""
+  fi
+
+  # bugs/002 follow-up (Wave 2 #1): inject stack.md per turn so the AI
+  # stops proposing services that contradict what the project already
+  # uses. Reading stack.md was previously documented in CLAUDE.md as a
+  # session-start step, but session-start is unreliable — auto-injecting
+  # it on every turn closes the gap.
+  if [ -f .sdd/stack.md ]; then
+    echo "--- .sdd/stack.md ---"
+    cat .sdd/stack.md
+    echo ""
+  fi
+
+  # bugs/002 follow-up (Wave 2 #2): inject data-model.md per turn so the
+  # AI sees the project's entities/fields and stops duplicating schema
+  # definitions or inventing entity names. Same reason as stack.md:
+  # CLAUDE.md said "read on session start" but session-start is
+  # unreliable. The truncation logic below caps total injected size, so
+  # an oversized data-model.md falls off rather than blowing the budget.
+  if [ -f .sdd/data-model.md ]; then
+    echo "--- .sdd/data-model.md ---"
+    cat .sdd/data-model.md
+    echo ""
+  fi
+
   if [ -f .sdd/patterns.md ]; then
     echo "--- .sdd/patterns.md ---"
     cat .sdd/patterns.md
@@ -131,7 +164,8 @@ if [ "$size" -gt "$SDD_INJECTION_CAP_CHARS" ]; then
   printf '\n'
   printf '[TRUNCATED — Theme 11 grain budget: emitted %d of %d chars '\
 '(~%dK of ~%dK tokens). Full state at .sdd/INDEX.md, the active spec.md '\
-'(see Active line above), and .sdd/patterns.md. Re-read explicitly if '\
+'(see Active line above), .sdd/principles.md, .sdd/stack.md, '\
+'.sdd/data-model.md, and .sdd/patterns.md. Re-read explicitly if '\
 'you need detail beyond the truncated context.]\n' \
     "$SDD_INJECTION_CAP_CHARS" "$size" \
     "$((SDD_INJECTION_CAP_CHARS / 4000))" "$((size / 4000))"
