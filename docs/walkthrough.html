@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>SDD v1.0.0 — what shipped, what's next, can it be reviewed</title>
+<title>SDD — v1.0 graph layer + v1.1 Tier 3 chat + v1.2 quality lints (live)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
   :root {
@@ -20,11 +20,11 @@
   .mono { font-family: "SF Mono", Monaco, Consolas, "Liberation Mono", monospace; }
   .pill { display:inline-flex; align-items:center; gap:6px; padding:2px 10px; border-radius:999px; font-size:11px; font-weight:600; line-height:1.6; }
   .pill-v10 { background: var(--green-bg); color: var(--green); border:1px solid #86efac; }
-  .pill-v11 { background: var(--violet-bg); color: var(--violet); border:1px solid #c4b5fd; border-style: dashed; }
+  .pill-v11 { background: var(--violet-bg); color: var(--violet); border:1px solid #c4b5fd; }
   .pill-soft { background: #f5f5f4; color: var(--ink-2); border:1px solid var(--line); }
   .card { background:#fff; border:1px solid var(--line); border-radius:12px; transition: box-shadow .18s ease, transform .18s ease; }
   .card:hover { box-shadow: 0 4px 18px -8px rgba(0,0,0,.12); }
-  .card-v11 { border-style: dashed; border-color: #c4b5fd; background: linear-gradient(to bottom, #fff, #fbf9ff); }
+  .card-v11 { border-color: #c4b5fd; background: linear-gradient(to bottom, #fff, #fbf9ff); }
   .code { background: #1c1917; color: #fafaf9; padding: 14px 18px; border-radius: 8px; overflow-x:auto; font-size: 12.5px; line-height: 1.65; }
   .code .k { color: #fbbf24; } .code .v { color: #a7f3d0; } .code .c { color: #78716c; font-style: italic; } .code .s { color: #f9a8d4; }
   .codeblock-light { background:#f5f5f4; border:1px solid var(--line); padding: 12px 16px; border-radius: 8px; overflow-x:auto; font-size: 12.5px; line-height: 1.6; color: var(--ink-2); }
@@ -88,14 +88,14 @@
   <div class="max-w-6xl mx-auto px-6 py-3 flex items-center gap-4 flex-wrap">
     <a href="#top" class="flex items-center gap-3">
       <span class="text-base font-bold tracking-tight">SDD</span>
-      <span class="pill pill-v10">v1.0.0 shipped</span>
+      <span class="pill pill-v10">v1.0 + v1.1 + v1.2 shipped</span>
     </a>
     <nav class="flex items-center gap-3 text-sm text-stone-600 ml-2">
       <a href="#loop" class="hover:text-stone-900">The loop</a>
       <a href="#architecture" class="hover:text-stone-900">Architecture</a>
       <a href="#validation" class="hover:text-stone-900">Validate</a>
       <a href="#shipped" class="hover:text-stone-900">v1.0</a>
-      <a href="#planned" class="hover:text-stone-900">v1.1</a>
+      <a href="#planned" class="hover:text-stone-900">v1.1+v1.2</a>
       <a href="#try" class="hover:text-stone-900">Try it</a>
       <a href="#reference" class="hover:text-stone-900">Reference</a>
     </nav>
@@ -103,7 +103,7 @@
       <span class="text-xs text-stone-500 mr-1">Show:</span>
       <button type="button" class="filter-btn px-2 py-1 text-xs rounded border border-stone-300" data-set="all">All</button>
       <button type="button" class="filter-btn px-2 py-1 text-xs rounded border border-stone-300" data-set="v10">v1.0 only</button>
-      <button type="button" class="filter-btn px-2 py-1 text-xs rounded border border-stone-300" data-set="v11">v1.1 only</button>
+      <button type="button" class="filter-btn px-2 py-1 text-xs rounded border border-stone-300" data-set="v11">v1.1+v1.2 only</button>
       <span class="mx-2 w-px h-5 bg-stone-300"></span>
       <label class="flex items-center gap-2 text-xs cursor-pointer select-none">
         <input id="reviewToggle" type="checkbox" class="accent-indigo-600">
@@ -137,7 +137,7 @@
   <div class="rounded-xl border border-stone-200 bg-white p-5 text-sm text-stone-700 flex flex-col md:flex-row gap-4 items-start">
     <span class="pill pill-soft">How to read this page</span>
     <div class="flex-1 grid md:grid-cols-3 gap-4">
-      <div><strong class="block text-stone-900 mb-1">Filter (top right)</strong> Show all, only v1.0 (live today), or only v1.1 (planned, dashed).</div>
+      <div><strong class="block text-stone-900 mb-1">Filter (top right)</strong> Show all, only v1.0, or only the v1.1 + v1.2 sweep that landed after v1.0.</div>
       <div><strong class="block text-stone-900 mb-1">Click any architecture box</strong> A panel opens with the actual file paths and a sample.</div>
       <div><strong class="block text-stone-900 mb-1">Review mode (top right)</strong> Flag any section ✓ / ? / ✗, leave a note, export feedback as markdown.</div>
     </div>
@@ -210,7 +210,7 @@
 <!-- ═══════════════════════════════════════════ ARCHITECTURE DIAGRAM ═══════════════════════════════════════════ -->
 <section id="architecture" class="max-w-6xl mx-auto px-6 py-10 reviewable" data-section="architecture">
   <div class="review-tools review-only"><button type="button" class="rb" data-flag="ok">✓</button><button type="button" class="rb" data-flag="unclear">?</button><button type="button" class="rb" data-flag="problem">✗</button></div>
-  <h2 class="text-2xl font-bold mb-2">System architecture — solid lines = live, dashed = v1.1 plan.</h2>
+  <h2 class="text-2xl font-bold mb-2">System architecture — every box live as of v1.2.</h2>
   <p class="text-stone-600 max-w-3xl mb-6">Click any box to see what's actually inside it (file paths, counts, a real sample). The diagram is the source of truth — every claim below it traces to a file you can open.</p>
 
   <div class="card p-4 md:p-6">
@@ -299,11 +299,11 @@
             <text class="arch-label" x="585" y="336" text-anchor="middle">Slash commands</text>
             <text class="arch-sub"   x="585" y="354" text-anchor="middle">9 user-facing</text>
           </g>
-          <!-- v1.1 tier 3 -->
+          <!-- v1.1 tier 3 (shipped 2026-05-01 via PR #114) -->
           <g class="arch-box-grp" data-box="tier3" data-tier="v11">
-            <rect class="arch-box dashed" x="680" y="315" width="160" height="50" rx="6"/>
-            <text class="arch-label" x="760" y="336" text-anchor="middle" fill="var(--violet)">Tier 3 synthesis</text>
-            <text class="arch-sub"   x="760" y="354" text-anchor="middle" fill="var(--violet)">v1.1 — chat over graph</text>
+            <rect class="arch-box" x="680" y="315" width="160" height="50" rx="6"/>
+            <text class="arch-label" x="760" y="336" text-anchor="middle">Tier 3 synthesis</text>
+            <text class="arch-sub"   x="760" y="354" text-anchor="middle">v1.1 — chat over graph (live)</text>
           </g>
 
           <!-- CI gate -->
@@ -642,46 +642,55 @@ search_within(slug)   bounded semantic search
   <textarea class="review-note review-only" placeholder="Notes on Phase B fixes…" data-note="phase-b"></textarea>
 </section>
 
-<!-- ═══════════════════════════════════════════ WHAT'S COMING — v1.1 ═══════════════════════════════════════════ -->
+<!-- ═══════════════════════════════════════════ WHAT LANDED AFTER v1.0 — v1.1 + v1.2 ═══════════════════════════════════════════ -->
 <section id="planned" class="max-w-6xl mx-auto px-6 py-10 reviewable" data-section="planned" data-tier="v11">
   <div class="review-tools review-only"><button type="button" class="rb" data-flag="ok">✓</button><button type="button" class="rb" data-flag="unclear">?</button><button type="button" class="rb" data-flag="problem">✗</button></div>
   <div class="flex items-end justify-between mb-2 flex-wrap gap-3">
     <div>
-      <h2 class="text-2xl font-bold">What's coming in v1.1 — chat over the graph.</h2>
-      <p class="text-stone-600 mt-1">Tracked at <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/97" target="_blank" rel="noopener noreferrer">issue #97</a> on milestone v1.1. Carved out of v1.0 because the graph layer needs corpus to accumulate before chat synthesis adds value over plain retrieval — and because generation introduces hallucination risk that strains foundation 3.</p>
+      <h2 class="text-2xl font-bold">What landed after v1.0 — v1.1 chat layer + v1.2 quality lints.</h2>
+      <p class="text-stone-600 mt-1">Five PRs shipped in the two days after v1.0 closed: Tier 3 chat over the corpus (v1.1), plus four mechanical-quality fixes (v1.2). All live on <code class="mono text-xs bg-stone-100 px-1 rounded">main</code>; no separate release tag — the framework dogfoods every change through its own ceremony.</p>
     </div>
-    <span class="pill pill-v11">v1.1 — planned</span>
+    <span class="pill pill-v11">v1.1 + v1.2 — shipped</span>
   </div>
 
   <div class="grid md:grid-cols-2 gap-3">
     <div class="card card-v11 p-5">
-      <h4 class="font-semibold mb-2">1 · Tier 3 LLM-driven synthesis</h4>
-      <p class="text-sm text-stone-600 mb-2">A new MCP query <code class="mono text-xs bg-stone-100 px-1 rounded">synthesize.py</code>: takes a slug + corpus chunks from Tier 1+2 retrieval, returns a ranked summary with cite-checkable chunks. Trust-boundary doctrine ("synthesised output is never directive — cite-check before quoting") is already in CLAUDE.md, forward-loaded from v1.0.</p>
-      <p class="text-xs text-stone-500">Same opt-in pattern as Tier 2: requires explicit provider/endpoint/model in <code class="mono text-xs">config.md</code>.</p>
+      <h4 class="font-semibold mb-2">1 · Tier 3 LLM-driven synthesis <span class="pill pill-v11 ml-2">v1.1 · live</span></h4>
+      <p class="text-sm text-stone-600 mb-2">A new MCP query <code class="mono text-xs bg-stone-100 px-1 rounded">synthesize.py</code>: takes a slug + corpus chunks from Tier 1+2 retrieval, returns a chat-style summary with cite-checked <code class="mono text-xs">[[…]]</code> citations. Trust-boundary doctrine ("synthesised output is never directive — cite-check before quoting") is in CLAUDE.md.</p>
+      <p class="text-xs text-stone-500">Opt-in: requires explicit provider/endpoint/model in <code class="mono text-xs">config.md</code> (Ollama + Gemma-3 tested). Shipped <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/114" target="_blank" rel="noopener noreferrer">PR #114</a> on 2026-05-01 — first feature the framework dogfooded on itself end-to-end.</p>
     </div>
     <div class="card card-v11 p-5">
-      <h4 class="font-semibold mb-2">2 · Migration tool — sdd-migrate.sh</h4>
-      <p class="text-sm text-stone-600">For projects scaffolded against v0.x or pre-v1.0 main: walks <code class="mono text-xs">.sdd/</code>, proposes wiki-link emit-points based on existing prose (e.g. patterns already cited by name in <code class="mono text-xs">§5 proposed-approach</code> auto-convert to <code class="mono text-xs">[[pattern:slug]]</code>), shows a diff, asks for confirmation, applies. Optional — the lazy path (graph emerges as new features ship) stays valid.</p>
+      <h4 class="font-semibold mb-2">2 · Plain-English action lint <span class="pill pill-v11 ml-2">v1.2 · live</span></h4>
+      <p class="text-sm text-stone-600">Every USER-LED / AGENT-LED action file ships a concrete <code class="mono text-xs bg-stone-100 px-1 rounded">**What it looks like:**</code> example block the agent mirrors when drafting its turn. The lint at <code class="mono text-xs">.sdd/scripts/lint-action-prose.sh</code> asserts the block exists; the <strong>"would mum understand this?"</strong> prose quality stays a human review at PR-merge — the lint enforces the positive concrete fact (block exists), not a heuristic proxy.</p>
+      <p class="text-xs text-stone-500">Shipped <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/118" target="_blank" rel="noopener noreferrer">PR #118</a> on 2026-05-02 (5 CR cycles · 38 findings closed).</p>
     </div>
     <div class="card card-v11 p-5">
-      <h4 class="font-semibold mb-2">3 · Auto-suggest cross-references at <code class="mono text-xs bg-stone-100 px-1 rounded">mark-shipped</code></h4>
-      <p class="text-sm text-stone-600">Graph traversal pulls candidate patterns and entities the feature touches; embeddings narrow; synthesis writes <em>"this feature uses [[pattern:auth-retry-logic]] and [[entity:User]]"</em>. You confirm or edit before it's recorded.</p>
+      <h4 class="font-semibold mb-2">3 · Anti-theatre spec lint <span class="pill pill-v11 ml-2">v1.2 · live</span></h4>
+      <p class="text-sm text-stone-600">Specs can't ship sentences that <em>look</em> like enforced guards but aren't. The lint at <code class="mono text-xs">.sdd/scripts/lint-no-theatre.sh</code> refuses theatre tokens (numerical bounds, currency, enforcement verbs, quality absolutes) unless an adjacent annotation declares the verification path: <code class="mono text-xs">{verify-by: T-NNN}</code> · <code class="mono text-xs">{best-effort: who}</code> · <code class="mono text-xs">{prod-only: why}</code>. Foundation 3 applied at the spec layer — every claim either checks or is explicitly softened.</p>
+      <p class="text-xs text-stone-500">Shipped <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/121" target="_blank" rel="noopener noreferrer">PR #121</a> on 2026-05-02 (4 CR cycles · 11 findings closed).</p>
     </div>
     <div class="card card-v11 p-5">
-      <h4 class="font-semibold mb-2">4 · Tier 3 config block</h4>
-      <p class="text-sm text-stone-600">New stanza in <code class="mono text-xs bg-stone-100 px-1 rounded">templates/.sdd/config.md</code>: <code class="mono text-xs">parameters.mcp.tier3</code> with <code class="mono text-xs">enabled · provider · endpoint · model · max_calls_per_run · cost_limit_usd</code>. Opt-in, no baked-in defaults — same shape as Tier 2 + Playwright explorer.</p>
+      <h4 class="font-semibold mb-2">4 · Graph-cache multi-line code-span fix <span class="pill pill-v11 ml-2">v1.2 · live</span></h4>
+      <p class="text-sm text-stone-600">Wiki-links inside CommonMark backtick code spans that crossed line boundaries were being treated as live graph edges — false positives in <code class="mono text-xs">_graph_cache.py</code>. New <code class="mono text-xs">_mask_inline_code_in_content()</code> pre-pass masks inline-code spans while preserving newlines, so the line-by-line walker still sees correct line numbers. Cache version bumped 1 → 2 so old caches regenerate cleanly.</p>
+      <p class="text-xs text-stone-500">Shipped <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/124" target="_blank" rel="noopener noreferrer">PR #124</a> on 2026-05-02 (closes <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/105" target="_blank" rel="noopener noreferrer">#105</a>).</p>
+    </div>
+    <div class="card card-v11 p-5 md:col-span-2">
+      <h4 class="font-semibold mb-2">5 · Wireframe action redesign — UI vs non-UI shapes <span class="pill pill-v11 ml-2">v1.2 · live</span></h4>
+      <p class="text-sm text-stone-600">Dropped the <code class="mono text-xs bg-stone-100 px-1 rounded">[SKIPPABLE: non-UI features]</code> tag. Now branches on UI vs non-UI shape: UI features get a screens / design tokens / component states / interaction details skeleton; non-UI features get a flow diagram / architecture diagram / concrete chat-or-CLI example skeleton. Two starter HTML files at <code class="mono text-xs">templates/.sdd/skeletons/</code>. <strong>Non-UI features need MORE visualisation than UI features, not less</strong> — reviewers can't infer behaviour from code.</p>
+      <p class="text-xs text-stone-500">Shipped <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/128" target="_blank" rel="noopener noreferrer">PR #128</a> on 2026-05-03 (5 CR cycles · 20 findings closed). Auto-update of this very walkthrough on every <code class="mono text-xs">/ship</code> deferred to v1.3.</p>
     </div>
   </div>
 
   <details class="card p-5 mt-4">
-    <summary class="font-semibold flex items-center"><span class="chevron mr-2">▶</span>Other open issues post-v1.0 (the small backlog)</summary>
+    <summary class="font-semibold flex items-center"><span class="chevron mr-2">▶</span>Open issues post-v1.2 (the small remaining backlog)</summary>
     <ul class="mt-3 space-y-2 text-sm text-stone-600">
-      <li>· <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/95" target="_blank" rel="noopener noreferrer">#95</a> — ~25 deferred CodeRabbit findings from PR #92 self-host (parking lot — nothing security-critical, batch into a v1.0.1 maintenance pass).</li>
-      <li>· <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/105" target="_blank" rel="noopener noreferrer">#105</a> — multi-line code-span detection in <code class="mono text-xs">_graph_cache.py</code> (CommonMark backtick spans across line breaks; deferred from PR #104).</li>
+      <li>· <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/95" target="_blank" rel="noopener noreferrer">#95</a> — ~25 deferred CodeRabbit findings from PR #92 self-host (touches-contract gaps, small script bugs, markdown lint nits, test-drift bidirectional). Batched into 4 small follow-up PRs; nothing security-critical.</li>
+      <li>· <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/116" target="_blank" rel="noopener noreferrer">#116</a> — Enable Playwright on the framework's own repo. The framework <em>built</em> the Playwright extension but doesn't dogfood it yet on its own walkthrough + wireframe HTML.</li>
+      <li>· <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/113" target="_blank" rel="noopener noreferrer">#113</a> — Possible cache-key inconsistency under concurrent corpus edits during a Tier 3 synthesise call. Filed during edge-case sweep; no real-world report yet — fixing without evidence would over-engineer.</li>
     </ul>
   </details>
 
-  <textarea class="review-note review-only" placeholder="Notes on the v1.1 plan…" data-note="planned"></textarea>
+  <textarea class="review-note review-only" placeholder="Notes on what shipped post-v1.0…" data-note="planned"></textarea>
 </section>
 
 <!-- ═══════════════════════════════════════════ TRY IT NOW ═══════════════════════════════════════════ -->
@@ -798,7 +807,7 @@ search_within(slug)   bounded semantic search
         <tr class="bg-emerald-50/50"><td class="py-2 mono text-xs">get_backlinks</td><td>Which files cite <code class="mono">[[slug]]</code>?</td><td><span class="pill pill-v10">★ v1.0 graph</span></td></tr>
         <tr class="bg-emerald-50/50"><td class="py-2 mono text-xs">get_neighbours</td><td>What's adjacent in the graph?</td><td><span class="pill pill-v10">★ v1.0 graph</span></td></tr>
         <tr class="bg-emerald-50/50"><td class="py-2 mono text-xs">search_within</td><td>Bounded semantic search around a slug.</td><td><span class="pill pill-v10">★ v1.0 graph</span></td></tr>
-        <tr class="bg-violet-50/50" data-tier="v11"><td class="py-2 mono text-xs">synthesize</td><td>Chat over corpus with cite-check.</td><td><span class="pill pill-v11">v1.1 plan</span></td></tr>
+        <tr class="bg-violet-50/50" data-tier="v11"><td class="py-2 mono text-xs">synthesize</td><td>Chat over corpus with cite-checked <code class="mono">[[…]]</code> citations.</td><td><span class="pill pill-v11">★ v1.1 live</span></td></tr>
       </tbody>
     </table>
   </details>
@@ -869,7 +878,7 @@ search_within(slug)   bounded semantic search
     <li class="card p-4"><strong class="block mb-1">Not for one-shot speed.</strong> A first SPEC takes 30–90 minutes. If you want it built right now without questions, this isn't the framework.</li>
     <li class="card p-4"><strong class="block mb-1">Doesn't turn a bad idea into a good one.</strong> The framework makes drift expensive and deep questioning cheap. It does not invent product strategy.</li>
     <li class="card p-4"><strong class="block mb-1">Scales to roughly 50 in-flight features / 500 total.</strong> Beyond that, you outgrow plain markdown — but the cold-tier + size caps + auto-archival keep working memory bounded indefinitely up to that scale.</li>
-    <li class="card p-4"><strong class="block mb-1">Retrofit on existing repos is still rough.</strong> <code class="mono text-xs">init.sh</code> assumes a clean repo. Projects with existing PRDs / Husky / Drizzle migrations need the v1.1 migration tool (planned).</li>
+    <li class="card p-4"><strong class="block mb-1">Retrofit on existing repos is still rough.</strong> <code class="mono text-xs">init.sh</code> assumes a clean repo. Projects with existing PRDs / Husky / Drizzle migrations don't yet have a migration tool — manual scaffold for now.</li>
     <li class="card p-4"><strong class="block mb-1">Action prose still carries some JS-stack assumptions.</strong> Mentions of <code class="mono text-xs">tests/task-NNN.mjs</code>, Tailwind, <code class="mono text-xs">gh pr create</code>. Non-JS adopters fork the affected actions or write a sibling extension.</li>
   </ul>
   <textarea class="review-note review-only" placeholder="Notes on the caveats…" data-note="caveats"></textarea>
@@ -879,13 +888,13 @@ search_within(slug)   bounded semantic search
 <footer class="border-t border-stone-200 mt-12">
   <div class="max-w-6xl mx-auto px-6 py-8 flex flex-col md:flex-row gap-6 items-start md:items-center justify-between text-sm">
     <div class="text-stone-500">
-      <p><strong class="text-stone-900">SDD v1.0.0</strong> · tagged on commit <a class="mono underline" target="_blank" rel="noopener noreferrer" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/commit/ec3e711">ec3e711</a> · 2026-05-01</p>
-      <p class="mt-1">192/192 framework tests + 68/68 MCP unit tests · all mutation-verified</p>
+      <p><strong class="text-stone-900">SDD v1.0.0</strong> · tagged on commit <a class="mono underline" target="_blank" rel="noopener noreferrer" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/commit/ec3e711">ec3e711</a> · 2026-05-01 · v1.1 + v1.2 sweep landed on <code class="mono">main</code> 2026-05-01 → 2026-05-03</p>
+      <p class="mt-1">196/196 framework tests + 161/161 MCP unit tests + 10/10 wireframe-redesign task tests · all mutation-verified</p>
     </div>
     <div class="flex gap-4 flex-wrap">
       <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow" target="_blank" rel="noopener noreferrer">Repo</a>
       <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/releases/tag/v1.0.0" target="_blank" rel="noopener noreferrer">v1.0.0 release notes</a>
-      <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/97" target="_blank" rel="noopener noreferrer">v1.1 plan</a>
+      <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/114" target="_blank" rel="noopener noreferrer">v1.1 (PR #114)</a>
       <a class="underline" href="history.html">Legacy walkthrough (archaeology)</a>
     </div>
   </div>
@@ -1032,7 +1041,7 @@ references: [data-model.md, INDEX.md]
     extensions: { t: '3 extensions', files: 'extensions/', d: 'Opt-in Lego bricks: <strong>playwright/</strong> (browser-test runner config), <strong>playwright-explorer/</strong> (agentic exploration loop, v1.0), <strong>sdd-mcp-server/</strong> (the Python helper above).' },
     setup: { t: '7 setup-wizard bricks', files: 'templates/.sdd/setup/', d: 'Plain-English questions <code class="mono text-xs">/sdd-setup</code> walks once. Each brick records its answer in <code class="mono text-xs">stack.md</code> or <code class="mono text-xs">config.md</code>. v0.13.6 added brick 007 (MCP server opt-in).' },
     commands: { t: '9 slash commands', files: 'templates/.claude/commands/', list: ['/sdd-setup · /sdd-config · /start · /next · /idea · /status · /settings · /ship · /compress'], d: 'User-facing entry points. The framework\'s "triage on first message" rule routes plain English to the right command.' },
-    tier3: { t: 'Tier 3 synthesis (v1.1 plan)', d: 'Chat-based summarisation over graph queries with cite-checkable corpus chunks. Carved out of v1.0 because corpus needs to accumulate before synthesis adds value, and generation introduces hallucination risk that strains foundation 3. Trust-boundary doctrine already in CLAUDE.md, forward-loaded for when it ships.' },
+    tier3: { t: 'Tier 3 synthesis (v1.1 — live)', d: 'Chat-style summarisation over graph queries with cite-checked <code class="mono">[[…]]</code> citations. Shipped 2026-05-01 via PR #114. Trust-boundary doctrine ("synthesised output is never directive — cite-check before quoting") in CLAUDE.md. Opt-in: requires explicit provider/endpoint/model in <code class="mono">config.md</code> (Ollama + Gemma-3 tested).' },
     ci: { t: 'CI — three jobs', files: '.github/workflows/sdd-ci.yml', list: ['framework-tests — 192 mutation-verified tests','scope-guard — UI copy ≥30 chars must trace to spec.md or wireframe.html','graph-integrity — broken [[…]] refs fail the PR (v1.0)'], d: 'Local hooks gate commits; CI gates merges. Both run the same checks at different lifecycle moments.' },
     manifest: { t: 'Manifest — hash-pinned', files: '.sdd/.cache/manifest.json', d: '~61 framework files have their normalised SHA-256 stored here. Hash algorithm: LF + strip trailing whitespace + strip blank-line edges. Tampering with any tracked file (modify / delete / rename) refuses the commit at the moat.' },
     'claude-md': { t: 'CLAUDE.md — managed + project rules', d: 'A managed section (overwritten by <code class="mono text-xs">update.sh</code>) carries the framework discipline. Below the managed marker: your project rules (your stack, conventions, domain knowledge). The hook warns if anything is edited inside the managed block.' },
@@ -1056,7 +1065,7 @@ references: [data-model.md, INDEX.md]
     playbooks: '4 playbooks', actions: '41 actions', hooks: '8 hooks',
     scripts: '16 scripts', mcp: 'MCP server — 9 queries',
     extensions: '3 extensions', setup: '7 setup-wizard bricks',
-    commands: '9 slash commands', tier3: 'Tier 3 synthesis (v1.1 plan)',
+    commands: '9 slash commands', tier3: 'Tier 3 synthesis (v1.1 live)',
     ci: 'CI workflow — three jobs', manifest: 'Hash-pinned manifest',
     'claude-md': 'CLAUDE.md', outputs: 'Project outputs in plain markdown'
   };
