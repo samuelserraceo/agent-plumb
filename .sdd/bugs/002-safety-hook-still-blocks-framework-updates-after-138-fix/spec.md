@@ -2,7 +2,7 @@
 
 [PHASE: SPEC]
 
-**Active blocker:** §2 (next action: bug-repro)
+**Active blocker:** §3 (next action: bug-root-cause)
 
 ## PHASE: SPEC
 
@@ -12,7 +12,23 @@
 
 ### action: bug-repro
 
-- [ ] steps: Steps to reproduce — exact sequence. (e.g. '1. Sign up with sam@x.com  2. Click the magic-link email  3. Page shows 'Session not found' instead of dashboard')
+- [x] steps: two repro recipes for two distinct bugs in `pre-commit-stage-verified.sh`.
+
+  **Bug A repro** (multi-manifest path confuses the hook):
+  1. Edit any framework file the manifest tracks (e.g. add a comment to `.sdd/scripts/start.sh`).
+  2. Recompute its fingerprint and write the new value into BOTH `.sdd/.cache/manifest.json` AND `templates/.sdd/.cache/manifest.json`.
+  3. Stage all three: `git add .sdd/scripts/start.sh .sdd/.cache/manifest.json templates/.sdd/.cache/manifest.json`.
+  4. `git commit -m '[SDD] manifest: repin — testing'`.
+  5. The save fails with `[moat] cannot extract staged manifest blob from index`. The hook's regex `(^|/)\.sdd/\.cache/manifest\.json$` (line ~70) matched both manifest paths, joined them with a newline, and `git show :<multi-line-path>` returned non-zero.
+
+  **Bug B repro** (per-file HEAD vs staged-manifest hash check fires on every legitimate repin):
+  1. Edit any framework file the manifest tracks (e.g. `.sdd/scripts/start.sh`).
+  2. Recompute its fingerprint and write the new value into JUST `.sdd/.cache/manifest.json`. Leave the template manifest unchanged.
+  3. Stage: `git add .sdd/scripts/start.sh .sdd/.cache/manifest.json`.
+  4. `git commit -m '[SDD] manifest: repin — testing'`.
+  5. The save fails with `[moat] One or more SDD framework files have changed... hash mismatch — HEAD (cross-commit attack? working tree looks clean but HEAD has tampered content)`. The check at line ~643 (`if head_actual != expected:`) compared HEAD's old `start.sh` content hash against the new staged manifest's `expected_sha256` — they differ, because that is what a legitimate repin IS. With or without the `[SDD] manifest: repin` marker. {verify-by: T-002-bug-b-repro}
+
+  Confirmed live by the #138 author on 2026-05-03 via direct python-heredoc test against a temp git repo. Bug B fires regardless of marker presence; the marker check moving to commit-msg in #138 sits in the trust-baseline block (line ~317), not the file-integrity loop (line ~614+).
 
 ### action: bug-root-cause
 
