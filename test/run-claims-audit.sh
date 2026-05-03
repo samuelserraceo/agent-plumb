@@ -751,9 +751,12 @@ claim_shipped_pr_links_merged() {
   command -v gh >/dev/null 2>&1 || return 0  # gh missing — skip
   # Verify gh is authed; otherwise skip rather than false-fail.
   gh auth status >/dev/null 2>&1 || return 0
-  # Extract PR numbers from the ## Shipped section.
-  local pr_numbers
-  pr_numbers=$(python3 -c "
+  # Extract owner/repo + PR numbers from the ## Shipped section. The
+  # PR URL embeds owner/repo so we don't have to assume the current
+  # checkout context — works on CI where `gh pr view <num>` without
+  # --repo can't determine the upstream from a shallow checkout.
+  local entries
+  entries=$(python3 -c "
 import re, sys
 with open('.sdd/INDEX.md') as f:
     text = f.read()
@@ -761,22 +764,24 @@ m = re.search(r'## Shipped\n(.*?)(?=\n## |\Z)', text, re.DOTALL)
 if not m:
     sys.exit(0)
 block = m.group(1)
-nums = re.findall(r'PR: https://github\.com/[^\s/]+/[^\s/]+/pull/([0-9]+)', block)
-print('\n'.join(nums))
+# Capture owner/repo and PR number together.
+matches = re.findall(r'PR: https://github\.com/([^\s/]+)/([^\s/]+)/pull/([0-9]+)', block)
+for owner, repo, num in matches:
+    print(f'{owner}/{repo}|{num}')
 ")
-  [ -z "$pr_numbers" ] && return 0  # no shipped rows yet — pass
+  [ -z "$entries" ] && return 0  # no shipped rows yet — pass
   local failed=""
-  while IFS= read -r num; do
+  while IFS='|' read -r repo num; do
     [ -z "$num" ] && continue
     local state
-    state=$(gh pr view "$num" --json state --jq '.state' 2>/dev/null) || {
-      failed="${failed}#${num} (gh view failed) "
+    state=$(gh pr view "$num" --repo "$repo" --json state --jq '.state' 2>/dev/null) || {
+      failed="${failed}#${num} (gh view failed for $repo) "
       continue
     }
     if [ "$state" != "MERGED" ]; then
       failed="${failed}#${num} (state=$state) "
     fi
-  done <<<"$pr_numbers"
+  done <<<"$entries"
   if [ -n "$failed" ]; then
     echo "Shipped PRs not in MERGED state: $failed" >&2
     return 1
