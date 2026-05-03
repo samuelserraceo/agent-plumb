@@ -2005,6 +2005,37 @@ else
 fi
 
 # ============================================================
+# T149 — user-prompt-submit auto-injects .sdd/principles.md when present.
+#        Wave 2 #3 (v1.3 audit follow-up): adds an ADR-style layer for
+#        project-wide non-negotiable rules. The AI reads them on every
+#        turn so design decisions don't drift from the principles.
+# ============================================================
+note "T149: user-prompt-submit injects .sdd/principles.md when present"
+d=$(mkproj_v08)
+cd "$d"
+echo '**Active:** _(none)_' > .sdd/INDEX.md
+cat > .sdd/principles.md <<'PRIN'
+# Principles
+
+## All dates stored in UTC
+
+**Why:** consistency across services and timezones.
+**How to apply:** UTC for storage; local-zone conversion at the UI layer only.
+**Adopted:** 2026-05-03
+PRIN
+out=$(bash "$FRAMEWORK_ROOT/templates/.claude/hooks/user-prompt-submit.sh" 2>&1)
+ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 0 ] \
+   && echo "$out" | grep -q "\.sdd/principles\.md ---" \
+   && echo "$out" | grep -q "All dates stored in UTC"; then
+  ok "T149 principles.md injected per turn (header + content visible)"
+else
+  bad "T149 principles.md not auto-injected" "exit=$ec; has-header=$(echo "$out" | grep -c "principles\.md"); has-content=$(echo "$out" | grep -c 'All dates')"
+fi
+
+# ============================================================
 # T59 — advance.sh appends to .sdd/metrics.md (Theme 12 — token instrumentation)
 #   RED: advance.sh updates INDEX.md but never logs the iteration. Sam can't
 #        answer "is this framework earning its keep?" with data.

@@ -96,6 +96,16 @@ emit_state() {
     echo ""
   fi
 
+  # bugs/002 follow-up (Wave 2 #3): inject principles.md per turn so the
+  # AI sees project-wide non-negotiables (e.g. "all dates UTC", "never
+  # store secrets in code") on every action and doesn't drift away from
+  # them in proposed approaches. ADR-style layer.
+  if [ -f .sdd/principles.md ]; then
+    echo "--- .sdd/principles.md ---"
+    cat .sdd/principles.md
+    echo ""
+  fi
+
   # bugs/002 follow-up (Wave 2 #1): inject stack.md per turn so the AI
   # stops proposing services that contradict what the project already
   # uses. Reading stack.md was previously documented in CLAUDE.md as a
