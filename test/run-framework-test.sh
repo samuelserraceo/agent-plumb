@@ -1940,6 +1940,36 @@ else
 fi
 
 # ============================================================
+# T147 — user-prompt-submit auto-injects .sdd/stack.md when present.
+#        Wave 2 #1 (v1.3 audit follow-up): the AI was supposed to read
+#        stack.md on session start per CLAUDE.md, but session-start is
+#        unreliable; inject every turn instead so the AI doesn't propose
+#        services that contradict the project's stack.
+# ============================================================
+note "T147: user-prompt-submit injects .sdd/stack.md when present"
+d=$(mkproj_v08)
+cd "$d"
+echo '**Active:** _(none)_' > .sdd/INDEX.md
+cat > .sdd/stack.md <<'STK'
+## Stack
+
+- Database: Supabase (Postgres-compatible)
+- Hosting: Vercel
+- Email: Resend
+STK
+out=$(bash "$FRAMEWORK_ROOT/templates/.claude/hooks/user-prompt-submit.sh" 2>&1)
+ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 0 ] \
+   && echo "$out" | grep -q "\.sdd/stack\.md ---" \
+   && echo "$out" | grep -q "Supabase"; then
+  ok "T147 stack.md injected per turn (header + content visible)"
+else
+  bad "T147 stack.md not auto-injected" "exit=$ec; has-header=$(echo "$out" | grep -c "stack\.md"); has-content=$(echo "$out" | grep -c Supabase)"
+fi
+
+# ============================================================
 # T59 — advance.sh appends to .sdd/metrics.md (Theme 12 — token instrumentation)
 #   RED: advance.sh updates INDEX.md but never logs the iteration. Sam can't
 #        answer "is this framework earning its keep?" with data.

@@ -96,6 +96,17 @@ emit_state() {
     echo ""
   fi
 
+  # bugs/002 follow-up (Wave 2 #1): inject stack.md per turn so the AI
+  # stops proposing services that contradict what the project already
+  # uses. Reading stack.md was previously documented in CLAUDE.md as a
+  # session-start step, but session-start is unreliable — auto-injecting
+  # it on every turn closes the gap.
+  if [ -f .sdd/stack.md ]; then
+    echo "--- .sdd/stack.md ---"
+    cat .sdd/stack.md
+    echo ""
+  fi
+
   if [ -f .sdd/patterns.md ]; then
     echo "--- .sdd/patterns.md ---"
     cat .sdd/patterns.md
