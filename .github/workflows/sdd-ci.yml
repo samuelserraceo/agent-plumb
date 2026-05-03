@@ -26,6 +26,25 @@ jobs:
         run: |
           bash test/run-framework-test.sh
 
+  claims-audit:
+    name: Claims audit (proof-by-execution of marketing claims)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python (PyYAML for the framework's own scripts)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install PyYAML
+        run: python3 -m pip install pyyaml
+
+      - name: Run test/run-claims-audit.sh
+        shell: bash
+        run: |
+          bash test/run-claims-audit.sh
+
   scope-guard:
     name: Scope guard (UI copy + new-file spec refs)
     runs-on: ubuntu-latest
