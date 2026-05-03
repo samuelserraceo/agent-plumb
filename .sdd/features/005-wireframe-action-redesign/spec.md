@@ -1,10 +1,10 @@
 # wireframe action redesign
 
-[PHASE: SHIP]
+[PHASE: SHIPPED]
 
 **Run mode at BUILD:** full autonomous.
 
-**Active blocker:** SHIP — push-pr → CR cycles → mark-shipped.
+**Active blocker:** (none — shipped 2026-05-03 via PR #128).
 
 ## PHASE: SPEC
 
@@ -196,30 +196,61 @@ Auto-updating `docs/walkthrough.html` on every `/ship` requires knowing the stru
 ## PHASE: SHIP
 
 ### action: verify-test-run
-- [ ] run: framework + MCP + 10/10 task tests passing.
+- [x] run: 196/196 framework + 161/161 MCP + 10/10 task tests GREEN at cycle-5 push (`0ad65c5`).
 
 ### action: verify-prod-only-acs
-- [ ] collect: N/A — no `[PROD-ONLY]` ACs.
+- [x] collect: N/A — no `[PROD-ONLY]` ACs in this feature.
 
 ### action: adversarial-review
-- [ ] adversarial: CodeRabbit on the PR. Iterate until converged.
+- [x] adversarial: 5 CodeRabbit cycles, 20 findings closed (8 → 5 → 4 → 3 → silent). Detailed cycle-by-cycle audit below.
+
+**Cycle 1 (8 findings, on initial push of action prose + 2 skeletons).**
+- Heading level inconsistency in `wireframe.md` — `### Shape A` / `### Shape B` should be `## Shape A` / `## Shape B` to match the H2 cadence of surrounding sections (Shape A and Shape B are co-equal branches, not nested under a shared parent). Fixed.
+- Walkthrough cross-link in `wireframe-ui.html` and `wireframe-non-ui.html` used `../../docs/walkthrough.html` — wrong from `.sdd/features/<id>/wireframe.html` (resolves to `.sdd/docs/`). Corrected to `../../../docs/walkthrough.html` (3 levels up).
+- `<button>` elements in the UI skeleton's component-states matrix missing `type="button"` — defaults to `type="submit"` inside a form context, which would submit the wireframe's form on click. Added `type="button"` to every state-demo button.
+- Form-input examples in the UI skeleton lacked `<label>` association — added `<label>`-wrapped inputs with `aria-invalid="true"` on the error-state demo.
+- The "Screens" section in UI skeleton was a focusable `<div tabindex="0">` — but it's a landmark, not interactive. Replaced with semantic `<section aria-labelledby="screen-1-title">`.
+- Stack reference in UI skeleton's Design tokens section read "your project's `stack.md`" without the `.sdd/` prefix. Added the explicit path.
+- Non-UI skeleton's `.cite` spans had `role="button"` + `tabindex="0"` but the click handler was a no-op stub — actively misleading screen readers. Removed the interactive attributes; documented the restoration path in a code comment for downstream users who do want clickable citations.
+- Non-UI skeleton used `innerHTML` for the detail panel updates — XSS risk if a downstream user templates user-controlled data through `STEP_DETAIL`. Replaced with `createElement` + `textContent`.
+
+**Cycle 2 (5 findings).**
+- `.step-grp` and `.arch-grp` SVG groups missing `aria-pressed` attribute — they are toggle buttons, screen readers should announce pressed/unpressed state. Added initial `aria-pressed="false"` markup; activation handlers toggle to `"true"` on the active peer and reset all others to `"false"`.
+- `renderDetail(targetId, d)` lacked a null-guard — if a downstream user removes the `#stepDetail` or `#archDetail` panel, the function would throw on `target.textContent = ''`. Added `if (!target) return;` early-out.
+- AC9 task-009.sh test caught a real lint-no-theatre crash on shipped specs but the failure message only included the exit code, not the captured output — added the `out` variable to the FAIL message so the diagnostic is visible.
+- T141 framework-test gate scanned `.sdd/features/*/spec.md` but missed `.sdd/bugs/*/spec.md` and `.sdd/refactors/*/spec.md` (added in v1.0). Broadened glob to `.sdd/*/*/spec.md` with `shopt -s nullglob` guard.
+- T141 used `|| true` to capture the lint exit code, which forced ec=0 — meaning a real lint crash would be silently swallowed. Removed the `|| true`; distinguish `nt_ec=1` (theatre finding, expected pass-through) from `nt_ec=2+` (lint exec error, real failure).
+
+**Cycle 3 (4 findings).**
+- `.cite` JS handler removal in cycle 1 left an orphan `STEP_DETAIL`-style citation lookup in non-UI skeleton — dead code. Removed.
+- Focus styles for `.step-grp:focus`/`:focus-visible` and `.arch-grp:focus`/`:focus-visible` not defined — keyboard users couldn't see which group was focused before activation. Added 3-stroke accent ring before activation; modifier classes (`.cache`, `.fallback`, `.existing`, `.new`, `.future`) keep their fill but inherit the focus stroke.
+- Detail panels `#stepDetail` + `#archDetail` lacked `aria-live` + `aria-atomic` + `role="status"` — content swapped on activation but screen readers didn't announce the change. Added all three.
+- Edge-case sweep listed only 3 edges; the v1.0 plan-decompose coverage check (constraints → ACs) wasn't explicitly run because §4 UX brief was minimal (no mobile, no a11y, no i18n keywords). Added a §11.10 explicit comment that coverage check ran with no §4 keywords found.
+
+**Cycle 4 (3 findings).**
+- task-015.sh tested `lint-no-theatre.sh` for "no GNU-only constructs" — the test itself used `\b` regex (a GNU extension). Replaced with POSIX `[^[:alnum:]_]` boundaries.
+- task-015.sh boundary check was firing on commented-out test cases inside the lint script. Filtered comment lines first (`grep -v '^[[:space:]]*#'`) before the GNU-only boundary check.
+- `.sdd/scripts/start.sh` MD041 fix (cycle 2 of #110) regressed when feature spec body opened with `# <heading>` — metadata block was placed BEFORE the H1, breaking MD041. Re-ordered: place metadata AFTER H1 if body opens with `# `.
+
+**Cycle 5 (silent).**
+CodeRabbit did not return new findings on the cycle-5 push. Per Sam's standing pre-auth ("admin-merge once CI green and CR converged"), admin-merged via `gh pr merge --admin --squash` after all 4 GitHub Actions checks landed GREEN.
 
 ### action: playwright-explore
 - ⏭ skipped — non-UI feature (template + prose changes).
 
 ### action: learn
-- [ ] lessons: lesson captured in INDEX.md `## Shipped` row.
+- [x] lessons: lesson captured in INDEX.md `## Shipped` row — *non-UI features need MORE visualisation than UI features, not less, because reviewers can't infer behaviour from code*.
 
 ### action: push-pr
-- [ ] pr: PR opened against main.
+- [x] pr: PR #128 opened against main.
 
 ### action: verify-ci-green
-- [ ] ci: all 4 GitHub Actions checks green.
+- [x] ci: all 4 GitHub Actions checks GREEN at cycle-5 push (`0ad65c5`).
 
 ### action: mark-shipped
-- [ ] shipped: `.shipped` marker, INDEX.md row, decisions.md audit.
+- [x] shipped: `.shipped` marker added (mark-shipped PR #129); INDEX.md row added to `## Shipped` block; decisions.md audit appended.
 
 ### Exit checks (SHIP)
-- [ ] C-ship-pr-merged: PR merged with CI green
-- [ ] C-ship-marker: `.shipped` present
-- [ ] C-ship-index: INDEX.md `## Shipped` row added
+- [x] C-ship-pr-merged: PR #128 admin-merged 2026-05-03 (commit `30f48de`)
+- [x] C-ship-marker: `.shipped` present at `.sdd/features/005-wireframe-action-redesign/.shipped`
+- [x] C-ship-index: INDEX.md `## Shipped` row added (top of list)
