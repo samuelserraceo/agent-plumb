@@ -1,0 +1,214 @@
+#!/usr/bin/env bash
+# Native git commit-msg hook — repin marker enforcement.
+#
+# Closes #138. The framework's moat used to do the repin-marker check
+# inside pre-commit-stage-verified.sh, but native git pre-commit
+# fundamentally CANNOT see -m / --message= text (git writes
+# .git/COMMIT_EDITMSG only AFTER pre-commit fires for -m commits —
+# verified empirically). That made legitimate `git commit -m '[SDD]
+# manifest: repin — ...'` invocations bounce off the moat from the
+# native-git path even when the user supplied the marker correctly.
+#
+# Solution: move the marker check to commit-msg, which git always
+# invokes with the message file path as $1. The message is fully
+# materialised by then — readable for both -m and editor commits.
+#
+# What this hook does:
+#   1. Skip if the manifest isn't being staged (no repin to enforce).
+#   2. If staged: compare staged manifest vs HEAD manifest. If any
+#      tracked file's expected_sha256 differs (or a path was removed),
+#      that's a repin — refuse unless the message contains
+#      `[SDD] manifest: repin` (case-insensitive).
+#   3. Otherwise allow the commit.
+#
+# All other moat checks (file-integrity, hash-pin, the verification
+# semantics) stay in pre-commit-stage-verified.sh — those don't need
+# the message.
+#
+# Activation: same as pre-commit shim — `git config core.hooksPath
+# .claude/hooks` activates it. /start sets that on first run; init.sh
+# does it during scaffold.
+
+set -uo pipefail
+
+MSG_FILE="${1:-}"
+[ -z "$MSG_FILE" ] && exit 0
+[ -f "$MSG_FILE" ] || exit 0
+
+HOOKS_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(cd "$HOOKS_DIR/../.." && pwd)"
+MANIFEST_PATH="$PROJECT_DIR/.sdd/.cache/manifest.json"
+
+# No manifest tracking? Nothing to gate.
+[ -f "$MANIFEST_PATH" ] || exit 0
+
+# Is the manifest being staged in THIS commit? If not, no repin is
+# possible — exit cleanly.
+staged_manifest=$(git diff --cached --name-only --diff-filter=ACM 2>/dev/null \
+  | grep -E '(^|/)\.sdd/\.cache/manifest\.json$' || true)
+[ -z "$staged_manifest" ] && exit 0
+
+# python3 + the trust-baseline diff. Returns:
+#   exit 0 — no repin, or repin with marker present → allow
+#   exit 1 — repin without marker → refuse
+command -v python3 >/dev/null 2>&1 || {
+  echo "[moat] python3 required for commit-msg manifest repin check." >&2
+  exit 1
+}
+
+MSG_FILE_ABS="$MSG_FILE" \
+STAGED_MANIFEST="$staged_manifest" \
+PROJ="$PROJECT_DIR" \
+python3 <<'PYEOF'
+import json, os, re, subprocess, sys
+
+msg_path = os.environ["MSG_FILE_ABS"]
+staged_manifest_path = os.environ["STAGED_MANIFEST"]
+proj = os.environ["PROJ"]
+
+# 1. Read the commit message — we now have it directly, no shell parsing.
+try:
+    with open(msg_path, encoding="utf-8") as f:
+        commit_message = f.read()
+except OSError as e:
+    print(f"[moat] cannot read commit message file: {e}", file=sys.stderr)
+    sys.exit(1)
+
+# Strip git comment lines (lines starting with # are stripped before
+# the commit object is built — so the marker can't legitimately live
+# only inside a comment line). This matches git's own message
+# canonicalisation.
+commit_message = "\n".join(
+    line for line in commit_message.split("\n") if not line.startswith("#")
+)
+
+marker_re = re.compile(r"\[SDD\]\s+manifest:\s+repin", re.IGNORECASE)
+marker_present = bool(marker_re.search(commit_message))
+
+# 2. Read staged manifest blob (going-into-HEAD content).
+try:
+    staged_blob = subprocess.run(
+        ["git", "show", ":" + staged_manifest_path],
+        capture_output=True, cwd=proj, timeout=10,
+    )
+    if staged_blob.returncode != 0:
+        # Couldn't read the staged blob — defer to pre-commit's gate;
+        # exit cleanly here.
+        sys.exit(0)
+    staged_manifest = json.loads(
+        staged_blob.stdout.decode("utf-8", errors="replace")
+    )
+except (subprocess.TimeoutExpired, json.JSONDecodeError, OSError):
+    # Defer to pre-commit's manifest validation.
+    sys.exit(0)
+
+# 3. Read HEAD's manifest as the trust baseline.
+head_manifest = None
+head_unreadable = False
+try:
+    head_blob = subprocess.run(
+        ["git", "show", f"HEAD:{staged_manifest_path}"],
+        capture_output=True, cwd=proj, timeout=10,
+    )
+    if head_blob.returncode == 0:
+        try:
+            head_manifest = json.loads(
+                head_blob.stdout.decode("utf-8", errors="replace")
+            )
+        except json.JSONDecodeError:
+            head_unreadable = True
+except (subprocess.TimeoutExpired, OSError):
+    pass
+
+# 4. Malformed HEAD baseline → fail-closed unless marker present.
+if head_unreadable and not marker_present:
+    print("[moat] HEAD manifest.json exists but is malformed —", file=sys.stderr)
+    print("       refusing the commit. The trust baseline cannot be", file=sys.stderr)
+    print("       evaluated against an unreadable HEAD manifest.", file=sys.stderr)
+    print("", file=sys.stderr)
+    print("To recover: stage a valid manifest.json and commit it with", file=sys.stderr)
+    print("the marker:", file=sys.stderr)
+    print("", file=sys.stderr)
+    print("    git commit -m '[SDD] manifest: repin — repair HEAD'", file=sys.stderr)
+    sys.exit(1)
+
+# 5. No HEAD manifest yet (very early project life) → nothing to
+# compare against. Skip cleanly.
+if head_manifest is None:
+    sys.exit(0)
+
+# 6. Path-keyed repin detection — match the same logic that lived in
+# pre-commit-stage-verified.sh (PR #61 cycle-1 path-keyed fix).
+def _collect_paths(m):
+    out = {}
+    for section in ("playbooks", "actions", "extensions", "scripts"):
+        for _slug, entry in (m.get(section) or {}).items():
+            p = entry.get("path", "")
+            h = entry.get("expected_sha256", "")
+            if p:
+                out[p] = (section, h)
+    return out
+
+head_paths = _collect_paths(head_manifest)
+staged_paths = _collect_paths(staged_manifest)
+
+repins = []
+for path, (_head_sec, head_hash) in head_paths.items():
+    staged = staged_paths.get(path)
+    if staged is None:
+        repins.append((path, head_hash, "<removed>"))
+        continue
+    _staged_sec, staged_hash = staged
+    if head_hash and staged_hash and head_hash != staged_hash:
+        repins.append((path, head_hash, staged_hash))
+# Additions (paths in staged but not HEAD) are allowed — pre-commit's
+# per-file hash check verifies the new file's content.
+
+# 7. If any repin and marker missing → refuse.
+if repins and not marker_present:
+    print("[moat] manifest repin refused — no approval marker.",
+          file=sys.stderr)
+    print("", file=sys.stderr)
+    print("This commit changes the manifest's trust coverage for the",
+          file=sys.stderr)
+    print("following framework files (HEAD baseline → staged):",
+          file=sys.stderr)
+    for path, head_hash, staged_hash in repins:
+        if staged_hash == "<removed>":
+            print(f"  {path}: pin removed (no longer enforced)",
+                  file=sys.stderr)
+        else:
+            print(f"  {path}: {head_hash[:12]}... → {staged_hash[:12]}...",
+                  file=sys.stderr)
+    print("", file=sys.stderr)
+    print("Repinning or removing entries changes the trust baseline.",
+          file=sys.stderr)
+    print("To prevent a tampered file being silently legitimised by",
+          file=sys.stderr)
+    print("a co-staged manifest edit, the moat refuses the commit",
+          file=sys.stderr)
+    print("unless the commit message contains the marker:", file=sys.stderr)
+    print("", file=sys.stderr)
+    print("    [SDD] manifest: repin", file=sys.stderr)
+    print("", file=sys.stderr)
+    print("(case-insensitive)", file=sys.stderr)
+    print("", file=sys.stderr)
+    print("If this is a legitimate repin (e.g. you ran scripts/update.sh",
+          file=sys.stderr)
+    print("or you intentionally edited a framework file), commit with:",
+          file=sys.stderr)
+    print("", file=sys.stderr)
+    print("    git commit -m '[SDD] manifest: repin — <reason>'",
+          file=sys.stderr)
+    print("", file=sys.stderr)
+    print("Closes #138: this check used to live in pre-commit, where the",
+          file=sys.stderr)
+    print("commit message wasn't yet readable. It now lives in commit-msg,",
+          file=sys.stderr)
+    print("so both -m and editor commits can supply the marker.",
+          file=sys.stderr)
+    sys.exit(1)
+
+# 8. All clear (no repin, or repin with marker).
+sys.exit(0)
+PYEOF

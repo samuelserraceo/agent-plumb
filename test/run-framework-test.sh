@@ -113,6 +113,7 @@ mkproj_v08() {
   cp "$FRAMEWORK_ROOT/templates/.claude/settings.json" "$d/.claude/settings.json"
   cp "$FRAMEWORK_ROOT/templates/.claude/hooks/"*.sh "$d/.claude/hooks/" 2>/dev/null || true
   cp "$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit" "$d/.claude/hooks/pre-commit"
+  cp "$FRAMEWORK_ROOT/templates/.claude/hooks/commit-msg" "$d/.claude/hooks/commit-msg" 2>/dev/null || true
   chmod +x "$d/.claude/hooks/"* 2>/dev/null || true
   ( cd "$d" \
     && git init -q 2>/dev/null \
@@ -6568,6 +6569,89 @@ if [ "$hook_ec" -eq 2 ] && echo "$hook_out" | grep -qiE 'missing on disk|framewo
   ok "T135c moat refused framework-file rename (exit 2)"
 else
   bad "T135c moat let framework rename through" "ec=$hook_ec; out=${hook_out:0:300}"
+fi
+
+# ============================================================
+# T142 — commit-msg hook enforces the [SDD] manifest: repin marker
+#   on a real manifest-repin scenario.
+#
+# Closes #138. The marker check used to live in pre-commit-stage-verified.sh,
+# but native git pre-commit can't see -m messages (verified empirically:
+# .git/COMMIT_EDITMSG is unwritten at pre-commit time for -m commits).
+# The check now lives in commit-msg, which receives the message file
+# path as $1.
+#
+# Test shape: simulate a manifest repin (edit a tracked framework file,
+# update the manifest's expected_sha256 to the new hash, stage both),
+# then invoke the commit-msg hook with two different messages:
+#   (a) no marker → expect exit 1 + plain-English refusal
+#   (b) with [SDD] manifest: repin marker → expect exit 0
+# ============================================================
+note "T142: commit-msg hook enforces repin marker (closes #138)"
+d=$(mkproj_v08)
+cd "$d" || { bad "T142 cannot cd" "d=$d"; rm -rf "$d"; }
+git init -q
+git config user.email t@t.com && git config user.name T
+git add -A 2>/dev/null
+git commit -q -m "init" 2>/dev/null
+
+# Edit a manifest-tracked file + recompute its hash.
+echo "# legitimate edit $(date +%s)" >> .sdd/playbooks/feature.md
+new_hash=$(python3 -c "
+import hashlib
+with open('.sdd/playbooks/feature.md', 'rb') as f:
+    data = f.read()
+text = data.decode('utf-8', errors='replace')
+lines = [ln.rstrip() for ln in text.replace('\r\n', '\n').replace('\r', '\n').split('\n')]
+while lines and lines[0] == '':
+    lines.pop(0)
+while lines and lines[-1] == '':
+    lines.pop()
+print(hashlib.sha256('\n'.join(lines).encode()).hexdigest())
+")
+
+# Update the manifest's expected_sha256 for that file → this IS the
+# repin scenario the marker is meant to gate.
+python3 -c "
+import json
+with open('.sdd/.cache/manifest.json') as f:
+    m = json.load(f)
+m['playbooks']['feature']['expected_sha256'] = '$new_hash'
+with open('.sdd/.cache/manifest.json', 'w') as f:
+    json.dump(m, f, indent=2)
+    f.write('\n')
+"
+git add .sdd/playbooks/feature.md .sdd/.cache/manifest.json 2>/dev/null
+
+# Case (a): no-marker message → expect refusal.
+msg_no_marker=$(mktemp)
+echo "fix something" > "$msg_no_marker"
+hook_out_a=$(bash .claude/hooks/commit-msg "$msg_no_marker" 2>&1) && hook_ec_a=0 || hook_ec_a=$?
+rm -f "$msg_no_marker"
+
+# Case (b): with-marker message → expect success.
+msg_with_marker=$(mktemp)
+echo "[SDD] manifest: repin — legitimate test edit" > "$msg_with_marker"
+hook_out_b=$(bash .claude/hooks/commit-msg "$msg_with_marker" 2>&1) && hook_ec_b=0 || hook_ec_b=$?
+rm -f "$msg_with_marker"
+
+cd - >/dev/null || true
+rm -rf "$d"
+
+if [ "$hook_ec_a" -eq 1 ] && echo "$hook_out_a" | grep -qiE 'manifest repin refused|approval marker'; then
+  case_a="PASS"
+else
+  case_a="FAIL (ec=$hook_ec_a; out=${hook_out_a:0:200})"
+fi
+if [ "$hook_ec_b" -eq 0 ]; then
+  case_b="PASS"
+else
+  case_b="FAIL (ec=$hook_ec_b; out=${hook_out_b:0:200})"
+fi
+if [ "$case_a" = "PASS" ] && [ "$case_b" = "PASS" ]; then
+  ok "T142 commit-msg hook enforces repin marker (refused without, allowed with)"
+else
+  bad "T142 commit-msg hook didn't behave as expected" "no-marker=$case_a; with-marker=$case_b"
 fi
 
 # ============================================================

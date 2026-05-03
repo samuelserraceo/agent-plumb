@@ -272,6 +272,14 @@ check_manifest_pins() {
   # both file + manifest in the same commit. HEAD's manifest is the
   # trusted baseline; legitimate repins (e.g. via update.sh) must
   # explicitly opt in via the marker.
+  #
+  # #138 fix: the marker check inside this pre-commit hook fires only
+  # when GIT_COMMIT_CMD is non-empty (i.e. PreToolUse path with the
+  # actual `git commit` line visible). When empty (native-git pre-commit
+  # path — synthetic stdin from the shim), the message text isn't
+  # readable here, so the marker check is deferred to the commit-msg
+  # hook which DOES receive the message file path. Either path
+  # eventually enforces the marker — defence in depth.
   MANIFEST="$manifest_path" PROJ="$PROJECT_DIR" \
     STAGED_MANIFEST_PATH="$staged_manifest" \
     GIT_COMMIT_CMD="$cmd" \
@@ -303,18 +311,21 @@ except Exception as e:
     print(f"[moat] manifest.json malformed: {e}", file=sys.stderr)
     sys.exit(1)
 
-# === TRUST BASELINE CHECK (closes #55) ===
-# When the manifest itself is staged, fetch HEAD's manifest as the
-# trusted baseline and check whether any existing slug's expected_sha256
-# has changed. A change means this commit is a REPIN — possibly
-# legitimate (e.g. SDD update), possibly an attacker laundering a
-# tampered file. Distinguish via commit-message marker.
+# (Trust-baseline diff + repin-marker check moved to commit-msg hook —
+# see comment block above. The per-file WT/HEAD hash-pin check below is
+# still the pre-commit defence against tampered file content.)
 #
 # The marker pattern is `[SDD] manifest: repin` (case-sensitive). The
 # `update.sh` migration script writes commits with this prefix. The
 # user (or update.sh) can also add it manually for one-off framework
 # upgrades.
-if staged_manifest_path:
+#
+# #138 fix: skip this whole block when git_commit_cmd is empty —
+# that's the native-git pre-commit path where the message isn't yet
+# readable. The commit-msg hook will run the same trust-baseline diff
+# with full message access. When git_commit_cmd is non-empty
+# (PreToolUse path), this block runs as the early gate.
+if staged_manifest_path and git_commit_cmd:
     # Step 1 (PR #61 cycle-3 refactor): parse the actual commit message
     # FIRST — before any trust-baseline gate runs — so the same parsed
     # `marker_present` can be reused in:
