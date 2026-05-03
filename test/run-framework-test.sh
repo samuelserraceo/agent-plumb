@@ -5353,17 +5353,23 @@ regex_out=$(CLAUDE_PROJECT_DIR="$d" bash "$helper" --regex 2>&1)
 mc_out=$(CLAUDE_PROJECT_DIR="$d" bash "$helper" --min-chars 2>&1)
 rm -rf "$d"
 ok_count=0
-# 6 dirs × 4 exts = 24 globs expected
-[ "$(printf '%s\n' "$globs_out" | wc -l)" -eq 24 ] && ok_count=$((ok_count + 1))
+# bugs/002 follow-up: defaults extended to cover backend traceable dirs +
+# extensions (api routes, migrations, server code; py/rb/go/sql).
+# 15 dirs × 8 exts = 120 globs expected.
+[ "$(printf '%s\n' "$globs_out" | wc -l)" -eq 120 ] && ok_count=$((ok_count + 1))
 echo "$globs_out" | grep -q '^app/\*\*/\*\.tsx$' && ok_count=$((ok_count + 1))
 echo "$globs_out" | grep -q '^src/pages/\*\*/\*\.js$' && ok_count=$((ok_count + 1))
+echo "$globs_out" | grep -q '^app/api/\*\*/\*\.py$' && ok_count=$((ok_count + 1))
+echo "$globs_out" | grep -q '^migrations/\*\*/\*\.sql$' && ok_count=$((ok_count + 1))
 echo "$regex_out" | grep -qE 'app\|components\|pages' && ok_count=$((ok_count + 1))
 echo "$regex_out" | grep -qE 'tsx\|jsx\|ts\|js' && ok_count=$((ok_count + 1))
+echo "$regex_out" | grep -qE 'py\|rb\|go\|sql' && ok_count=$((ok_count + 1))
+echo "$regex_out" | grep -qE 'app/api\|pages/api\|routes\|migrations\|server' && ok_count=$((ok_count + 1))
 [ "$mc_out" = "30" ] && ok_count=$((ok_count + 1))
-if [ "$ok_count" -eq 6 ]; then
-  ok "T116 scope-guard-config.sh defaults present (6/6 assertions)"
+if [ "$ok_count" -eq 10 ]; then
+  ok "T116 scope-guard-config.sh defaults present (10/10 assertions, UI + backend)"
 else
-  bad "T116 scope-guard-config.sh defaults broken" "ok_count=$ok_count globs='$globs_out' regex='$regex_out' min_chars='$mc_out'"
+  bad "T116 scope-guard-config.sh defaults broken" "ok_count=$ok_count globs_count=$(printf '%s\n' "$globs_out" | wc -l) regex='$regex_out' min_chars='$mc_out'"
 fi
 
 # ============================================================
@@ -5418,8 +5424,10 @@ mc_out=$(CLAUDE_PROJECT_DIR="$d" bash "$helper" --min-chars 2>&1)
 rm -rf "$d"
 ok_count=0
 # Partial config: only copy_min_chars set; file_extensions + ui_dirs
-# fall back to v0.13.x defaults (24 globs).
-[ "$(printf '%s\n' "$globs_out" | wc -l)" -eq 24 ] && ok_count=$((ok_count + 1))
+# fall back to current defaults (15 dirs × 8 exts = 120 globs after the
+# bugs/002 follow-up that extended ui_dirs to cover backend traceable
+# paths).
+[ "$(printf '%s\n' "$globs_out" | wc -l)" -eq 120 ] && ok_count=$((ok_count + 1))
 echo "$globs_out" | grep -q '^app/\*\*/\*\.tsx$' && ok_count=$((ok_count + 1))
 [ "$mc_out" = "100" ] && ok_count=$((ok_count + 1))
 if [ "$ok_count" -eq 3 ]; then
