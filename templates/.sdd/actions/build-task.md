@@ -8,9 +8,9 @@ steps:
   - { id: test, action: "write the failing test for this task (RED required before code)", field: "tests/task-NNN.*" }
   - { id: code, action: "write the code that makes the new test pass (GREEN) without breaking other tests", field: "src" }
   - { id: green, action: "mark the task GREEN in spec.md and commit (one task = one commit)", field: "BUILD.task-N.status" }
-used_by: [feature]
+used_by: [feature, bug, refactor]
 references: [acceptance-criteria, plan-decompose]
-touches: []
+touches: [".sdd/<work-item>/spec.md"]
 trust: framework
 budget:
   max_minutes: 90

@@ -8,7 +8,7 @@ steps:
   - { id: metric, prompt: "Pick a metric pattern (volume / speed / quality / engagement) or describe your own. Give a target number AND the current baseline if known.", field: "§2.verifiable-outcomes" }
 used_by: [feature]
 references: []
-touches: []
+touches: [".sdd/<work-item>/spec.md"]
 trust: framework
 budget:
   max_minutes: 5

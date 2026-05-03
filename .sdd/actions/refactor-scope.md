@@ -8,7 +8,7 @@ steps:
   - { id: scope, prompt: "What's being moved/extracted/renamed? Paste the duplicated or messy code (or the function signature you're extracting). Be specific — file paths + line ranges.", field: "§1.scope" }
 used_by: [refactor]
 references: []
-touches: []
+touches: [".sdd/<work-item>/spec.md"]
 trust: framework
 budget:
   max_minutes: 15

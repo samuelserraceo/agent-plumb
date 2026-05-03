@@ -6,7 +6,7 @@ title: "push-pr"
 short_label: "Push PR"
 steps:
   - { id: push, action: "push the branch and open a PR with spec.md as the body", field: "spec.md" }
-used_by: [feature]
+used_by: [feature, bug, refactor]
 references: [problem, success, learn, plan-decompose]
 touches: []
 requires_setup: [where-it-runs]

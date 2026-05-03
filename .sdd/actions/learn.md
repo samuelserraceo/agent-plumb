@@ -7,7 +7,7 @@ short_label: "Learn"
 steps:
   - { id: summary, action: "write a one-paragraph recap of what shipped", field: "§learn.summary" }
   - { id: lessons, action: "extract 1 to 2 cross-feature lessons and sync patterns.md", field: "§learn.lessons" }
-used_by: [feature]
+used_by: [feature, bug, refactor]
 references: [problem, success, acceptance-criteria, build-task, verify-test-run, non-functional, data-contract]
 touches: [.sdd/patterns.md]
 trust: framework

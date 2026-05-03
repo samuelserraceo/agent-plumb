@@ -9,7 +9,7 @@ steps:
   - { id: new-tests, action: "draft any new T-tests for shared-shape behaviour the existing tests don't already cover", field: "§2.new-tests" }
 used_by: [refactor]
 references: [refactor-scope]
-touches: []
+touches: [".sdd/<work-item>/spec.md"]
 trust: framework
 budget:
   max_minutes: 30

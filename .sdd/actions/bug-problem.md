@@ -8,7 +8,7 @@ steps:
   - { id: what, prompt: "What's broken? In one sentence — the behaviour the user sees vs the behaviour they expect.", field: "§1.what" }
 used_by: [bug]
 references: []
-touches: []
+touches: [".sdd/<work-item>/spec.md"]
 trust: framework
 budget:
   max_minutes: 5

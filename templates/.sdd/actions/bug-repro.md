@@ -8,7 +8,7 @@ steps:
   - { id: steps, prompt: "Steps to reproduce — exact sequence. (e.g. '1. Sign up with sam@x.com  2. Click the magic-link email  3. Page shows 'Session not found' instead of dashboard')", field: "§2.steps" }
 used_by: [bug]
 references: [bug-problem]
-touches: []
+touches: [".sdd/<work-item>/spec.md"]
 trust: framework
 budget:
   max_minutes: 10

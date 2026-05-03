@@ -8,7 +8,7 @@ steps:
   - { id: pe-run,    action: draft, field: "§14.findings" }
   - { id: pe-triage, action: ask,   field: "§14.triage" }
 used_by: [feature]
-references: [acceptance-criteria, edge-case-sweep, adversarial-review, verify-test-run, learn]
+references: [acceptance-criteria, edge-case-sweep, adversarial-review, verify-test-run]
 touches: [".sdd/<work-item>/spec.md", ".sdd/<work-item>/wireframe.html"]
 trust: framework
 budget:

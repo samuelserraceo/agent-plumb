@@ -6,7 +6,7 @@ title: "verify-test-run"
 short_label: "Test run"
 steps:
   - { id: full-suite, action: "run the full test suite, mark all ACs as passing, or open a bug", field: "§verify-test-run" }
-used_by: [feature]
+used_by: [feature, bug, refactor]
 references: [acceptance-criteria, plan-decompose]
 touches: [".sdd/<work-item>/spec.md"]
 trust: framework

@@ -8,7 +8,7 @@ steps:
   - { id: approval, action: "draft the acceptance criteria, run a constraint-coverage check vs §4, iterate, get approval", field: "§11", triggers: [section_approved] }
 used_by: [feature]
 references: [success, user-stories, flows, ux-brief, non-functional]
-touches: [".sdd/<work-item>/spec.md"]
+touches: [".sdd/<work-item>/spec.md", ".sdd/<work-item>/wireframe.html"]
 trust: framework
 budget:
   max_minutes: 30

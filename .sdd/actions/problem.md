@@ -10,7 +10,7 @@ steps:
   - { id: what-breaks, prompt: "What breaks (concretely) if it isn't solved?", field: "§1.what-breaks" }
 used_by: [feature]
 references: []
-touches: []
+touches: [".sdd/<work-item>/spec.md"]
 trust: framework
 budget:
   max_minutes: 5

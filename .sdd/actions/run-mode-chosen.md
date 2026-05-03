@@ -6,9 +6,9 @@ title: "Run mode chosen"
 short_label: "Run mode"
 steps:
   - { id: mode, prompt: "How do you want to run BUILD? 1=step-by-step, 2=checkpoint-every-5, 3=full autonomous, 4=Shell Ralph headless. Or adjust.", field: "**Run mode:**" }
-used_by: [feature]
+used_by: [feature, bug, refactor]
 references: [plan-decompose]
-touches: []
+touches: [".sdd/<work-item>/spec.md"]
 trust: framework
 budget:
   max_minutes: 5

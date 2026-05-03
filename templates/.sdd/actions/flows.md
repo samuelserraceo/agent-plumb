@@ -8,7 +8,7 @@ steps:
   - { id: flows, action: "draft 1-3 critical flows, each referencing the user story it implements", field: "§7" }
 used_by: [feature]
 references: [user-stories, success]
-touches: [".sdd/<work-item>/spec.md"]
+touches: [".sdd/<work-item>/spec.md", ".sdd/<work-item>/wireframe.html"]
 trust: framework
 budget:
   max_minutes: 25
