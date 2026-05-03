@@ -2,7 +2,7 @@
 
 [PHASE: SPEC]
 
-**Active blocker:** §3 (next action: bug-root-cause)
+**Active blocker:** §4 (next action: bug-fix)
 
 ## PHASE: SPEC
 
@@ -32,7 +32,9 @@
 
 ### action: bug-root-cause
 
-- [ ] cause: investigate the repro, propose a one-line root cause in plain English, get user confirmation
+- [x] cause: two distinct root causes in the same hook.
+  - **Bug A:** the safety hook's search for the staged fingerprint list grabs both copies (live + template) when both are in one commit, producing a two-line value that breaks the next read step (`git show :<multi-line>` returns non-zero).
+  - **Bug B:** the safety hook compares the OLD content of each framework file (from git history, via `git show HEAD:<path>`) against the NEW fingerprint (in the staged update) — but a legitimate repin is exactly when those two should differ, so the check trips on every real framework update. The marker check moving to commit-msg in #138 lives in the trust-baseline block, not the file-integrity loop, so #138 doesn't gate this path.
 
 ### action: bug-fix
 
