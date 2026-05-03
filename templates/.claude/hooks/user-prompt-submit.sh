@@ -164,7 +164,8 @@ if [ "$size" -gt "$SDD_INJECTION_CAP_CHARS" ]; then
   printf '\n'
   printf '[TRUNCATED — Theme 11 grain budget: emitted %d of %d chars '\
 '(~%dK of ~%dK tokens). Full state at .sdd/INDEX.md, the active spec.md '\
-'(see Active line above), and .sdd/patterns.md. Re-read explicitly if '\
+'(see Active line above), .sdd/principles.md, .sdd/stack.md, '\
+'.sdd/data-model.md, and .sdd/patterns.md. Re-read explicitly if '\
 'you need detail beyond the truncated context.]\n' \
     "$SDD_INJECTION_CAP_CHARS" "$size" \
     "$((SDD_INJECTION_CAP_CHARS / 4000))" "$((size / 4000))"

@@ -1948,25 +1948,40 @@ fi
 # ============================================================
 note "T147: user-prompt-submit injects .sdd/stack.md when present"
 d=$(mkproj_v08)
-cd "$d"
-echo '**Active:** _(none)_' > .sdd/INDEX.md
-cat > .sdd/stack.md <<'STK'
+if ! cd "$d"; then
+  bad "T147 setup failed" "cannot cd into temp project at $d"
+else
+  echo '**Active:** _(none)_' > .sdd/INDEX.md
+  cat > .sdd/stack.md <<'STK'
 ## Stack
 
 - Database: Supabase (Postgres-compatible)
 - Hosting: Vercel
 - Email: Resend
 STK
-out=$(bash "$FRAMEWORK_ROOT/templates/.claude/hooks/user-prompt-submit.sh" 2>&1)
-ec=$?
-cd - >/dev/null
-rm -rf "$d"
-if [ "$ec" -eq 0 ] \
-   && echo "$out" | grep -q "\.sdd/stack\.md ---" \
-   && echo "$out" | grep -q "Supabase"; then
-  ok "T147 stack.md injected per turn (header + content visible)"
-else
-  bad "T147 stack.md not auto-injected" "exit=$ec; has-header=$(echo "$out" | grep -c "stack\.md"); has-content=$(echo "$out" | grep -c Supabase)"
+  cat > .sdd/patterns.md <<'PAT'
+# Patterns
+PAT
+  out=$(bash "$FRAMEWORK_ROOT/templates/.claude/hooks/user-prompt-submit.sh" 2>&1)
+  ec=$?
+  cd - >/dev/null
+  rm -rf "$d"
+  # CR cycle 1 fix: assert ordering — stack.md header appears BEFORE
+  # patterns.md header. The ordering matters because the AI reads
+  # injected context top-down; patterns.md should come last so it
+  # doesn't push earlier (more authoritative) context out of view
+  # when truncation kicks in.
+  stack_line=$(echo "$out" | grep -n "\.sdd/stack\.md ---" | head -1 | cut -d: -f1)
+  patterns_line=$(echo "$out" | grep -n "\.sdd/patterns\.md ---" | head -1 | cut -d: -f1)
+  if [ "$ec" -eq 0 ] \
+     && echo "$out" | grep -q "\.sdd/stack\.md ---" \
+     && echo "$out" | grep -q "Supabase" \
+     && [ -n "$stack_line" ] && [ -n "$patterns_line" ] \
+     && [ "$stack_line" -lt "$patterns_line" ]; then
+    ok "T147 stack.md injected per turn (header + content + ordering before patterns)"
+  else
+    bad "T147 stack.md not auto-injected or ordering wrong" "exit=$ec; has-header=$(echo "$out" | grep -c "stack\.md"); has-content=$(echo "$out" | grep -c Supabase); stack_line=$stack_line; patterns_line=$patterns_line"
+  fi
 fi
 
 # ============================================================
@@ -1978,9 +1993,11 @@ fi
 # ============================================================
 note "T148: user-prompt-submit injects .sdd/data-model.md when present"
 d=$(mkproj_v08)
-cd "$d"
-echo '**Active:** _(none)_' > .sdd/INDEX.md
-cat > .sdd/data-model.md <<'DM'
+if ! cd "$d"; then
+  bad "T148 setup failed" "cannot cd into temp project at $d"
+else
+  echo '**Active:** _(none)_' > .sdd/INDEX.md
+  cat > .sdd/data-model.md <<'DM'
 # Data model
 
 ## User
@@ -1992,16 +2009,25 @@ cat > .sdd/data-model.md <<'DM'
 - user_id: → User
 - tier: text (free | pro)
 DM
-out=$(bash "$FRAMEWORK_ROOT/templates/.claude/hooks/user-prompt-submit.sh" 2>&1)
-ec=$?
-cd - >/dev/null
-rm -rf "$d"
-if [ "$ec" -eq 0 ] \
-   && echo "$out" | grep -q "\.sdd/data-model\.md ---" \
-   && echo "$out" | grep -q "Subscription"; then
-  ok "T148 data-model.md injected per turn (header + content visible)"
-else
-  bad "T148 data-model.md not auto-injected" "exit=$ec; has-header=$(echo "$out" | grep -c "data-model\.md"); has-content=$(echo "$out" | grep -c Subscription)"
+  cat > .sdd/patterns.md <<'PAT'
+# Patterns
+PAT
+  out=$(bash "$FRAMEWORK_ROOT/templates/.claude/hooks/user-prompt-submit.sh" 2>&1)
+  ec=$?
+  cd - >/dev/null
+  rm -rf "$d"
+  # CR cycle 1 fix: assert ordering — data-model.md before patterns.md.
+  dm_line=$(echo "$out" | grep -n "\.sdd/data-model\.md ---" | head -1 | cut -d: -f1)
+  patterns_line=$(echo "$out" | grep -n "\.sdd/patterns\.md ---" | head -1 | cut -d: -f1)
+  if [ "$ec" -eq 0 ] \
+     && echo "$out" | grep -q "\.sdd/data-model\.md ---" \
+     && echo "$out" | grep -q "Subscription" \
+     && [ -n "$dm_line" ] && [ -n "$patterns_line" ] \
+     && [ "$dm_line" -lt "$patterns_line" ]; then
+    ok "T148 data-model.md injected per turn (header + content + ordering before patterns)"
+  else
+    bad "T148 data-model.md not auto-injected or ordering wrong" "exit=$ec; has-header=$(echo "$out" | grep -c "data-model\.md"); has-content=$(echo "$out" | grep -c Subscription); dm_line=$dm_line; patterns_line=$patterns_line"
+  fi
 fi
 
 # ============================================================
@@ -2012,9 +2038,11 @@ fi
 # ============================================================
 note "T149: user-prompt-submit injects .sdd/principles.md when present"
 d=$(mkproj_v08)
-cd "$d"
-echo '**Active:** _(none)_' > .sdd/INDEX.md
-cat > .sdd/principles.md <<'PRIN'
+if ! cd "$d"; then
+  bad "T149 setup failed" "cannot cd into temp project at $d"
+else
+  echo '**Active:** _(none)_' > .sdd/INDEX.md
+  cat > .sdd/principles.md <<'PRIN'
 # Principles
 
 ## All dates stored in UTC
@@ -2023,16 +2051,17 @@ cat > .sdd/principles.md <<'PRIN'
 **How to apply:** UTC for storage; local-zone conversion at the UI layer only.
 **Adopted:** 2026-05-03
 PRIN
-out=$(bash "$FRAMEWORK_ROOT/templates/.claude/hooks/user-prompt-submit.sh" 2>&1)
-ec=$?
-cd - >/dev/null
-rm -rf "$d"
-if [ "$ec" -eq 0 ] \
-   && echo "$out" | grep -q "\.sdd/principles\.md ---" \
-   && echo "$out" | grep -q "All dates stored in UTC"; then
-  ok "T149 principles.md injected per turn (header + content visible)"
-else
-  bad "T149 principles.md not auto-injected" "exit=$ec; has-header=$(echo "$out" | grep -c "principles\.md"); has-content=$(echo "$out" | grep -c 'All dates')"
+  out=$(bash "$FRAMEWORK_ROOT/templates/.claude/hooks/user-prompt-submit.sh" 2>&1)
+  ec=$?
+  cd - >/dev/null
+  rm -rf "$d"
+  if [ "$ec" -eq 0 ] \
+     && echo "$out" | grep -q "\.sdd/principles\.md ---" \
+     && echo "$out" | grep -q "All dates stored in UTC"; then
+    ok "T149 principles.md injected per turn (header + content visible)"
+  else
+    bad "T149 principles.md not auto-injected" "exit=$ec; has-header=$(echo "$out" | grep -c "principles\.md"); has-content=$(echo "$out" | grep -c 'All dates')"
+  fi
 fi
 
 # ============================================================
