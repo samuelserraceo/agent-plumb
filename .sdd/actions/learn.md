@@ -6,7 +6,7 @@ title: "learn"
 short_label: "Learn"
 steps:
   - { id: summary, action: "write a one-paragraph recap of what shipped", field: "§learn.summary" }
-  - { id: lessons, action: "extract 1 to 2 cross-feature lessons and sync patterns.md", field: "§learn.lessons" }
+  - { id: lessons, action: "extract 1 to 2 cross-work-item lessons and sync patterns.md", field: "§learn.lessons" }
 used_by: [feature, bug, refactor]
 references: [problem, success, acceptance-criteria, build-task, verify-test-run, non-functional, data-contract]
 touches: [.sdd/patterns.md]
@@ -18,7 +18,7 @@ budget:
 requires_user_approval: true
 ---
 
-Two parts of the same closing reflection: first capture **what just shipped** (one paragraph anyone can read cold), then extract **the one or two cross-feature lessons** that future features will benefit from. Each part is its own atomic step + commit.
+Two parts of the same closing reflection: first capture **what just shipped** (one paragraph anyone can read cold), then extract **the one or two cross-work-item lessons** that future work will benefit from. Each part is its own atomic step + commit. Applies to features, bugs, and refactors — substitute the work-item type wherever "feature" appears below.
 
 ---
 
@@ -47,7 +47,7 @@ One paragraph (4-6 sentences) capturing what just shipped.
 
 ## Part 2 — Lessons
 
-The distilled value of the feature. **One or two cross-feature lessons** — patterns, constraints, gotchas, surprising discoveries that future features will benefit from knowing.
+The distilled value of the work-item. **One or two cross-work-item lessons** — patterns, constraints, gotchas, surprising discoveries that future work (features, bugs, or refactors) will benefit from knowing.
 
 **Anchoring:** scan `non-functional`, `data-contract`, `acceptance-criteria`, and the summary above for signals.
 
@@ -59,7 +59,7 @@ The distilled value of the feature. **One or two cross-feature lessons** — pat
 
 **Format:** one paragraph per lesson. No jargon. Actionable. Each lesson should answer *"if you read this in 6 months, what would you do differently?"*
 
-**Sync requirement (F1 generic enforcer (`pre-commit-rules.sh`)'s `touches:` enforcement):** stage `.sdd/patterns.md` in this commit. If `patterns.md` doesn't exist yet, create it. Append the new lessons under a `## Feature: <id>-<slug>` heading.
+**Sync requirement (F1 generic enforcer (`pre-commit-rules.sh`)'s `touches:` enforcement):** stage `.sdd/patterns.md` in this commit. If `patterns.md` doesn't exist yet, create it. Append the new lessons under a heading shaped `## <work-item-type>: <id>-<slug>` — e.g. `## Feature: 003-auth-retry`, `## Bug: 002-safety-hook-still-blocks-...`, or `## Refactor: 001-extract-helper`.
 
 **Wiki-link emission (v1.0 graph layer).** Add a `Source: [[<id>-<slug>]]` line inside the appended pattern block — typically as the last line of the body, but the position doesn't strictly matter (`get_pattern.py`'s `_SOURCE_RE` searches the whole block). Wrapping the source slug in `[[…]]` does two things: the graph cache picks it up as an outgoing edge from pattern → feature, AND the existing `feature_source` extractor still returns the bare slug for callers that don't care about the link form. Future sessions querying `get_backlinks(<id>-<slug>)` will see "the pattern cites this feature as its source" alongside any other inbound references. The pattern's own backlinks (which features cite the pattern) come from `[[pattern:<slug>]]` in feature specs — that's a separate emit-point handled by `proposed-approach`. Example:
 

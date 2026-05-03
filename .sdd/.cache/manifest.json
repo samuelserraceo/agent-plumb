@@ -202,7 +202,7 @@
       "trust": "framework"
     },
     "verify-ci-green": {
-      "expected_sha256": "c39aaae0e5fea70592eba6dd9305ca7bac8cda7591a433bb14e93c6fc2fbca34",
+      "expected_sha256": "99384f421c87732a769916e256e3ef7cffcfacf180de3de345339e42146ef38f",
       "path": ".sdd/actions/verify-ci-green.md",
       "trust": "framework"
     },
@@ -223,7 +223,7 @@
     },
     "learn": {
       "path": ".sdd/actions/learn.md",
-      "expected_sha256": "3bb92f8d81d43fa851f41749a00abe165105bc645a027f747e0e92a7d2f2d3b4"
+      "expected_sha256": "b0a84fd9d2cc0d9598ff8c23ec7b157318ff1518ecfd06d2019be44a7639fad6"
     },
     "project-problem": {
       "expected_sha256": "219bc16d6b442bd2147b214384bdb8842bc801923170d7a1271f796ae88efa5a",
