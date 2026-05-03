@@ -8,7 +8,7 @@ steps:
   - { id: wireframe, action: "draft wireframe.html — UI screens for UI features OR flow + architecture for non-UI features", field: "wireframe.html" }
 used_by: [feature]
 references: [user-stories, ux-brief]
-touches: [.sdd/<work-item>/wireframe.html]
+touches: [".sdd/<work-item>/wireframe.html"]
 trust: framework
 budget:
   max_minutes: 45

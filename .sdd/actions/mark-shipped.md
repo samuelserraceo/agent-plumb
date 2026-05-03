@@ -8,7 +8,7 @@ steps:
   - { id: mark, action: "write the .shipped marker and update INDEX.md's Shipped block", field: ".shipped", triggers: [ship_complete] }
 used_by: [feature]
 references: [push-pr, verify-ci-green]
-touches: [.sdd/INDEX.md]
+touches: [".sdd/INDEX.md", ".sdd/<work-item>/.shipped"]
 trust: framework
 budget:
   max_minutes: 5
@@ -47,7 +47,7 @@ Final SHIP action. Move the work item from `## In flight` to `## Shipped` in IND
 
 5. **Commit:** `git add .sdd/INDEX.md .sdd/<work_item_folder>/<id>-<slug>/.shipped && git commit -m "[SDD] index: <id>-<slug> shipped"`
 
-**Sync requirement (pre-commit-rules.sh `touches:` enforcement):** the `touches: [.sdd/INDEX.md]` declaration ensures INDEX.md is staged in this commit.
+**Sync requirement (pre-commit-rules.sh `touches:` enforcement):** the `touches: [".sdd/INDEX.md", ".sdd/<work-item>/.shipped"]` declaration ensures both INDEX.md and the `.shipped` marker are staged in this commit. (The `<work-item>` placeholder is currently skipped by the F1 enforcer per the inline rule at `pre-commit-rules.sh`'s touches-validation loop, but it documents intent for the planned per-branch worktree-aware substitution — see issue #42.)
 
 **Why richer entries (Memory-at-scale pillar):** the catalog block is the only durable, agent-readable index of what's been built. Future sessions extending or tweaking a feature read INDEX.md (already injected via UserPromptSubmit hook), match by name or substring, and follow the `Extends:` chain — all without cold-reading shipped specs. The `Data-model:` line points at `data-model.md`'s entity definitions; the `Lesson:` line points at `patterns.md`. Cross-references replace re-reading.
 
