@@ -2,7 +2,7 @@
 
 [PHASE: SPEC]
 
-**Active blocker:** §4 (next action: bug-fix)
+**Active blocker:** §5 (next action: bug-regression-test)
 
 ## PHASE: SPEC
 
@@ -38,7 +38,22 @@
 
 ### action: bug-fix
 
-- [ ] approval: draft the minimal-diff fix, name files touched, get user approval
+- [x] approval: minimum-diff fix in two places of `templates/.claude/hooks/pre-commit-stage-verified.sh` — approved by Sam on 2026-05-03.
+
+  **Files touched:**
+  - `templates/.claude/hooks/pre-commit-stage-verified.sh` (the fix; ~6 lines changed)
+  - `test/run-framework-test.sh` (regression tests T143 + T144)
+
+  **Bug A fix** — tighten the manifest path search.
+  - Current: line 70 regex `(^|/)\.sdd/\.cache/manifest\.json$` matches both `.sdd/.cache/manifest.json` and `templates/.sdd/.cache/manifest.json`.
+  - Change to: `^\.sdd/\.cache/manifest\.json$` (anchored to start; only the live manifest matches).
+  - Why safe: the templates manifest is data — user projects don't read from it as their live manifest. The moat protects the live manifest only.
+
+  **Bug B fix** — skip the per-file HEAD content check when the file is staged in this commit.
+  - In the file-integrity loop around line 614, add a guard: pass the staged-files list into the python block as `STAGED_FILES` env var (newline-separated), parse as a set, and `continue` past the HEAD check if `rel in staged_files`.
+  - Why safe: the cross-commit attack the HEAD check defends against is exactly *"HEAD has tampered content + working tree reverted to clean"* — in that attack, the file is NOT in the staged set (no diff between HEAD and WT). Skipping the HEAD check on staged files preserves the defence; only the false-positive on legitimate repins disappears.
+
+  Defence-in-depth preserved on both fixes: WT hash check + manifest trust-baseline check + marker requirement (in commit-msg) all still apply.
 
 ### action: bug-regression-test
 
