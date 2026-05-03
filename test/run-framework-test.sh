@@ -4932,6 +4932,68 @@ else
 fi
 
 # ============================================================
+# T146 — post-stop-lint refuses ## Shipped rows that don't have a
+#        corresponding .shipped marker (invariant 10 — Wave 1 must-fix
+#        from v1.3 audit). Catches the lying-about-shipped-state drift
+#        the framework can't detect today.
+# ============================================================
+note "T146: post-stop-lint refuses ## Shipped row without .shipped marker"
+d=$(mkproj_v08)
+cd "$d"
+mkdir -p .sdd/features/777-real-shipped .sdd/features/888-fake-shipped
+touch .sdd/features/777-real-shipped/.shipped
+# 888-fake-shipped intentionally has no marker
+cat > .sdd/INDEX.md <<'IDX'
+# Project Index
+
+**Active:** _(none)_
+
+## In flight
+- (none)
+
+## Shipped
+- **features/777-real-shipped** — actually shipped
+- **features/888-fake-shipped** — claimed shipped but no marker
+IDX
+ec=0
+err=$(echo '{"hook_event_name":"Stop"}' | bash .claude/hooks/post-stop-lint.sh 2>&1 1>/dev/null) || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 2 ] && echo "$err" | grep -q "888-fake-shipped" && ! echo "$err" | grep -q "777-real-shipped"; then
+  ok "T146 hook refused Shipped row without .shipped marker (invariant 10)"
+else
+  bad "T146 hook missed lying-about-shipped drift" "ec=$ec; err='$err'"
+fi
+
+# T146b — wiki-link form `[[<id>-<slug>]]` rows in ## Shipped get
+# the same treatment (resolved to features/<slug>).
+note "T146b: post-stop-lint applies invariant 10 to wiki-link form rows"
+d=$(mkproj_v08)
+cd "$d"
+mkdir -p .sdd/features/999-wiki-fake
+# No marker
+cat > .sdd/INDEX.md <<'IDX'
+# Project Index
+
+**Active:** _(none)_
+
+## In flight
+- (none)
+
+## Shipped
+- **[[999-wiki-fake]]** — wiki-link form, no marker
+IDX
+ec=0
+err=$(echo '{"hook_event_name":"Stop"}' | bash .claude/hooks/post-stop-lint.sh 2>&1 1>/dev/null) || ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 2 ] && echo "$err" | grep -q "999-wiki-fake"; then
+  ok "T146b hook refused wiki-link Shipped row without marker"
+else
+  bad "T146b hook missed wiki-link Shipped drift" "ec=$ec; err='$err'"
+fi
+
+# ============================================================
 # T119c — post-stop-lint refuses spec.md with two [PHASE: X] lines
 #         (invariant 3).
 # ============================================================

@@ -13,7 +13,7 @@
 # English fix path if any drifted. Foundation 3 (never assume — always
 # check) applied at turn boundary, not just commit boundary.
 #
-# The 9 invariants checked:
+# The 10 invariants checked:
 #   1. .sdd/INDEX.md has exactly one **Active:** line
 #   2. .sdd/INDEX.md ## In flight lines all point at existing feature folders
 #   3. Active feature's spec.md has a single [PHASE: X] line
@@ -25,6 +25,9 @@
 #   8. Wiki-links [[slug]] in .sdd/ markdown all resolve to known nodes
 #      (v1.0 graph layer; opt-in via the MCP server extension)
 #   9. No NUL bytes in any tracked .sdd/ file (binary contamination)
+#  10. Every row under ## Shipped in INDEX.md has a corresponding
+#      .shipped marker file (catches "claimed shipped but not actually
+#      shipped" drift — the framework's own credibility check).
 #
 # Wires up as a Claude Code Stop hook in settings.json. Stop hooks
 # receive a JSON payload on stdin describing the session state, but
@@ -713,6 +716,82 @@ $samples
 }
 
 # ============================================================
+# Invariant 10 — every row under ## Shipped in INDEX.md has a
+# corresponding .shipped marker file in the work-item folder.
+# Catches the "claimed shipped but not actually shipped" drift —
+# the framework's own credibility check. Surfaced by the v1.3
+# audit (Wave 1 must-fix #3) which flagged that any contributor
+# could add a row in `## Shipped` without the folder having a
+# `.shipped` marker; the lie would ship.
+# ============================================================
+check_shipped_rows_have_marker() {
+  local index=".sdd/INDEX.md"
+  [ -f "$index" ] || return 0
+  local result
+  result=$(INDEX="$index" PROJECT_DIR="$PROJECT_DIR" python3 <<'PYEOF' 2>/dev/null || true
+import os, re, sys
+
+index = os.environ["INDEX"]
+project_dir = os.environ["PROJECT_DIR"]
+
+try:
+    with open(index, encoding="utf-8") as f:
+        text = f.read()
+except OSError:
+    sys.exit(0)
+
+# Find the ## Shipped section body. Stops at the next top-level
+# heading (so blocks like ## Pending production verification or
+# ## Shipped via ad-hoc PRs don't get treated as shipped rows).
+m = re.search(r"^##\s+Shipped\s*\n(.*?)(?=^##\s+|\Z)",
+              text, re.MULTILINE | re.DOTALL)
+if not m:
+    sys.exit(0)
+body = m.group(1)
+
+# Two row formats both seen in INDEX.md:
+#   - **bugs/002-...** — ...   (plain-text, post-bugs/002 shape)
+#   - **[[005-...]]** — ...    (wiki-link form, older format)
+#
+# For wiki-link form, the slug resolves to a feature folder under
+# .sdd/features/. For plain-text form the path is explicit.
+plain_re = re.compile(r"^\s*-\s+\*\*([a-z][a-z0-9_-]*/[a-zA-Z0-9][a-zA-Z0-9._-]*)\*\*", re.MULTILINE)
+wiki_re  = re.compile(r"^\s*-\s+\*\*\[\[([a-zA-Z0-9][a-zA-Z0-9._-]*)\]\]\*\*", re.MULTILINE)
+
+paths_to_check = set()
+for m2 in plain_re.finditer(body):
+    paths_to_check.add(m2.group(1))
+for m2 in wiki_re.finditer(body):
+    slug = m2.group(1)
+    # Wiki-link form resolves to features/ (the historical default
+    # before bugs/refactors got their own row format).
+    paths_to_check.add(f"features/{slug}")
+
+missing = []
+for p in sorted(paths_to_check):
+    folder = os.path.join(project_dir, ".sdd", p)
+    marker = os.path.join(folder, ".shipped")
+    if not os.path.isfile(marker):
+        missing.append(p)
+
+if missing:
+    print("MISSING:" + ",".join(missing))
+PYEOF
+)
+  if [ -n "$result" ] && [[ "$result" == MISSING:* ]]; then
+    local missing_list
+    missing_list="${result#MISSING:}"
+    local pretty
+    pretty=$(echo "$missing_list" | tr ',' '\n' | sed 's|^|    .sdd/|')
+    add_violation "[stop-lint] .sdd/INDEX.md ## Shipped rows missing .shipped marker:
+$pretty
+  Fix: either create the marker (touch .sdd/<path>/.shipped) if
+       the work item really is shipped, or remove / move the row
+       out of ## Shipped if it isn't ready yet."
+  fi
+}
+
+# ============================================================
 # Run all checks. Each adds to $violations on drift; nothing exits
 # early — we want the user to see the whole picture in one pass.
 # ============================================================
@@ -726,6 +805,7 @@ check_manifest_json
 check_ticked_rows_have_answers
 check_wiki_links_resolve
 check_no_nul_bytes
+check_shipped_rows_have_marker
 
 # Happy path: no violations → silent allow.
 [ -z "$violations" ] && exit 0
