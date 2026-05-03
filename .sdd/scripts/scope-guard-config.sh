@@ -23,9 +23,15 @@
 # of the three keys is missing or malformed.
 #
 # Defaults (must match `templates/.sdd/config.md`'s scope_guard: block):
-#   file_extensions: [tsx, jsx, ts, js]
-#   ui_dirs: [app, components, pages, src/app, src/components, src/pages]
+#   file_extensions: [tsx, jsx, ts, js, py, rb, go, sql]
+#   ui_dirs: [app, components, pages, src/app, src/components, src/pages,
+#             app/api, pages/api, routes, migrations, server, src/api,
+#             src/server, lib/db, db]
 #   copy_min_chars: 30
+#
+# Variable name `ui_dirs` is legacy — covers backend traceable dirs too
+# (api routes, db migrations, server code). Kept as-is for backward
+# compatibility with downstream projects that have it in their config.
 #
 # Exit:
 #   0 — emitted output to stdout
@@ -45,8 +51,8 @@ CONFIG="$PROJECT_DIR/.sdd/config.md"
 # Defaults — must stay in sync with `templates/.sdd/config.md` so a
 # project without a scope_guard: block gets the same behaviour as one
 # with the defaults written out.
-DEFAULT_EXTS="tsx jsx ts js"
-DEFAULT_DIRS="app components pages src/app src/components src/pages"
+DEFAULT_EXTS="tsx jsx ts js py rb go sql"
+DEFAULT_DIRS="app components pages src/app src/components src/pages app/api pages/api routes migrations server src/api src/server lib/db db"
 DEFAULT_MIN_CHARS="30"
 
 # Try to read config.md's scope_guard block. Falls through to defaults

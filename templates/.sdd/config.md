@@ -119,10 +119,19 @@ folder_rules:
 scope_guard:
   # Per-project scope-guard configuration (closes #16). The CI's scope-guard
   # job checks that newly-added UI copy strings (≥ copy_min_chars) appear in
-  # spec.md or wireframe.html, and that new UI files have a `// spec:` comment.
-  # Defaults below match the v0.13.x Next.js shape; override per project.
-  file_extensions: [tsx, jsx, ts, js]
-  ui_dirs: [app, components, pages, src/app, src/components, src/pages]
+  # spec.md or wireframe.html, and that new traceable files (UI + backend)
+  # carry a spec-reference comment in the first 10 lines. Comment syntax is
+  # per-language: `// spec: ...` for JS/TS/Go, `# spec: ...` for Python/Ruby,
+  # `-- spec: ...` for SQL. Defaults below cover the v0.13.x Next.js
+  # shape PLUS common backend conventions (api routes, db migrations,
+  # server code) so the "code traces back to spec" claim holds for both
+  # UI and backend changes. Override per project.
+  #
+  # Variable name `ui_dirs` is legacy from the v0.13.x UI-only era — kept
+  # as-is so existing downstream projects don't break on schema rename.
+  # The list now covers backend traceable dirs too.
+  file_extensions: [tsx, jsx, ts, js, py, rb, go, sql]
+  ui_dirs: [app, components, pages, src/app, src/components, src/pages, app/api, pages/api, routes, migrations, server, src/api, src/server, lib/db, db]
   copy_min_chars: 30
 events:
   section_approved:

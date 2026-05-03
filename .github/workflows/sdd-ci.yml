@@ -229,7 +229,7 @@ jobs:
             exit 1
           fi
 
-          # ─── Block 2: new UI files must carry a `// spec:` reference ──
+          # ─── Block 2: new traceable files (UI + backend) must carry a `// spec:` reference ──
           # Range form: three-dot — same reason as Block 1 above. Files
           # added on main after the PR branched must not count as files
           # this PR added.
@@ -239,7 +239,11 @@ jobs:
           if [ -x "$SG_HELPER" ]; then
             ui_path_re=$(bash "$SG_HELPER" --regex)
           else
-            ui_path_re='^(app|components|pages|src/app|src/components|src/pages)/.*\.(tsx|jsx|ts|js)$'
+            # Fallback regex: covers UI (app/components/pages/src/...) AND
+            # backend (api routes, migrations, server code) traceable paths.
+            # Variable name `ui_path_re` is legacy from the v0.13.x UI-only
+            # era; the regex now covers both UI and backend.
+            ui_path_re='^(app|components|pages|src/app|src/components|src/pages|app/api|pages/api|routes|migrations|server|src/api|src/server|lib/db|db)/.*\.(tsx|jsx|ts|js|py|rb|go|sql)$'
           fi
           # Validate the regex compiles (CR cycle-3 major). Without
           # this check, a malformed scope_guard config in a downstream
@@ -271,7 +275,9 @@ jobs:
           if [ -n "$new_ui_files" ]; then
             while IFS= read -r file; do
               [ -z "$file" ] && continue
-              if ! head -10 "$file" | grep -qE '(//|/\*|\*).*spec:\s*(features/|\.sdd/|\S+\.md)' ; then
+              # Match `// spec:` (JS/TS/Go), `/* spec:` / `* spec:` (JS/TS
+              # block comments), `# spec:` (Python/Ruby), `-- spec:` (SQL).
+              if ! head -10 "$file" | grep -qE '(//|/\*|\*|#|--).*spec:\s*(features/|\.sdd/|\S+\.md)' ; then
                 missing_ref+=("$file")
               fi
             done <<< "$new_ui_files"
@@ -279,18 +285,22 @@ jobs:
 
           if [ ${#missing_ref[@]} -gt 0 ]; then
             {
-              echo "::error::[SDD scope-guard] new UI files missing \`// spec:\` reference"
+              echo "::error::[SDD scope-guard] new files missing \`// spec:\` reference (UI + backend)"
               echo ""
               echo "  Files:"
               for f in "${missing_ref[@]}"; do
                 echo "    • $f"
               done
               echo ""
-              echo "  Add a comment in the first 10 lines, e.g.:"
+              echo "  Add a comment in the first 10 lines. Use the comment"
+              echo "  syntax that matches the file's language:"
+              echo "    JS/TS/Go: // spec: ..."
+              echo "    Python/Ruby: # spec: ..."
+              echo "    SQL: -- spec: ..."
               if [ -f "$spec" ]; then
-                echo "    // spec: $spec §3 US2 — <what this file is for>"
+                echo "  e.g. // spec: $spec §3 US2 — <what this file is for>"
               else
-                echo "    // spec: $wireframe — <what this file is for>"
+                echo "  e.g. // spec: $wireframe — <what this file is for>"
               fi
             } >&2
             exit 1
