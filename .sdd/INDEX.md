@@ -1,8 +1,8 @@
 # SDD framework — INDEX
 
-**Active:** (none)
+**Active:** _(none)_
 **Playbook:** feature
-**Active blocker:** (none — last shipped: 005-wireframe-action-redesign on 2026-05-03)
+**Active blocker:** _(none — last shipped: 005-wireframe-action-redesign on 2026-05-03)_
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
