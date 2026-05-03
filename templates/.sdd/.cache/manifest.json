@@ -132,7 +132,7 @@
       "trust": "framework"
     },
     "flows": {
-      "expected_sha256": "b645c0f2a205ab628b19df292a45c37d5ad4be64c11bd0efa1cb23f22d4ddb81",
+      "expected_sha256": "f8958784351b62116fc6a3c1b5b90b58ca5804e559bd6f4fa34f55e107d9bad2",
       "path": ".sdd/actions/flows.md",
       "trust": "framework"
     },
@@ -152,7 +152,7 @@
       "trust": "framework"
     },
     "plan-decompose": {
-      "expected_sha256": "dbfad47115b35594a07817f790dcfd2813d2f5af2362765be4bb14cb836a75b3",
+      "expected_sha256": "918394ee0313e5b7ca3150b9324a1de6bf93830b1783e1c5614ab534f09aa21d",
       "path": ".sdd/actions/plan-decompose.md",
       "trust": "framework"
     },
@@ -182,7 +182,7 @@
       "trust": "framework"
     },
     "signoff-steps": {
-      "expected_sha256": "94b421ddc4d0f4b4a07e2b9861c7997328fc18af0f6675830b2cd092e5959663",
+      "expected_sha256": "de17f3477da5439838655532f81520f6fcf8c77dedab0145187df2accfa5450c",
       "path": ".sdd/actions/signoff-steps.md",
       "trust": "framework"
     },
