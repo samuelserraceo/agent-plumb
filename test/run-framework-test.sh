@@ -4741,62 +4741,110 @@ fi
 # sharing an ID makes failures ambiguous in the report; CR cycle-2
 # flagged the collision.
 # ============================================================
-note "T120: framework's root .sdd/ stays in sync with templates/.sdd/"
-# Closes #95: scan whichever subdirs DO exist in root .sdd/, instead of
+note "T120: framework's root .sdd/ + .claude/ stay in sync with templates/"
+# Closes #95: scan whichever subdirs DO exist in root, instead of
 # requiring all 3 (playbooks + actions + scripts) before the test runs.
-# Earlier behaviour silently skipped partially-bootstrapped repos. Now:
-# walks the per-subdir intersection of (templates has it) AND
-# (either templates OR root has it), so partial bootstraps still surface
-# real drift. Only when NONE of the 3 root subdirs exist do we skip
-# (still assumes the contributor never ran init.sh).
-if [ -d "$FRAMEWORK_ROOT/.sdd/playbooks" ] || [ -d "$FRAMEWORK_ROOT/.sdd/actions" ] || [ -d "$FRAMEWORK_ROOT/.sdd/scripts" ]; then
+# Earlier behaviour silently skipped partially-bootstrapped repos.
+#
+# Closes #136: extended to cover .claude/hooks/ and .claude/commands/
+# too. Without this, the framework's own root .claude/hooks/ went
+# missing entirely and no test caught it — the framework wasn't
+# dogfooding its own pre-commit / stop-lint hooks. Same bidirectional
+# logic, just walking 5 subdir pairs instead of 3.
+if [ -d "$FRAMEWORK_ROOT/.sdd/playbooks" ] || [ -d "$FRAMEWORK_ROOT/.sdd/actions" ] || [ -d "$FRAMEWORK_ROOT/.sdd/scripts" ] \
+   || [ -d "$FRAMEWORK_ROOT/.claude/hooks" ] || [ -d "$FRAMEWORK_ROOT/.claude/commands" ]; then
   drift=""
-  for sub in playbooks actions scripts; do
-    tpl_dir="$FRAMEWORK_ROOT/templates/.sdd/$sub"
-    root_dir="$FRAMEWORK_ROOT/.sdd/$sub"
+  # Pairs of (root-relative-prefix, template-relative-prefix) — both walk
+  # together. Hooks include a no-extension `pre-commit` git shim, so the
+  # find filter is broader for .claude/hooks/ than for the rest.
+  for spec in ".sdd:playbooks" ".sdd:actions" ".sdd:scripts" ".claude:hooks" ".claude:commands"; do
+    root_top="${spec%%:*}"
+    sub="${spec##*:}"
+    tpl_dir="$FRAMEWORK_ROOT/templates/$root_top/$sub"
+    root_dir="$FRAMEWORK_ROOT/$root_top/$sub"
+
+    # File-name filter per subdir is set inline below — bash + the
+    # `find -type f \( ... \)` form doesn't survive eval because the
+    # unescaped parens break the parser. Two find calls per direction
+    # keeps it portable: hooks include the no-extension `pre-commit`
+    # native git shim; everything else only looks at .md / .sh files.
+
+    # Soft check policy for .claude/ only: the root .claude/ tree is
+    # gitignored on the framework repo (per-contributor working copy
+    # bootstrapped via scripts/init.sh — see #125 for the same pattern
+    # applied to root CLAUDE.md). On CI checkouts where init.sh hasn't
+    # been run, root .claude/hooks/ + .claude/commands/ legitimately
+    # don't exist. Skip the forward scan for those subdirs when root
+    # is absent, instead of spamming MISSING entries for every hook.
+    # The reverse scan still runs when root_dir exists, so contributor-
+    # local drift is still caught. The .sdd/ subdirs are always
+    # committed and DO require both directions.
+    if [ "$root_top" = ".claude" ] && [ ! -d "$root_dir" ]; then
+      continue
+    fi
 
     # Forward scan: every templates/ file must exist + match in root/.
     if [ -d "$tpl_dir" ]; then
+      if [ "$root_top" = ".claude" ] && [ "$sub" = "hooks" ]; then
+        tpl_files=$(find "$tpl_dir" -type f \( -name '*.md' -o -name '*.sh' -o -name 'pre-commit' \) 2>/dev/null)
+      else
+        tpl_files=$(find "$tpl_dir" -type f \( -name '*.md' -o -name '*.sh' \) 2>/dev/null)
+      fi
       while IFS= read -r tpl_file; do
         [ -z "$tpl_file" ] && continue
         rel="${tpl_file#$tpl_dir/}"
         root_file="$root_dir/$rel"
         if [ ! -f "$root_file" ]; then
-          drift="${drift}MISSING: .sdd/$sub/$rel
+          drift="${drift}MISSING: $root_top/$sub/$rel
 "
           continue
         fi
         if ! diff -q "$tpl_file" "$root_file" >/dev/null 2>&1; then
-          drift="${drift}DIFF: .sdd/$sub/$rel
+          drift="${drift}DIFF: $root_top/$sub/$rel
 "
         fi
-      done < <(find "$tpl_dir" -type f \( -name '*.md' -o -name '*.sh' \) 2>/dev/null)
+      done <<<"$tpl_files"
     fi
 
     # Reverse scan: every root/ file must exist in templates/. Catches
-    # drift the other direction — orphan files in root .sdd/ that have
-    # no source in templates/.sdd/. Closes #95: bidirectional T118.
+    # orphan files with no source in templates/. Closes #95.
     if [ -d "$root_dir" ]; then
+      if [ "$root_top" = ".claude" ] && [ "$sub" = "hooks" ]; then
+        root_files=$(find "$root_dir" -type f \( -name '*.md' -o -name '*.sh' -o -name 'pre-commit' \) 2>/dev/null)
+      else
+        root_files=$(find "$root_dir" -type f \( -name '*.md' -o -name '*.sh' \) 2>/dev/null)
+      fi
       while IFS= read -r root_file; do
         [ -z "$root_file" ] && continue
         rel="${root_file#$root_dir/}"
         tpl_file="$tpl_dir/$rel"
         if [ ! -f "$tpl_file" ]; then
-          drift="${drift}EXTRA: .sdd/$sub/$rel (no source in templates/.sdd/$sub/)
+          drift="${drift}EXTRA: $root_top/$sub/$rel (no source in templates/$root_top/$sub/)
 "
         fi
-      done < <(find "$root_dir" -type f \( -name '*.md' -o -name '*.sh' \) 2>/dev/null)
+      done <<<"$root_files"
     fi
   done
+
+  # Also enforce that root .claude/settings.json (if it exists) matches
+  # templates/.claude/settings.json — this is the hook registration map,
+  # and drift here means hooks ship but never fire.
+  if [ -f "$FRAMEWORK_ROOT/.claude/settings.json" ] && [ -f "$FRAMEWORK_ROOT/templates/.claude/settings.json" ]; then
+    if ! diff -q "$FRAMEWORK_ROOT/templates/.claude/settings.json" "$FRAMEWORK_ROOT/.claude/settings.json" >/dev/null 2>&1; then
+      drift="${drift}DIFF: .claude/settings.json (hook registration map drift — root vs templates)
+"
+    fi
+  fi
+
   if [ -z "$drift" ]; then
-    ok "T120 root .sdd/ stays in sync with templates/.sdd/ (bidirectional: missing + diff + extra)"
+    ok "T120 root .sdd/ + .claude/ stay in sync with templates/ (bidirectional: missing + diff + extra)"
   else
     bad "T120 framework self-host drift detected" "$drift"
   fi
 else
-  # No subdirs exist in root .sdd/ at all — fresh contributor clone
-  # before init.sh has been run. Skip cleanly so this doesn't false-fail.
-  ok "T120 root .sdd/ not bootstrapped yet — skipping (run scripts/init.sh to enable)"
+  # No subdirs exist in root at all — fresh contributor clone before
+  # init.sh has been run. Skip cleanly so this doesn't false-fail.
+  ok "T120 root .sdd/ + .claude/ not bootstrapped yet — skipping (run scripts/init.sh to enable)"
 fi
 
 # ============================================================
