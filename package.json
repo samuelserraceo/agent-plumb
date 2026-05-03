@@ -1,0 +1,17 @@
+{
+  "name": "spec-driven-dev-workflow-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Playwright tests for the SDD framework's own walkthrough HTML and feature wireframes. The framework itself is bash + Python + markdown — this package.json exists ONLY so contributors who run the browser tests can install Playwright. Closes #116.",
+  "scripts": {
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:install": "playwright install --with-deps chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
