@@ -69,8 +69,13 @@ fi
 # Numerical: 1KB, 80%, ≥5, ≤100ms, etc. Match digit + unit/sign.
 TOK_NUMERIC='([0-9]+%|[<>≤≥]\s*[0-9]+\s*(KB|MB|ms|sec|tokens?|bytes?)|at least [0-9]+|≥[[:space:]]*[0-9]+|≤[[:space:]]*[0-9]+)'
 
-# Currency: $0.50, USD, dollars, cents
-TOK_CURRENCY='(\$[0-9]+(\.[0-9]+)?|USD|cents?|dollars?)'
+# Currency: $0.50, $50, $100, USD, dollars, cents.
+# Single-digit $N (e.g. $1, $2) excluded so bash positional args in
+# prose code references don't false-positive (caught in bugs/001 spec
+# review where `as $1` for "first positional argument" matched the
+# currency regex). To match real currency, require either a decimal
+# point ($0.50, $1.99) OR at least two digits ($50, $100).
+TOK_CURRENCY='(\$[0-9]+\.[0-9]+|\$[1-9][0-9]+|USD|cents?|dollars?)'
 
 # Enforcement verbs (whole-word). Refuses/enforces/prevents/ensures/guarantees.
 # Plus absolute always/never (rare but classic theatre).
@@ -138,15 +143,20 @@ for spec in "${TARGETS[@]}"; do
     fi
     if [ -z "$found_token" ]; then
       # Currency tokens. Token-specific boundaries:
-      #   - `\$N` where N≥1 — matches anywhere (`$0` alone is "free", skip)
+      #   - `$N.M` (decimal): $0.50, $1.99 — always currency-shaped
+      #   - `$NN+` (multi-digit): $50, $100 — always currency-shaped
+      #   - Single-digit `$N` ($0, $1, …, $9): EXCLUDED. Bash positional
+      #     argument syntax dominates that shape in tech prose (e.g.
+      #     "the message file path as $1"). Caught in bugs/001 spec
+      #     review where `as $1` falsely matched. Real currency claims
+      #     overwhelmingly write the decimal form ($0.50) or multi-digit
+      #     ($10) — accepting the rare miss of "$5 cap" prose for the
+      #     much more common bash-arg false-positive avoidance.
       #   - `usd`, `dollars?` — match anywhere; rare false positives,
       #     and `cost_limit_usd` IS the canonical Sam example we want.
       #   - `cents?` — require non-letter boundary (otherwise matches
       #     inside `agent`, `recent`, `decent`).
-      # Currency $N — allow $0, $0.50 too (a "$0 cap" claim is still
-      # theatre about the cost). CR cycle 1: previous [1-9] gate
-      # missed valid theatre cases.
-      m=$(printf '%s' "$stripped" | grep -ioE '\$[0-9]+(\.[0-9]+)?' | head -1)
+      m=$(printf '%s' "$stripped" | grep -ioE '\$[0-9]+\.[0-9]+|\$[0-9]{2,}' | head -1)
       if [ -n "$m" ]; then
         found_token="$m"
       fi
