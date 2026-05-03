@@ -33,6 +33,16 @@ parameters:
       top_k: 5                  # how many results to return per search
       max_chunks_per_run: 1000  # cost ceiling — refuses to embed more chunks than this in one call
       auth_header: ""           # optional. To keep tokens OUT of tracked config, use ${ENV_VAR_NAME} indirection (e.g. "${SDD_MCP_AUTH}") and put the literal token in the env var. Literal values still work. Empty = no auth header sent.
+    tier3:               # opt-in Tier 3 LLM-driven synthesis over .sdd/ corpus — chat-style answers with cite-checked wiki-link citations. v1.1 wizard-supported provider: Ollama+Gemma running locally. Other providers (OpenAI / Anthropic / etc.) settable manually but not wizard-supported until v1.2+. See extensions/sdd-mcp-server/README.md and [[001-tier-3-llm-driven-synthesis]].
+      enabled: false
+      provider: ""                       # v1.1 wizard: "ollama-chat" (Gemma); manual: openai / anthropic / etc. (v1.2+ widens wizard). REQUIRED when enabled — no silent default per foundation 3.
+      endpoint: ""                       # http(s)://host:port — base URL the chat AI lives at
+      model: ""                          # chat model name (e.g. "gemma2:2b" for Ollama)
+      max_calls_per_run: 10              # exact integer counter — refuses past this
+      max_input_tokens_per_call: 8000    # exact — refuses to send larger context to the AI
+      max_total_tokens_per_run: 100000   # exact — stops once running total crossed
+      auth_header: ""                    # optional. To keep tokens OUT of tracked config, use ${ENV_VAR_NAME} indirection. Literal values still work. Empty = no auth header sent. NOTE: v1.1 default Ollama+Gemma local doesn't need this; load-bearing for v1.2+ paid providers.
+      # Anti-theatre note (Sam's catch 2026-05-01): there is no `cost_limit_usd` field. The framework can't enforce dollar amounts without a per-provider pricing table or a live spending ledger — neither exists. Token caps above are the mechanical enforcement. Dollar guidance for picking a provider lives in the spec, not here.
 file_classes:
   CLAIM:
     - '(^|/)verification\.json$'
@@ -95,6 +105,8 @@ folder_rules:
     - "package-lock.json"
     - "node_modules"
     - "tsconfig.json"
+    - "playwright.config.ts"
+    - "playwright.config.js"
     - "Makefile"
     - "Dockerfile"
     - "docs"
@@ -103,6 +115,7 @@ folder_rules:
     - "tests"
     - "templates"
     - ".github"
+    - "extensions"
 scope_guard:
   # Per-project scope-guard configuration (closes #16). The CI's scope-guard
   # job checks that newly-added UI copy strings (≥ copy_min_chars) appear in
