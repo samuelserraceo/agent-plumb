@@ -107,6 +107,18 @@ emit_state() {
     echo ""
   fi
 
+  # bugs/002 follow-up (Wave 2 #2): inject data-model.md per turn so the
+  # AI sees the project's entities/fields and stops duplicating schema
+  # definitions or inventing entity names. Same reason as stack.md:
+  # CLAUDE.md said "read on session start" but session-start is
+  # unreliable. The truncation logic below caps total injected size, so
+  # an oversized data-model.md falls off rather than blowing the budget.
+  if [ -f .sdd/data-model.md ]; then
+    echo "--- .sdd/data-model.md ---"
+    cat .sdd/data-model.md
+    echo ""
+  fi
+
   if [ -f .sdd/patterns.md ]; then
     echo "--- .sdd/patterns.md ---"
     cat .sdd/patterns.md

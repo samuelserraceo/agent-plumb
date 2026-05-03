@@ -1970,6 +1970,41 @@ else
 fi
 
 # ============================================================
+# T148 — user-prompt-submit auto-injects .sdd/data-model.md when present.
+#        Wave 2 #2 (v1.3 audit follow-up): the AI was supposed to read
+#        data-model.md on demand, but discoverability was poor. Inject
+#        every turn so the AI doesn't duplicate entity definitions or
+#        invent entity names that already exist.
+# ============================================================
+note "T148: user-prompt-submit injects .sdd/data-model.md when present"
+d=$(mkproj_v08)
+cd "$d"
+echo '**Active:** _(none)_' > .sdd/INDEX.md
+cat > .sdd/data-model.md <<'DM'
+# Data model
+
+## User
+- id: uuid
+- email: citext (unique)
+
+## Subscription
+- id: uuid
+- user_id: → User
+- tier: text (free | pro)
+DM
+out=$(bash "$FRAMEWORK_ROOT/templates/.claude/hooks/user-prompt-submit.sh" 2>&1)
+ec=$?
+cd - >/dev/null
+rm -rf "$d"
+if [ "$ec" -eq 0 ] \
+   && echo "$out" | grep -q "\.sdd/data-model\.md ---" \
+   && echo "$out" | grep -q "Subscription"; then
+  ok "T148 data-model.md injected per turn (header + content visible)"
+else
+  bad "T148 data-model.md not auto-injected" "exit=$ec; has-header=$(echo "$out" | grep -c "data-model\.md"); has-content=$(echo "$out" | grep -c Subscription)"
+fi
+
+# ============================================================
 # T59 — advance.sh appends to .sdd/metrics.md (Theme 12 — token instrumentation)
 #   RED: advance.sh updates INDEX.md but never logs the iteration. Sam can't
 #        answer "is this framework earning its keep?" with data.
