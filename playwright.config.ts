@@ -50,14 +50,23 @@ export default defineConfig({
     screenshot: "only-on-failure",
   },
 
+  // Two projects, both Chromium-engine — per Sam's #116 design call
+  // "Chrome only" for first cut. The mobile project uses Pixel 5 (a
+  // Chromium-engine device profile shipped by Playwright) instead of
+  // iPhone 13 (WebKit engine), so we don't need to install WebKit on
+  // CI just to assert mobile-viewport rendering. Pixel 5's viewport
+  // (393x851) is a representative mobile size that catches the
+  // mobile-only layout regressions a marketplace visitor would hit on
+  // their phone. Switch to iPhone 13 (WebKit) only if a Safari-specific
+  // bug surfaces and we add `--with-deps` (no flag = chromium only).
   projects: [
     {
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
     },
     {
-      name: "iPhone 13",
-      use: { ...devices["iPhone 13"] },
+      name: "Pixel 5 (mobile chromium)",
+      use: { ...devices["Pixel 5"] },
     },
   ],
 });
