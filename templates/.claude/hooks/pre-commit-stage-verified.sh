@@ -335,7 +335,18 @@ except Exception as e:
 # readable. The commit-msg hook will run the same trust-baseline diff
 # with full message access. When git_commit_cmd is non-empty
 # (PreToolUse path), this block runs as the early gate.
-if staged_manifest_path and git_commit_cmd:
+#
+# bugs/002 Bug D fix: also require a message-flag to be present in the
+# cmd. The native-git shim at .claude/hooks/pre-commit sends synthetic
+# stdin {"tool_input":{"command":"git commit"}} — non-empty but no -m
+# / -F visible. The #138 fix gated this block behind `git_commit_cmd`
+# truthy, but the synthetic is truthy too, so legitimate terminal
+# repins via the shim still got refused. With this guard, when the
+# message is unreadable (no -m / -F / --message / --file in cmd) the
+# block defers to commit-msg which DOES receive the message file path.
+_msg_flag_re = re.compile(r"(^|\s)(-m|-F|--message|--file)([=\s]|$)")
+_has_msg_flag = bool(_msg_flag_re.search(git_commit_cmd))
+if staged_manifest_path and git_commit_cmd and _has_msg_flag:
     # Step 1 (PR #61 cycle-3 refactor): parse the actual commit message
     # FIRST — before any trust-baseline gate runs — so the same parsed
     # `marker_present` can be reused in:

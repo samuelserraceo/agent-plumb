@@ -6771,6 +6771,64 @@ else
 fi
 
 # ============================================================
+# T145 — pre-commit-stage-verified.sh defers to commit-msg when the
+#   native-git shim sends synthetic stdin without -m / -F (closes
+#   bugs/002 Bug D).
+#
+# Bug D: the native-git shim at .claude/hooks/pre-commit sends
+# {"tool_input":{"command":"git commit"}} (no message text). The #138
+# fix gated the trust-baseline marker check behind `git_commit_cmd`
+# truthy, but synthetic is truthy too, so legitimate terminal repins
+# via the shim still got refused.
+# Fix: require a message-flag (-m / -F / --message / --file) in the
+# cmd before running the marker check; when absent, defer to commit-msg.
+#
+# Test shape: legitimate repin scenario (file + manifest staged).
+# Run hook with the shim's exact synthetic stdin (no marker visible
+# at this layer). Expect: hook passes (deferred to commit-msg).
+# ============================================================
+note "T145: moat defers to commit-msg on shim's synthetic stdin (closes bugs/002 Bug D)"
+d=$(mkproj_v08)
+cd "$d" || { bad "T145 cannot cd" "d=$d"; rm -rf "$d"; }
+git init -q
+git config user.email t@t.com && git config user.name T
+git add -A 2>/dev/null
+git commit -q -m "init" 2>/dev/null
+
+echo "# legitimate edit $(date +%s)" >> .sdd/playbooks/feature.md
+new_hash=$(python3 -c "
+import hashlib
+with open('.sdd/playbooks/feature.md', 'rb') as f: data = f.read()
+text = data.decode('utf-8', errors='replace')
+lines = [ln.rstrip() for ln in text.replace('\r\n', '\n').replace('\r', '\n').split('\n')]
+while lines and lines[0] == '': lines.pop(0)
+while lines and lines[-1] == '': lines.pop()
+print(hashlib.sha256('\n'.join(lines).encode()).hexdigest())
+")
+
+python3 -c "
+import json
+with open('.sdd/.cache/manifest.json') as f: m = json.load(f)
+m['playbooks']['feature']['expected_sha256'] = '$new_hash'
+with open('.sdd/.cache/manifest.json', 'w') as f: json.dump(m, f, indent=2); f.write('\n')
+"
+
+git add .sdd/playbooks/feature.md .sdd/.cache/manifest.json 2>/dev/null
+
+# Send the EXACT shim's synthetic stdin — no marker visible here.
+hook_out=$(echo '{"tool_input":{"command":"git commit"}}' \
+  | CLAUDE_PROJECT_DIR="$d" bash .claude/hooks/pre-commit-stage-verified.sh 2>&1) && hook_ec=0 || hook_ec=$?
+
+cd - >/dev/null || true
+rm -rf "$d"
+
+if [ "$hook_ec" -eq 0 ]; then
+  ok "T145 moat defers to commit-msg on shim synthetic"
+else
+  bad "T145 moat refused shim-synthetic legitimate repin (Bug D not fixed)" "ec=$hook_ec; out=${hook_out:0:400}"
+fi
+
+# ============================================================
 # T136 — invariant 8 warns when wiki-links exist in user content but the
 #   MCP server queries are missing. Closes Phase B finding: the hook
 #   used to silently `return 0` when the MCP server wasn't present, so

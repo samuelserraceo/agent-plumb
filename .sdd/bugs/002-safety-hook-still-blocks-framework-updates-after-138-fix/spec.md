@@ -81,9 +81,10 @@
 
 ## PHASE: BUILD
 
-### Build tasks (1 total · run mode: tests-then-fix)
+### Build tasks (2 total · run mode: tests-then-fix)
 
 - [x] T01 GREEN: T143 + T144 land in `test/run-framework-test.sh`; Bug A regex tightening + Bug B staged-files guard applied to `templates/.claude/hooks/pre-commit-stage-verified.sh`; mirror copied to `.claude/hooks/`. Verified RED before the fix (both new tests failed on the original hook with their expected error strings), then GREEN after — full suite 199/199 passing, including T45 cross-commit attack defence still firing on the genuine-attack scenario.
+- [x] T02 GREEN: T145 added. Bug D (4th bug surfaced during real-world Tier 0 validation) fixed. The native-git shim sends synthetic `{"tool_input":{"command":"git commit"}}` (non-empty but no -m / -F visible). The #138 fix gated the trust-baseline marker check behind `git_commit_cmd` truthy, but synthetic is truthy too, so legitimate terminal repins still got refused. Fix: also require a message-flag (-m / -F / --message / --file) in the cmd before running the marker check; defer to commit-msg when absent. Verified RED before fix (T145 failed with "manifest repin refused"), GREEN after. Full suite 200/200 passing.
 
 ### Exit checks (BUILD)
-- [x] C-build-task-green: 1/1 task GREEN — 199/199 framework tests passing.
+- [x] C-build-task-green: 2/2 tasks GREEN — 200/200 framework tests passing.
