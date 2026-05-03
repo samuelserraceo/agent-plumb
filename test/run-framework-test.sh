@@ -6655,6 +6655,180 @@ else
 fi
 
 # ============================================================
+# T143 — pre-commit-stage-verified.sh handles BOTH manifest copies
+#   being staged in one commit (closes bugs/002 Bug A).
+#
+# Bug A: line-70 regex (^|/)\.sdd/\.cache/manifest\.json$ matched both
+# .sdd/.cache/manifest.json AND templates/.sdd/.cache/manifest.json.
+# When both staged, staged_manifest was multi-line, breaking
+# `git show :<multi-line-path>` with "cannot extract staged manifest blob".
+# Fix: anchor regex to ^.sdd/.cache/manifest.json$.
+#
+# Test shape: legitimate repin scenario — edit tracked framework file,
+# recompute hash, write into BOTH manifest copies, stage all three. Run
+# moat hook with marker. Expect: hook passes silently (only the live
+# manifest is read; templates manifest is just data).
+# ============================================================
+note "T143: moat handles both manifest copies staged (closes bugs/002 Bug A)"
+d=$(mkproj_v08)
+cd "$d" || { bad "T143 cannot cd" "d=$d"; rm -rf "$d"; }
+git init -q
+git config user.email t@t.com && git config user.name T
+mkdir -p templates/.sdd/.cache
+cp .sdd/.cache/manifest.json templates/.sdd/.cache/manifest.json
+git add -A 2>/dev/null
+git commit -q -m "init" 2>/dev/null
+
+echo "# legitimate edit $(date +%s)" >> .sdd/playbooks/feature.md
+new_hash=$(python3 -c "
+import hashlib
+with open('.sdd/playbooks/feature.md', 'rb') as f: data = f.read()
+text = data.decode('utf-8', errors='replace')
+lines = [ln.rstrip() for ln in text.replace('\r\n', '\n').replace('\r', '\n').split('\n')]
+while lines and lines[0] == '': lines.pop(0)
+while lines and lines[-1] == '': lines.pop()
+print(hashlib.sha256('\n'.join(lines).encode()).hexdigest())
+")
+
+# Update BOTH manifests with the new hash.
+for mp in .sdd/.cache/manifest.json templates/.sdd/.cache/manifest.json; do
+  python3 -c "
+import json, sys
+with open('$mp') as f: m = json.load(f)
+m['playbooks']['feature']['expected_sha256'] = '$new_hash'
+with open('$mp', 'w') as f: json.dump(m, f, indent=2); f.write('\n')
+"
+done
+
+git add .sdd/playbooks/feature.md .sdd/.cache/manifest.json templates/.sdd/.cache/manifest.json 2>/dev/null
+
+hook_out=$(echo '{"tool_input":{"command":"git commit -m \"[SDD] manifest: repin — testing\""}}' \
+  | CLAUDE_PROJECT_DIR="$d" bash .claude/hooks/pre-commit-stage-verified.sh 2>&1) && hook_ec=0 || hook_ec=$?
+
+cd - >/dev/null || true
+rm -rf "$d"
+
+if [ "$hook_ec" -eq 0 ]; then
+  ok "T143 moat handles both manifest copies staged"
+else
+  bad "T143 moat tripped on multi-manifest stage" "ec=$hook_ec; out=${hook_out:0:300}"
+fi
+
+# ============================================================
+# T144 — pre-commit-stage-verified.sh allows legitimate repin without
+#   firing the cross-commit-attack false-positive (closes bugs/002 Bug B).
+#
+# Bug B: per-file integrity loop at ~line 614 compared HEAD's content
+# of each tracked file against the staged manifest's expected_sha256.
+# During a legitimate repin: HEAD has OLD content (different hash),
+# staged manifest has NEW hash. They differ — and the check fired
+# "hash mismatch — HEAD (cross-commit attack)".
+# Fix: skip HEAD check for files also staged in this commit.
+#
+# Test shape: legitimate repin — edit tracked framework file, update
+# only the live manifest, stage both. Run moat hook with marker.
+# Expect: hook passes (HEAD check skipped because the file is staged;
+# the WT-vs-staged-manifest hash check still runs and matches).
+# ============================================================
+note "T144: moat allows legitimate repin without cross-commit false-positive (closes bugs/002 Bug B)"
+d=$(mkproj_v08)
+cd "$d" || { bad "T144 cannot cd" "d=$d"; rm -rf "$d"; }
+git init -q
+git config user.email t@t.com && git config user.name T
+git add -A 2>/dev/null
+git commit -q -m "init" 2>/dev/null
+
+echo "# legitimate edit $(date +%s)" >> .sdd/playbooks/feature.md
+new_hash=$(python3 -c "
+import hashlib
+with open('.sdd/playbooks/feature.md', 'rb') as f: data = f.read()
+text = data.decode('utf-8', errors='replace')
+lines = [ln.rstrip() for ln in text.replace('\r\n', '\n').replace('\r', '\n').split('\n')]
+while lines and lines[0] == '': lines.pop(0)
+while lines and lines[-1] == '': lines.pop()
+print(hashlib.sha256('\n'.join(lines).encode()).hexdigest())
+")
+
+python3 -c "
+import json
+with open('.sdd/.cache/manifest.json') as f: m = json.load(f)
+m['playbooks']['feature']['expected_sha256'] = '$new_hash'
+with open('.sdd/.cache/manifest.json', 'w') as f: json.dump(m, f, indent=2); f.write('\n')
+"
+
+git add .sdd/playbooks/feature.md .sdd/.cache/manifest.json 2>/dev/null
+
+hook_out=$(echo '{"tool_input":{"command":"git commit -m \"[SDD] manifest: repin — testing\""}}' \
+  | CLAUDE_PROJECT_DIR="$d" bash .claude/hooks/pre-commit-stage-verified.sh 2>&1) && hook_ec=0 || hook_ec=$?
+
+cd - >/dev/null || true
+rm -rf "$d"
+
+if [ "$hook_ec" -eq 0 ]; then
+  ok "T144 moat allows legitimate repin"
+else
+  bad "T144 moat fired cross-commit false-positive on legitimate repin" "ec=$hook_ec; out=${hook_out:0:400}"
+fi
+
+# ============================================================
+# T145 — pre-commit-stage-verified.sh defers to commit-msg when the
+#   native-git shim sends synthetic stdin without -m / -F (closes
+#   bugs/002 Bug D).
+#
+# Bug D: the native-git shim at .claude/hooks/pre-commit sends
+# {"tool_input":{"command":"git commit"}} (no message text). The #138
+# fix gated the trust-baseline marker check behind `git_commit_cmd`
+# truthy, but synthetic is truthy too, so legitimate terminal repins
+# via the shim still got refused.
+# Fix: require a message-flag (-m / -F / --message / --file) in the
+# cmd before running the marker check; when absent, defer to commit-msg.
+#
+# Test shape: legitimate repin scenario (file + manifest staged).
+# Run hook with the shim's exact synthetic stdin (no marker visible
+# at this layer). Expect: hook passes (deferred to commit-msg).
+# ============================================================
+note "T145: moat defers to commit-msg on shim's synthetic stdin (closes bugs/002 Bug D)"
+d=$(mkproj_v08)
+cd "$d" || { bad "T145 cannot cd" "d=$d"; rm -rf "$d"; }
+git init -q
+git config user.email t@t.com && git config user.name T
+git add -A 2>/dev/null
+git commit -q -m "init" 2>/dev/null
+
+echo "# legitimate edit $(date +%s)" >> .sdd/playbooks/feature.md
+new_hash=$(python3 -c "
+import hashlib
+with open('.sdd/playbooks/feature.md', 'rb') as f: data = f.read()
+text = data.decode('utf-8', errors='replace')
+lines = [ln.rstrip() for ln in text.replace('\r\n', '\n').replace('\r', '\n').split('\n')]
+while lines and lines[0] == '': lines.pop(0)
+while lines and lines[-1] == '': lines.pop()
+print(hashlib.sha256('\n'.join(lines).encode()).hexdigest())
+")
+
+python3 -c "
+import json
+with open('.sdd/.cache/manifest.json') as f: m = json.load(f)
+m['playbooks']['feature']['expected_sha256'] = '$new_hash'
+with open('.sdd/.cache/manifest.json', 'w') as f: json.dump(m, f, indent=2); f.write('\n')
+"
+
+git add .sdd/playbooks/feature.md .sdd/.cache/manifest.json 2>/dev/null
+
+# Send the EXACT shim's synthetic stdin — no marker visible here.
+hook_out=$(echo '{"tool_input":{"command":"git commit"}}' \
+  | CLAUDE_PROJECT_DIR="$d" bash .claude/hooks/pre-commit-stage-verified.sh 2>&1) && hook_ec=0 || hook_ec=$?
+
+cd - >/dev/null || true
+rm -rf "$d"
+
+if [ "$hook_ec" -eq 0 ]; then
+  ok "T145 moat defers to commit-msg on shim synthetic"
+else
+  bad "T145 moat refused shim-synthetic legitimate repin (Bug D not fixed)" "ec=$hook_ec; out=${hook_out:0:400}"
+fi
+
+# ============================================================
 # T136 — invariant 8 warns when wiki-links exist in user content but the
 #   MCP server queries are missing. Closes Phase B finding: the hook
 #   used to silently `return 0` when the MCP server wasn't present, so

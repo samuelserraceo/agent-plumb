@@ -67,7 +67,7 @@ git rev-parse --git-dir >/dev/null 2>&1 || exit 0
 staged_files=$(git diff --cached --name-only --diff-filter=ACM 2>/dev/null || true)
 staged_verifications=$(printf '%s\n' "$staged_files" | grep -E '(^|/)verification\.json$' || true)
 staged_specs=$(printf '%s\n' "$staged_files" | grep -E '(^|/)spec\.md$' || true)
-staged_manifest=$(printf '%s\n' "$staged_files" | grep -E '(^|/)\.sdd/\.cache/manifest\.json$' || true)
+staged_manifest=$(printf '%s\n' "$staged_files" | grep -E '^\.sdd/\.cache/manifest\.json$' || true)
 
 # Phase B (heavy testing) finding: tampering ANY framework file
 # (e.g. .sdd/playbooks/feature.md, .sdd/scripts/advance.sh) IN ISOLATION
@@ -283,10 +283,20 @@ check_manifest_pins() {
   MANIFEST="$manifest_path" PROJ="$PROJECT_DIR" \
     STAGED_MANIFEST_PATH="$staged_manifest" \
     GIT_COMMIT_CMD="$cmd" \
+    STAGED_FILES="$staged_files" \
     python3 <<'PYEOF'
 import hashlib, json, os, re, shlex, subprocess, sys
 
 manifest_path = os.environ["MANIFEST"]
+# bugs/002 Bug B fix: parse staged-file list so the per-file HEAD check
+# below can skip files that ARE being legitimately updated in this
+# commit. The cross-commit attack the HEAD check defends against is
+# exactly "HEAD has tampered content + WT reverted to clean" — in that
+# shape the file is NOT in the staged set, so skipping the HEAD check
+# on staged files preserves the defence. See .sdd/bugs/002 for repro.
+staged_files_set = set(
+    line.strip() for line in os.environ.get("STAGED_FILES", "").split("\n") if line.strip()
+)
 proj = os.environ["PROJ"]
 staged_manifest_path = os.environ.get("STAGED_MANIFEST_PATH", "")
 git_commit_cmd = os.environ.get("GIT_COMMIT_CMD", "")
@@ -325,7 +335,27 @@ except Exception as e:
 # readable. The commit-msg hook will run the same trust-baseline diff
 # with full message access. When git_commit_cmd is non-empty
 # (PreToolUse path), this block runs as the early gate.
-if staged_manifest_path and git_commit_cmd:
+#
+# bugs/002 Bug D fix: also require a message-flag to be present in the
+# cmd. The native-git shim at .claude/hooks/pre-commit sends synthetic
+# stdin {"tool_input":{"command":"git commit"}} — non-empty but no -m
+# / -F visible. The #138 fix gated this block behind `git_commit_cmd`
+# truthy, but the synthetic is truthy too, so legitimate terminal
+# repins via the shim still got refused. With this guard, when the
+# message is unreadable (no -m / -F / --message / --file in cmd) the
+# block defers to commit-msg which DOES receive the message file path.
+#
+# CR cycle-2 refinements: scope the regex to text AFTER "git commit"
+# in the cmd, so tool-prefix flags don't false-positive on a compound
+# command (`tool -m ... && git commit ...`). Also strip `-F -` /
+# `--file -` (stdin-backed file) before matching — those are NOT
+# readable from this hook layer, so they should defer to commit-msg.
+_gc_idx = git_commit_cmd.find("git commit") if git_commit_cmd else -1
+_after_gc = git_commit_cmd[_gc_idx:] if _gc_idx >= 0 else ""
+_after_gc_no_stdin = re.sub(r"(^|\s)(-F|--file)(\s+|=)-(?=\s|$)", " ", _after_gc)
+_msg_flag_re = re.compile(r"(^|\s)(-m|-F|--message|--file)([=\s]|$)")
+_has_msg_flag = bool(_msg_flag_re.search(_after_gc_no_stdin))
+if staged_manifest_path and git_commit_cmd and _has_msg_flag:
     # Step 1 (PR #61 cycle-3 refactor): parse the actual commit message
     # FIRST — before any trust-baseline gate runs — so the same parsed
     # `marker_present` can be reused in:
@@ -645,6 +675,17 @@ for section in ("playbooks", "actions", "extensions", "scripts"):
         # Catches cross-commit attack: HEAD has tampered content, agent
         # ran `git checkout HEAD^ -- <file>` to revert WT to clean.
         # WT pin saw nothing; HEAD pin catches the lurking tamper.
+        #
+        # bugs/002 Bug B fix: skip the HEAD check ONLY when the manifest
+        # is also being repinned in this commit AND the file is staged.
+        # That's the signature of a legitimate repin — file content +
+        # manifest hash both updated together. Without the manifest-
+        # staged condition, T45's cross-commit attack scenario (HEAD
+        # tampered, WT-revert staged, manifest unchanged) would slip
+        # past — its staged file is not paired with a manifest repin,
+        # so the HEAD check still fires there.
+        if staged_manifest_path and rel in staged_files_set:
+            continue
         head_actual = head_normalized_sha256(rel, proj)
         if head_actual is None:
             continue  # File not in HEAD (legitimate new file), skip
