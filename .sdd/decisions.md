@@ -245,3 +245,12 @@ Final state: 196/196 framework tests + 161/161 MCP tests + 4/4 task tests + 4/4 
 Forward-pointer lesson: when a parser is line-by-line by construction, content that crosses line boundaries (CommonMark §6.1 backtick spans being the canonical case) needs a pre-mask pass on the full content with newlines preserved. Position-preserving masks (replace span with same-length whitespace, keep newlines) beat content-deleting strips.
 
 Closes [#105](https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/105).
+
+## 2026-05-03T10:19:03Z  [[005-wireframe-action-redesign]]  feature/mark-shipped
+**Phase: SHIP → SHIPPED.** v1.2 wireframe action redesign shipped via PR #128 (commit 30f48de) — admin-merged after 5 CodeRabbit cycles converged silent on the cycle-5 push (`0ad65c5`). Closes #112.
+
+What landed: wireframe action prose rewritten to drop `[SKIPPABLE: non-UI features]` and branch on UI vs non-UI shape; two skeleton starters added at `templates/.sdd/skeletons/wireframe-ui.html` (Screens / Design tokens / Component states / Interactions) and `templates/.sdd/skeletons/wireframe-non-ui.html` (Example interactions / Flow diagram / Architecture diagram / New vs existing). Non-UI features now ship a flow + architecture diagram + concrete chat/CLI examples — the visualisation a non-technical reviewer can read end-to-end without touching code.
+
+The non-UI skeleton went through three accessibility hardening cycles: `.cite` spans dropped misleading `role="button"` + `tabindex="0"` (the handler was a no-op); `.step-grp` and `.arch-grp` SVG groups got proper toggle-button semantics (`aria-pressed`, peer-toggle on activation, focus styles before activation); detail panels got `aria-live="polite"` + `aria-atomic="true"` + `role="status"` so screen readers announce content swaps; XSS surface eliminated via `createElement` + `textContent` instead of `innerHTML`; null-guards added to `renderDetail(targetId, d)` so the skeleton degrades gracefully if a downstream user removes a panel.
+
+Exit checks (T140 plain-English lint + T141 anti-theatre lint + 196/196 framework + 161/161 MCP + 10/10 task tests) all GREEN on cycle 5. Foundation 3 applied at the visualisation layer: every feature ships a wireframe, no escape hatch.

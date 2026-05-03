@@ -1,18 +1,25 @@
 # SDD framework — INDEX
 
-**Active:** features/005-wireframe-action-redesign
+**Active:** (none)
 **Playbook:** feature
-**Active blocker:** SHIP — PR #128 in CR cycle
+**Active blocker:** (none — last shipped: 005-wireframe-action-redesign on 2026-05-03)
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
 
 ## In flight
 
-- features/005-wireframe-action-redesign — wireframe action redesign (PHASE: SHIP — PR #128 in CR cycle)
+- (none)
 
 
 ## Shipped
+
+- **[[005-wireframe-action-redesign]]** — v1.2 wireframe action redesign: drops `[SKIPPABLE: non-UI features]`, branches on UI vs non-UI shape with two skeleton starters (`wireframe-ui.html` + `wireframe-non-ui.html`). Non-UI features now ship a flow + architecture diagram + concrete chat/CLI examples — visualisation a non-technical reviewer can read end-to-end without reading code.
+  - Shipped: 2026-05-03 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/128
+  - Data-model: (none — action-prose rewrite + 2 new HTML skeleton files)
+  - Extends: (root)
+  - Lesson: forward-pointer to a future `[[pattern:non-ui-features-need-more-visualisation-not-less]]` — the wireframe is the only doc a non-technical reviewer can read to decide *"yes, that's what I asked for"*. UI features inherit visualisation from the screens themselves; non-UI features need MORE explicit visualisation (flow + architecture diagrams + concrete examples), not less, because reviewers can't infer behaviour from code.
+  - 5 CR cycles, 20 findings closed (8 → 5 → 4 → 3 → silent). 196/196 framework + 161/161 MCP + 10/10 task tests.
 
 - **[[004-graph-cache-multi-line-code-span-fix]]** — v1.2 graph-cache multi-line code span fix: `_INLINE_CODE_MULTILINE_RE` + `_mask_inline_code_in_content()` mask CommonMark backtick spans across newlines while preserving line numbers. `_CACHE_VERSION` bumped 1 → 2 so old caches regenerate.
   - Shipped: 2026-05-02 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/124
