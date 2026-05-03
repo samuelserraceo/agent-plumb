@@ -352,7 +352,7 @@ except Exception as e:
 # readable from this hook layer, so they should defer to commit-msg.
 _gc_idx = git_commit_cmd.find("git commit") if git_commit_cmd else -1
 _after_gc = git_commit_cmd[_gc_idx:] if _gc_idx >= 0 else ""
-_after_gc_no_stdin = re.sub(r"(^|\s)(-F|--file)\s+-(?=\s|$)", " ", _after_gc)
+_after_gc_no_stdin = re.sub(r"(^|\s)(-F|--file)(\s+|=)-(?=\s|$)", " ", _after_gc)
 _msg_flag_re = re.compile(r"(^|\s)(-m|-F|--message|--file)([=\s]|$)")
 _has_msg_flag = bool(_msg_flag_re.search(_after_gc_no_stdin))
 if staged_manifest_path and git_commit_cmd and _has_msg_flag:
