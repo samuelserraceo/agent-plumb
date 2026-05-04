@@ -289,3 +289,6 @@ Sam approved §4 fix: derive current PR number from $GITHUB_REF (refs/pull/<num>
 
 ## 2026-05-04T13:05:00Z [[003-claims-audit-fails-on-shipped-pr-self-reference-chicken-egg]] bug/bug-regression-test
 Sam approved §5 regression: T159 in test/run-framework-test.sh exports GITHUB_REF=refs/pull/153/merge with a temp INDEX.md pointing at #153; asserts the claim returns 0 in that scenario. Without the env, behaviour is unchanged.
+
+## 2026-05-04T16:10:00Z [[003-claims-audit-fails-on-shipped-pr-self-reference-chicken-egg]] bug/mark-shipped
+SHIPPED. Chicken-egg in claims-audit closed: `claim_shipped_pr_links_merged` now exempts the PR currently being CI'd via $GITHUB_REF + $GITHUB_REPOSITORY scoping. T159 covers regression with both positive and negative controls. PR #154's own CI was the meta-validation — green without admin override. CR cycle 1 only Minors (no Critical/Major); all addressed.

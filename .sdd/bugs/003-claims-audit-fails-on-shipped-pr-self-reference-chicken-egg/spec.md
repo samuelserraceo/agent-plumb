@@ -1,8 +1,8 @@
 # claims-audit fails on shipped-PR self-reference (chicken-egg)
 
-[PHASE: SHIP]
+[PHASE: SHIPPED]
 
-**Active blocker:** §S4 (next action: verify-ci-green)
+**Active blocker:** SHIPPED.
 
 ## PHASE: SPEC
 
@@ -65,12 +65,12 @@
 
 ### action: verify-ci-green
 
-- [ ] ci: poll CI; gate mark-shipped on a green run.
+- [x] ci: 6/6 CI checks GREEN on PR #154 cycle 3 — Browser (1m10s), Claims audit (1m59s), CR (review completed), Framework tests (1m31s), Graph (10s), Scope (7s). The fix's own claim audit passes — meta-validation that the chicken-egg is closed.
 
 ### action: mark-shipped
 
-- [ ] shipped: INDEX.md update, .shipped marker, decisions.md append.
+- [x] shipped: INDEX.md updated, .shipped marker written, decisions.md appended.
 
 ### Exit checks
-- [ ] C-ship-pr-url: PR URL recorded in INDEX.md Shipped section
-- [ ] C-ship-marked: .shipped marker file exists in bug folder
+- [x] C-ship-pr-url: PR https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/154 recorded in INDEX.md Shipped section
+- [x] C-ship-marked: .shipped marker file exists in bug folder
