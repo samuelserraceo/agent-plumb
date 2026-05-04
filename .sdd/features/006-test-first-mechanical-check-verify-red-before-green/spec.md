@@ -2,7 +2,7 @@
 
 [PHASE: BUILD]
 
-**Active blocker:** §B2 (next action: build-task — T08)
+**Active blocker:** §B2 (next action: build-task — T09)
 
 ## PHASE: SPEC
 
@@ -115,7 +115,7 @@
 - [x] T05 GREEN: trap hardened. Cleanup (pop + re-stage) now fires on EXIT plus INT, TERM, HUP signals — covers Ctrl+C and CI-runner SIGTERM. Test verifies recovery on (a) test runner undefined-var crash, (b) SIGTERM mid-sleep. T154 added (211/211 passing). → tests/task-005.sh
 - [x] T06 GREEN: Refusal message reshaped into 3 explicit sections — test path, "What this means" (plain-English explanation of test-first), "How to fix" (4 numbered steps from rewrite-test through commit-again). T155 added (212/212 passing). → tests/task-006.sh
 - [x] T07 GREEN: Multi-pair detection landed. Hook counts staged tests/task-NNN.* files; 2+ → blocks with "split into one commit per task" message + 3-step recovery. Block happens before stash creation (no stash to clean up). T156 added (213/213 passing). → tests/task-007.sh
-- [ ] T08: Test runner failure detection (AC8). Hook distinguishes "test FAIL" (real RED → allow) from "runner crashed" (exit 127 / non-test-failure exit codes → stop with wrong-config message). → tests/task-008.sh
+- [x] T08 GREEN: Runner-crash detection landed. Hook now branches on test_ec: 0 = theatre (block), 127 = command-not-found (block with config-wrong message), other non-zero = real RED (allow). Closes the backdoor where a misconfigured runner silently let theatre through. T157 added (214/214 passing). → tests/task-008.sh
 - [ ] T09: Stash pop conflict recovery (AC9). trap wraps the pop; on conflict, print the stash ref + recovery hint. → tests/task-009.sh
 
 ### action: edge-case-sweep

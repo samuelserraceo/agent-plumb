@@ -7660,6 +7660,82 @@ CFG
 fi
 
 # ============================================================
+# T157 — pre-commit-test-first.sh: exit 127 (test_runner not found)
+#   blocks with a config-wrong message; exit 1 (legit fail) still allows.
+#   Closes feature 006 AC8.
+#   RED: hook treats 127 as a successful "real test-first" signal,
+#        letting theatre through whenever the runner is misconfigured.
+# ============================================================
+note "T157: pre-commit-test-first distinguishes 127 from real test fail (AC8)"
+TEST_FIRST_HOOK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-test-first.sh"
+if [ ! -x "$TEST_FIRST_HOOK" ]; then
+  bad "T157 hook missing or not executable" "$TEST_FIRST_HOOK"
+else
+  d=$(mktemp -d)
+  (
+    cd "$d" || exit 1
+    git init -q
+    git config user.email t@t.com; git config user.name T; git config commit.gpgsign false
+    mkdir -p .sdd src
+    cat > .sdd/config.md <<'CFG'
+---
+type: config
+parameters:
+  test_runner: "absolutely_nonexistent_xyz_runner_42"
+---
+CFG
+    echo init > README.md
+    git add README.md .sdd/config.md
+    git commit -q -m scaffold
+    mkdir -p tests
+    echo '#!/usr/bin/env bash' > tests/task-008.sh
+    echo 'exit 0' >> tests/task-008.sh
+    chmod +x tests/task-008.sh
+    echo "echo a" > src/foo.sh
+    git add tests/task-008.sh src/foo.sh
+    out=$(printf '%s' '{"tool_input":{"command":"git commit -m \"[SDD:006][T08] task\""}}' | bash "$TEST_FIRST_HOOK" 2>&1)
+    ec=$?
+    if [ "$ec" -ne 0 ] && printf '%s' "$out" | grep -qiE 'test_runner.*wrong|command not found'; then
+      echo "PASS_127"
+    else
+      echo "FAIL_127 ec=$ec out=$out"
+    fi
+    git reset --hard HEAD >/dev/null 2>&1
+    cat > .sdd/config.md <<'CFG'
+---
+type: config
+parameters:
+  test_runner: "bash -c 'exit 1'"
+---
+CFG
+    git add .sdd/config.md
+    git commit -q -m runner
+    cat > tests/task-008.sh <<'TST'
+#!/usr/bin/env bash
+exit 0
+TST
+    chmod +x tests/task-008.sh
+    echo "echo b" > src/foo.sh
+    git add tests/task-008.sh src/foo.sh
+    out2=$(printf '%s' '{"tool_input":{"command":"git commit -m \"[SDD:006][T08] task\""}}' | bash "$TEST_FIRST_HOOK" 2>&1)
+    ec2=$?
+    if [ "$ec2" -eq 0 ]; then
+      echo "PASS_1"
+    else
+      echo "FAIL_1 ec=$ec2 out=$out2"
+    fi
+  ) > "$d/result.txt" 2>&1
+  pass127=$(grep -c '^PASS_127$' "$d/result.txt" || true)
+  pass1=$(grep -c '^PASS_1$' "$d/result.txt" || true)
+  rm -rf "$d"
+  if [ "$pass127" -eq 1 ] && [ "$pass1" -eq 1 ]; then
+    ok "T157 exit 127 blocks; exit 1 allows"
+  else
+    bad "T157 runner-vs-test-fail distinction broke" "pass127=$pass127 pass1=$pass1"
+  fi
+fi
+
+# ============================================================
 # T141 — anti-theatre lint passes on the in-flight spec (closes #111,
 #   PR #003). Theatre tokens (numerical bounds, currency, enforcement
 #   verbs, quality absolutes) without an adjacent verifier annotation

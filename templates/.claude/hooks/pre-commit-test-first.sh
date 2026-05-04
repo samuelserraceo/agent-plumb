@@ -201,5 +201,28 @@ HOOK_ERR
   exit 2
 fi
 
-# Test FAILED without code → real test-first → allow.
+# T08: distinguish "runner config wrong" from "test legitimately failed".
+# bash returns 127 when the command itself can't be found. That's the
+# user pointing test_runner at a non-existent binary — not a real RED
+# signal. Block with a config-wrong message instead of silently
+# accepting the commit (which would let theatre slip through whenever
+# the runner happens to be misconfigured).
+if [ "$test_ec" -eq 127 ]; then
+  cat >&2 <<HOOK_ERR
+[pre-commit-test-first] test_runner config is wrong — fix .sdd/config.md.
+
+  test_runner: $test_runner
+  exit code:   127 (command not found)
+
+The configured test_runner couldn't be executed. Set
+parameters.test_runner in .sdd/config.md to a real test command
+(e.g. "bash test/run-test.sh", "npx vitest run", "pytest"), or
+leave it empty to use the lighter Approach B (commit-order check).
+
+Refusing the commit so theatre doesn't slip through a broken runner.
+HOOK_ERR
+  exit 2
+fi
+
+# Test FAILED with a normal exit code → real test-first → allow.
 exit 0
