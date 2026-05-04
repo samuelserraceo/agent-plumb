@@ -2,7 +2,7 @@
 
 [PHASE: BUILD]
 
-**Active blocker:** §B1 (next action: run-mode-chosen)
+**Active blocker:** §B2 (next action: build-task — T01)
 
 ## PHASE: SPEC
 
@@ -131,7 +131,9 @@
 
 ### action: run-mode-chosen
 
-- [ ] mode: How do you want to run BUILD? 1=step-by-step, 2=checkpoint-every-5, 3=full autonomous, 4=Shell Ralph headless. Or adjust.
+- [x] mode: full autonomous (conversation) — runs all 9 tasks back-to-back, halts only on universal rules.
+
+**Run mode:** full-autonomous
 
 ### action: build-task
 
