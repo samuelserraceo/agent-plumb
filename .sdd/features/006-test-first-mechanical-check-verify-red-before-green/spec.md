@@ -114,7 +114,7 @@
 
 ### action: edge-case-sweep
 
-- [ ] ec-sweep: draft
+- [x] ec-sweep: drafted 4 candidates — EC1 multi-pair commit, EC2 runner crash, EC3 initial commit (deferred — corner case), EC4 stash-pop conflict.
 - [ ] ec-pick: ask
 
 ### Exit checks
