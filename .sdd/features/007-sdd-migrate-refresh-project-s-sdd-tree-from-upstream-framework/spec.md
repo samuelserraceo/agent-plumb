@@ -1,8 +1,8 @@
 # sdd-migrate — refresh project's .sdd/ tree from upstream framework
 
-[PHASE: SPEC]
+[PHASE: BUILD]
 
-**Active blocker:** SPEC done — phase advance to BUILD next.
+**Active blocker:** §B1 (next action: run-mode-chosen → full-autonomous → T01)
 
 ## PHASE: SPEC
 
@@ -113,3 +113,18 @@
 ### Exit checks
 - [ ] C-spec-acs: ≥1 acceptance criterion exists in §11 — grep -qE '^- \[[ x]\] AC[0-9]+' "$SECTION_FILE" {verify-by: verify-stage.sh}
 - [ ] C-spec-tasks: ≥1 task in plan-decompose section — grep -qE '^- \[[ x]\] T[0-9]+' "$SECTION_FILE" {verify-by: verify-stage.sh}
+
+## PHASE: BUILD
+
+### action: run-mode-chosen
+
+- [x] mode: full autonomous — Sam pre-approved this run mode for both feature 006 and bug 003 today; same default applies here.
+
+**Run mode:** full-autonomous
+
+### action: build-task
+
+(driven by §14 tasks T01-T07 — each task lands as one commit)
+
+### Exit checks
+- [ ] C-build-tasks-green: every task is GREEN (test passing, code committed)
