@@ -2,7 +2,7 @@
 
 [PHASE: SPEC]
 
-**Active blocker:** §15 (next action: edge-case-sweep)
+**Active blocker:** SPEC done — phase advance to BUILD next (run-mode question).
 
 ## PHASE: SPEC
 
@@ -89,6 +89,9 @@
   - [ ] AC4: non-BUILD-task commits (spec.md edits, framework chores, mark-shipped) → hook exits 0 silently. → tests/task-004.sh
   - [ ] AC5: stash always restored even if the test run errors mid-flight or is interrupted (use a `trap` for cleanup). → tests/task-005.sh
   - [ ] AC6: refusal message includes (a) which test is theatre, (b) what test-first means, (c) how to fix. → tests/task-006.sh (mechanical) + {best-effort: Sam at SHIP — confirms readability}
+- [ ] AC7: commit with 2+ test+code pairs → hook stops the commit; stderr says "split into one commit per task." → tests/task-007.sh
+- [ ] AC8: parameters.test_runner exits non-zero before any test runs (e.g. binary not found, exit 127) → hook treats this as "runner broke", not "test failed", and stops the commit with stderr saying "test_runner config is wrong — fix .sdd/config.md." → tests/task-008.sh
+- [ ] AC9: stash-pop fails with a conflict (test created files the stashed code overwrites) → trap catches it, hook prints the stash ref so the user can recover by hand. → tests/task-009.sh
 
 ### action: signoff-steps
 
@@ -111,11 +114,14 @@
 - [ ] T04: Non-BUILD-task pass-through. spec.md edits / framework chores / mark-shipped → hook exits 0 silently. Only [SDD:NNN][T<n>]-shaped commits get gated. → tests/task-004.sh
 - [ ] T05: trap-based stash restore. Test runner crashes mid-run → stash still gets restored before hook exits. → tests/task-005.sh
 - [ ] T06: Refusal message has 3 elements — which test is theatre, what test-first means, how to fix. → tests/task-006.sh
+- [ ] T07: Multi-pair detection (AC7). Hook counts test+code pairs in the staged set; 2+ pairs → stops with split-commit message. → tests/task-007.sh
+- [ ] T08: Test runner failure detection (AC8). Hook distinguishes "test FAIL" (real RED → allow) from "runner crashed" (exit 127 / non-test-failure exit codes → stop with wrong-config message). → tests/task-008.sh
+- [ ] T09: Stash pop conflict recovery (AC9). trap wraps the pop; on conflict, print the stash ref + recovery hint. → tests/task-009.sh
 
 ### action: edge-case-sweep
 
 - [x] ec-sweep: drafted 4 candidates — EC1 multi-pair commit, EC2 runner crash, EC3 initial commit (deferred — corner case), EC4 stash-pop conflict.
-- [ ] ec-pick: ask
+- [x] ec-pick: picked EC1, EC2, EC4 → added AC7-AC9 + T07-T09. EC3 (initial commit on fresh repo) deferred — corner case, documented as known limitation.
 
 ### Exit checks
 - [ ] C-spec-acs: ≥1 acceptance criterion exists in §11 — grep -qE '^- \[[ x]\] AC[0-9]+' "$SECTION_FILE" {verify-by: verify-stage.sh}
