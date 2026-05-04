@@ -43,6 +43,7 @@ parameters:
       max_total_tokens_per_run: 100000   # exact — stops once running total crossed
       auth_header: ""                    # optional. To keep tokens OUT of tracked config, use ${ENV_VAR_NAME} indirection. Literal values still work. Empty = no auth header sent. NOTE: v1.1 default Ollama+Gemma local doesn't need this; load-bearing for v1.2+ paid providers.
       # Anti-theatre note (Sam's catch 2026-05-01): there is no `cost_limit_usd` field. The framework can't enforce dollar amounts without a per-provider pricing table or a live spending ledger — neither exists. Token caps above are the mechanical enforcement. Dollar guidance for picking a provider lives in the spec, not here.
+  test_runner: ""              # populated by /sdd-setup. Examples: "bash test/run-framework-test.sh", "npx vitest run", "pytest", "npm test". When set, the pre-commit-test-first.sh hook stashes code, runs this, restores, and gates the commit on the result (real test-first → allow; theatre → block). When empty, the hook falls back to a commit-order check (Approach B).
 file_classes:
   CLAIM:
     - '(^|/)verification\.json$'

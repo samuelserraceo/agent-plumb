@@ -7194,6 +7194,67 @@ else
 fi
 
 # ============================================================
+# T150 — pre-commit-test-first.sh: real test-first (test fails without
+#   code) lands cleanly. Closes feature 006 AC1.
+#   RED: hook missing or broken — test+code commit gets blocked or
+#        the stash isn't restored.
+# ============================================================
+note "T150: pre-commit-test-first allows real test-first commit (AC1)"
+TEST_FIRST_HOOK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-test-first.sh"
+if [ ! -x "$TEST_FIRST_HOOK" ]; then
+  bad "T150 hook missing or not executable" "$TEST_FIRST_HOOK"
+else
+  d=$(mktemp -d)
+  (
+    cd "$d" || exit 1
+    git init -q
+    git config user.email t@t.com
+    git config user.name T
+    git config commit.gpgsign false
+    echo init > README.md
+    mkdir -p .sdd
+    cat > .sdd/config.md <<'CFG'
+---
+type: config
+parameters:
+  test_runner: "bash tests/task-001.sh"
+---
+CFG
+    git add README.md .sdd/config.md
+    git commit -q -m scaffold
+    mkdir -p tests src
+    cat > tests/task-001.sh <<'TST'
+#!/usr/bin/env bash
+out=$(bash src/foo.sh 2>/dev/null)
+[ "$out" = "hello" ] || exit 1
+TST
+    cat > src/foo.sh <<'SRC'
+#!/usr/bin/env bash
+echo "hello"
+SRC
+    chmod +x tests/task-001.sh src/foo.sh
+    git add tests/task-001.sh src/foo.sh
+    pre_idx=$(git diff --cached --name-only | sort | tr '\n' ',')
+    out=$(bash "$TEST_FIRST_HOOK" </dev/null 2>&1)
+    ec=$?
+    stash_count=$(git stash list 2>/dev/null | wc -l | tr -d ' ')
+    post_idx=$(git diff --cached --name-only | sort | tr '\n' ',')
+    if [ "$ec" -eq 0 ] && [ "$stash_count" -eq 0 ] && [ "$pre_idx" = "$post_idx" ]; then
+      echo "PASS"
+    else
+      echo "FAIL ec=$ec stash=$stash_count pre=$pre_idx post=$post_idx out=$out"
+    fi
+  ) > "$d/result.txt" 2>&1
+  result=$(grep -E '^PASS|^FAIL' "$d/result.txt" | tail -1)
+  rm -rf "$d"
+  if [ "$result" = "PASS" ]; then
+    ok "T150 real test-first lands; stash restored, index intact"
+  else
+    bad "T150 hook didn't behave for real test-first" "$result"
+  fi
+fi
+
+# ============================================================
 # T141 — anti-theatre lint passes on the in-flight spec (closes #111,
 #   PR #003). Theatre tokens (numerical bounds, currency, enforcement
 #   verbs, quality absolutes) without an adjacent verifier annotation

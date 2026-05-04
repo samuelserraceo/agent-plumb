@@ -85,8 +85,20 @@ if ! git stash push --quiet -m "$stash_msg" -- $code_files >/dev/null 2>&1; then
   exit 0
 fi
 
-# trap pops the stash on any exit path (T05 hardens this).
-trap 'git stash pop --quiet 2>/dev/null || true' EXIT
+# trap restores the stash on any exit path (T05 hardens this).
+# Pop + re-stage (instead of pop --index): --index doesn't survive
+# new files cleanly — pop refuses with a conflict and leaves the
+# stash in place. The pop-then-add pattern brings the working tree
+# back, then re-stages each code path to restore the index.
+# Caught dogfooding T01: the very first commit silently landed only
+# the new files because pop-without-index leaves modified files in
+# the working tree but not the index.
+trap '
+  git stash pop --quiet 2>/dev/null || true
+  for _f in $code_files; do
+    git add -- "$_f" 2>/dev/null || true
+  done
+' EXIT
 
 # Run the configured test runner.
 test_output=$(eval "$test_runner" 2>&1)
