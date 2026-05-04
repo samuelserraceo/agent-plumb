@@ -67,16 +67,21 @@ test.describe("walkthrough.html — marketplace landing page", () => {
     expect(cls).not.toContain("dashed");
   });
 
-  test("post-v1.0 shipped block lists the v1.2 sweep PRs", async ({ page }) => {
+  test("post-v1.0 shipped block lists the v1.x sweep PRs", async ({ page }) => {
     // Assert: the "what landed after v1.0" section names the actual
-    // shipped PRs (Tier 3 #114, plain-English #118, anti-theatre #121,
-    // graph-cache #124, wireframe redesign #128). Catches both a stale
-    // section AND a future drift where a v1.x sweep ships but the
+    // shipped PRs across v1.1 (Tier 3 #114), v1.2 (#118/#121/#124/#128),
+    // and v1.3 (test-first #153, claims-audit fix #154). Catches both a
+    // stale section AND a future drift where a v1.x sweep ships but the
     // walkthrough doesn't get refreshed.
     const planned = page.locator("#planned");
-    await expect(planned).toContainText("v1.1 + v1.2 — shipped");
-    await expect(planned).toContainText("PR #114"); // Tier 3
-    await expect(planned).toContainText("PR #128"); // wireframe redesign
+    await expect(planned).toContainText("v1.1 + v1.2 + v1.3 — shipped");
+    await expect(planned).toContainText("PR #114"); // Tier 3 (v1.1)
+    await expect(planned).toContainText("PR #118"); // plain-English action lint (v1.2)
+    await expect(planned).toContainText("PR #121"); // anti-theatre spec lint (v1.2)
+    await expect(planned).toContainText("PR #124"); // graph-cache code-span fix (v1.2)
+    await expect(planned).toContainText("PR #128"); // wireframe redesign (v1.2)
+    await expect(planned).toContainText("PR #153"); // test-first hook (v1.3)
+    await expect(planned).toContainText("PR #154"); // claims-audit chicken-egg (v1.3)
   });
 
   test("filter buttons exist and are buttons (not links)", async ({ page }) => {
