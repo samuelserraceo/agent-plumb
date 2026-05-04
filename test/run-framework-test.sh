@@ -7850,6 +7850,14 @@ STUB
   # shellcheck source=/dev/null
   source "$FRAMEWORK_ROOT/test/run-claims-audit.sh"
 
+  # GITHUB_REPOSITORY is auto-set on CI to the actual repo
+  # (samuelserraceo/spec-driven-dev-workflow). With the cycle 1 repo-
+  # scoped exemption, the claim only matches when repo+num both align.
+  # Override here so the test's fake-owner/fake-repo INDEX matches what
+  # the env var thinks is the current repo. Without this, the test
+  # passes locally (env unset) but fails on CI.
+  export GITHUB_REPOSITORY="fake-owner/fake-repo"
+
   # CR cycle 1 minor: negative control — non-matching PR ref must NOT
   # be exempted (proves the exemption is PR-number-specific, not
   # always-pass when any GITHUB_REF is set).
