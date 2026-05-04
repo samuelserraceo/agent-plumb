@@ -7661,12 +7661,15 @@ fi
 
 # ============================================================
 # T157 — pre-commit-test-first.sh: exit 127 (test_runner not found)
-#   blocks with a config-wrong message; exit 1 (legit fail) still allows.
-#   Closes feature 006 AC8.
-#   RED: hook treats 127 as a successful "real test-first" signal,
-#        letting theatre through whenever the runner is misconfigured.
+#   blocks with a config-wrong message; non-127 failures still go
+#   through staged-test-specific theatre detection (so theatre with
+#   a runner that happens to exit non-zero doesn't slip through).
+#   Closes feature 006 AC8 + the L248 follow-on.
+#   RED: hook treats 127 the same as 1 — both as "real test-first
+#        signal", letting theatre through whenever the runner is
+#        misconfigured OR when an unrelated test fails.
 # ============================================================
-note "T157: pre-commit-test-first distinguishes 127 from real test fail (AC8)"
+note "T157: pre-commit-test-first distinguishes 127 from non-127 (AC8 + L248)"
 TEST_FIRST_HOOK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-test-first.sh"
 if [ ! -x "$TEST_FIRST_HOOK" ]; then
   bad "T157 hook missing or not executable" "$TEST_FIRST_HOOK"
@@ -7741,7 +7744,7 @@ SRC
   pass1=$(grep -c '^PASS_1$' "$d/result.txt" || true)
   rm -rf "$d"
   if [ "$pass127" -eq 1 ] && [ "$pass1" -eq 1 ]; then
-    ok "T157 exit 127 blocks; exit 1 allows"
+    ok "T157 exit 127 blocks (config wrong); non-127 with theatre also blocks"
   else
     bad "T157 runner-vs-test-fail distinction broke" "pass127=$pass127 pass1=$pass1"
   fi

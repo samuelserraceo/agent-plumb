@@ -18,10 +18,10 @@ if [ ! -x "$HOOK" ]; then
   exit 1
 fi
 
-tmpdir=$(mktemp -d)
-trap "rm -rf $tmpdir" EXIT
+tmpdir=$(mktemp -d) || { echo "FAIL: mktemp -d failed"; exit 1; }
+trap 'rm -rf "$tmpdir"' EXIT
 
-cd "$tmpdir"
+cd "$tmpdir" || { echo "FAIL: cd $tmpdir failed"; exit 1; }
 git init -q
 git config user.email "t@t.com"
 git config user.name "T"

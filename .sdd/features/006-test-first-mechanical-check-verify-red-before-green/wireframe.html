@@ -60,7 +60,7 @@
 
     <div class="step">
       <p class="label mb-1">Approach A (test runner configured)</p>
-      <p><strong>1.</strong> <span class="code">git stash push --keep-index</span> the code-side staged changes. Test stays in index.</p>
+      <p><strong>1.</strong> <span class="code">git stash push -- $code_files</span> stashes only the code-side staged paths. Test file stays in index.</p>
       <p><strong>2.</strong> Run <span class="code">$test_runner</span>. Capture exit code.</p>
       <p><strong>3.</strong> <span class="code">git stash pop</span> to restore the code (always — even if step 2 errored, via <span class="code">trap</span>).</p>
     </div>
@@ -102,7 +102,7 @@
     </div>
     <div class="step">
       <p class="label mb-1">Existing (the framework's own test suite)</p>
-      <p><span class="code">test/run-framework-test.sh</span> — gets 6 new T-tests covering each AC.</p>
+      <p><span class="code">test/run-framework-test.sh</span> — gets new T-tests covering each AC for this hook (T150-T158, one per AC1-AC9).</p>
     </div>
   </div>
 </section>

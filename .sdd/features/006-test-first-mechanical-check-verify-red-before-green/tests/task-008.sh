@@ -90,7 +90,12 @@ SRC
   git add tests/task-008.sh src/foo.sh
   out=$(printf '%s' '{"tool_input":{"command":"git commit -m \"[SDD:006][T08] task\""}}' | bash "$HOOK" 2>&1)
   ec=$?
-  if [ "$ec" -ne 0 ]; then
+  # CR cycle 2 minor: assert theatre-specific failure, not just any
+  # non-zero exit — an unrelated hook failure would otherwise mask a
+  # regression in the theatre-vs-runner-fail distinction.
+  if [ "$ec" -ne 0 ] \
+     && printf '%s' "$out" | grep -qiE 'theatre detected|test PASSED without' \
+     && ! printf '%s' "$out" | grep -qiE 'test_runner.*wrong|command not found'; then
     echo "PASS_B"
   else
     echo "FAIL_B ec=$ec out=$out"

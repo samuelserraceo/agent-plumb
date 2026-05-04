@@ -70,15 +70,25 @@ for i,a in enumerate(args):
     build_task_msg="$build_task_msg $(cat "$msg_path" 2>/dev/null)"
   fi
 fi
-# NOTE: deliberately NOT falling back to .git/COMMIT_EDITMSG. That
-# file's state at pre-commit time is unreliable (it may hold the
-# previous commit's message), causing false-passes on stale content.
-# Editor-backed commits without -m / -F that happen to pair test+code
-# fall through to the gate — that's the safer failure mode (block
-# rather than silently allow theatre).
+# Native git pre-commit fallback: the framework's pre-commit shim
+# (templates/.claude/hooks/pre-commit) invokes hooks with the
+# synthetic stdin `{"tool_input":{"command":"git commit"}}` that
+# strips the -m payload. In that path, .git/COMMIT_EDITMSG holds
+# the message git is about to commit (editor flow has already
+# written it), so we recover the BUILD-task shape check from there.
+# Detect the shim by its exact synthetic-stdin signature — avoids
+# false-firing on test scenarios that invoke the hook directly with
+# an empty stdin.
+if [ -z "$build_task_msg" ] \
+   && [ "$input" = '{"tool_input":{"command":"git commit"}}' ] \
+   && git rev-parse --git-dir >/dev/null 2>&1; then
+  git_dir=$(git rev-parse --git-dir 2>/dev/null)
+  if [ -n "$git_dir" ] && [ -f "$git_dir/COMMIT_EDITMSG" ]; then
+    build_task_msg=$(head -1 "$git_dir/COMMIT_EDITMSG" 2>/dev/null)
+  fi
+fi
 # If we have a visible message and it's NOT BUILD-task shape, exit 0.
-# If we have NO visible message (cmd is just "git commit"), gate by
-# default.
+# If we still have NO visible message, gate by default.
 if [ -n "$build_task_msg" ]; then
   if ! printf '%s' "$build_task_msg" | grep -qE '\[SDD:[^]]+\]\[T[0-9]+'; then
     exit 0

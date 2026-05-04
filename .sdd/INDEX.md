@@ -8,9 +8,8 @@
 
 
 ## In flight
-- features/006-test-first-mechanical-check-verify-red-before-green — test-first mechanical check — verify RED before GREEN (PHASE: SPEC)
 
-- (none)
+- features/006-test-first-mechanical-check-verify-red-before-green — test-first mechanical check — verify RED before GREEN (PHASE: SHIP)
 
 
 ## Shipped

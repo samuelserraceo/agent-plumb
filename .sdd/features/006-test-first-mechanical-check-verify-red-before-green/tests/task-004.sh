@@ -12,10 +12,10 @@ FRAMEWORK_ROOT="${FRAMEWORK_ROOT:-$(git rev-parse --show-toplevel 2>/dev/null ||
 HOOK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-test-first.sh"
 [ -x "$HOOK" ] || { echo "FAIL: hook missing at $HOOK"; exit 1; }
 
-tmpdir=$(mktemp -d)
-trap "rm -rf $tmpdir" EXIT
+tmpdir=$(mktemp -d) || { echo "FAIL: mktemp -d failed"; exit 1; }
+trap 'rm -rf "$tmpdir"' EXIT
 
-cd "$tmpdir"
+cd "$tmpdir" || { echo "FAIL: cd $tmpdir failed"; exit 1; }
 git init -q
 git config user.email t@t.com; git config user.name T; git config commit.gpgsign false
 
