@@ -2,7 +2,7 @@
 
 [PHASE: SHIP]
 
-**Active blocker:** §S3 (next action: push-pr)
+**Active blocker:** §S4 (next action: verify-ci-green)
 
 ## PHASE: SPEC
 
@@ -60,7 +60,7 @@
 
 ### action: push-pr
 
-- [ ] push-and-open: git push -u + gh pr create.
+- [x] push-and-open: branch pushed; PR https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/154 opened.
 
 ### action: verify-ci-green
 
