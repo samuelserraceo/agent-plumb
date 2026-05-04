@@ -2,7 +2,7 @@
 
 [PHASE: SPEC]
 
-**Active blocker:** §9 (next action: out-of-scope)
+**Active blocker:** §10 (next action: non-functional)
 
 ## PHASE: SPEC
 
@@ -64,8 +64,13 @@
 
 ### action: out-of-scope
 
-- [ ] list: What are we explicitly NOT building this round? 1-5 bullets, each: name + reason. Empty is fine.
-- [ ] approval: user_approves
+- [x] list: 5 explicit deferrals —
+  1. Per-task customisable test command — using project default from `config.md` `parameters.test_runner`. Per-task overrides deferred.
+  2. Detection across multiple commits — this round catches same-commit pairs (Approach A) and same-PR commit-order (Approach B). Multi-commit theatre (test in commit N + code in commit N+1 where the test passed throughout) is deferred.
+  3. IDE / editor integration — hook fires at git commit time, not in the editor.
+  4. Visual report / dashboard — error message only, no UI.
+  5. Auto-fixing the test — when theatre is caught, the user / AI rewrites the test; framework doesn't try to mutate it for them.
+- [x] approval: user_approves — Sam approved on 2026-05-04.
 
 ### action: non-functional
 

@@ -271,3 +271,6 @@ Sam approved §5: ship Approach A (stash-and-rerun pre-commit hook) as primary w
 
 ## 2026-05-04T07:35:00Z  [[features/006-test-first-mechanical-check-verify-red-before-green]]  feature/data-contract
 Sam approved §6: no new entities. Hook reads parameters.test_runner from existing config.md shape; no data-model.md updates needed.
+
+## 2026-05-04T07:40:00Z  [[features/006-test-first-mechanical-check-verify-red-before-green]]  feature/out-of-scope
+Sam approved §9: 5 explicit deferrals — per-task test command override; multi-commit theatre detection; IDE integration; visual report; auto-fixing the test. This round catches same-commit and commit-order patterns only.
