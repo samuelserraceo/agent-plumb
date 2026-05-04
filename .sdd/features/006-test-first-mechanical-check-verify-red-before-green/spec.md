@@ -2,7 +2,7 @@
 
 [PHASE: SHIP]
 
-**Active blocker:** §S5 (next action: learn)
+**Active blocker:** §S6 (next action: push-pr)
 
 ## PHASE: SPEC
 
@@ -167,8 +167,8 @@
 
 ### action: learn
 
-- [ ] summary: write one-line TL;DR of what shipped.
-- [ ] lessons: append a block to .sdd/patterns.md with cross-feature lessons.
+- [x] summary: shipped pre-commit-test-first.sh — a 9-AC backend hook that stashes the code-side of a paired test+code commit, runs the project's test_runner, restores via trap, and decides RED-vs-theatre. Closes the SDD-identity gap that the v1.0 audit surfaced (test-first was discipline-only, no mechanical check).
+- [x] lessons: appended block to .sdd/patterns.md — 3 lessons (stash --index gotcha, anti-theatre token traps, hook-stashes-itself contract).
 
 ### action: push-pr
 
