@@ -2,7 +2,7 @@
 
 [PHASE: BUILD]
 
-**Active blocker:** §B1 (next action: build-task — T01)
+**Active blocker:** BUILD done — phase advance to SHIP next.
 
 ## PHASE: SPEC
 
@@ -42,7 +42,7 @@
 
 ### action: build-task
 
-- [ ] T01: Implement the fix in `test/run-claims-audit.sh` `claim_shipped_pr_links_merged` — derive current PR number from `$GITHUB_REF` (shape `refs/pull/<num>/merge`) and skip that entry when iterating shipped PRs. Add T159 regression in `test/run-framework-test.sh` simulating PR-CI scenario. → tests captured in test/run-framework-test.sh T159
+- [x] T01 GREEN: Fix landed. `claim_shipped_pr_links_merged` now reads `$GITHUB_REF` (shape `refs/pull/<num>/merge`), extracts the current PR number, and skips that entry during iteration. Source-guard added at top of `run-claims-audit.sh` so test harnesses can source the script without triggering the orchestrator (or the cd to PROJECT_ROOT). T159 added (216/216 framework tests passing); standalone audit run passes 31/31. → tests captured in test/run-framework-test.sh T159
 
 ### Exit checks
 - [ ] C-build-tasks-green: every task is GREEN (test passing, code committed)
