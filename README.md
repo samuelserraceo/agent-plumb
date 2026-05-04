@@ -64,6 +64,29 @@ Each phase has its own actions (small focused steps). You can never skip a phase
 
 ## Quick start
 
+### Option A — Claude Code plugin (recommended for teams)
+
+```bash
+# In Claude Code, add the marketplace (your team's git URL or this repo)
+/plugin marketplace add https://github.com/samuelserraceo/spec-driven-dev-workflow
+/plugin install sdd
+
+# After install, slash commands and hooks are available immediately.
+# To set up SDD inside a project:
+/sdd-setup
+```
+
+To pull in framework updates later (refresh `.sdd/` from upstream):
+
+```bash
+bash .sdd/scripts/sdd-migrate.sh --upstream=<path-to-sdd-framework-checkout>           # dry-run
+bash .sdd/scripts/sdd-migrate.sh --apply --upstream=<path-to-sdd-framework-checkout>   # apply
+```
+
+The migrate tool keeps your `INDEX.md` / `decisions.md` / `patterns.md` / `data-model.md` / `stack.md` / `principles.md` / `.sdd/features/**` untouched. Read the [feature 007 wireframe](.sdd/features/007-sdd-migrate-refresh-project-s-sdd-tree-from-upstream-framework/wireframe.html) for the full categorisation flow.
+
+### Option B — manual clone + scaffold
+
 ### 1. Clone SDD somewhere stable
 
 ```bash
