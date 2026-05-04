@@ -2,7 +2,7 @@
 
 [PHASE: SPEC]
 
-**Active blocker:** §12 (next action: signoff-steps)
+**Active blocker:** §13 (next action: wireframe)
 
 ## PHASE: SPEC
 
@@ -92,7 +92,10 @@
 
 ### action: signoff-steps
 
-- [ ] manual-steps: What manual smoke tests do YOU need to do before SHIP, beyond the automated tests? 1-5 bullets.
+- [x] manual-steps: 3 manual checks before SHIP —
+  1. Run a real BUILD task end-to-end on the framework itself; see the hook fire silently when the test legitimately fails-first.
+  2. Manually craft a fake-test-first commit (stage code+test where test passes without code); see the hook refuse with the plain-English error.
+  3. Read the refusal error; check it makes sense to a non-technical reader without further explanation. {best-effort: Sam at SHIP}
 
 ### action: wireframe
 
