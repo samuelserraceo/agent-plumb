@@ -7701,6 +7701,8 @@ CFG
       echo "FAIL_127 ec=$ec out=$out"
     fi
     git reset --hard HEAD >/dev/null 2>&1
+    mkdir -p src tests
+    # Sub-B: theatre still caught when runner exits non-zero (L248).
     cat > .sdd/config.md <<'CFG'
 ---
 type: config
@@ -7708,18 +7710,28 @@ parameters:
   test_runner: "bash -c 'exit 1'"
 ---
 CFG
-    git add .sdd/config.md
+    cat > src/foo.sh <<'SRC'
+#!/usr/bin/env bash
+echo "hello"
+SRC
+    chmod +x src/foo.sh
+    git add .sdd/config.md src/foo.sh
     git commit -q -m runner
     cat > tests/task-008.sh <<'TST'
 #!/usr/bin/env bash
-exit 0
+out=$(bash src/foo.sh 2>/dev/null)
+[ "$out" = "hello" ] || exit 1
 TST
     chmod +x tests/task-008.sh
-    echo "echo b" > src/foo.sh
+    cat > src/foo.sh <<'SRC'
+#!/usr/bin/env bash
+# cosmetic comment
+echo "hello"
+SRC
     git add tests/task-008.sh src/foo.sh
     out2=$(printf '%s' '{"tool_input":{"command":"git commit -m \"[SDD:006][T08] task\""}}' | bash "$TEST_FIRST_HOOK" 2>&1)
     ec2=$?
-    if [ "$ec2" -eq 0 ]; then
+    if [ "$ec2" -ne 0 ]; then
       echo "PASS_1"
     else
       echo "FAIL_1 ec=$ec2 out=$out2"
@@ -7772,14 +7784,18 @@ TST
     echo "STAGED_MOD" > src/foo.sh
     git add tests/task-009.sh src/foo.sh
     out=$(printf '%s' '{"tool_input":{"command":"git commit -m \"[SDD:006][T09] task\""}}' | bash "$TEST_FIRST_HOOK" 2>&1)
+    ec=$?
     has_recovery=0
     has_stash=0
     printf '%s' "$out" | grep -qiE 'stash.*pop.*failed|recover.*hand|stash@' && has_recovery=1
     [ "$(git stash list 2>/dev/null | wc -l | tr -d ' ')" -gt 0 ] && has_stash=1
-    if [ "$has_recovery" = "1" ] && [ "$has_stash" = "1" ]; then
+    # CR cycle 1 L7783 fix: also assert hook exit code non-zero so a
+    # regression where the hook prints recovery text but still exits 0
+    # gets caught.
+    if [ "$ec" -ne 0 ] && [ "$has_recovery" = "1" ] && [ "$has_stash" = "1" ]; then
       echo "PASS"
     else
-      echo "FAIL recovery=$has_recovery stash=$has_stash out=$out"
+      echo "FAIL ec=$ec recovery=$has_recovery stash=$has_stash out=$out"
     fi
   ) > "$d/result.txt" 2>&1
   result=$(grep -E '^PASS|^FAIL' "$d/result.txt" | tail -1)

@@ -43,16 +43,44 @@ case "$cmd" in
 esac
 
 # T04: only gate BUILD-task commits.
-# When the cmd carries a -m payload (Claude Code path), look for the
-# [SDD:NNN][T<n>] shape that the framework's BUILD-task convention
-# uses. Anything else (spec edits, phase advances, framework chores,
-# mark-shipped) should pass through silently — only the test-first
-# discipline of BUILD-tasks needs the gate.
-# When the cmd is just "git commit" (no -m), assume the caller is a
-# native pre-commit invocation that can't see the message; gate by
-# default in that case.
-if printf '%s' "$cmd" | grep -qE 'git commit.*-m'; then
-  if ! printf '%s' "$cmd" | grep -qE '\[SDD:[^]]+\]\[T[0-9]+'; then
+# Look for the [SDD:NNN][T<n>] shape in any visible message source —
+# -m / --message inline, OR -F / --file path (read from the file), OR
+# COMMIT_EDITMSG (editor-backed). Anything else (spec edits, phase
+# advances, framework chores, mark-shipped) should pass through
+# silently — only the test-first discipline of BUILD-tasks needs the
+# gate. (CR cycle 1 L58 fix — extend beyond the -m-only original.)
+build_task_msg=""
+# Inline -m / --message: pull text from cmd
+if printf '%s' "$cmd" | grep -qE 'git commit.*(-m|--message)'; then
+  build_task_msg=$(printf '%s' "$cmd")
+fi
+# -F / --file: read the named file
+if printf '%s' "$cmd" | grep -qE 'git commit.*(-F|--file)'; then
+  msg_path=$(printf '%s' "$cmd" | python3 -c "
+import sys, re, shlex
+s = sys.stdin.read()
+m = re.search(r'git commit(.*)', s, re.DOTALL)
+if not m: sys.exit(0)
+args = shlex.split(m.group(1))
+for i,a in enumerate(args):
+    if a in ('-F','--file') and i+1 < len(args):
+        print(args[i+1]); break
+" 2>/dev/null)
+  if [ -n "$msg_path" ] && [ -f "$msg_path" ]; then
+    build_task_msg="$build_task_msg $(cat "$msg_path" 2>/dev/null)"
+  fi
+fi
+# NOTE: deliberately NOT falling back to .git/COMMIT_EDITMSG. That
+# file's state at pre-commit time is unreliable (it may hold the
+# previous commit's message), causing false-passes on stale content.
+# Editor-backed commits without -m / -F that happen to pair test+code
+# fall through to the gate — that's the safer failure mode (block
+# rather than silently allow theatre).
+# If we have a visible message and it's NOT BUILD-task shape, exit 0.
+# If we have NO visible message (cmd is just "git commit"), gate by
+# default.
+if [ -n "$build_task_msg" ]; then
+  if ! printf '%s' "$build_task_msg" | grep -qE '\[SDD:[^]]+\]\[T[0-9]+'; then
     exit 0
   fi
 fi
@@ -149,7 +177,11 @@ if ! git stash push --quiet -m "$stash_msg" -- $code_files >/dev/null 2>&1; then
   exit 0
 fi
 
-# trap restores the stash on any exit path.
+# Signal traps: if the hook is interrupted (Ctrl+C, CI SIGTERM)
+# BEFORE the explicit pop in the main flow runs, best-effort restore
+# so the user's code isn't orphaned. Normal-exit pop is handled in
+# the main flow below — that path checks pop_ec and blocks the commit
+# on conflict (CR cycle 1 L193 fix).
 #
 # Pop + re-stage (instead of pop --index): --index doesn't survive
 # new files cleanly — pop refuses with a conflict and leaves the
@@ -158,20 +190,60 @@ fi
 # Caught dogfooding T01: the very first commit silently landed only
 # the new files because pop-without-index leaves modified files in
 # the working tree but not the index.
-#
-# T05: explicit INT TERM HUP signals alongside EXIT. macOS bash 3.2's
-# EXIT trap empirically fires on SIGTERM/SIGINT too, but the bash
-# manual doesn't guarantee that across all platforms — Linux bash 5+
-# and other shells handle this differently. Naming the signals
-# explicitly is the portable form: the cleanup runs whether bash
-# exits normally, gets Ctrl+C'd, or is sent SIGTERM by a CI runner.
 trap '
-  pop_err=$(git stash pop 2>&1)
-  pop_ec=$?
-  if [ "$pop_ec" -ne 0 ]; then
-    stash_ref=$(git stash list 2>/dev/null | grep -F "$stash_msg" | head -1 | cut -d":" -f1)
-    [ -z "$stash_ref" ] && stash_ref="stash@{0}"
-    cat >&2 <<RECOVERY
+  git stash pop --quiet 2>/dev/null || true
+  for _f in $code_files; do
+    git add -- "$_f" 2>/dev/null || true
+  done
+  exit 130
+' INT TERM HUP
+
+# Run the configured test_runner (broad signal — catches general
+# regressions). Result kept for fallback when the staged test has an
+# unknown extension.
+# Subshell isolation: an `exit N` inside test_runner shouldn't kill
+# the hook itself. Caught dogfooding T09 (CR cycle 1 follow-up): the
+# unwrapped eval let test_runners with `; exit 1` terminate the hook
+# silently before pop ran.
+( eval "$test_runner" ) >/dev/null 2>&1
+test_ec=$?
+
+# CR cycle 1 L248 fix — run the staged test SPECIFICALLY against the
+# stashed (HEAD-only) code. Without this, full-suite test_runner masks
+# theatre whenever an unrelated test happens to fail (suite returns
+# non-zero, hook treats as "real RED", allows). Per-extension dispatch
+# below; falls back to test_runner result for unknown extensions.
+staged_test_ec=0
+while IFS= read -r tf; do
+  [ -z "$tf" ] && continue
+  case "$tf" in
+    *.sh)        bash "$tf" >/dev/null 2>&1; tf_ec=$? ;;
+    *.py)        python3 "$tf" >/dev/null 2>&1; tf_ec=$? ;;
+    *.js|*.mjs)  node "$tf" >/dev/null 2>&1; tf_ec=$? ;;
+    *)           tf_ec=$test_ec ;;
+  esac
+  # If any staged test failed, the overall staged_test_ec is non-zero.
+  # If they all passed (exit 0), staged_test_ec stays 0 → theatre.
+  [ "$tf_ec" -ne 0 ] && staged_test_ec=$tf_ec
+done <<< "$test_files"
+
+# Pop stash explicitly + re-stage. CR cycle 1 L193 fix: capture the
+# pop exit code so we can block the commit on conflict instead of
+# silently swallowing it.
+pop_err=$(git stash pop 2>&1)
+pop_ec=$?
+for _f in $code_files; do
+  git add -- "$_f" 2>/dev/null || true
+done
+trap - INT TERM HUP
+
+# CR cycle 1 L193 fix — block when stash pop fails. Previously the
+# trap-only logic logged the error but the hook still returned 0 from
+# the test-result check below, letting an invalid commit proceed.
+if [ "$pop_ec" -ne 0 ]; then
+  stash_ref=$(git stash list 2>/dev/null | grep -F "$stash_msg" | head -1 | cut -d":" -f1)
+  [ -z "$stash_ref" ] && stash_ref="stash@{0}"
+  cat >&2 <<RECOVERY
 [pre-commit-test-first] stash pop failed — your code is in $stash_ref.
 
 This usually means the test runner created a file the stashed code
@@ -185,20 +257,37 @@ To recover by hand:
 
 Pop error:
 $pop_err
+
+Refusing the commit.
 RECOVERY
-  fi
-  for _f in $code_files; do
-    git add -- "$_f" 2>/dev/null || true
-  done
-' EXIT INT TERM HUP
+  exit 2
+fi
 
-# Run the configured test runner.
-test_output=$(eval "$test_runner" 2>&1)
-test_ec=$?
+# T08: distinguish "runner config wrong" from a real test result.
+# Check this FIRST — when the configured test_runner can't be executed
+# (exit 127), bash returns 127 from eval. The staged test below would
+# still run separately, but its result is meaningless if the runner
+# itself is broken — we should surface the config error first.
+if [ "$test_ec" -eq 127 ] || [ "$staged_test_ec" -eq 127 ]; then
+  cat >&2 <<HOOK_ERR
+[pre-commit-test-first] test_runner config is wrong — fix .sdd/config.md.
 
-if [ "$test_ec" -eq 0 ]; then
-  # Test PASSED without the code → theatre → block.
-  # 3 elements (AC6): test path, what test-first means, how to fix.
+  test_runner: $test_runner
+  exit code:   127 (command not found)
+
+The configured test_runner couldn't be executed. Set
+parameters.test_runner in .sdd/config.md to a real test command
+(e.g. "bash test/run-test.sh", "npx vitest run", "pytest"), or
+leave it empty to use the lighter Approach B (commit-order check).
+
+Refusing the commit so theatre doesn't slip through a broken runner.
+HOOK_ERR
+  exit 2
+fi
+
+# Decide based on the STAGED test specifically (CR cycle 1 L248 fix).
+if [ "$staged_test_ec" -eq 0 ]; then
+  # Theatre — the staged test passed without the code paired with it.
   cat >&2 <<HOOK_ERR
 [pre-commit-test-first] test PASSED without the code — theatre detected.
 
@@ -221,28 +310,5 @@ HOOK_ERR
   exit 2
 fi
 
-# T08: distinguish "runner config wrong" from "test legitimately failed".
-# bash returns 127 when the command itself can't be found. That's the
-# user pointing test_runner at a non-existent binary — not a real RED
-# signal. Block with a config-wrong message instead of silently
-# accepting the commit (which would let theatre slip through whenever
-# the runner happens to be misconfigured).
-if [ "$test_ec" -eq 127 ]; then
-  cat >&2 <<HOOK_ERR
-[pre-commit-test-first] test_runner config is wrong — fix .sdd/config.md.
-
-  test_runner: $test_runner
-  exit code:   127 (command not found)
-
-The configured test_runner couldn't be executed. Set
-parameters.test_runner in .sdd/config.md to a real test command
-(e.g. "bash test/run-test.sh", "npx vitest run", "pytest"), or
-leave it empty to use the lighter Approach B (commit-order check).
-
-Refusing the commit so theatre doesn't slip through a broken runner.
-HOOK_ERR
-  exit 2
-fi
-
-# Test FAILED with a normal exit code → real test-first → allow.
+# Staged test failed with a normal exit code → real test-first → allow.
 exit 0

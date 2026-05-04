@@ -44,7 +44,16 @@ CFG
 result_a=$(grep -E '^PASS|^FAIL' /tmp/sdd_t08_a.out | tail -1)
 rm -rf "$d_a" /tmp/sdd_t08_a.out
 
-# ── Sub-test B: test_runner exits 1 (real test failure) → allow ───────
+# ── Sub-test B: theatre detected even when runner exits non-zero ─────
+# This exercises the L248 fix specifically: pre-fix, `runner exits 1`
+# was treated as "real RED → allow" — masking theatre. Post-fix, the
+# staged-test-specific check fires regardless of runner exit code.
+# - HEAD already has src/foo.sh outputting "hello"
+# - Stage tests/task-008.sh that asserts "hello" (already true at HEAD,
+#   so the test passes without the new code = theatre)
+# - Stage a cosmetic src/foo.sh change (just a comment)
+# - test_runner exits 1 (unrelated non-127 failure)
+# - Expected: hook BLOCKS (staged test passes = theatre)
 d_b=$(mktemp -d)
 (
   cd "$d_b" || exit 1
@@ -59,17 +68,29 @@ parameters:
 ---
 CFG
   echo init > README.md
-  git add README.md .sdd/config.md
+  cat > src/foo.sh <<'SRC'
+#!/usr/bin/env bash
+echo "hello"
+SRC
+  chmod +x src/foo.sh
+  git add README.md .sdd/config.md src/foo.sh
   git commit -q -m scaffold
   mkdir -p tests
-  echo '#!/usr/bin/env bash' > tests/task-008.sh
-  echo 'exit 0' >> tests/task-008.sh
+  cat > tests/task-008.sh <<'TST'
+#!/usr/bin/env bash
+out=$(bash src/foo.sh 2>/dev/null)
+[ "$out" = "hello" ] || exit 1
+TST
   chmod +x tests/task-008.sh
-  echo "echo a" > src/foo.sh
+  cat > src/foo.sh <<'SRC'
+#!/usr/bin/env bash
+# cosmetic comment
+echo "hello"
+SRC
   git add tests/task-008.sh src/foo.sh
   out=$(printf '%s' '{"tool_input":{"command":"git commit -m \"[SDD:006][T08] task\""}}' | bash "$HOOK" 2>&1)
   ec=$?
-  if [ "$ec" -eq 0 ]; then
+  if [ "$ec" -ne 0 ]; then
     echo "PASS_B"
   else
     echo "FAIL_B ec=$ec out=$out"
@@ -79,14 +100,14 @@ result_b=$(grep -E '^PASS|^FAIL' /tmp/sdd_t08_b.out | tail -1)
 rm -rf "$d_b" /tmp/sdd_t08_b.out
 
 fails=()
-[[ "$result_a" == PASS_A ]] || fails+=("Sub-A (exit 127): $result_a")
-[[ "$result_b" == PASS_B ]] || fails+=("Sub-B (exit 1): $result_b")
+[[ "$result_a" == PASS_A ]] || fails+=("Sub-A (exit 127 → config wrong block): $result_a")
+[[ "$result_b" == PASS_B ]] || fails+=("Sub-B (theatre w/ runner-fail → block): $result_b")
 
 if [ ${#fails[@]} -ne 0 ]; then
-  echo "FAIL: AC8 — runner-crash vs test-fail distinction broken"
+  echo "FAIL: AC8 — runner-crash vs theatre distinction broken"
   for f in "${fails[@]}"; do echo "  - $f"; done
   exit 1
 fi
 
-echo "PASS: AC8 — exit 127 blocks (config wrong); exit 1 allows (real RED)"
+echo "PASS: AC8 — exit 127 blocks (config wrong); theatre detected even with runner exiting non-zero"
 exit 0
