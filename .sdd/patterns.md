@@ -71,3 +71,9 @@ Source: [[006-test-first-mechanical-check-verify-red-before-green]] T01.
 Any audit-style claim that runs on PR CI and asserts "shipped X is in state Y" must exempt the very PR being CI'd from the check — otherwise the PR's own mark-shipped row references a still-OPEN PR, the claim fails, CI is red, and merge is needed-but-blocked by CI. Caught in feature 006 / PR #153 (first PR after the claims-audit harness landed). Fix shape: read `$GITHUB_REF` (matches `refs/pull/<num>/merge` on PR runs), extract the number, and skip that entry during iteration. See `claim_shipped_pr_links_merged` in `test/run-claims-audit.sh`.
 
 Source: [[003-claims-audit-fails-on-shipped-pr-self-reference-chicken-egg]] T01.
+
+### Channel A vs Channel B framework updates need different tools
+
+A SDD-style framework that ships both as a Claude Code plugin (slash commands, hooks) AND as a project-installed tree (`.sdd/`) has TWO update channels with different semantics. Channel A (plugin layer) auto-flows when users run `/plugin update` — single replacement, no user data at risk. Channel B (project-template layer) does NOT auto-flow because the user's `.sdd/` contains their own project data (spec.md, INDEX.md, decisions.md, patterns.md) that can't be auto-replaced. Without a migration tool for Channel B, downstream teams stay on whatever framework version they first installed — making the "framework dogfoods every change" claim hollow for anyone but the maintainer. Solution: ship a migration tool (`sdd-migrate.sh`) that diffs user's tracked framework files vs upstream by hash, applies non-conflicting changes, prompts on locally-edited conflicts, and re-pins the manifest. User-data files are excluded by walk-list — they're invisible to the tool, not just blacklisted. See `templates/.sdd/scripts/sdd-migrate.sh`.
+
+Source: [[007-sdd-migrate-refresh-project-s-sdd-tree-from-upstream-framework]] feature ship.

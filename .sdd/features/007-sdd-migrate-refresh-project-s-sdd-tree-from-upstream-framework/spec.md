@@ -1,8 +1,8 @@
 # sdd-migrate — refresh project's .sdd/ tree from upstream framework
 
-[PHASE: BUILD]
+[PHASE: SHIP]
 
-**Active blocker:** BUILD done — phase advance to SHIP next.
+**Active blocker:** §S1 (next action: verify-test-run)
 
 ## PHASE: SPEC
 
@@ -127,4 +127,31 @@
 (driven by §14 tasks T01-T07 — each task lands as one commit)
 
 ### Exit checks
-- [ ] C-build-tasks-green: every task is GREEN (test passing, code committed)
+- [x] C-build-tasks-green: T01-T07 all GREEN; 218/218 framework tests + 7/7 per-feature tests pass.
+
+## PHASE: SHIP
+
+### action: verify-test-run
+
+- [x] run-tests: bash test/run-framework-test.sh → 218/218 (added T160, T161); bash test/run-claims-audit.sh → 31/31. All 7 per-feature tests/task-001..007.sh PASS.
+
+### action: learn
+
+- [x] summary: shipped sdd-migrate.sh — a CLI tool that refreshes a downstream project's .sdd/ + .claude/ from upstream framework HEAD. Closes Channel B (project-template layer) update flow that was previously manual. Now the framework is a real updatable internal package.
+- [x] lessons: 1 lesson appended to patterns.md — "Channel A vs Channel B updates need different tools" (slash commands + hooks flow via /plugin update; project-template tree needs its own migration tool). Plus discovered + flagged a hook bug: pre-commit-test-first.sh's COMMIT_EDITMSG fallback reads stale message at pre-commit time (filed as TODO).
+
+### action: push-pr
+
+- [ ] push-and-open: git push -u + gh pr create.
+
+### action: verify-ci-green
+
+- [ ] ci: poll CI; gate mark-shipped on a green run.
+
+### action: mark-shipped
+
+- [ ] shipped: INDEX.md update, .shipped marker, decisions.md append.
+
+### Exit checks
+- [ ] C-ship-pr-url: PR URL recorded in INDEX.md Shipped section
+- [ ] C-ship-marked: .shipped marker file exists in feature folder
