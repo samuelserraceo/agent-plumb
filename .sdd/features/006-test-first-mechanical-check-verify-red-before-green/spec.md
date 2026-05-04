@@ -74,7 +74,7 @@
 
 ### action: non-functional
 
-- [x] constraints:
+- [x] constraints: 3 categories — performance (hook overhead bounded by one test-suite run), security (no external transmission, no new credentials), compliance (no PII, no external API calls). Detail below.
   - **Performance**: hook runs once per BUILD-task commit. Stash + test-run + restore should complete in under the time of one test-suite run for the project. For the framework's own use (`bash test/run-framework-test.sh`), that's ~1 minute. {best-effort: Sam at SHIP — confirms timing on real BUILD task}
   - **Security**: stashed code stays in git's local stash store; not transmitted anywhere. Test runner is invoked with the project's existing credentials; no new secrets flow through this hook.
   - **Compliance**: no PII, no external API calls. Hook runs locally only.
