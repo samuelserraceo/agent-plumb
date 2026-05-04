@@ -7255,6 +7255,71 @@ SRC
 fi
 
 # ============================================================
+# T151 — pre-commit-test-first.sh: fake test-first (test passes without
+#   code) is blocked; stderr names the test path. Closes feature 006 AC2.
+#   RED: hook lets the commit through silently — theatre slips past.
+# ============================================================
+note "T151: pre-commit-test-first blocks fake test-first commit (AC2)"
+TEST_FIRST_HOOK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-test-first.sh"
+if [ ! -x "$TEST_FIRST_HOOK" ]; then
+  bad "T151 hook missing or not executable" "$TEST_FIRST_HOOK"
+else
+  d=$(mktemp -d)
+  (
+    cd "$d" || exit 1
+    git init -q
+    git config user.email t@t.com
+    git config user.name T
+    git config commit.gpgsign false
+    mkdir -p .sdd src
+    cat > .sdd/config.md <<'CFG'
+---
+type: config
+parameters:
+  test_runner: "bash tests/task-002.sh"
+---
+CFG
+    cat > src/foo.sh <<'SRC'
+#!/usr/bin/env bash
+echo "hello"
+SRC
+    chmod +x src/foo.sh
+    git add .sdd/config.md src/foo.sh
+    git commit -q -m scaffold
+    mkdir -p tests
+    cat > tests/task-002.sh <<'TST'
+#!/usr/bin/env bash
+out=$(bash src/foo.sh 2>/dev/null)
+[ "$out" = "hello" ] || exit 1
+TST
+    chmod +x tests/task-002.sh
+    cat > src/foo.sh <<'SRC'
+#!/usr/bin/env bash
+# cosmetic comment — doesn't change behavior
+echo "hello"
+SRC
+    git add tests/task-002.sh src/foo.sh
+    out=$(bash "$TEST_FIRST_HOOK" </dev/null 2>&1)
+    ec=$?
+    stash_count=$(git stash list 2>/dev/null | wc -l | tr -d ' ')
+    if [ "$ec" -ne 0 ] \
+       && printf '%s' "$out" | grep -q 'tests/task-002.sh' \
+       && [ "$stash_count" -eq 0 ]; then
+      echo "PASS"
+    else
+      echo "FAIL ec=$ec stash=$stash_count out=$out"
+    fi
+  ) > "$d/result.txt" 2>&1
+  result=$(grep -E '^PASS|^FAIL' "$d/result.txt" | tail -1)
+  rm -rf "$d"
+  if [ "$result" = "PASS" ]; then
+    ok "T151 fake test-first blocked; test path in stderr; stash restored"
+  else
+    bad "T151 hook didn't block theatre" "$result"
+  fi
+fi
+
+# ============================================================
 # T141 — anti-theatre lint passes on the in-flight spec (closes #111,
 #   PR #003). Theatre tokens (numerical bounds, currency, enforcement
 #   verbs, quality absolutes) without an adjacent verifier annotation

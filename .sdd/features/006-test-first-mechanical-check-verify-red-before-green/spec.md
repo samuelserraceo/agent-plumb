@@ -2,7 +2,7 @@
 
 [PHASE: BUILD]
 
-**Active blocker:** §B2 (next action: build-task — T02)
+**Active blocker:** §B2 (next action: build-task — T03)
 
 ## PHASE: SPEC
 
@@ -109,7 +109,7 @@
 - [x] tasks: 6 tasks (T01-T06) — 1:1 with AC1-AC6. T01 introduces the hook (manifest repin in same commit); T02-T06 extend hook logic. Each task adds: hook source + mirror + per-feature test (tests/task-NNN.sh) + framework regression entry in test/run-framework-test.sh.
 
 - [x] T01 GREEN: Hook skeleton + Approach A happy path landed. New file templates/.claude/hooks/pre-commit-test-first.sh (+ mirror at .claude/hooks/), wired in both settings.json copies, parameters.test_runner field added to templates/.sdd/config.md (empty default) and set in .sdd/config.md to "bash test/run-framework-test.sh". T150 added to run-framework-test.sh; all 207 framework tests pass. → tests/task-001.sh
-- [ ] T02: Theatre detection. Fake test-first (test passes without code) → hook stops the commit; stderr names the test path. → tests/task-002.sh
+- [x] T02 GREEN: Theatre detection landed. Hook stops fake test-first commits with stderr naming the test path. T151 added to framework test suite (208/208 passing). → tests/task-002.sh
 - [ ] T03: Approach B fallback when parameters.test_runner is empty. Same-commit test+code pair → message says "test must land in its own commit first." → tests/task-003.sh
 - [ ] T04: Non-BUILD-task pass-through. spec.md edits / framework chores / mark-shipped → hook exits 0 silently. Only [SDD:NNN][T<n>]-shaped commits get gated. → tests/task-004.sh
 - [ ] T05: trap-based stash restore. Test runner crashes mid-run → stash still gets restored before hook exits. → tests/task-005.sh

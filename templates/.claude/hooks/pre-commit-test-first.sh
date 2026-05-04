@@ -104,6 +104,22 @@ trap '
 test_output=$(eval "$test_runner" 2>&1)
 test_ec=$?
 
-# T01 skeleton: allow regardless of test result. T02 adds the
-# theatre-block path (test PASSES without code → exit 2 with stderr).
+if [ "$test_ec" -eq 0 ]; then
+  # Test PASSED without the code → theatre → block.
+  # T06 adds the full 3-element message; T02 just names the test path.
+  cat >&2 <<HOOK_ERR
+[pre-commit-test-first] test PASSED without the code — theatre detected.
+
+  test:  $(printf '%s' "$test_files" | tr '\n' ' ')
+
+The test you staged passes WITHOUT the code paired with it. That
+means it doesn't pin behaviour — it was written to match whatever
+the code happens to do, not to fail before the code existed.
+
+Refusing the commit. (Stash being restored.)
+HOOK_ERR
+  exit 2
+fi
+
+# Test FAILED without code → real test-first → allow.
 exit 0
