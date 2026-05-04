@@ -2,7 +2,7 @@
 
 [PHASE: SPEC]
 
-**Active blocker:** §13 (next action: wireframe)
+**Active blocker:** §14 (next action: plan-decompose)
 
 ## PHASE: SPEC
 
@@ -99,7 +99,7 @@
 
 ### action: wireframe
 
-- [ ] wireframe: draft wireframe.html — UI screens for UI features OR flow + architecture for non-UI features
+- [x] wireframe: drafted — non-UI flow (commit pipeline + Approach A/B branching), architecture (where the new hook sits relative to existing safety hooks), concrete example of a fake-test-first commit being stopped.
 
 ### action: plan-decompose
 

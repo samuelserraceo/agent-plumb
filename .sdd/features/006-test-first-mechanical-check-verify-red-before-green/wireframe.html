@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>006 — Test-first mechanical check (RED before GREEN)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
+  .step { background: #fff; border: 1.5px solid #d4d4d4; border-radius: 8px; padding: 12px 16px; }
+  .step.gate { background: #fef2f2; border-color: #fca5a5; }
+  .step.allow { background: #f0fdf4; border-color: #86efac; }
+  .step.fallback { background: #f5f3ff; border-color: #8b5cf6; }
+  .arrow { font-size: 24px; color: #8a8a8a; text-align: center; }
+  .label { font-size: 11px; color: #4a4a4a; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  .code { font-family: "SF Mono", Monaco, Consolas, monospace; font-size: 13px; background: #f1f5f9; padding: 1px 6px; border-radius: 3px; }
+  pre { background: #1a1a1a; color: #f0fdf4; font-family: "SF Mono", Monaco, Consolas, monospace; font-size: 12px; padding: 12px; border-radius: 6px; overflow-x: auto; }
+</style>
+</head>
+<body class="p-8 max-w-4xl mx-auto text-slate-900">
+
+<header class="mb-8">
+  <p class="label mb-2">Feature 006 — non-UI (safety hook)</p>
+  <h1 class="text-2xl font-bold mb-2">Test-first mechanical check — verify RED before GREEN</h1>
+  <p class="text-slate-600">A pre-commit hook that catches "fake test-first" — when the AI ships a test that passes without the code it's supposed to verify.</p>
+</header>
+
+<section class="mb-10">
+  <h2 class="text-lg font-semibold mb-4">Flow — what happens when a BUILD task commit lands</h2>
+
+  <div class="space-y-3">
+
+    <div class="step">
+      <p class="label mb-1">Trigger</p>
+      <p>Agent runs <span class="code">git commit -m "[SDD:NNN][T01] task..."</span> with a test file <span class="code">tests/task-001.&lt;ext&gt;</span> and a code file staged together.</p>
+    </div>
+
+    <div class="arrow">↓</div>
+
+    <div class="step">
+      <p class="label mb-1">Detect pair</p>
+      <p>Hook reads the staged set, looks for the <span class="code">tests/task-NNN</span> shape paired with a non-test file in the same commit.</p>
+    </div>
+
+    <div class="arrow">↓</div>
+
+    <div class="step">
+      <p class="label mb-1">Branch on test runner</p>
+      <p>Hook reads <span class="code">config.md → parameters.test_runner</span>. If empty → Approach B (commit-order check). If set → Approach A (run the test).</p>
+    </div>
+
+    <div class="arrow">↓</div>
+
+    <div class="step fallback">
+      <p class="label mb-1">Approach B (no test runner)</p>
+      <p>Was the test file committed in a separate prior commit on this branch? If yes → allow. If no (test+code in same commit) → refuse with <em>"test must land in its own commit first."</em></p>
+    </div>
+
+    <div class="arrow">↓ <span class="text-xs">OR</span></div>
+
+    <div class="step">
+      <p class="label mb-1">Approach A (test runner configured)</p>
+      <p><strong>1.</strong> <span class="code">git stash push --keep-index</span> the code-side staged changes. Test stays in index.</p>
+      <p><strong>2.</strong> Run <span class="code">$test_runner</span>. Capture exit code.</p>
+      <p><strong>3.</strong> <span class="code">git stash pop</span> to restore the code (always — even if step 2 errored, via <span class="code">trap</span>).</p>
+    </div>
+
+    <div class="arrow">↓</div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <div class="step gate">
+        <p class="label mb-1">Test PASSED without code</p>
+        <p class="font-semibold mb-2">Theatre detected → BLOCK.</p>
+        <p class="text-sm text-slate-700">The test doesn't actually pin behaviour — it was written to pass against whatever the code happens to do.</p>
+      </div>
+
+      <div class="step allow">
+        <p class="label mb-1">Test FAILED without code</p>
+        <p class="font-semibold mb-2">Real test-first → ALLOW.</p>
+        <p class="text-sm text-slate-700">The test would have caught a missing implementation. Commit lands; spec.md row flips RED → GREEN as expected.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section class="mb-10">
+  <h2 class="text-lg font-semibold mb-4">Architecture — where the new piece sits</h2>
+
+  <div class="space-y-3">
+    <div class="step">
+      <p class="label mb-1">Existing</p>
+      <p><span class="code">.claude/settings.json</span> — registers hook callbacks. <span class="code">templates/.claude/hooks/</span> — existing safety hooks (manifest pin, scope-guard, post-stop-lint).</p>
+    </div>
+    <div class="step" style="background: #eef2ff; border-color: #4f46e5;">
+      <p class="label mb-1">New (this feature)</p>
+      <p><span class="code">templates/.claude/hooks/pre-commit-test-first.sh</span> — the hook. Wired in <span class="code">settings.json</span> as a PreToolUse(Bash) handler on <span class="code">git commit</span>.</p>
+    </div>
+    <div class="step">
+      <p class="label mb-1">Existing (read by the new hook)</p>
+      <p><span class="code">.sdd/config.md</span> — <span class="code">parameters.test_runner</span> field. Empty by default, populated by <span class="code">/sdd-setup</span>.</p>
+    </div>
+    <div class="step">
+      <p class="label mb-1">Existing (the framework's own test suite)</p>
+      <p><span class="code">test/run-framework-test.sh</span> — gets 6 new T-tests covering each AC.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2 class="text-lg font-semibold mb-4">Concrete example — fake-test-first refused</h2>
+  <p class="mb-3 text-slate-600">Agent stages a test that passes without code (theatre). The hook catches it.</p>
+
+<pre>$ git add src/auth/login.ts tests/task-001.sh
+$ git commit -m "[SDD:042][T01] login route GREEN"
+
+[pre-commit-test-first] paired test+code detected:
+  test:  tests/task-001.sh
+  code:  src/auth/login.ts
+
+[pre-commit-test-first] stashing code, running test (test_runner: bash tests/task-001.sh)...
+[pre-commit-test-first] test PASSED without the code — theatre detected.
+
+The test you staged passes WITHOUT the code it's supposed to verify.
+That means it doesn't actually pin behaviour — it was written to
+match whatever the code happens to do, not to fail before the code
+existed. Future regressions will sneak past this test.
+
+Fix:
+  1. Rewrite the test against the not-yet-existing code shape.
+  2. Run it — it should FAIL (because the code doesn't exist yet).
+  3. Then write the code that makes it pass.
+  4. Commit again.
+
+Refusing the commit. (Stash restored.)</pre>
+</section>
+
+</body>
+</html>
