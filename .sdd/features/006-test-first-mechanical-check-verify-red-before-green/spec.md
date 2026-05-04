@@ -2,7 +2,7 @@
 
 [PHASE: SPEC]
 
-**Active blocker:** §10 (next action: non-functional)
+**Active blocker:** §11 (next action: acceptance-criteria)
 
 ## PHASE: SPEC
 
@@ -74,7 +74,10 @@
 
 ### action: non-functional
 
-- [ ] constraints: draft performance, security, and compliance constraints
+- [x] constraints:
+  - **Performance**: hook runs once per BUILD-task commit. Stash + test-run + restore should complete in under the time of one test-suite run for the project. For the framework's own use (`bash test/run-framework-test.sh`), that's ~1 minute. {best-effort: Sam at SHIP — confirms timing on real BUILD task}
+  - **Security**: stashed code stays in git's local stash store; not transmitted anywhere. Test runner is invoked with the project's existing credentials; no new secrets flow through this hook.
+  - **Compliance**: no PII, no external API calls. Hook runs locally only.
 
 ### action: acceptance-criteria
 
