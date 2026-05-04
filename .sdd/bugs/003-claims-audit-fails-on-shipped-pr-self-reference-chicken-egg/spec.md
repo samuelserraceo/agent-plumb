@@ -1,8 +1,8 @@
 # claims-audit fails on shipped-PR self-reference (chicken-egg)
 
-[PHASE: BUILD]
+[PHASE: SHIP]
 
-**Active blocker:** BUILD done — phase advance to SHIP next.
+**Active blocker:** §S3 (next action: push-pr)
 
 ## PHASE: SPEC
 
@@ -45,4 +45,31 @@
 - [x] T01 GREEN: Fix landed. `claim_shipped_pr_links_merged` now reads `$GITHUB_REF` (shape `refs/pull/<num>/merge`), extracts the current PR number, and skips that entry during iteration. Source-guard added at top of `run-claims-audit.sh` so test harnesses can source the script without triggering the orchestrator (or the cd to PROJECT_ROOT). T159 added (216/216 framework tests passing); standalone audit run passes 31/31. → tests captured in test/run-framework-test.sh T159
 
 ### Exit checks
-- [ ] C-build-tasks-green: every task is GREEN (test passing, code committed)
+- [x] C-build-tasks-green: T01 GREEN (216/216 framework tests, 31/31 claims audit).
+
+## PHASE: SHIP
+
+### action: verify-test-run
+
+- [x] run-tests: bash test/run-framework-test.sh → 216/216; bash test/run-claims-audit.sh → 31/31.
+
+### action: learn
+
+- [x] summary: shipped a one-line fix to the claims-audit harness — PR being CI'd is now exempted from the merged-state check, closing the chicken-egg that bit feature 006's PR #153.
+- [x] lessons: appended a pattern to .sdd/patterns.md — claims that fire on PR CI must exempt the PR being reviewed from any "is this merged?" predicate, otherwise mark-shipped self-references fail until merge but merge is gated on CI passing.
+
+### action: push-pr
+
+- [ ] push-and-open: git push -u + gh pr create.
+
+### action: verify-ci-green
+
+- [ ] ci: poll CI; gate mark-shipped on a green run.
+
+### action: mark-shipped
+
+- [ ] shipped: INDEX.md update, .shipped marker, decisions.md append.
+
+### Exit checks
+- [ ] C-ship-pr-url: PR URL recorded in INDEX.md Shipped section
+- [ ] C-ship-marked: .shipped marker file exists in bug folder
