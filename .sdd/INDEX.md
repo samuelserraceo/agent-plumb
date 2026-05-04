@@ -1,8 +1,8 @@
 # SDD framework — INDEX
 
-**Active:** bugs/003-claims-audit-fails-on-shipped-pr-self-reference-chicken-egg
-**Playbook:** bug
-**Active blocker:** §1 (first action: bug-problem)
+**Active:** features/007-sdd-migrate-refresh-project-s-sdd-tree-from-upstream-framework
+**Playbook:** feature
+**Active blocker:** §1 (first action: problem)
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
@@ -13,6 +13,11 @@
 
 
 ## Shipped
+
+- **[[007-sdd-migrate-refresh-project-s-sdd-tree-from-upstream-framework]]** — closes the load-bearing gap that prevented SDD from being a real updatable internal package. Ships `bash .sdd/scripts/sdd-migrate.sh --upstream=<path>` (dry-run by default) + `--apply` mode with per-file confirmation on conflicts. Categorises every framework-tracked file as ADD / UPDATE-CLEAN / UPDATE-CONFLICT / REMOVED via the framework's normalised SHA-256 hash. User-data files (spec.md, INDEX.md, decisions.md, patterns.md, data-model.md, stack.md, principles.md, .sdd/features/**, .sdd/bugs/**, .sdd/refactors/**, .sdd/ideas/**) are invisible to the tool by walk-list design. After --apply the manifest is re-pinned to upstream so commits stop tripping drift errors. Bash 3.2 compat (tempfile-backed prior-hash lookup; declare -A would crash on macOS). 1 CR review cycle (5 Major + 4 Minor closed: bit-for-bit hash check on AC7, apply error handling pre-manifest-repin, T161 UPDATE-CLEAN + post-apply idempotence, REMOVED-only message, MD022, decisions.md correction).
+  - Shipped: 2026-05-04 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/157
+  - Patterns: 1 lesson appended ("Channel A vs Channel B framework updates need different tools").
+  - Deferred: managed-section auto-update for CLAUDE.md / config.md (today they go through the standard CONFLICT prompt); manifest schema extension to cover hooks/commands/skeletons (so they can become UPDATE-CLEAN when stock-prior, not always CONFLICT); auto-fetch upstream URL; --rollback flag.
 
 - **bugs/003-claims-audit-fails-on-shipped-pr-self-reference-chicken-egg** — closes the chicken-egg surfaced by feature 006 / PR #153: `claim_shipped_pr_links_merged` in `test/run-claims-audit.sh` now reads `$GITHUB_REF` + `$GITHUB_REPOSITORY` and skips the PR currently being CI'd from the merged-state check. Without this, every shipped PR's CI failed on its own audit run (because the row in INDEX.md added by mark-shipped pointed at the still-OPEN PR), and merge needed admin override. PR #154's own CI is the meta-validation that the fix works. T159 (with negative + positive controls) covers the regression. Bug-playbook lighter SPEC: 5 sections (problem, repro, root-cause, fix, regression-test) walked in a single ceremony.
   - Shipped: 2026-05-04 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/154

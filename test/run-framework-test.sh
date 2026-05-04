@@ -7901,6 +7901,185 @@ else
 fi
 
 # ============================================================
+# T160 — sdd-migrate.sh: dry-run on a synced project reports 0 changes
+#   (closes feature 007 AC1; the full AC1-AC7 coverage builds out as
+#   subsequent BUILD tasks land in the same PR).
+#   RED: script missing or returns drift on a bit-for-bit copy of
+#        upstream.
+# ============================================================
+note "T160: sdd-migrate dry-run on synced project = 0 changes (AC1)"
+SDD_MIGRATE="$FRAMEWORK_ROOT/templates/.sdd/scripts/sdd-migrate.sh"
+if [ ! -x "$SDD_MIGRATE" ]; then
+  bad "T160 sdd-migrate.sh missing or not executable" "$SDD_MIGRATE"
+else
+  d=$(mktemp -d)
+  (
+    cd "$d" || exit 1
+    mkdir -p .sdd .claude
+    cp -R "$FRAMEWORK_ROOT/templates/.sdd/." .sdd/ 2>/dev/null
+    cp -R "$FRAMEWORK_ROOT/templates/.claude/." .claude/ 2>/dev/null
+    out=$(bash "$SDD_MIGRATE" --upstream="$FRAMEWORK_ROOT" 2>&1)
+    ec=$?
+    if [ "$ec" -eq 0 ] \
+       && printf '%s' "$out" | grep -qiE 'in sync|no changes' \
+       && ! printf '%s' "$out" | grep -qE '^\s*[+~!]'; then
+      echo "PASS"
+    else
+      echo "FAIL ec=$ec out=$out"
+    fi
+  ) > "$d/result.txt" 2>&1
+  result=$(grep -E '^PASS|^FAIL' "$d/result.txt" | tail -1)
+  rm -rf "$d"
+  if [ "$result" = "PASS" ]; then
+    ok "T160 sdd-migrate reports 0 changes on synced project"
+  else
+    bad "T160 sdd-migrate reported drift on synced project" "$result"
+  fi
+fi
+
+# ============================================================
+# T161 — sdd-migrate.sh: end-to-end apply scenario covering AC2-AC7.
+#   Project drifts in 3 ways (ADD missing hook, UPDATE-CLEAN stale
+#   stock-prior content, UPDATE-CONFLICT user-edited file), --apply
+#   handles each correctly, user-data files survive bit-for-bit, and
+#   a fresh dry-run reports 0 changes for the resolved entries.
+#   RED: any branch of the categoriser or the apply path is broken.
+# ============================================================
+note "T161: sdd-migrate end-to-end --apply (AC2-AC7)"
+SDD_MIGRATE="$FRAMEWORK_ROOT/templates/.sdd/scripts/sdd-migrate.sh"
+if [ ! -x "$SDD_MIGRATE" ]; then
+  bad "T161 sdd-migrate.sh missing or not executable" "$SDD_MIGRATE"
+else
+  d=$(mktemp -d)
+  (
+    cd "$d" || exit 1
+    mkdir -p .sdd .claude
+    cp -R "$FRAMEWORK_ROOT/templates/.sdd/." .sdd/ 2>/dev/null
+    cp -R "$FRAMEWORK_ROOT/templates/.claude/." .claude/ 2>/dev/null
+
+    # ADD drift
+    rm -f .claude/hooks/pre-commit-test-first.sh
+
+    # UPDATE-CLEAN drift (CR cycle 1 L7946 fix): make local file differ
+    # from upstream, but pin manifest expected_sha256 to local content
+    # so it's treated as stock-prior content the framework just bumped.
+    cat > .sdd/scripts/resolve-active.sh <<'STALE'
+#!/usr/bin/env bash
+echo "stale stock-prior content"
+STALE
+    stale_hash=$(python3 - <<'PY'
+import hashlib
+p = ".sdd/scripts/resolve-active.sh"
+with open(p, "rb") as f:
+    data = f.read()
+text = data.decode("utf-8", errors="replace")
+if text.startswith("﻿"): text = text[1:]
+text = text.replace("\r\n", "\n").replace("\r", "\n")
+lines = [ln.rstrip() for ln in text.split("\n")]
+while lines and lines[0] == "": lines.pop(0)
+while lines and lines[-1] == "": lines.pop()
+print(hashlib.sha256("\n".join(lines).encode("utf-8")).hexdigest())
+PY
+)
+    python3 - "$stale_hash" <<'PY'
+import json, sys
+hv = sys.argv[1]
+p = ".sdd/.cache/manifest.json"
+with open(p) as f: m = json.load(f)
+for section in ("scripts","actions","playbooks"):
+    sect = m.get(section) or {}
+    for k, v in sect.items():
+        if isinstance(v, dict) and v.get("path") == ".sdd/scripts/resolve-active.sh":
+            v["expected_sha256"] = hv
+with open(p, "w") as f:
+    json.dump(m, f, indent=2)
+PY
+
+    # UPDATE-CONFLICT drift (user-edited file, manifest unchanged)
+    cat > .sdd/scripts/load-playbook.sh <<'CUSTOM'
+#!/usr/bin/env bash
+# user customisation — should be kept on default Enter
+echo "user override"
+CUSTOM
+
+    # User-data sentinels (none must be touched)
+    SENTINEL="USER-DATA-T161"
+    echo "$SENTINEL" > .sdd/INDEX.md
+    mkdir -p .sdd/features/001-fake .sdd/decisions
+    echo "$SENTINEL" > .sdd/decisions.md
+    echo "$SENTINEL" > .sdd/patterns.md
+    echo "$SENTINEL" > .sdd/features/001-fake/spec.md
+
+    # Apply with default Enter on the conflict (keep user version)
+    out=$(printf '\n' | bash "$SDD_MIGRATE" --apply --upstream="$FRAMEWORK_ROOT" 2>&1)
+    ec=$?
+
+    # Assertions
+    fails=""
+    [ "$ec" -eq 0 ] || fails="$fails ec=$ec"
+    [ -f .claude/hooks/pre-commit-test-first.sh ] || fails="$fails ADD-not-landed"
+    grep -q "user override" .sdd/scripts/load-playbook.sh || fails="$fails CONFLICT-keep-failed"
+    grep -q "$SENTINEL" .sdd/INDEX.md || fails="$fails INDEX.md-touched"
+    grep -q "$SENTINEL" .sdd/decisions.md || fails="$fails decisions.md-touched"
+    grep -q "$SENTINEL" .sdd/patterns.md || fails="$fails patterns.md-touched"
+    grep -q "$SENTINEL" .sdd/features/001-fake/spec.md || fails="$fails feature-spec-touched"
+
+    # CR cycle 1 L7946 verify UPDATE-CLEAN actually overwrote the stale file.
+    user_resolve_hash=$(python3 - <<'PY'
+import hashlib
+p = ".sdd/scripts/resolve-active.sh"
+with open(p, "rb") as f: data = f.read()
+text = data.decode("utf-8", errors="replace")
+if text.startswith("﻿"): text = text[1:]
+text = text.replace("\r\n", "\n").replace("\r", "\n")
+lines = [ln.rstrip() for ln in text.split("\n")]
+while lines and lines[0] == "": lines.pop(0)
+while lines and lines[-1] == "": lines.pop()
+print(hashlib.sha256("\n".join(lines).encode("utf-8")).hexdigest())
+PY
+)
+    upstream_resolve_hash=$(python3 - <<PY
+import hashlib
+p = "$FRAMEWORK_ROOT/templates/.sdd/scripts/resolve-active.sh"
+with open(p, "rb") as f: data = f.read()
+text = data.decode("utf-8", errors="replace")
+if text.startswith("﻿"): text = text[1:]
+text = text.replace("\r\n", "\n").replace("\r", "\n")
+lines = [ln.rstrip() for ln in text.split("\n")]
+while lines and lines[0] == "": lines.pop(0)
+while lines and lines[-1] == "": lines.pop()
+print(hashlib.sha256("\n".join(lines).encode("utf-8")).hexdigest())
+PY
+)
+    [ "$user_resolve_hash" = "$upstream_resolve_hash" ] \
+      || fails="$fails UPDATE-CLEAN-not-applied"
+
+    # CR cycle 1 L7993 post-apply idempotence — fresh dry-run = clean.
+    out2=$(bash "$SDD_MIGRATE" --upstream="$FRAMEWORK_ROOT" 2>&1)
+    ec2=$?
+    [ "$ec2" -eq 0 ] || fails="$fails post-dryrun-ec=$ec2"
+    # Note: the kept conflict (load-playbook.sh) WILL still appear as
+    # CONFLICT in the post-apply dry-run (it's expected — user chose
+    # keep). Idempotence here means ADD + UPDATE-CLEAN are resolved.
+    printf '%s' "$out2" | grep -qE '^\s*\+ ' && fails="$fails post-dryrun-still-has-ADD"
+    printf '%s' "$out2" | grep -qE '^\s*~ ' && fails="$fails post-dryrun-still-has-CLEAN"
+
+    if [ -z "$fails" ]; then
+      echo "PASS"
+    else
+      echo "FAIL$fails out=$out out2=$out2"
+    fi
+  ) > "$d/result.txt" 2>&1
+  result=$(grep -E '^PASS|^FAIL' "$d/result.txt" | tail -1)
+  rm -rf "$d"
+  if [ "$result" = "PASS" ]; then
+    ok "T161 end-to-end --apply: ADD + CONFLICT (default keep) + user-data preserved"
+  else
+    bad "T161 end-to-end --apply broke" "$result"
+  fi
+fi
+
+# ============================================================
 # T141 — anti-theatre lint passes on the in-flight spec (closes #111,
 #   PR #003). Theatre tokens (numerical bounds, currency, enforcement
 #   verbs, quality absolutes) without an adjacent verifier annotation

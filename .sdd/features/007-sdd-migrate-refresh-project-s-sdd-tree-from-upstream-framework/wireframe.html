@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>007 — sdd-migrate (Channel B updatable)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
+  .step { background: #fff; border: 1.5px solid #d4d4d4; border-radius: 8px; padding: 12px 16px; }
+  .step.gate { background: #fef2f2; border-color: #fca5a5; }
+  .step.allow { background: #f0fdf4; border-color: #86efac; }
+  .step.user { background: #eff6ff; border-color: #93c5fd; }
+  .step.skip { background: #f5f5f4; border-color: #d6d3d1; }
+  .arrow { font-size: 24px; color: #8a8a8a; text-align: center; }
+  .label { font-size: 11px; color: #4a4a4a; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  .code { font-family: "SF Mono", Monaco, Consolas, monospace; font-size: 13px; background: #f1f5f9; padding: 1px 6px; border-radius: 3px; }
+  pre { background: #1a1a1a; color: #f0fdf4; font-family: "SF Mono", Monaco, Consolas, monospace; font-size: 12px; padding: 12px; border-radius: 6px; overflow-x: auto; }
+</style>
+</head>
+<body class="p-8 max-w-4xl mx-auto text-slate-900">
+
+<header class="mb-8">
+  <p class="label mb-2">Feature 007 — non-UI (CLI tool)</p>
+  <h1 class="text-2xl font-bold mb-2">sdd-migrate — refresh Channel B from upstream framework</h1>
+  <p class="text-slate-600">A CLI tool that makes the framework's project-template layer (<span class="code">.sdd/</span>) updatable for downstream users without losing their project-specific data.</p>
+</header>
+
+<section class="mb-10">
+  <h2 class="text-lg font-semibold mb-4">Flow — what happens when a user runs sdd-migrate</h2>
+
+  <div class="space-y-3">
+
+    <div class="step user">
+      <p class="label mb-1">User runs (dry-run, default)</p>
+      <p><span class="code">bash .sdd/scripts/sdd-migrate.sh --upstream=/path/to/sdd-framework</span></p>
+    </div>
+
+    <div class="arrow">↓</div>
+
+    <div class="step">
+      <p class="label mb-1">Read manifest hashes</p>
+      <p>Tool reads user's <span class="code">.sdd/.cache/manifest.json</span> (prior shipped hashes) and upstream's manifest. Walks every framework-tracked file path.</p>
+    </div>
+
+    <div class="arrow">↓</div>
+
+    <div class="step">
+      <p class="label mb-1">Compute current user hash + upstream hash per file</p>
+      <p>Same normalised SHA-256 algorithm the framework uses (LF + strip trailing whitespace + strip blank-line edges). Categorise into 4 buckets.</p>
+    </div>
+
+    <div class="arrow">↓</div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <div class="step allow">
+        <p class="label mb-1">ADD</p>
+        <p class="text-sm text-slate-700">Upstream has the file, user doesn't. Safe to add (e.g., today's <span class="code">pre-commit-test-first.sh</span> on a project from last week).</p>
+      </div>
+      <div class="step allow">
+        <p class="label mb-1">UPDATE-CLEAN</p>
+        <p class="text-sm text-slate-700">User's hash matches the prior shipped version, upstream has a newer one. User has stock content, just outdated. Safe overwrite.</p>
+      </div>
+      <div class="step gate">
+        <p class="label mb-1">UPDATE-CONFLICT</p>
+        <p class="text-sm text-slate-700">User's hash differs from BOTH upstream AND the prior shipped version. User has local edits — refuse to overwrite without confirmation.</p>
+      </div>
+      <div class="step skip">
+        <p class="label mb-1">REMOVED</p>
+        <p class="text-sm text-slate-700">Upstream removed the file but user has it. Listed for awareness; left alone (could be local addition).</p>
+      </div>
+    </div>
+
+    <div class="arrow">↓ <span class="text-xs">if --apply</span></div>
+
+    <div class="step user">
+      <p class="label mb-1">Apply: per-file decision</p>
+      <p><strong>ADD + UPDATE-CLEAN:</strong> applied automatically.</p>
+      <p><strong>UPDATE-CONFLICT:</strong> prompts: <span class="code">keep / overwrite / show-diff</span>. Default Enter = keep.</p>
+      <p><strong>REMOVED:</strong> never deleted automatically. User decides via plain rm if they want.</p>
+    </div>
+
+    <div class="arrow">↓</div>
+
+    <div class="step allow">
+      <p class="label mb-1">Re-pin manifest</p>
+      <p>Write the new <span class="code">.sdd/.cache/manifest.json</span> with upstream hashes for all framework-tracked files (including ones the user kept). Manifest now matches reality; commits stop tripping drift errors.</p>
+    </div>
+
+  </div>
+</section>
+
+<section class="mb-10">
+  <h2 class="text-lg font-semibold mb-4">Architecture — where the new piece sits</h2>
+
+  <div class="space-y-3">
+    <div class="step">
+      <p class="label mb-1">Existing</p>
+      <p><span class="code">templates/.sdd/.cache/manifest.json</span> — hash-pinned manifest of ~61 framework files. <span class="code">templates/.sdd/scripts/</span> — 18 framework scripts. <span class="code">templates/.claude/hooks/</span> — 9 hooks.</p>
+    </div>
+    <div class="step" style="background: #eef2ff; border-color: #4f46e5;">
+      <p class="label mb-1">New (this feature)</p>
+      <p><span class="code">templates/.sdd/scripts/sdd-migrate.sh</span> — the migration tool.</p>
+      <p><span class="code">templates/.claude/commands/sdd-migrate.md</span> — slash command wrapper, calls the script with sensible defaults.</p>
+    </div>
+    <div class="step">
+      <p class="label mb-1">Excluded by hard-coded regex (user-data, never touched)</p>
+      <p><span class="code">spec.md, INDEX.md, decisions.md, patterns.md, data-model.md, stack.md, principles.md, .sdd/features/**, .sdd/bugs/**, .sdd/refactors/**, .sdd/ideas/**, .sdd/.cache/manifest.json</span> (managed separately at end of run).</p>
+    </div>
+    <div class="step">
+      <p class="label mb-1">Existing (the framework's own test suite)</p>
+      <p><span class="code">test/run-framework-test.sh</span> — gets T160 covering all 7 ACs end-to-end.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2 class="text-lg font-semibold mb-4">Concrete example — refresh a project that's missing today's test-first hook</h2>
+  <p class="mb-3 text-slate-600">User installed SDD a week ago; doesn't have <span class="code">pre-commit-test-first.sh</span>. Runs sdd-migrate.</p>
+
+<pre>$ bash .sdd/scripts/sdd-migrate.sh --upstream=~/Projects/sdd-framework
+
+[sdd-migrate] reading user manifest at .sdd/.cache/manifest.json …
+[sdd-migrate] reading upstream manifest at ~/Projects/sdd-framework/templates/.sdd/.cache/manifest.json …
+[sdd-migrate] hashing 61 framework-tracked files …
+
+== Drift summary (dry-run) ==
+
+ADD (upstream has, user doesn't):
+  + .claude/hooks/pre-commit-test-first.sh
+  + .claude/hooks/pre-commit-no-theatre.sh
+  + .claude/commands/ask.md
+
+UPDATE-CLEAN (user has stock prior version, upstream has newer):
+  ~ .sdd/scripts/advance.sh
+  ~ .claude/hooks/post-stop-lint.sh         (added invariant 10)
+  ~ .claude/hooks/user-prompt-submit.sh     (added principles.md inject)
+
+UPDATE-CONFLICT (user has local edits — confirmation needed):
+  ! .sdd/actions/proposed-approach.md       (you edited this; upstream also changed)
+
+REMOVED (upstream removed, user has — left alone):
+  · (none)
+
+To apply ADD + UPDATE-CLEAN automatically and prompt on UPDATE-CONFLICT:
+  $ bash .sdd/scripts/sdd-migrate.sh --apply --upstream=~/Projects/sdd-framework</pre>
+</section>
+
+</body>
+</html>
