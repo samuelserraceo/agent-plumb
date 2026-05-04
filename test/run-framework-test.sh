@@ -7460,6 +7460,89 @@ TST
 fi
 
 # ============================================================
+# T154 — pre-commit-test-first.sh: trap recovers stash on test runner
+#   error + on SIGTERM mid-run. Closes feature 006 AC5.
+#   RED: trap only fires on EXIT, leaving stash orphaned when a CI
+#        runner sends SIGTERM after a timeout.
+# ============================================================
+note "T154: pre-commit-test-first trap covers crash + SIGTERM (AC5)"
+TEST_FIRST_HOOK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-test-first.sh"
+if [ ! -x "$TEST_FIRST_HOOK" ]; then
+  bad "T154 hook missing or not executable" "$TEST_FIRST_HOOK"
+else
+  d=$(mktemp -d)
+  (
+    cd "$d" || exit 1
+    git init -q
+    git config user.email t@t.com; git config user.name T; git config commit.gpgsign false
+    mkdir -p .sdd src
+    cat > .sdd/config.md <<'CFG'
+---
+type: config
+parameters:
+  test_runner: "bash -c 'set -u; echo $UNDEFINED_VAR; exit 99'"
+---
+CFG
+    cat > src/foo.sh <<'SRC'
+#!/usr/bin/env bash
+echo "hello"
+SRC
+    chmod +x src/foo.sh
+    git add .sdd/config.md src/foo.sh
+    git commit -q -m scaffold
+    mkdir -p tests
+    echo '#!/usr/bin/env bash' > tests/task-005.sh
+    echo 'exit 0' >> tests/task-005.sh
+    chmod +x tests/task-005.sh
+    echo "# cosmetic" >> src/foo.sh
+    git add tests/task-005.sh src/foo.sh
+    input='{"tool_input":{"command":"git commit -m \"[SDD:006][T05] task\""}}'
+    printf '%s' "$input" | bash "$TEST_FIRST_HOOK" >/dev/null 2>&1
+    crash_stash=$(git stash list 2>/dev/null | wc -l | tr -d ' ')
+    # Reset and try SIGTERM scenario
+    git reset --hard HEAD >/dev/null 2>&1
+    cat > .sdd/config.md <<'CFG'
+---
+type: config
+parameters:
+  test_runner: "sleep 3; exit 1"
+---
+CFG
+    git add .sdd/config.md
+    git commit -q -m "slow runner"
+    echo "# cosmetic" >> src/foo.sh
+    cat > tests/task-005.sh <<'TST'
+#!/usr/bin/env bash
+exit 0
+TST
+    chmod +x tests/task-005.sh
+    git add tests/task-005.sh src/foo.sh
+    printf '%s' "$input" | bash "$TEST_FIRST_HOOK" >/dev/null 2>&1 &
+    hook_pid=$!
+    sleep 0.5
+    kill -TERM "$hook_pid" 2>/dev/null
+    for _ in 1 2 3 4 5 6 7 8 9 10; do
+      if ! kill -0 "$hook_pid" 2>/dev/null; then break; fi
+      sleep 0.2
+    done
+    wait "$hook_pid" 2>/dev/null || true
+    sigterm_stash=$(git stash list 2>/dev/null | wc -l | tr -d ' ')
+    if [ "$crash_stash" = "0" ] && [ "$sigterm_stash" = "0" ]; then
+      echo "PASS"
+    else
+      echo "FAIL crash=$crash_stash sigterm=$sigterm_stash"
+    fi
+  ) > "$d/result.txt" 2>&1
+  result=$(grep -E '^PASS|^FAIL' "$d/result.txt" | tail -1)
+  rm -rf "$d"
+  if [ "$result" = "PASS" ]; then
+    ok "T154 trap recovers stash on undefined-var crash + SIGTERM"
+  else
+    bad "T154 trap missed an error path" "$result"
+  fi
+fi
+
+# ============================================================
 # T141 — anti-theatre lint passes on the in-flight spec (closes #111,
 #   PR #003). Theatre tokens (numerical bounds, currency, enforcement
 #   verbs, quality absolutes) without an adjacent verifier annotation
