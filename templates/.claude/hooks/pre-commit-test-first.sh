@@ -22,9 +22,23 @@
 #
 # Wired as PreToolUse(Bash) on `git commit` in .claude/settings.json.
 #
+# Known limitations (deferred, not blockers):
+#   - EC3 (initial commit on a fresh repo): Approach B's "was test
+#     committed in a prior commit?" can't run when there's no parent.
+#     A first commit that pairs test+code on a brand-new repo will
+#     always trip Approach B's same-commit refusal — which is the
+#     safer failure mode (block, ask user to split). Documented here
+#     so future readers know it's intentional.
+#   - L69 (paths with spaces): the staged-file iteration uses
+#     newline-separated text instead of NUL-delimited. Paths
+#     containing spaces would split unexpectedly during stash push +
+#     re-stage. Rare in practice for the tests/task-NNN.<ext> shape;
+#     left as a follow-up.
+#
 # Exits:
 #   0 — allow commit
-#   2 — block (theatre detected; stderr explains)
+#   2 — block (theatre detected, stash conflict, runner config wrong,
+#       multi-pair, or Approach B same-commit pair; stderr explains)
 
 set -uo pipefail
 

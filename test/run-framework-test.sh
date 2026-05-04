@@ -7235,7 +7235,10 @@ SRC
     chmod +x tests/task-001.sh src/foo.sh
     git add tests/task-001.sh src/foo.sh
     pre_idx=$(git diff --cached --name-only | sort | tr '\n' ',')
-    out=$(bash "$TEST_FIRST_HOOK" </dev/null 2>&1)
+    # CR cycle 3 polish: pipe BUILD-task stdin so the hook's T04 gate
+    # sees the message shape and proceeds (instead of falling through
+    # the no-msg path). Matches Claude Code's PreToolUse payload.
+    out=$(printf '%s' '{"tool_input":{"command":"git commit -m \"[SDD:006][T01] task\""}}' | bash "$TEST_FIRST_HOOK" 2>&1)
     ec=$?
     stash_count=$(git stash list 2>/dev/null | wc -l | tr -d ' ')
     post_idx=$(git diff --cached --name-only | sort | tr '\n' ',')
@@ -7299,7 +7302,7 @@ TST
 echo "hello"
 SRC
     git add tests/task-002.sh src/foo.sh
-    out=$(bash "$TEST_FIRST_HOOK" </dev/null 2>&1)
+    out=$(printf '%s' '{"tool_input":{"command":"git commit -m \"[SDD:006][T02] task\""}}' | bash "$TEST_FIRST_HOOK" 2>&1)
     ec=$?
     stash_count=$(git stash list 2>/dev/null | wc -l | tr -d ' ')
     if [ "$ec" -ne 0 ] \
@@ -7354,7 +7357,7 @@ CFG
     echo 'echo hi' > src/foo.sh
     chmod +x tests/task-003.sh
     git add tests/task-003.sh src/foo.sh
-    out=$(bash "$TEST_FIRST_HOOK" </dev/null 2>&1)
+    out=$(printf '%s' '{"tool_input":{"command":"git commit -m \"[SDD:006][T03] task\""}}' | bash "$TEST_FIRST_HOOK" 2>&1)
     ec=$?
     if [ "$ec" -ne 0 ] && printf '%s' "$out" | grep -q 'test must land in its own commit first'; then
       echo "PASS_BLOCK"
@@ -7372,7 +7375,7 @@ CFG
     echo 'echo hi' > src/foo.sh
     echo '# refinement' >> tests/task-003.sh
     git add src/foo.sh tests/task-003.sh
-    out2=$(bash "$TEST_FIRST_HOOK" </dev/null 2>&1)
+    out2=$(printf '%s' '{"tool_input":{"command":"git commit -m \"[SDD:006][T03] task\""}}' | bash "$TEST_FIRST_HOOK" 2>&1)
     ec2=$?
     if [ "$ec2" -eq 0 ]; then
       echo "PASS_ALLOW"
@@ -7476,11 +7479,15 @@ else
     git init -q
     git config user.email t@t.com; git config user.name T; git config commit.gpgsign false
     mkdir -p .sdd src
-    cat > .sdd/config.md <<'CFG'
+    # CR cycle 3 polish: positive runner signal — runner writes a marker
+    # file so we can assert it actually ran (otherwise the test could
+    # pass even if the runner never fired).
+    crash_marker=$(mktemp)
+    cat > .sdd/config.md <<CFG
 ---
 type: config
 parameters:
-  test_runner: "bash -c 'set -u; echo $UNDEFINED_VAR; exit 99'"
+  test_runner: "echo CRASH-RAN > $crash_marker; bash -c 'set -u; echo \$UNDEFINED_VAR; exit 99'"
 ---
 CFG
     cat > src/foo.sh <<'SRC'
@@ -7499,6 +7506,8 @@ SRC
     input='{"tool_input":{"command":"git commit -m \"[SDD:006][T05] task\""}}'
     printf '%s' "$input" | bash "$TEST_FIRST_HOOK" >/dev/null 2>&1
     crash_stash=$(git stash list 2>/dev/null | wc -l | tr -d ' ')
+    crash_ran=$(grep -c CRASH-RAN "$crash_marker" 2>/dev/null || echo 0)
+    rm -f "$crash_marker"
     # Reset and try SIGTERM scenario
     git reset --hard HEAD >/dev/null 2>&1
     cat > .sdd/config.md <<'CFG'
@@ -7527,10 +7536,13 @@ TST
     done
     wait "$hook_pid" 2>/dev/null || true
     sigterm_stash=$(git stash list 2>/dev/null | wc -l | tr -d ' ')
-    if [ "$crash_stash" = "0" ] && [ "$sigterm_stash" = "0" ]; then
+    # CR cycle 3 polish: assert the crash-scenario runner actually ran
+    # (positive control, not just "stash count == 0" which could pass
+    # if the hook silently exited before reaching the runner).
+    if [ "$crash_stash" = "0" ] && [ "$sigterm_stash" = "0" ] && [ "$crash_ran" -ge 1 ]; then
       echo "PASS"
     else
-      echo "FAIL crash=$crash_stash sigterm=$sigterm_stash"
+      echo "FAIL crash=$crash_stash sigterm=$sigterm_stash crash_ran=$crash_ran"
     fi
   ) > "$d/result.txt" 2>&1
   result=$(grep -E '^PASS|^FAIL' "$d/result.txt" | tail -1)
@@ -7734,7 +7746,12 @@ SRC
     git add tests/task-008.sh src/foo.sh
     out2=$(printf '%s' '{"tool_input":{"command":"git commit -m \"[SDD:006][T08] task\""}}' | bash "$TEST_FIRST_HOOK" 2>&1)
     ec2=$?
-    if [ "$ec2" -ne 0 ]; then
+    # CR cycle 3 polish: assert specifically the theatre-blocking
+    # path (not just any non-zero), so an unrelated error doesn't
+    # mask a regression.
+    if [ "$ec2" -ne 0 ] \
+       && printf '%s' "$out2" | grep -qiE 'theatre detected|test PASSED without' \
+       && ! printf '%s' "$out2" | grep -qiE 'test_runner.*wrong|command not found'; then
       echo "PASS_1"
     else
       echo "FAIL_1 ec=$ec2 out=$out2"
