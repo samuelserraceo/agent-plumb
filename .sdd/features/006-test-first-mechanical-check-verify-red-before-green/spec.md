@@ -2,7 +2,7 @@
 
 [PHASE: SPEC]
 
-**Active blocker:** §7 (next action: flows)
+**Active blocker:** §8 (next action: dependencies)
 
 ## PHASE: SPEC
 
@@ -56,7 +56,7 @@
 
 ### action: flows
 
-- [ ] flows: draft 1-3 critical flows, each referencing the user story it implements
+- [x] flows: one critical flow (implements §3 stories 1+2+3): agent commits a BUILD task with test+code paired → pre-commit-test-first hook fires → stashes the code-side staged changes → runs project's configured test runner → if test PASSES without code, hook blocks the commit with a plain-English error pointing at the test path; if test FAILS without code, hook restores the stash and the commit proceeds normally. {verify-by: T-006-fake-test-first}
 
 ### action: dependencies
 
