@@ -7543,6 +7543,69 @@ TST
 fi
 
 # ============================================================
+# T155 — pre-commit-test-first.sh: refusal message has 3 plain-English
+#   elements (test path + meaning + fix-it steps). Closes feature 006 AC6.
+#   RED: stderr is just a test path with no explanation, agent sees
+#        "refused" but doesn't know what to do next.
+# ============================================================
+note "T155: pre-commit-test-first refusal message has 3 elements (AC6)"
+TEST_FIRST_HOOK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-test-first.sh"
+if [ ! -x "$TEST_FIRST_HOOK" ]; then
+  bad "T155 hook missing or not executable" "$TEST_FIRST_HOOK"
+else
+  d=$(mktemp -d)
+  (
+    cd "$d" || exit 1
+    git init -q
+    git config user.email t@t.com; git config user.name T; git config commit.gpgsign false
+    mkdir -p .sdd src
+    cat > .sdd/config.md <<'CFG'
+---
+type: config
+parameters:
+  test_runner: "bash tests/task-006.sh"
+---
+CFG
+    cat > src/foo.sh <<'SRC'
+#!/usr/bin/env bash
+echo "hello"
+SRC
+    chmod +x src/foo.sh
+    git add .sdd/config.md src/foo.sh
+    git commit -q -m scaffold
+    mkdir -p tests
+    cat > tests/task-006.sh <<'TST'
+#!/usr/bin/env bash
+out=$(bash src/foo.sh 2>/dev/null)
+[ "$out" = "hello" ] || exit 1
+TST
+    chmod +x tests/task-006.sh
+    echo "# cosmetic" >> src/foo.sh
+    git add tests/task-006.sh src/foo.sh
+    out=$(printf '%s' '{"tool_input":{"command":"git commit -m \"[SDD:006][T06] task\""}}' | bash "$TEST_FIRST_HOOK" 2>&1)
+    ec=$?
+    has_path=0
+    has_meaning=0
+    has_fix=0
+    printf '%s' "$out" | grep -q 'tests/task-006.sh' && has_path=1
+    printf '%s' "$out" | grep -qiE 'pin behaviour|test-first' && has_meaning=1
+    printf '%s' "$out" | grep -qiE 'rewrite the test|How to fix' && has_fix=1
+    if [ "$ec" -ne 0 ] && [ "$has_path" = "1" ] && [ "$has_meaning" = "1" ] && [ "$has_fix" = "1" ]; then
+      echo "PASS"
+    else
+      echo "FAIL ec=$ec path=$has_path meaning=$has_meaning fix=$has_fix"
+    fi
+  ) > "$d/result.txt" 2>&1
+  result=$(grep -E '^PASS|^FAIL' "$d/result.txt" | tail -1)
+  rm -rf "$d"
+  if [ "$result" = "PASS" ]; then
+    ok "T155 refusal message has test path + meaning + fix steps"
+  else
+    bad "T155 refusal message missing required element(s)" "$result"
+  fi
+fi
+
+# ============================================================
 # T141 — anti-theatre lint passes on the in-flight spec (closes #111,
 #   PR #003). Theatre tokens (numerical bounds, currency, enforcement
 #   verbs, quality absolutes) without an adjacent verifier annotation

@@ -152,17 +152,25 @@ test_ec=$?
 
 if [ "$test_ec" -eq 0 ]; then
   # Test PASSED without the code → theatre → block.
-  # T06 adds the full 3-element message; T02 just names the test path.
+  # 3 elements (AC6): test path, what test-first means, how to fix.
   cat >&2 <<HOOK_ERR
 [pre-commit-test-first] test PASSED without the code — theatre detected.
 
   test:  $(printf '%s' "$test_files" | tr '\n' ' ')
 
+What this means:
 The test you staged passes WITHOUT the code paired with it. That
 means it doesn't pin behaviour — it was written to match whatever
-the code happens to do, not to fail before the code existed.
+the code happens to do, not to fail before the code existed. Future
+regressions will sneak past this test.
 
-Refusing the commit. (Stash being restored.)
+How to fix:
+  1. Rewrite the test against the not-yet-existing code shape.
+  2. Run it — it should FAIL (because the code doesn't exist yet).
+  3. Then write the code that makes it pass.
+  4. Commit again.
+
+Refusing the commit. (Stash restored.)
 HOOK_ERR
   exit 2
 fi
