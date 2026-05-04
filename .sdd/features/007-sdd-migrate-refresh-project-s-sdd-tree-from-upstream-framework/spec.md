@@ -1,8 +1,8 @@
 # sdd-migrate — refresh project's .sdd/ tree from upstream framework
 
-[PHASE: SHIP]
+[PHASE: SHIPPED]
 
-**Active blocker:** §S1 (next action: verify-test-run)
+**Active blocker:** SHIPPED.
 
 ## PHASE: SPEC
 
@@ -143,16 +143,16 @@
 
 ### action: push-pr
 
-- [ ] push-and-open: git push -u + gh pr create.
+- [x] push-and-open: branch pushed; PR https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/157 opened.
 
 ### action: verify-ci-green
 
-- [ ] ci: poll CI; gate mark-shipped on a green run.
+- [x] ci: 6/6 CI checks GREEN on PR #157 cycle 2 — Browser, Claims audit, CR, Framework tests (218/218), Graph integrity, Scope guard. CR cycle 1 surfaced 5 Major + 4 Minor; all addressed; cycle 2 returned 0 new findings.
 
 ### action: mark-shipped
 
-- [ ] shipped: INDEX.md update, .shipped marker, decisions.md append.
+- [x] shipped: INDEX.md updated, .shipped marker written, decisions.md appended.
 
 ### Exit checks
-- [ ] C-ship-pr-url: PR URL recorded in INDEX.md Shipped section
-- [ ] C-ship-marked: .shipped marker file exists in feature folder
+- [x] C-ship-pr-url: PR https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/157 recorded in INDEX.md Shipped section
+- [x] C-ship-marked: .shipped marker file exists in feature folder
