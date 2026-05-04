@@ -7736,6 +7736,62 @@ TST
 fi
 
 # ============================================================
+# T158 — pre-commit-test-first.sh: stash-pop conflict surfaces the
+#   stash ref + recovery hint. Closes feature 006 AC9.
+#   RED: pop failure swallowed silently; user's work stuck in an
+#        un-named stash entry with no idea how to recover.
+# ============================================================
+note "T158: pre-commit-test-first surfaces stash conflict recovery (AC9)"
+TEST_FIRST_HOOK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-test-first.sh"
+if [ ! -x "$TEST_FIRST_HOOK" ]; then
+  bad "T158 hook missing or not executable" "$TEST_FIRST_HOOK"
+else
+  d=$(mktemp -d)
+  (
+    cd "$d" || exit 1
+    git init -q
+    git config user.email t@t.com; git config user.name T; git config commit.gpgsign false
+    mkdir -p .sdd src
+    cat > .sdd/config.md <<'CFG'
+---
+type: config
+parameters:
+  test_runner: "printf 'CONFLICTING_MOD\n' > src/foo.sh; exit 1"
+---
+CFG
+    echo init > README.md
+    echo "BASE" > src/foo.sh
+    git add README.md .sdd/config.md src/foo.sh
+    git commit -q -m scaffold
+    mkdir -p tests
+    cat > tests/task-009.sh <<'TST'
+#!/usr/bin/env bash
+exit 0
+TST
+    chmod +x tests/task-009.sh
+    echo "STAGED_MOD" > src/foo.sh
+    git add tests/task-009.sh src/foo.sh
+    out=$(printf '%s' '{"tool_input":{"command":"git commit -m \"[SDD:006][T09] task\""}}' | bash "$TEST_FIRST_HOOK" 2>&1)
+    has_recovery=0
+    has_stash=0
+    printf '%s' "$out" | grep -qiE 'stash.*pop.*failed|recover.*hand|stash@' && has_recovery=1
+    [ "$(git stash list 2>/dev/null | wc -l | tr -d ' ')" -gt 0 ] && has_stash=1
+    if [ "$has_recovery" = "1" ] && [ "$has_stash" = "1" ]; then
+      echo "PASS"
+    else
+      echo "FAIL recovery=$has_recovery stash=$has_stash out=$out"
+    fi
+  ) > "$d/result.txt" 2>&1
+  result=$(grep -E '^PASS|^FAIL' "$d/result.txt" | tail -1)
+  rm -rf "$d"
+  if [ "$result" = "PASS" ]; then
+    ok "T158 stash conflict surfaces ref + recovery hint; stash kept"
+  else
+    bad "T158 stash conflict path didn't surface recovery info" "$result"
+  fi
+fi
+
+# ============================================================
 # T141 — anti-theatre lint passes on the in-flight spec (closes #111,
 #   PR #003). Theatre tokens (numerical bounds, currency, enforcement
 #   verbs, quality absolutes) without an adjacent verifier annotation

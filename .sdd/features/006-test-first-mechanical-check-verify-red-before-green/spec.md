@@ -2,7 +2,7 @@
 
 [PHASE: BUILD]
 
-**Active blocker:** §B2 (next action: build-task — T09)
+**Active blocker:** BUILD done — phase advance to SHIP next.
 
 ## PHASE: SPEC
 
@@ -116,7 +116,7 @@
 - [x] T06 GREEN: Refusal message reshaped into 3 explicit sections — test path, "What this means" (plain-English explanation of test-first), "How to fix" (4 numbered steps from rewrite-test through commit-again). T155 added (212/212 passing). → tests/task-006.sh
 - [x] T07 GREEN: Multi-pair detection landed. Hook counts staged tests/task-NNN.* files; 2+ → blocks with "split into one commit per task" message + 3-step recovery. Block happens before stash creation (no stash to clean up). T156 added (213/213 passing). → tests/task-007.sh
 - [x] T08 GREEN: Runner-crash detection landed. Hook now branches on test_ec: 0 = theatre (block), 127 = command-not-found (block with config-wrong message), other non-zero = real RED (allow). Closes the backdoor where a misconfigured runner silently let theatre through. T157 added (214/214 passing). → tests/task-008.sh
-- [ ] T09: Stash pop conflict recovery (AC9). trap wraps the pop; on conflict, print the stash ref + recovery hint. → tests/task-009.sh
+- [x] T09 GREEN: Stash conflict recovery landed. Trap captures pop output; on non-zero exit, surfaces the stash ref + 4-step recovery hint (inspect status, drop test artefacts, re-pop the named stash, re-stage). Stash entry stays preserved so the user can recover. T158 added (215/215 passing). → tests/task-009.sh
 
 ### action: edge-case-sweep
 

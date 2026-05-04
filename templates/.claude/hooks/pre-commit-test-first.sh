@@ -166,7 +166,27 @@ fi
 # explicitly is the portable form: the cleanup runs whether bash
 # exits normally, gets Ctrl+C'd, or is sent SIGTERM by a CI runner.
 trap '
-  git stash pop --quiet 2>/dev/null || true
+  pop_err=$(git stash pop 2>&1)
+  pop_ec=$?
+  if [ "$pop_ec" -ne 0 ]; then
+    stash_ref=$(git stash list 2>/dev/null | grep -F "$stash_msg" | head -1 | cut -d":" -f1)
+    [ -z "$stash_ref" ] && stash_ref="stash@{0}"
+    cat >&2 <<RECOVERY
+[pre-commit-test-first] stash pop failed — your code is in $stash_ref.
+
+This usually means the test runner created a file the stashed code
+also touches, so the merge cannot apply cleanly.
+
+To recover by hand:
+  1. Inspect what the test left behind: git status
+  2. Drop the test runners output if youre sure: git checkout -- <files>
+  3. Re-apply your code:    git stash pop $stash_ref
+  4. Resolve any conflicts, re-stage, commit again.
+
+Pop error:
+$pop_err
+RECOVERY
+  fi
   for _f in $code_files; do
     git add -- "$_f" 2>/dev/null || true
   done
