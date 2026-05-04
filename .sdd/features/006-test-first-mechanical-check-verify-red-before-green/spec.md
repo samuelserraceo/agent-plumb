@@ -2,7 +2,7 @@
 
 [PHASE: SPEC]
 
-**Active blocker:** §4 (next action: ux-brief)
+**Active blocker:** §5 (next action: proposed-approach)
 
 ## PHASE: SPEC
 
@@ -20,9 +20,9 @@
 
 - [x] stories: 3 personas — Sam (framework user) wants commits with theatre tests refused; future SDD contributors get the same catch even if they don't know test-first discipline; PR reviewers want T01 GREEN to mean test was RED first, not written-to-match-code.
 
-### action: ux-brief
+### action: ux-brief [SKIPPED]
 
-- [ ] brief: infer the UX direction from problem, success, and user stories
+- ⏭ skipped — no UI surface, backend hook only
 
 ### action: proposed-approach
 
