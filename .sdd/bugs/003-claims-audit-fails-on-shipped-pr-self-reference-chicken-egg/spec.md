@@ -1,8 +1,8 @@
 # claims-audit fails on shipped-PR self-reference (chicken-egg)
 
-[PHASE: SPEC]
+[PHASE: BUILD]
 
-**Active blocker:** SPEC done — phase advance to BUILD next.
+**Active blocker:** §B1 (next action: build-task — T01)
 
 ## PHASE: SPEC
 
@@ -27,7 +27,22 @@
 - [x] approval: T159 in `test/run-framework-test.sh` simulates the CI scenario — exports `GITHUB_REF=refs/pull/153/merge`, writes a temp INDEX.md whose ## Shipped row points at PR #153, runs `claim_shipped_pr_links_merged` from a stubbed environment (or shell wrapper that intercepts gh calls). Asserts: with the env var set, the claim returns 0; without it, the claim still calls gh for every PR (legacy behaviour). Approved by Sam on 2026-05-04. → tests captured in test/run-framework-test.sh T159
 
 ### Exit checks
-- [ ] C-spec-repro: repro steps captured in §2
-- [ ] C-spec-cause: root cause captured in §3
-- [ ] C-spec-fix: proposed fix recorded in §4
-- [ ] C-spec-regression: regression test drafted in §5
+- [x] C-spec-repro: repro steps captured in §2
+- [x] C-spec-cause: root cause captured in §3
+- [x] C-spec-fix: proposed fix recorded in §4
+- [x] C-spec-regression: regression test drafted in §5
+
+## PHASE: BUILD
+
+### action: run-mode-chosen
+
+- [x] mode: full autonomous — single-task bug, runs to GREEN.
+
+**Run mode:** full-autonomous
+
+### action: build-task
+
+- [ ] T01: Implement the fix in `test/run-claims-audit.sh` `claim_shipped_pr_links_merged` — derive current PR number from `$GITHUB_REF` (shape `refs/pull/<num>/merge`) and skip that entry when iterating shipped PRs. Add T159 regression in `test/run-framework-test.sh` simulating PR-CI scenario. → tests captured in test/run-framework-test.sh T159
+
+### Exit checks
+- [ ] C-build-tasks-green: every task is GREEN (test passing, code committed)
