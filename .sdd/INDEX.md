@@ -1,8 +1,8 @@
 # SDD framework — INDEX
 
-**Active:** features/006-test-first-mechanical-check-verify-red-before-green
-**Playbook:** feature
-**Active blocker:** §1 (first action: problem)
+**Active:** bugs/003-claims-audit-fails-on-shipped-pr-self-reference-chicken-egg
+**Playbook:** bug
+**Active blocker:** §1 (first action: bug-problem)
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
@@ -13,6 +13,10 @@
 
 
 ## Shipped
+
+- **[[003-claims-audit-fails-on-shipped-pr-self-reference-chicken-egg]]** — closes the chicken-egg surfaced by feature 006 / PR #153: `claim_shipped_pr_links_merged` in `test/run-claims-audit.sh` now reads `$GITHUB_REF` + `$GITHUB_REPOSITORY` and skips the PR currently being CI'd from the merged-state check. Without this, every shipped PR's CI failed on its own audit run (because the row in INDEX.md added by mark-shipped pointed at the still-OPEN PR), and merge needed admin override. PR #154's own CI is the meta-validation that the fix works. T159 (with negative + positive controls) covers the regression. Bug-playbook lighter SPEC: 5 sections (problem, repro, root-cause, fix, regression-test) walked in a single ceremony.
+  - Shipped: 2026-05-04 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/154
+  - Patterns: 1 lesson appended ("self-referential CI claims need an exemption").
 
 - **[[006-test-first-mechanical-check-verify-red-before-green]]** — closes the SDD-identity gap surfaced in the v1.0 audit: BUILD's test-first claim was discipline-only with no mechanical check. Ships `pre-commit-test-first.sh` — a 9-AC pre-commit hook that detects staged tests/task-NNN.* + non-test code pairs, stashes the code, runs the project's test_runner via Approach A (or falls back to commit-order check via Approach B when test_runner is empty), and decides theatre-vs-real-RED based on the staged test's actual result against HEAD content (CR L248 fix). 3 review cycles closed: 1 Critical (L193 stash-pop must block), 4 behavioural Majors (L58 message detection extended to -F + COMMIT_EDITMSG via shim signature, L248 staged-test-specific check, L7783 T158 ec assertion, L24 test trap quoting). 9 per-feature tests + T150-T158 framework regression. 215/215 framework tests passing.
   - Shipped: 2026-05-04 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/153

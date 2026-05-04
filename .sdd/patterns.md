@@ -65,3 +65,9 @@ Source: [[006-test-first-mechanical-check-verify-red-before-green]] §13/§15 + 
 Counterintuitively: when pre-commit-test-first.sh fires on the very commit that introduces it (T01 self-host), the hook's bash process is already loaded into memory. The hook then `git stash push`es itself — the file vanishes from disk, but the running bash continues executing the in-memory copy. eval "$test_runner" runs; tests/task-001.sh executes against the OLD HEAD content (no hook present); the test legitimately fails (real test-first); trap pops the stash; commit lands. The dogfood loop is recursive but stable as long as bash doesn't re-read the script mid-execution.
 
 Source: [[006-test-first-mechanical-check-verify-red-before-green]] T01.
+
+### Self-referential CI claims need an exemption
+
+Any audit-style claim that runs on PR CI and asserts "shipped X is in state Y" must exempt the very PR being CI'd from the check — otherwise the PR's own mark-shipped row references a still-OPEN PR, the claim fails, CI is red, and merge is needed-but-blocked by CI. Caught in feature 006 / PR #153 (first PR after the claims-audit harness landed). Fix shape: read `$GITHUB_REF` (matches `refs/pull/<num>/merge` on PR runs), extract the number, and skip that entry during iteration. See `claim_shipped_pr_links_merged` in `test/run-claims-audit.sh`.
+
+Source: [[003-claims-audit-fails-on-shipped-pr-self-reference-chicken-egg]] T01.

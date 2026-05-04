@@ -7811,6 +7811,79 @@ TST
 fi
 
 # ============================================================
+# T159 — claim_shipped_pr_links_merged exempts the PR being CI'd
+#   (closes bug 003). Pre-fix: every PR shipping a feature fails
+#   the claim on its own CI because the row in INDEX.md points at
+#   the still-OPEN PR. Post-fix: GITHUB_REF (refs/pull/<num>/merge
+#   shape) is read; the matching PR number is skipped during
+#   iteration.
+# ============================================================
+note "T159: claim_shipped_pr_links_merged exempts the current PR (closes bug 003)"
+d=$(mktemp -d)
+(
+  cd "$d" || exit 1
+  mkdir -p .sdd stub_bin
+  cat > .sdd/INDEX.md <<'INDEX'
+# INDEX
+
+## Shipped
+
+- **[[001-fake-feature]]** — fake feature for testing.
+  - Shipped: 2026-05-04 · PR: https://github.com/fake-owner/fake-repo/pull/99999
+INDEX
+  # Stub gh so any pr-view returns OPEN — without the exemption,
+  # the claim would mark this row as failing.
+  cat > stub_bin/gh <<'STUB'
+#!/usr/bin/env bash
+case "$1" in
+  auth) echo "Logged in"; exit 0 ;;
+  pr) echo "OPEN" ;;
+  *) echo "OPEN" ;;
+esac
+STUB
+  chmod +x stub_bin/gh
+  export PATH="$PWD/stub_bin:$PATH"
+
+  # Source the audit script (the source-guard prevents the
+  # orchestrator from running) so we can call the function in
+  # isolation.
+  # shellcheck source=/dev/null
+  source "$FRAMEWORK_ROOT/test/run-claims-audit.sh"
+
+  # GITHUB_REPOSITORY is auto-set on CI to the actual repo
+  # (samuelserraceo/spec-driven-dev-workflow). With the cycle 1 repo-
+  # scoped exemption, the claim only matches when repo+num both align.
+  # Override here so the test's fake-owner/fake-repo INDEX matches what
+  # the env var thinks is the current repo. Without this, the test
+  # passes locally (env unset) but fails on CI.
+  export GITHUB_REPOSITORY="fake-owner/fake-repo"
+
+  # CR cycle 1 minor: negative control — non-matching PR ref must NOT
+  # be exempted (proves the exemption is PR-number-specific, not
+  # always-pass when any GITHUB_REF is set).
+  export GITHUB_REF="refs/pull/88888/merge"
+  if claim_shipped_pr_links_merged 2>/dev/null; then
+    echo "FAIL — non-matching GITHUB_REF was incorrectly exempted (over-broad)"
+  else
+    # Good — claim still failed (#99999 in INDEX is OPEN per stub).
+    # Now positive control: matching PR ref IS exempted.
+    export GITHUB_REF="refs/pull/99999/merge"
+    if claim_shipped_pr_links_merged 2>/dev/null; then
+      echo "PASS"
+    else
+      echo "FAIL — claim returned non-zero with matching GITHUB_REF; exemption logic missing"
+    fi
+  fi
+) > "$d/result.txt" 2>&1
+result=$(grep -E '^PASS|^FAIL' "$d/result.txt" | tail -1)
+rm -rf "$d"
+if [ "$result" = "PASS" ]; then
+  ok "T159 claim exempts the PR being CI'd via GITHUB_REF"
+else
+  bad "T159 chicken-egg exemption missing" "$result"
+fi
+
+# ============================================================
 # T141 — anti-theatre lint passes on the in-flight spec (closes #111,
 #   PR #003). Theatre tokens (numerical bounds, currency, enforcement
 #   verbs, quality absolutes) without an adjacent verifier annotation

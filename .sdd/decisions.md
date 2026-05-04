@@ -280,3 +280,15 @@ Sam approved §11: 6 ACs — real test-first allowed; fake test-first refused; f
 
 ## 2026-05-04T12:55:00Z [[features/006-test-first-mechanical-check-verify-red-before-green]] feature/mark-shipped
 SHIPPED. SDD-identity gap closed: BUILD's test-first claim now backed by a mechanical pre-commit hook. 9 ACs, 9 BUILD tasks, 9 per-feature tests + 9 framework regression tests. 3 CR review cycles addressed (1 Critical L193 stash-pop blocking, 4 Majors L58/L248/L7783/L24, several Minors). PR #153 merged with all 6 CI checks green.
+
+## 2026-05-04T13:05:00Z [[003-claims-audit-fails-on-shipped-pr-self-reference-chicken-egg]] bug/bug-root-cause
+Sam approved §3 root cause: claim_shipped_pr_links_merged at test/run-claims-audit.sh:750-794 has no exemption for "the PR currently being CI'd" — every same-PR self-reference fails on PR CI by definition.
+
+## 2026-05-04T13:05:00Z [[003-claims-audit-fails-on-shipped-pr-self-reference-chicken-egg]] bug/bug-fix
+Sam approved §4 fix: derive current PR number from $GITHUB_REF (refs/pull/<num>/merge shape on PR runs) and skip that entry when iterating shipped PR URLs. Single-file change in test/run-claims-audit.sh; no schema change.
+
+## 2026-05-04T13:05:00Z [[003-claims-audit-fails-on-shipped-pr-self-reference-chicken-egg]] bug/bug-regression-test
+Sam approved §5 regression: T159 in test/run-framework-test.sh exports GITHUB_REF=refs/pull/153/merge with a temp INDEX.md pointing at #153; asserts the claim returns 0 in that scenario. Without the env, behaviour is unchanged.
+
+## 2026-05-04T16:10:00Z [[003-claims-audit-fails-on-shipped-pr-self-reference-chicken-egg]] bug/mark-shipped
+SHIPPED. Chicken-egg in claims-audit closed: `claim_shipped_pr_links_merged` now exempts the PR currently being CI'd via $GITHUB_REF + $GITHUB_REPOSITORY scoping. T159 covers regression with both positive and negative controls. PR #154's own CI was the meta-validation — green without admin override. CR cycle 1 only Minors (no Critical/Major); all addressed.

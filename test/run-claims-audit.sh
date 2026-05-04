@@ -38,7 +38,12 @@ set -uo pipefail
 # Resolve project root deterministically.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-cd "$PROJECT_ROOT" || exit 1
+# Bug 003 fix: only cd to PROJECT_ROOT when invoked directly. When
+# sourced (test harnesses calling individual claim functions), the
+# caller manages its own CWD — don't trample it.
+if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
+  cd "$PROJECT_ROOT" || exit 1
+fi
 
 # Trap counter for the report at the end.
 PASSED=0
@@ -770,9 +775,34 @@ for owner, repo, num in matches:
     print(f'{owner}/{repo}|{num}')
 ")
   [ -z "$entries" ] && return 0  # no shipped rows yet — pass
+  # Bug 003 fix: when running on a PR's CI, exempt the PR from the
+  # MERGED check. The shipped row added by mark-shipped points at
+  # this very PR — which is OPEN at audit time by definition. Without
+  # the exemption, every shipped PR's CI fails until the merge lands,
+  # but the merge is gated on this passing — chicken-egg.
+  # GitHub Actions exposes the PR number via $GITHUB_REF in the shape
+  # `refs/pull/<num>/merge` on pull_request events.
+  local current_pr=""
+  local current_repo="${GITHUB_REPOSITORY:-}"  # CR cycle 1 minor: scope to repo+num
+  if [ -n "${GITHUB_REF:-}" ]; then
+    case "$GITHUB_REF" in
+      refs/pull/*/merge|refs/pull/*/head)
+        current_pr=$(printf '%s' "$GITHUB_REF" | sed -E 's|refs/pull/([0-9]+)/.*|\1|')
+        ;;
+    esac
+  fi
   local failed=""
   while IFS='|' read -r repo num; do
     [ -z "$num" ] && continue
+    # Exempt only the EXACT PR being CI'd: same repo + same number.
+    # PR numbers can collide across repos, so num-alone would
+    # false-positive on any other repo's PR with the same number.
+    # When current_repo is unset (e.g. local invocation outside Actions)
+    # we still match num — it's the cleanest signal we have.
+    if [ -n "$current_pr" ] && [ "$num" = "$current_pr" ] \
+       && { [ -z "$current_repo" ] || [ "$repo" = "$current_repo" ]; }; then
+      continue  # exempt: this PR is the one being CI'd; merge is the next step
+    fi
     local state
     state=$(gh pr view "$num" --repo "$repo" --json state --jq '.state' 2>/dev/null) || {
       failed="${failed}#${num} (gh view failed for $repo) "
@@ -825,6 +855,13 @@ sys.exit(0)
 # ============================================================
 # Orchestrator
 # ============================================================
+# Bug 003 fix: source-guard so test harnesses can `source` this file
+# to call individual claim functions in isolation without triggering
+# the full audit. Direct invocation (./run-claims-audit.sh) still
+# runs the orchestrator below.
+if [ "${BASH_SOURCE[0]}" != "${0}" ]; then
+  return 0 2>/dev/null
+fi
 
 echo "============================================================"
 echo "SDD Claims Audit — proof-by-execution"
