@@ -7606,6 +7606,60 @@ TST
 fi
 
 # ============================================================
+# T156 — pre-commit-test-first.sh: multi-pair commit (2+ tests staged
+#   together) refused with split-commit message. Closes feature 006 AC7.
+#   RED: hook treats batched tasks as a single pair, theatre detection
+#        runs once across all of them — atomic-step discipline broken.
+# ============================================================
+note "T156: pre-commit-test-first refuses multi-pair commit (AC7)"
+TEST_FIRST_HOOK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-test-first.sh"
+if [ ! -x "$TEST_FIRST_HOOK" ]; then
+  bad "T156 hook missing or not executable" "$TEST_FIRST_HOOK"
+else
+  d=$(mktemp -d)
+  (
+    cd "$d" || exit 1
+    git init -q
+    git config user.email t@t.com; git config user.name T; git config commit.gpgsign false
+    mkdir -p .sdd src
+    cat > .sdd/config.md <<'CFG'
+---
+type: config
+parameters:
+  test_runner: "echo dummy"
+---
+CFG
+    echo init > README.md
+    git add README.md .sdd/config.md
+    git commit -q -m scaffold
+    mkdir -p tests
+    echo '#!/usr/bin/env bash' > tests/task-007.sh
+    echo 'exit 0' >> tests/task-007.sh
+    echo '#!/usr/bin/env bash' > tests/task-008.sh
+    echo 'exit 0' >> tests/task-008.sh
+    chmod +x tests/task-007.sh tests/task-008.sh
+    echo 'echo a' > src/foo.sh
+    echo 'echo b' > src/bar.sh
+    git add tests/task-007.sh tests/task-008.sh src/foo.sh src/bar.sh
+    out=$(printf '%s' '{"tool_input":{"command":"git commit -m \"[SDD:006][T07] task\""}}' | bash "$TEST_FIRST_HOOK" 2>&1)
+    ec=$?
+    stash_count=$(git stash list 2>/dev/null | wc -l | tr -d ' ')
+    if [ "$ec" -ne 0 ] && printf '%s' "$out" | grep -qiE 'split into one commit|one commit per task|multiple.*pairs' && [ "$stash_count" -eq 0 ]; then
+      echo "PASS"
+    else
+      echo "FAIL ec=$ec stash=$stash_count out=$out"
+    fi
+  ) > "$d/result.txt" 2>&1
+  result=$(grep -E '^PASS|^FAIL' "$d/result.txt" | tail -1)
+  rm -rf "$d"
+  if [ "$result" = "PASS" ]; then
+    ok "T156 multi-pair commit refused; no stash created"
+  else
+    bad "T156 multi-pair detection broke" "$result"
+  fi
+fi
+
+# ============================================================
 # T141 — anti-theatre lint passes on the in-flight spec (closes #111,
 #   PR #003). Theatre tokens (numerical bounds, currency, enforcement
 #   verbs, quality absolutes) without an adjacent verifier annotation

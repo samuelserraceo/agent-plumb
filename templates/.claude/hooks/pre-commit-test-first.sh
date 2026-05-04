@@ -71,6 +71,32 @@ code_files=$(printf '%s\n' "$staged" | grep -vE '(^|/)tests/task-[0-9]+(\.|$)' |
 [ -z "$test_files" ] && exit 0
 [ -z "$code_files" ] && exit 0
 
+# T07: multi-pair refusal. The atomic-step rule (one task = one commit)
+# means a single commit should land at most one test file. If the AI
+# batched 2+ tasks (multiple tests/task-NNN.* files staged together),
+# refuse before any stash work — the right fix is to split commits.
+test_count=$(printf '%s\n' "$test_files" | grep -c .)
+if [ "$test_count" -gt 1 ]; then
+  cat >&2 <<HOOK_ERR
+[pre-commit-test-first] multiple test+code pairs in one commit.
+
+  tests staged:
+$(printf '%s\n' "$test_files" | sed 's/^/    /')
+
+The framework's atomic-step rule (one task = one commit) wants each
+test file to land in its own commit. This commit pairs $test_count
+tests with code — that's $test_count tasks bundled together.
+
+How to fix:
+  1. Unstage everything: git reset
+  2. Stage one task's test+code, commit it.
+  3. Repeat for the next task.
+
+Refusing the commit. Split into one commit per task.
+HOOK_ERR
+  exit 2
+fi
+
 # Read parameters.test_runner from .sdd/config.md (YAML-ish parse).
 test_runner=""
 if [ -f .sdd/config.md ]; then
