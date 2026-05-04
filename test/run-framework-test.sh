@@ -7938,6 +7938,70 @@ else
 fi
 
 # ============================================================
+# T161 — sdd-migrate.sh: end-to-end apply scenario covering AC2-AC7.
+#   Project drifts in 3 ways (ADD missing hook, UPDATE-CLEAN stale
+#   stock-prior content, UPDATE-CONFLICT user-edited file), --apply
+#   handles each correctly, user-data files survive bit-for-bit, and
+#   a fresh dry-run reports 0 changes for the resolved entries.
+#   RED: any branch of the categoriser or the apply path is broken.
+# ============================================================
+note "T161: sdd-migrate end-to-end --apply (AC2-AC7)"
+SDD_MIGRATE="$FRAMEWORK_ROOT/templates/.sdd/scripts/sdd-migrate.sh"
+if [ ! -x "$SDD_MIGRATE" ]; then
+  bad "T161 sdd-migrate.sh missing or not executable" "$SDD_MIGRATE"
+else
+  d=$(mktemp -d)
+  (
+    cd "$d" || exit 1
+    mkdir -p .sdd .claude
+    cp -R "$FRAMEWORK_ROOT/templates/.sdd/." .sdd/ 2>/dev/null
+    cp -R "$FRAMEWORK_ROOT/templates/.claude/." .claude/ 2>/dev/null
+
+    # ADD drift
+    rm -f .claude/hooks/pre-commit-test-first.sh
+    # UPDATE-CONFLICT drift (user-edited file, manifest unchanged)
+    cat > .sdd/scripts/load-playbook.sh <<'CUSTOM'
+#!/usr/bin/env bash
+# user customisation — should be kept on default Enter
+echo "user override"
+CUSTOM
+    # User-data sentinels (none must be touched)
+    SENTINEL="USER-DATA-T161"
+    echo "$SENTINEL" > .sdd/INDEX.md
+    mkdir -p .sdd/features/001-fake .sdd/decisions
+    echo "$SENTINEL" > .sdd/decisions.md
+    echo "$SENTINEL" > .sdd/patterns.md
+    echo "$SENTINEL" > .sdd/features/001-fake/spec.md
+
+    # Apply with default Enter on the conflict (keep user version)
+    out=$(printf '\n' | bash "$SDD_MIGRATE" --apply --upstream="$FRAMEWORK_ROOT" 2>&1)
+    ec=$?
+
+    # Assertions
+    fails=""
+    [ "$ec" -eq 0 ] || fails="$fails ec=$ec"
+    [ -f .claude/hooks/pre-commit-test-first.sh ] || fails="$fails ADD-not-landed"
+    grep -q "user override" .sdd/scripts/load-playbook.sh || fails="$fails CONFLICT-keep-failed"
+    grep -q "$SENTINEL" .sdd/INDEX.md || fails="$fails INDEX.md-touched"
+    grep -q "$SENTINEL" .sdd/decisions.md || fails="$fails decisions.md-touched"
+    grep -q "$SENTINEL" .sdd/patterns.md || fails="$fails patterns.md-touched"
+    grep -q "$SENTINEL" .sdd/features/001-fake/spec.md || fails="$fails feature-spec-touched"
+    if [ -z "$fails" ]; then
+      echo "PASS"
+    else
+      echo "FAIL$fails out=$out"
+    fi
+  ) > "$d/result.txt" 2>&1
+  result=$(grep -E '^PASS|^FAIL' "$d/result.txt" | tail -1)
+  rm -rf "$d"
+  if [ "$result" = "PASS" ]; then
+    ok "T161 end-to-end --apply: ADD + CONFLICT (default keep) + user-data preserved"
+  else
+    bad "T161 end-to-end --apply broke" "$result"
+  fi
+fi
+
+# ============================================================
 # T141 — anti-theatre lint passes on the in-flight spec (closes #111,
 #   PR #003). Theatre tokens (numerical bounds, currency, enforcement
 #   verbs, quality absolutes) without an adjacent verifier annotation

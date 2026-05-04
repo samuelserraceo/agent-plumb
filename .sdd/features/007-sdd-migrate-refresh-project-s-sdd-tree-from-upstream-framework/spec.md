@@ -2,7 +2,7 @@
 
 [PHASE: BUILD]
 
-**Active blocker:** §B1 (next action: run-mode-chosen → full-autonomous → T01)
+**Active blocker:** BUILD done — phase advance to SHIP next.
 
 ## PHASE: SPEC
 
@@ -98,12 +98,12 @@
 - [x] tasks: 7 tasks (T01-T07) — 1:1 with AC1-AC7. T01 introduces the script skeleton (dry-run reporting on a synced project = 0 changes); T02-T07 extend it.
 
 - [x] T01 GREEN: Skeleton landed. templates/.sdd/scripts/sdd-migrate.sh (+ mirror) walks 6 tracked dirs (.claude/hooks, .claude/commands, .sdd/scripts, .sdd/actions, .sdd/playbooks, .sdd/skeletons), hashes via the framework's normalised SHA-256, reads prior-shipped hashes from user manifest, categorises into ADD/UPDATE-CLEAN/UPDATE-CONFLICT/REMOVED, and prints summary. Synced project → "in sync" message. T160 added (217/217 passing). → tests/task-001.sh
-- [ ] T02: ADD detection (AC2). Tracked file in upstream, missing in user → reports under ADD. → tests/task-002.sh
-- [ ] T03: UPDATE-CLEAN detection (AC3). User hash matches prior shipped, upstream has newer → reports under UPDATE-CLEAN. → tests/task-003.sh
-- [ ] T04: UPDATE-CONFLICT detection (AC4). User hash differs from BOTH upstream AND prior shipped → reports under UPDATE-CONFLICT. → tests/task-004.sh
-- [ ] T05: --apply mode (AC5). Applies ADD + UPDATE-CLEAN automatically; writes new manifest. Fresh dry-run after = 0 changes. → tests/task-005.sh
-- [ ] T06: --apply prompt on UPDATE-CONFLICT (AC6). keep / overwrite / show-diff; default Enter = keep. → tests/task-006.sh
-- [ ] T07: User-data exclusion (AC7). INDEX.md, decisions.md, patterns.md, data-model.md, stack.md, principles.md, .sdd/features/**, .sdd/bugs/**, .sdd/refactors/**, .sdd/ideas/** preserved bit-for-bit even on --apply. → tests/task-007.sh
+- [x] T02 GREEN: ADD detection covered by T01's unified categoriser; per-feature regression added. → tests/task-002.sh
+- [x] T03 GREEN: UPDATE-CLEAN detection covered by T01's unified categoriser; bash 3.2 compat fix landed (declare -A → tempfile lookup). → tests/task-003.sh
+- [x] T04 GREEN: UPDATE-CONFLICT detection covered by T01's unified categoriser; per-feature regression added. → tests/task-004.sh
+- [x] T05 GREEN: --apply mode landed. Applies ADD + UPDATE-CLEAN automatically by cp-p (preserves executable bit), copies upstream manifest into user's .sdd/.cache/. Fresh dry-run after = 0 changes. → tests/task-005.sh
+- [x] T06 GREEN: --apply conflict prompt landed (keep / overwrite / show-diff; default Enter = keep). Sub-A verifies default keep preserves user content; Sub-B verifies 'overwrite' replaces with upstream. → tests/task-006.sh
+- [x] T07 GREEN: User-data exclusion verified end-to-end. SENTINEL test covers INDEX.md, decisions.md, patterns.md, data-model.md, stack.md, principles.md, .sdd/features/**, .sdd/bugs/**, .sdd/refactors/**, .sdd/ideas/**. T160+T161 added to framework regression suite (218/218 passing). → tests/task-007.sh
 
 ### action: edge-case-sweep
 
