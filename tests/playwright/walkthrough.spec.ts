@@ -76,6 +76,9 @@ test.describe("walkthrough.html — marketplace landing page", () => {
     const planned = page.locator("#planned");
     await expect(planned).toContainText("v1.1 + v1.2 + v1.3 — shipped");
     await expect(planned).toContainText("PR #114"); // Tier 3 (v1.1)
+    await expect(planned).toContainText("PR #118"); // plain-English action lint (v1.2)
+    await expect(planned).toContainText("PR #121"); // anti-theatre spec lint (v1.2)
+    await expect(planned).toContainText("PR #124"); // graph-cache code-span fix (v1.2)
     await expect(planned).toContainText("PR #128"); // wireframe redesign (v1.2)
     await expect(planned).toContainText("PR #153"); // test-first hook (v1.3)
     await expect(planned).toContainText("PR #154"); // claims-audit chicken-egg (v1.3)
