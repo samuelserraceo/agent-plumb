@@ -2,7 +2,7 @@
 
 [PHASE: SPEC]
 
-**Active blocker:** §1 (first action: problem)
+**Active blocker:** SPEC done — phase advance to BUILD next.
 
 ## PHASE: SPEC
 
@@ -91,16 +91,24 @@
 
 ### action: wireframe
 
-- [ ] wireframe: draft wireframe.html — UI screens for UI features OR flow + architecture for non-UI features
+- [x] wireframe: drafted — non-UI flow (categorise → ADD/UPDATE-CLEAN/UPDATE-CONFLICT/REMOVED → apply → re-pin), architecture (sdd-migrate.sh + slash command wrapper, exclusion list of user-data files), concrete example showing ADD/CLEAN/CONFLICT output for a real "missing today's test-first hook" scenario.
 
 ### action: plan-decompose
 
-- [ ] tasks: convert acceptance criteria into ordered build tasks (one test file per task)
+- [x] tasks: 7 tasks (T01-T07) — 1:1 with AC1-AC7. T01 introduces the script skeleton (dry-run reporting on a synced project = 0 changes); T02-T07 extend it.
+
+- [ ] T01: Skeleton script + AC1 (synced project = 0 changes). Creates templates/.sdd/scripts/sdd-migrate.sh + mirror, slash command wrapper, hash-computation helper. Reads --upstream path, walks tracked files, prints empty drift summary. → tests/task-001.sh
+- [ ] T02: ADD detection (AC2). Tracked file in upstream, missing in user → reports under ADD. → tests/task-002.sh
+- [ ] T03: UPDATE-CLEAN detection (AC3). User hash matches prior shipped, upstream has newer → reports under UPDATE-CLEAN. → tests/task-003.sh
+- [ ] T04: UPDATE-CONFLICT detection (AC4). User hash differs from BOTH upstream AND prior shipped → reports under UPDATE-CONFLICT. → tests/task-004.sh
+- [ ] T05: --apply mode (AC5). Applies ADD + UPDATE-CLEAN automatically; writes new manifest. Fresh dry-run after = 0 changes. → tests/task-005.sh
+- [ ] T06: --apply prompt on UPDATE-CONFLICT (AC6). keep / overwrite / show-diff; default Enter = keep. → tests/task-006.sh
+- [ ] T07: User-data exclusion (AC7). INDEX.md, decisions.md, patterns.md, data-model.md, stack.md, principles.md, .sdd/features/**, .sdd/bugs/**, .sdd/refactors/**, .sdd/ideas/** preserved bit-for-bit even on --apply. → tests/task-007.sh
 
 ### action: edge-case-sweep
 
-- [ ] ec-sweep: draft
-- [ ] ec-pick: ask
+- [x] ec-sweep: drafted 4 candidates — EC1 missing user manifest (.sdd/.cache/manifest.json absent), EC2 user is on the framework's own repo (sees self as upstream → no-op), EC3 upstream has malformed manifest (corrupted JSON), EC4 file rename across upstream versions (foo.sh → foo-renamed.sh treated as REMOVE+ADD pair).
+- [x] ec-pick: picked EC1 + EC2 → folded into existing AC1 (synced) and AC4 (conflict). EC3 deferred (corrupted upstream is rare; user can `git pull` again). EC4 deferred (file renames in framework code are rare; if it happens we'll surface as REMOVE+ADD which is honest).
 
 ### Exit checks
 - [ ] C-spec-acs: ≥1 acceptance criterion exists in §11 — grep -qE '^- \[[ x]\] AC[0-9]+' "$SECTION_FILE" {verify-by: verify-stage.sh}
