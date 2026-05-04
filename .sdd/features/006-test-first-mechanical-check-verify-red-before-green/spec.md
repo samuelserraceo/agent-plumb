@@ -2,7 +2,7 @@
 
 [PHASE: SHIP]
 
-**Active blocker:** §S6 (next action: push-pr)
+**Active blocker:** §S7 (next action: verify-ci-green)
 
 ## PHASE: SPEC
 
@@ -172,8 +172,8 @@
 
 ### action: push-pr
 
-- [ ] push: git push -u origin sdd/006-test-first-mechanical-check.
-- [ ] open-pr: gh pr create with summary + test plan.
+- [x] push: branch pushed and tracking origin/sdd/006-test-first-mechanical-check.
+- [x] open-pr: PR https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/153 opened with summary + per-AC test mapping.
 
 ### action: verify-ci-green
 
