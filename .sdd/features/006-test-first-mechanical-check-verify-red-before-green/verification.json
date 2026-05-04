@@ -1,7 +1,5 @@
 {
-  "phase": "SPEC",
+  "phase": "BUILD",
   "checks": [
-    {"id": "C-spec-acs", "result": "pass"},
-    {"id": "C-spec-tasks", "result": "pass"}
   ]
 }

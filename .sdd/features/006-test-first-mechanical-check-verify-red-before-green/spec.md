@@ -1,8 +1,8 @@
 # test-first mechanical check — verify RED before GREEN
 
-[PHASE: BUILD]
+[PHASE: SHIP]
 
-**Active blocker:** BUILD done — phase advance to SHIP next.
+**Active blocker:** §S1 (next action: verify-test-run)
 
 ## PHASE: SPEC
 
@@ -140,4 +140,44 @@
 (driven by §14 tasks T01-T09 — each task lands as one commit)
 
 ### Exit checks
-- [ ] C-build-tasks-green: every task is GREEN (test passing, code committed)
+- [x] C-build-tasks-green: every task is GREEN (T01-T09 all marked, 215/215 framework tests passing).
+
+## PHASE: SHIP
+
+### action: verify-test-run
+
+- [ ] run-tests: invoke the project's test_runner; assert exit 0 with all assertions reporting PASS.
+
+### action: verify-prod-only-acs
+
+- [ ] count-prod-only: count [PROD-ONLY] ACs and either route to INDEX.md "Pending production verification" or note none.
+
+### action: adversarial-review
+
+- [ ] sweep: agent self-reviews the implementation for security / edge-case gaps before pushing PR.
+
+### action: playwright-explore
+
+- [ ] explore: skip — non-UI feature (backend hook only).
+
+### action: learn
+
+- [ ] summary: write one-line TL;DR of what shipped.
+- [ ] lessons: append a block to .sdd/patterns.md with cross-feature lessons.
+
+### action: push-pr
+
+- [ ] push: git push -u origin sdd/006-test-first-mechanical-check.
+- [ ] open-pr: gh pr create with summary + test plan.
+
+### action: verify-ci-green
+
+- [ ] ci: poll CI; gate mark-shipped on a green run.
+
+### action: mark-shipped
+
+- [ ] shipped: update INDEX.md Shipped row, write .shipped marker, append decisions.md entry.
+
+### Exit checks
+- [ ] C-ship-pr-url: PR URL recorded in INDEX.md Shipped section
+- [ ] C-ship-marked: .shipped marker file exists in feature folder
