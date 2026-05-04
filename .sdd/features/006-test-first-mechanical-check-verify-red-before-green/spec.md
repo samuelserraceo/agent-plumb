@@ -1,8 +1,8 @@
 # test-first mechanical check — verify RED before GREEN
 
-[PHASE: SHIP]
+[PHASE: SHIPPED]
 
-**Active blocker:** §S7 (next action: verify-ci-green)
+**Active blocker:** SHIPPED.
 
 ## PHASE: SPEC
 
@@ -177,12 +177,12 @@
 
 ### action: verify-ci-green
 
-- [ ] ci: poll CI; gate mark-shipped on a green run.
+- [x] ci: 6/6 CI checks GREEN on PR #153 — Browser tests (1m7s), Claims audit (2m1s), CodeRabbit (review completed), Framework tests (1m2s), Graph integrity (9s), Scope guard (6s). 3 CR review cycles addressed (Critical L193, Majors L58/L248/L7783/L24, Minors). L69 NUL-safe paths deferred as follow-up.
 
 ### action: mark-shipped
 
-- [ ] shipped: update INDEX.md Shipped row, write .shipped marker, append decisions.md entry.
+- [x] shipped: INDEX.md updated, .shipped marker written, decisions.md appended.
 
 ### Exit checks
-- [ ] C-ship-pr-url: PR URL recorded in INDEX.md Shipped section
-- [ ] C-ship-marked: .shipped marker file exists in feature folder
+- [x] C-ship-pr-url: PR https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/153 recorded in INDEX.md Shipped section
+- [x] C-ship-marked: .shipped marker file exists in feature folder

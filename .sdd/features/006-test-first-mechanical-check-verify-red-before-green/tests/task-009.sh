@@ -55,6 +55,13 @@ ec=$?
 
 fails=()
 
+# CR cycle 3: assert non-zero exit too — without this, a regression
+# where the hook surfaces conflict text but still allows the commit
+# would slip past.
+if [ "$ec" -eq 0 ]; then
+  fails+=("hook returned 0 — should have blocked on stash-pop conflict")
+fi
+
 if ! printf '%s' "$output" | grep -qiE 'stash.*pop.*failed|recover.*hand|stash ref|stash@'; then
   fails+=("stderr doesn't surface stash ref or recovery hint")
 fi

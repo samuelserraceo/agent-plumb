@@ -277,3 +277,6 @@ Sam approved §9: 5 explicit deferrals — per-task test command override; multi
 
 ## 2026-05-04T07:50:00Z  [[features/006-test-first-mechanical-check-verify-red-before-green]]  feature/acceptance-criteria
 Sam approved §11: 6 ACs — real test-first allowed; fake test-first refused; fallback when no test runner; no-op for non-BUILD commits; stash always restored; plain-English error message. AC1+AC2 cover the core gate; AC3 covers the fallback shape; AC4-AC6 cover edge / quality.
+
+## 2026-05-04T12:55:00Z [[features/006-test-first-mechanical-check-verify-red-before-green]] feature/mark-shipped
+SHIPPED. SDD-identity gap closed: BUILD's test-first claim now backed by a mechanical pre-commit hook. 9 ACs, 9 BUILD tasks, 9 per-feature tests + 9 framework regression tests. 3 CR review cycles addressed (1 Critical L193 stash-pop blocking, 4 Majors L58/L248/L7783/L24, several Minors). PR #153 merged with all 6 CI checks green.
