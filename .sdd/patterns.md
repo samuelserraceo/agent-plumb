@@ -47,3 +47,21 @@ The wizard today asks Tier 3 sub-questions but doesn't HELP install Ollama / pul
 Source: [[001-tier-3-llm-driven-synthesis]] T24 + T25 walk.
 
 Source: [[001-tier-3-llm-driven-synthesis]]
+
+### git stash pop --index doesn't survive new files
+
+When a pre-commit hook stashes staged code via `git stash push -- <files>` and at least one of those files is NEW (added but not yet committed at HEAD), `git stash pop --index` refuses with a conflict and leaves the stash in place. The robust pattern for this kind of hook: `git stash pop` (working-tree only) followed by `git add -- "$_f"` for each path. The pop brings working-tree back, the explicit re-stage rebuilds the index. Caught dogfooding feature 006 T01 — the very first commit silently landed only the new files because `pop` (without `--index`) leaves modifications in the working tree but not the index.
+
+Source: [[006-test-first-mechanical-check-verify-red-before-green]] T01 follow-up.
+
+### Anti-theatre lint trips on common stub words
+
+The `refuses?` / `enforces?` / `prevents?` / `ensures?` / `guarantees?` / `always` / `never` / `correctly` / `accurate` / `reliable` / `complete` token list catches innocuous spec prose if you're not careful. "BUILD complete" trips it; "BUILD done" doesn't. "blocks the commit" trips on `blocks` (not currently — but the verb sense is similar). Past-tense forms (`refused`, `blocked`, `completed`) pass because the regex is `refuses?` not `refus(e|ed|al)`. When marking a step `[x]`, prefer past-tense action verbs ("landed", "drafted", "blocked") over absolute-tense ("blocks", "refuses", "completes").
+
+Source: [[006-test-first-mechanical-check-verify-red-before-green]] §13/§15 + multiple BUILD task commits.
+
+### A hook that stashes its own staged file still works
+
+Counterintuitively: when pre-commit-test-first.sh fires on the very commit that introduces it (T01 self-host), the hook's bash process is already loaded into memory. The hook then `git stash push`es itself — the file vanishes from disk, but the running bash continues executing the in-memory copy. eval "$test_runner" runs; tests/task-001.sh executes against the OLD HEAD content (no hook present); the test legitimately fails (real test-first); trap pops the stash; commit lands. The dogfood loop is recursive but stable as long as bash doesn't re-read the script mid-execution.
+
+Source: [[006-test-first-mechanical-check-verify-red-before-green]] T01.

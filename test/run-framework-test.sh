@@ -7194,6 +7194,623 @@ else
 fi
 
 # ============================================================
+# T150 — pre-commit-test-first.sh: real test-first (test fails without
+#   code) lands cleanly. Closes feature 006 AC1.
+#   RED: hook missing or broken — test+code commit gets blocked or
+#        the stash isn't restored.
+# ============================================================
+note "T150: pre-commit-test-first allows real test-first commit (AC1)"
+TEST_FIRST_HOOK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-test-first.sh"
+if [ ! -x "$TEST_FIRST_HOOK" ]; then
+  bad "T150 hook missing or not executable" "$TEST_FIRST_HOOK"
+else
+  d=$(mktemp -d)
+  (
+    cd "$d" || exit 1
+    git init -q
+    git config user.email t@t.com
+    git config user.name T
+    git config commit.gpgsign false
+    echo init > README.md
+    mkdir -p .sdd
+    cat > .sdd/config.md <<'CFG'
+---
+type: config
+parameters:
+  test_runner: "bash tests/task-001.sh"
+---
+CFG
+    git add README.md .sdd/config.md
+    git commit -q -m scaffold
+    mkdir -p tests src
+    cat > tests/task-001.sh <<'TST'
+#!/usr/bin/env bash
+out=$(bash src/foo.sh 2>/dev/null)
+[ "$out" = "hello" ] || exit 1
+TST
+    cat > src/foo.sh <<'SRC'
+#!/usr/bin/env bash
+echo "hello"
+SRC
+    chmod +x tests/task-001.sh src/foo.sh
+    git add tests/task-001.sh src/foo.sh
+    pre_idx=$(git diff --cached --name-only | sort | tr '\n' ',')
+    out=$(bash "$TEST_FIRST_HOOK" </dev/null 2>&1)
+    ec=$?
+    stash_count=$(git stash list 2>/dev/null | wc -l | tr -d ' ')
+    post_idx=$(git diff --cached --name-only | sort | tr '\n' ',')
+    if [ "$ec" -eq 0 ] && [ "$stash_count" -eq 0 ] && [ "$pre_idx" = "$post_idx" ]; then
+      echo "PASS"
+    else
+      echo "FAIL ec=$ec stash=$stash_count pre=$pre_idx post=$post_idx out=$out"
+    fi
+  ) > "$d/result.txt" 2>&1
+  result=$(grep -E '^PASS|^FAIL' "$d/result.txt" | tail -1)
+  rm -rf "$d"
+  if [ "$result" = "PASS" ]; then
+    ok "T150 real test-first lands; stash restored, index intact"
+  else
+    bad "T150 hook didn't behave for real test-first" "$result"
+  fi
+fi
+
+# ============================================================
+# T151 — pre-commit-test-first.sh: fake test-first (test passes without
+#   code) is blocked; stderr names the test path. Closes feature 006 AC2.
+#   RED: hook lets the commit through silently — theatre slips past.
+# ============================================================
+note "T151: pre-commit-test-first blocks fake test-first commit (AC2)"
+TEST_FIRST_HOOK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-test-first.sh"
+if [ ! -x "$TEST_FIRST_HOOK" ]; then
+  bad "T151 hook missing or not executable" "$TEST_FIRST_HOOK"
+else
+  d=$(mktemp -d)
+  (
+    cd "$d" || exit 1
+    git init -q
+    git config user.email t@t.com
+    git config user.name T
+    git config commit.gpgsign false
+    mkdir -p .sdd src
+    cat > .sdd/config.md <<'CFG'
+---
+type: config
+parameters:
+  test_runner: "bash tests/task-002.sh"
+---
+CFG
+    cat > src/foo.sh <<'SRC'
+#!/usr/bin/env bash
+echo "hello"
+SRC
+    chmod +x src/foo.sh
+    git add .sdd/config.md src/foo.sh
+    git commit -q -m scaffold
+    mkdir -p tests
+    cat > tests/task-002.sh <<'TST'
+#!/usr/bin/env bash
+out=$(bash src/foo.sh 2>/dev/null)
+[ "$out" = "hello" ] || exit 1
+TST
+    chmod +x tests/task-002.sh
+    cat > src/foo.sh <<'SRC'
+#!/usr/bin/env bash
+# cosmetic comment — doesn't change behavior
+echo "hello"
+SRC
+    git add tests/task-002.sh src/foo.sh
+    out=$(bash "$TEST_FIRST_HOOK" </dev/null 2>&1)
+    ec=$?
+    stash_count=$(git stash list 2>/dev/null | wc -l | tr -d ' ')
+    if [ "$ec" -ne 0 ] \
+       && printf '%s' "$out" | grep -q 'tests/task-002.sh' \
+       && [ "$stash_count" -eq 0 ]; then
+      echo "PASS"
+    else
+      echo "FAIL ec=$ec stash=$stash_count out=$out"
+    fi
+  ) > "$d/result.txt" 2>&1
+  result=$(grep -E '^PASS|^FAIL' "$d/result.txt" | tail -1)
+  rm -rf "$d"
+  if [ "$result" = "PASS" ]; then
+    ok "T151 fake test-first blocked; test path in stderr; stash restored"
+  else
+    bad "T151 hook didn't block theatre" "$result"
+  fi
+fi
+
+# ============================================================
+# T152 — pre-commit-test-first.sh: empty test_runner → Approach B
+#   commit-order check. Same-commit pair refused with canonical message.
+#   Closes feature 006 AC3.
+#   RED: hook lets same-commit pairs through silently when no runner set.
+# ============================================================
+note "T152: pre-commit-test-first Approach B blocks same-commit pair (AC3)"
+TEST_FIRST_HOOK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-test-first.sh"
+if [ ! -x "$TEST_FIRST_HOOK" ]; then
+  bad "T152 hook missing or not executable" "$TEST_FIRST_HOOK"
+else
+  d=$(mktemp -d)
+  (
+    cd "$d" || exit 1
+    git init -q
+    git config user.email t@t.com
+    git config user.name T
+    git config commit.gpgsign false
+    echo init > README.md
+    mkdir -p .sdd
+    cat > .sdd/config.md <<'CFG'
+---
+type: config
+parameters:
+  test_runner: ""
+---
+CFG
+    git add README.md .sdd/config.md
+    git commit -q -m scaffold
+    mkdir -p tests src
+    echo '#!/usr/bin/env bash' > tests/task-003.sh
+    echo '[ -f src/foo.sh ] || exit 1' >> tests/task-003.sh
+    echo 'echo hi' > src/foo.sh
+    chmod +x tests/task-003.sh
+    git add tests/task-003.sh src/foo.sh
+    out=$(bash "$TEST_FIRST_HOOK" </dev/null 2>&1)
+    ec=$?
+    if [ "$ec" -ne 0 ] && printf '%s' "$out" | grep -q 'test must land in its own commit first'; then
+      echo "PASS_BLOCK"
+    else
+      echo "FAIL_BLOCK ec=$ec out=$out"
+    fi
+    git reset --hard HEAD >/dev/null 2>&1
+    git stash drop --quiet 2>/dev/null || true
+    mkdir -p tests src
+    echo '#!/usr/bin/env bash' > tests/task-003.sh
+    echo '[ -f src/foo.sh ] || exit 1' >> tests/task-003.sh
+    chmod +x tests/task-003.sh
+    git add tests/task-003.sh
+    git commit -q -m "test first"
+    echo 'echo hi' > src/foo.sh
+    echo '# refinement' >> tests/task-003.sh
+    git add src/foo.sh tests/task-003.sh
+    out2=$(bash "$TEST_FIRST_HOOK" </dev/null 2>&1)
+    ec2=$?
+    if [ "$ec2" -eq 0 ]; then
+      echo "PASS_ALLOW"
+    else
+      echo "FAIL_ALLOW ec=$ec2 out=$out2"
+    fi
+  ) > "$d/result.txt" 2>&1
+  block_ok=$(grep -c '^PASS_BLOCK' "$d/result.txt" || true)
+  allow_ok=$(grep -c '^PASS_ALLOW' "$d/result.txt" || true)
+  rm -rf "$d"
+  if [ "$block_ok" -eq 1 ] && [ "$allow_ok" -eq 1 ]; then
+    ok "T152 Approach B blocks same-commit + allows prior-commit"
+  else
+    bad "T152 Approach B branch broke" "block_ok=$block_ok allow_ok=$allow_ok (see hook output above)"
+  fi
+fi
+
+# ============================================================
+# T153 — pre-commit-test-first.sh: non-BUILD-task commits pass through
+#   silently. Closes feature 006 AC4.
+#   RED: hook gates spec edits / chores / mark-shipped commits, treating
+#        every paired test+code commit as a BUILD-task — false positives
+#        on routine framework work.
+# ============================================================
+note "T153: pre-commit-test-first only gates BUILD-task commits (AC4)"
+TEST_FIRST_HOOK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-test-first.sh"
+if [ ! -x "$TEST_FIRST_HOOK" ]; then
+  bad "T153 hook missing or not executable" "$TEST_FIRST_HOOK"
+else
+  d=$(mktemp -d)
+  (
+    cd "$d" || exit 1
+    git init -q
+    git config user.email t@t.com
+    git config user.name T
+    git config commit.gpgsign false
+    mkdir -p .sdd src
+    cat > .sdd/config.md <<'CFG'
+---
+type: config
+parameters:
+  test_runner: "bash tests/task-004.sh"
+---
+CFG
+    cat > src/foo.sh <<'SRC'
+#!/usr/bin/env bash
+echo "hello"
+SRC
+    chmod +x src/foo.sh
+    git add .sdd/config.md src/foo.sh
+    git commit -q -m scaffold
+    mkdir -p tests
+    cat > tests/task-004.sh <<'TST'
+#!/usr/bin/env bash
+out=$(bash src/foo.sh 2>/dev/null)
+[ "$out" = "hello" ] || exit 1
+TST
+    chmod +x tests/task-004.sh
+    echo '# cosmetic' >> src/foo.sh
+    git add tests/task-004.sh src/foo.sh
+
+    # BUILD-task shape → expect block (theatre)
+    out_a=$(printf '%s' '{"tool_input":{"command":"git commit -m \"[SDD:006][T04] task\""}}' | bash "$TEST_FIRST_HOOK" 2>&1)
+    ec_a=$?
+
+    git stash list 2>/dev/null | head -1 | grep -q . && git stash pop --quiet 2>/dev/null || true
+
+    # spec-edit shape → expect silent pass
+    out_b=$(printf '%s' '{"tool_input":{"command":"git commit -m \"[SDD:006] spec: §X edit\""}}' | bash "$TEST_FIRST_HOOK" 2>&1)
+    ec_b=$?
+
+    if [ "$ec_a" -ne 0 ] && [ "$ec_b" -eq 0 ] && [ -z "$out_b" ]; then
+      echo "PASS"
+    else
+      echo "FAIL ec_a=$ec_a ec_b=$ec_b out_b='$out_b'"
+    fi
+  ) > "$d/result.txt" 2>&1
+  result=$(grep -E '^PASS|^FAIL' "$d/result.txt" | tail -1)
+  rm -rf "$d"
+  if [ "$result" = "PASS" ]; then
+    ok "T153 BUILD-task gated; spec edit silently passes"
+  else
+    bad "T153 BUILD-task filter broke" "$result"
+  fi
+fi
+
+# ============================================================
+# T154 — pre-commit-test-first.sh: trap recovers stash on test runner
+#   error + on SIGTERM mid-run. Closes feature 006 AC5.
+#   RED: trap only fires on EXIT, leaving stash orphaned when a CI
+#        runner sends SIGTERM after a timeout.
+# ============================================================
+note "T154: pre-commit-test-first trap covers crash + SIGTERM (AC5)"
+TEST_FIRST_HOOK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-test-first.sh"
+if [ ! -x "$TEST_FIRST_HOOK" ]; then
+  bad "T154 hook missing or not executable" "$TEST_FIRST_HOOK"
+else
+  d=$(mktemp -d)
+  (
+    cd "$d" || exit 1
+    git init -q
+    git config user.email t@t.com; git config user.name T; git config commit.gpgsign false
+    mkdir -p .sdd src
+    cat > .sdd/config.md <<'CFG'
+---
+type: config
+parameters:
+  test_runner: "bash -c 'set -u; echo $UNDEFINED_VAR; exit 99'"
+---
+CFG
+    cat > src/foo.sh <<'SRC'
+#!/usr/bin/env bash
+echo "hello"
+SRC
+    chmod +x src/foo.sh
+    git add .sdd/config.md src/foo.sh
+    git commit -q -m scaffold
+    mkdir -p tests
+    echo '#!/usr/bin/env bash' > tests/task-005.sh
+    echo 'exit 0' >> tests/task-005.sh
+    chmod +x tests/task-005.sh
+    echo "# cosmetic" >> src/foo.sh
+    git add tests/task-005.sh src/foo.sh
+    input='{"tool_input":{"command":"git commit -m \"[SDD:006][T05] task\""}}'
+    printf '%s' "$input" | bash "$TEST_FIRST_HOOK" >/dev/null 2>&1
+    crash_stash=$(git stash list 2>/dev/null | wc -l | tr -d ' ')
+    # Reset and try SIGTERM scenario
+    git reset --hard HEAD >/dev/null 2>&1
+    cat > .sdd/config.md <<'CFG'
+---
+type: config
+parameters:
+  test_runner: "sleep 3; exit 1"
+---
+CFG
+    git add .sdd/config.md
+    git commit -q -m "slow runner"
+    echo "# cosmetic" >> src/foo.sh
+    cat > tests/task-005.sh <<'TST'
+#!/usr/bin/env bash
+exit 0
+TST
+    chmod +x tests/task-005.sh
+    git add tests/task-005.sh src/foo.sh
+    printf '%s' "$input" | bash "$TEST_FIRST_HOOK" >/dev/null 2>&1 &
+    hook_pid=$!
+    sleep 0.5
+    kill -TERM "$hook_pid" 2>/dev/null
+    for _ in 1 2 3 4 5 6 7 8 9 10; do
+      if ! kill -0 "$hook_pid" 2>/dev/null; then break; fi
+      sleep 0.2
+    done
+    wait "$hook_pid" 2>/dev/null || true
+    sigterm_stash=$(git stash list 2>/dev/null | wc -l | tr -d ' ')
+    if [ "$crash_stash" = "0" ] && [ "$sigterm_stash" = "0" ]; then
+      echo "PASS"
+    else
+      echo "FAIL crash=$crash_stash sigterm=$sigterm_stash"
+    fi
+  ) > "$d/result.txt" 2>&1
+  result=$(grep -E '^PASS|^FAIL' "$d/result.txt" | tail -1)
+  rm -rf "$d"
+  if [ "$result" = "PASS" ]; then
+    ok "T154 trap recovers stash on undefined-var crash + SIGTERM"
+  else
+    bad "T154 trap missed an error path" "$result"
+  fi
+fi
+
+# ============================================================
+# T155 — pre-commit-test-first.sh: refusal message has 3 plain-English
+#   elements (test path + meaning + fix-it steps). Closes feature 006 AC6.
+#   RED: stderr is just a test path with no explanation, agent sees
+#        "refused" but doesn't know what to do next.
+# ============================================================
+note "T155: pre-commit-test-first refusal message has 3 elements (AC6)"
+TEST_FIRST_HOOK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-test-first.sh"
+if [ ! -x "$TEST_FIRST_HOOK" ]; then
+  bad "T155 hook missing or not executable" "$TEST_FIRST_HOOK"
+else
+  d=$(mktemp -d)
+  (
+    cd "$d" || exit 1
+    git init -q
+    git config user.email t@t.com; git config user.name T; git config commit.gpgsign false
+    mkdir -p .sdd src
+    cat > .sdd/config.md <<'CFG'
+---
+type: config
+parameters:
+  test_runner: "bash tests/task-006.sh"
+---
+CFG
+    cat > src/foo.sh <<'SRC'
+#!/usr/bin/env bash
+echo "hello"
+SRC
+    chmod +x src/foo.sh
+    git add .sdd/config.md src/foo.sh
+    git commit -q -m scaffold
+    mkdir -p tests
+    cat > tests/task-006.sh <<'TST'
+#!/usr/bin/env bash
+out=$(bash src/foo.sh 2>/dev/null)
+[ "$out" = "hello" ] || exit 1
+TST
+    chmod +x tests/task-006.sh
+    echo "# cosmetic" >> src/foo.sh
+    git add tests/task-006.sh src/foo.sh
+    out=$(printf '%s' '{"tool_input":{"command":"git commit -m \"[SDD:006][T06] task\""}}' | bash "$TEST_FIRST_HOOK" 2>&1)
+    ec=$?
+    has_path=0
+    has_meaning=0
+    has_fix=0
+    printf '%s' "$out" | grep -q 'tests/task-006.sh' && has_path=1
+    printf '%s' "$out" | grep -qiE 'pin behaviour|test-first' && has_meaning=1
+    printf '%s' "$out" | grep -qiE 'rewrite the test|How to fix' && has_fix=1
+    if [ "$ec" -ne 0 ] && [ "$has_path" = "1" ] && [ "$has_meaning" = "1" ] && [ "$has_fix" = "1" ]; then
+      echo "PASS"
+    else
+      echo "FAIL ec=$ec path=$has_path meaning=$has_meaning fix=$has_fix"
+    fi
+  ) > "$d/result.txt" 2>&1
+  result=$(grep -E '^PASS|^FAIL' "$d/result.txt" | tail -1)
+  rm -rf "$d"
+  if [ "$result" = "PASS" ]; then
+    ok "T155 refusal message has test path + meaning + fix steps"
+  else
+    bad "T155 refusal message missing required element(s)" "$result"
+  fi
+fi
+
+# ============================================================
+# T156 — pre-commit-test-first.sh: multi-pair commit (2+ tests staged
+#   together) refused with split-commit message. Closes feature 006 AC7.
+#   RED: hook treats batched tasks as a single pair, theatre detection
+#        runs once across all of them — atomic-step discipline broken.
+# ============================================================
+note "T156: pre-commit-test-first refuses multi-pair commit (AC7)"
+TEST_FIRST_HOOK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-test-first.sh"
+if [ ! -x "$TEST_FIRST_HOOK" ]; then
+  bad "T156 hook missing or not executable" "$TEST_FIRST_HOOK"
+else
+  d=$(mktemp -d)
+  (
+    cd "$d" || exit 1
+    git init -q
+    git config user.email t@t.com; git config user.name T; git config commit.gpgsign false
+    mkdir -p .sdd src
+    cat > .sdd/config.md <<'CFG'
+---
+type: config
+parameters:
+  test_runner: "echo dummy"
+---
+CFG
+    echo init > README.md
+    git add README.md .sdd/config.md
+    git commit -q -m scaffold
+    mkdir -p tests
+    echo '#!/usr/bin/env bash' > tests/task-007.sh
+    echo 'exit 0' >> tests/task-007.sh
+    echo '#!/usr/bin/env bash' > tests/task-008.sh
+    echo 'exit 0' >> tests/task-008.sh
+    chmod +x tests/task-007.sh tests/task-008.sh
+    echo 'echo a' > src/foo.sh
+    echo 'echo b' > src/bar.sh
+    git add tests/task-007.sh tests/task-008.sh src/foo.sh src/bar.sh
+    out=$(printf '%s' '{"tool_input":{"command":"git commit -m \"[SDD:006][T07] task\""}}' | bash "$TEST_FIRST_HOOK" 2>&1)
+    ec=$?
+    stash_count=$(git stash list 2>/dev/null | wc -l | tr -d ' ')
+    if [ "$ec" -ne 0 ] && printf '%s' "$out" | grep -qiE 'split into one commit|one commit per task|multiple.*pairs' && [ "$stash_count" -eq 0 ]; then
+      echo "PASS"
+    else
+      echo "FAIL ec=$ec stash=$stash_count out=$out"
+    fi
+  ) > "$d/result.txt" 2>&1
+  result=$(grep -E '^PASS|^FAIL' "$d/result.txt" | tail -1)
+  rm -rf "$d"
+  if [ "$result" = "PASS" ]; then
+    ok "T156 multi-pair commit refused; no stash created"
+  else
+    bad "T156 multi-pair detection broke" "$result"
+  fi
+fi
+
+# ============================================================
+# T157 — pre-commit-test-first.sh: exit 127 (test_runner not found)
+#   blocks with a config-wrong message; non-127 failures still go
+#   through staged-test-specific theatre detection (so theatre with
+#   a runner that happens to exit non-zero doesn't slip through).
+#   Closes feature 006 AC8 + the L248 follow-on.
+#   RED: hook treats 127 the same as 1 — both as "real test-first
+#        signal", letting theatre through whenever the runner is
+#        misconfigured OR when an unrelated test fails.
+# ============================================================
+note "T157: pre-commit-test-first distinguishes 127 from non-127 (AC8 + L248)"
+TEST_FIRST_HOOK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-test-first.sh"
+if [ ! -x "$TEST_FIRST_HOOK" ]; then
+  bad "T157 hook missing or not executable" "$TEST_FIRST_HOOK"
+else
+  d=$(mktemp -d)
+  (
+    cd "$d" || exit 1
+    git init -q
+    git config user.email t@t.com; git config user.name T; git config commit.gpgsign false
+    mkdir -p .sdd src
+    cat > .sdd/config.md <<'CFG'
+---
+type: config
+parameters:
+  test_runner: "absolutely_nonexistent_xyz_runner_42"
+---
+CFG
+    echo init > README.md
+    git add README.md .sdd/config.md
+    git commit -q -m scaffold
+    mkdir -p tests
+    echo '#!/usr/bin/env bash' > tests/task-008.sh
+    echo 'exit 0' >> tests/task-008.sh
+    chmod +x tests/task-008.sh
+    echo "echo a" > src/foo.sh
+    git add tests/task-008.sh src/foo.sh
+    out=$(printf '%s' '{"tool_input":{"command":"git commit -m \"[SDD:006][T08] task\""}}' | bash "$TEST_FIRST_HOOK" 2>&1)
+    ec=$?
+    if [ "$ec" -ne 0 ] && printf '%s' "$out" | grep -qiE 'test_runner.*wrong|command not found'; then
+      echo "PASS_127"
+    else
+      echo "FAIL_127 ec=$ec out=$out"
+    fi
+    git reset --hard HEAD >/dev/null 2>&1
+    mkdir -p src tests
+    # Sub-B: theatre still caught when runner exits non-zero (L248).
+    cat > .sdd/config.md <<'CFG'
+---
+type: config
+parameters:
+  test_runner: "bash -c 'exit 1'"
+---
+CFG
+    cat > src/foo.sh <<'SRC'
+#!/usr/bin/env bash
+echo "hello"
+SRC
+    chmod +x src/foo.sh
+    git add .sdd/config.md src/foo.sh
+    git commit -q -m runner
+    cat > tests/task-008.sh <<'TST'
+#!/usr/bin/env bash
+out=$(bash src/foo.sh 2>/dev/null)
+[ "$out" = "hello" ] || exit 1
+TST
+    chmod +x tests/task-008.sh
+    cat > src/foo.sh <<'SRC'
+#!/usr/bin/env bash
+# cosmetic comment
+echo "hello"
+SRC
+    git add tests/task-008.sh src/foo.sh
+    out2=$(printf '%s' '{"tool_input":{"command":"git commit -m \"[SDD:006][T08] task\""}}' | bash "$TEST_FIRST_HOOK" 2>&1)
+    ec2=$?
+    if [ "$ec2" -ne 0 ]; then
+      echo "PASS_1"
+    else
+      echo "FAIL_1 ec=$ec2 out=$out2"
+    fi
+  ) > "$d/result.txt" 2>&1
+  pass127=$(grep -c '^PASS_127$' "$d/result.txt" || true)
+  pass1=$(grep -c '^PASS_1$' "$d/result.txt" || true)
+  rm -rf "$d"
+  if [ "$pass127" -eq 1 ] && [ "$pass1" -eq 1 ]; then
+    ok "T157 exit 127 blocks (config wrong); non-127 with theatre also blocks"
+  else
+    bad "T157 runner-vs-test-fail distinction broke" "pass127=$pass127 pass1=$pass1"
+  fi
+fi
+
+# ============================================================
+# T158 — pre-commit-test-first.sh: stash-pop conflict surfaces the
+#   stash ref + recovery hint. Closes feature 006 AC9.
+#   RED: pop failure swallowed silently; user's work stuck in an
+#        un-named stash entry with no idea how to recover.
+# ============================================================
+note "T158: pre-commit-test-first surfaces stash conflict recovery (AC9)"
+TEST_FIRST_HOOK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-test-first.sh"
+if [ ! -x "$TEST_FIRST_HOOK" ]; then
+  bad "T158 hook missing or not executable" "$TEST_FIRST_HOOK"
+else
+  d=$(mktemp -d)
+  (
+    cd "$d" || exit 1
+    git init -q
+    git config user.email t@t.com; git config user.name T; git config commit.gpgsign false
+    mkdir -p .sdd src
+    cat > .sdd/config.md <<'CFG'
+---
+type: config
+parameters:
+  test_runner: "printf 'CONFLICTING_MOD\n' > src/foo.sh; exit 1"
+---
+CFG
+    echo init > README.md
+    echo "BASE" > src/foo.sh
+    git add README.md .sdd/config.md src/foo.sh
+    git commit -q -m scaffold
+    mkdir -p tests
+    cat > tests/task-009.sh <<'TST'
+#!/usr/bin/env bash
+exit 0
+TST
+    chmod +x tests/task-009.sh
+    echo "STAGED_MOD" > src/foo.sh
+    git add tests/task-009.sh src/foo.sh
+    out=$(printf '%s' '{"tool_input":{"command":"git commit -m \"[SDD:006][T09] task\""}}' | bash "$TEST_FIRST_HOOK" 2>&1)
+    ec=$?
+    has_recovery=0
+    has_stash=0
+    printf '%s' "$out" | grep -qiE 'stash.*pop.*failed|recover.*hand|stash@' && has_recovery=1
+    [ "$(git stash list 2>/dev/null | wc -l | tr -d ' ')" -gt 0 ] && has_stash=1
+    # CR cycle 1 L7783 fix: also assert hook exit code non-zero so a
+    # regression where the hook prints recovery text but still exits 0
+    # gets caught.
+    if [ "$ec" -ne 0 ] && [ "$has_recovery" = "1" ] && [ "$has_stash" = "1" ]; then
+      echo "PASS"
+    else
+      echo "FAIL ec=$ec recovery=$has_recovery stash=$has_stash out=$out"
+    fi
+  ) > "$d/result.txt" 2>&1
+  result=$(grep -E '^PASS|^FAIL' "$d/result.txt" | tail -1)
+  rm -rf "$d"
+  if [ "$result" = "PASS" ]; then
+    ok "T158 stash conflict surfaces ref + recovery hint; stash kept"
+  else
+    bad "T158 stash conflict path didn't surface recovery info" "$result"
+  fi
+fi
+
+# ============================================================
 # T141 — anti-theatre lint passes on the in-flight spec (closes #111,
 #   PR #003). Theatre tokens (numerical bounds, currency, enforcement
 #   verbs, quality absolutes) without an adjacent verifier annotation

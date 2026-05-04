@@ -1,18 +1,24 @@
 # SDD framework — INDEX
 
-**Active:** _(none)_
+**Active:** features/006-test-first-mechanical-check-verify-red-before-green
 **Playbook:** feature
-**Active blocker:** _(none — last shipped: bugs/002-safety-hook-still-blocks-framework-updates-after-138-fix on 2026-05-03)_
+**Active blocker:** §1 (first action: problem)
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
 
 ## In flight
 
-- (none)
+(none)
 
 
 ## Shipped
+
+- **[[006-test-first-mechanical-check-verify-red-before-green]]** — closes the SDD-identity gap surfaced in the v1.0 audit: BUILD's test-first claim was discipline-only with no mechanical check. Ships `pre-commit-test-first.sh` — a 9-AC pre-commit hook that detects staged tests/task-NNN.* + non-test code pairs, stashes the code, runs the project's test_runner via Approach A (or falls back to commit-order check via Approach B when test_runner is empty), and decides theatre-vs-real-RED based on the staged test's actual result against HEAD content (CR L248 fix). 3 review cycles closed: 1 Critical (L193 stash-pop must block), 4 behavioural Majors (L58 message detection extended to -F + COMMIT_EDITMSG via shim signature, L248 staged-test-specific check, L7783 T158 ec assertion, L24 test trap quoting). 9 per-feature tests + T150-T158 framework regression. 215/215 framework tests passing.
+  - Shipped: 2026-05-04 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/153
+  - Data-model: (none — single backend hook + 9 regression tests)
+  - Patterns: 3 lessons appended (`git stash pop --index` doesn't survive new files; anti-theatre lint trips on common stub words; a hook that stashes its own staged file still works in memory).
+  - Deferred to follow-up: L69 NUL-safe paths in hook (rare, paths-with-spaces); EC3 initial-commit-on-fresh-repo (corner case).
 
 - **bugs/002-safety-hook-still-blocks-framework-updates-after-138-fix** — closes 3 false-positive paths in the safety hook that #138 didn't cover. Bug A: tightens the staged-manifest path regex so it doesn't match both live + template copies. Bug B: skips the per-file HEAD content check ONLY when the manifest is being repinned AND the file is staged in the same commit (closes the cross-commit attack false-positive on legitimate framework updates while still firing on real attacks). Bug D: the trust-baseline marker check defers to commit-msg whenever the message isn't readable from the cmd (no -m / -F, or stdin-backed -F -, or compound-command false-positives). Validated end-to-end by Tier 0 lego cleanup committing cleanly through the fixed hook.
   - Shipped: 2026-05-03 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/147

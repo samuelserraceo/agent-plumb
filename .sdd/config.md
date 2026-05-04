@@ -43,6 +43,7 @@ parameters:
       max_total_tokens_per_run: 100000   # exact — stops once running total crossed
       auth_header: ""                    # optional. To keep tokens OUT of tracked config, use ${ENV_VAR_NAME} indirection. Literal values still work. Empty = no auth header sent. NOTE: v1.1 default Ollama+Gemma local doesn't need this; load-bearing for v1.2+ paid providers.
       # Anti-theatre note (Sam's catch 2026-05-01): there is no `cost_limit_usd` field. The framework can't enforce dollar amounts without a per-provider pricing table or a live spending ledger — neither exists. Token caps above are the mechanical enforcement. Dollar guidance for picking a provider lives in the spec, not here.
+  test_runner: "bash test/run-framework-test.sh"   # framework dogfoods its own test suite — pre-commit-test-first.sh runs this on commits that pair tests/task-NNN.* with code.
 file_classes:
   CLAIM:
     - '(^|/)verification\.json$'

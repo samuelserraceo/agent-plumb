@@ -265,3 +265,18 @@ Verified locally: T142 (new regression test) simulates a real manifest repin and
 Two sibling bugs surfaced during verification (other-session Sam paranoid-review): Bug A (multi-manifest path regex, two-line staged_manifest breaks `git show`); Bug B (HEAD content check fires cross-commit-attack false-positive on every legitimate repin because head_actual=OLD content but expected=NEW manifest hash). #138 fix doesn't close them — they're sibling issues in the same area. Tracked as bugs/002.
 
 PR #144 admin-merged 2026-05-03. CR converged after one re-run (the framework's own anti-theatre lint caught 4 theatre tokens in this very spec — fixed with `{verify-by: T142}` annotations + soften, exact dogfood the audit was built for).
+
+## 2026-05-04T07:30:00Z  [[features/006-test-first-mechanical-check-verify-red-before-green]]  feature/proposed-approach
+Sam approved §5: ship Approach A (stash-and-rerun pre-commit hook) as primary with Approach B (pattern-only commit-order check) as automatic fallback when no test runner is configured. Framework's own use case has bash test/run-framework-test.sh so it defaults to A. Defence-in-depth: this is an additional gate alongside existing hooks (manifest pin, scope-guard, post-stop-lint).
+
+## 2026-05-04T07:35:00Z  [[features/006-test-first-mechanical-check-verify-red-before-green]]  feature/data-contract
+Sam approved §6: no new entities. Hook reads parameters.test_runner from existing config.md shape; no data-model.md updates needed.
+
+## 2026-05-04T07:40:00Z  [[features/006-test-first-mechanical-check-verify-red-before-green]]  feature/out-of-scope
+Sam approved §9: 5 explicit deferrals — per-task test command override; multi-commit theatre detection; IDE integration; visual report; auto-fixing the test. This round catches same-commit and commit-order patterns only.
+
+## 2026-05-04T07:50:00Z  [[features/006-test-first-mechanical-check-verify-red-before-green]]  feature/acceptance-criteria
+Sam approved §11: 6 ACs — real test-first allowed; fake test-first refused; fallback when no test runner; no-op for non-BUILD commits; stash always restored; plain-English error message. AC1+AC2 cover the core gate; AC3 covers the fallback shape; AC4-AC6 cover edge / quality.
+
+## 2026-05-04T12:55:00Z [[features/006-test-first-mechanical-check-verify-red-before-green]] feature/mark-shipped
+SHIPPED. SDD-identity gap closed: BUILD's test-first claim now backed by a mechanical pre-commit hook. 9 ACs, 9 BUILD tasks, 9 per-feature tests + 9 framework regression tests. 3 CR review cycles addressed (1 Critical L193 stash-pop blocking, 4 Majors L58/L248/L7783/L24, several Minors). PR #153 merged with all 6 CI checks green.
