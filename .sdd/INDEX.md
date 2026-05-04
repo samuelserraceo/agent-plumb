@@ -1,13 +1,14 @@
 # SDD framework — INDEX
 
-**Active:** _(none)_
+**Active:** features/006-test-first-mechanical-check-verify-red-before-green
 **Playbook:** feature
-**Active blocker:** _(none — last shipped: bugs/002-safety-hook-still-blocks-framework-updates-after-138-fix on 2026-05-03)_
+**Active blocker:** §1 (first action: problem)
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
 
 ## In flight
+- features/006-test-first-mechanical-check-verify-red-before-green — test-first mechanical check — verify RED before GREEN (PHASE: SPEC)
 
 - (none)
 
