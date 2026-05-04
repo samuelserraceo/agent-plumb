@@ -2,7 +2,7 @@
 
 [PHASE: SPEC]
 
-**Active blocker:** §5 (next action: proposed-approach)
+**Active blocker:** §6 (next action: data-contract)
 
 ## PHASE: SPEC
 
@@ -26,7 +26,29 @@
 
 ### action: proposed-approach
 
-- [ ] approval: draft the approach with 2 alternatives and tradeoffs, iterate with the user, get approval
+- [x] approval: stash-and-rerun pre-commit hook (Approach A) with pattern-only fallback (Approach B). Approved by Sam on 2026-05-04.
+
+  **Approach A — stash-and-rerun (primary, when test runner is configured):**
+  - New pre-commit hook detects when a commit stages a test+code pair (test file at `tests/task-NNN.<ext>` and the task's code file together).
+  - Hook stashes the code-side staged changes (keeps test in index).
+  - Runs the project's configured test runner (read from `.sdd/config.md` `parameters.test_runner`).
+  - If the test FAILS without the code → expected RED-first signal → restore stash → allow commit.
+  - If the test PASSES without the code → theatre → block the commit with a plain-English error pointing at the test path. {verify-by: T-006-fake-test-first}
+
+  **Approach B — pattern-only fallback (when no test runner is configured):**
+  - Hook checks commit order: was the test file committed BEFORE the code file? Same-commit pairs refused with *"test must land in its own commit first."*
+  - Lighter; doesn't catch test-after-code-disguised-as-test-first across two commits, but works in any project.
+
+  **Decision:** ship A as primary, B as fallback. Framework's own use case has `bash test/run-framework-test.sh` — defaults to A. Downstream projects that haven't run /sdd-setup or didn't configure a test runner get B automatically.
+
+  **Defence preserved:** existing hooks (manifest pin, scope-guard, post-stop-lint) all still run. This is an additional gate.
+
+  **Files touched:**
+  - `templates/.claude/hooks/pre-commit-test-first.sh` (NEW)
+  - `templates/.claude/settings.json` (register the hook in PreToolUse)
+  - `templates/.sdd/config.md` (add `parameters.test_runner` field — empty by default, populated by /sdd-setup)
+  - `test/run-framework-test.sh` (T<N> regression: fake-test-first → refused; real-test-first → allowed)
+  - Both manifests (hash-repin if hook is manifest-tracked)
 
 ### action: data-contract
 

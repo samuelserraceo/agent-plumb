@@ -265,3 +265,6 @@ Verified locally: T142 (new regression test) simulates a real manifest repin and
 Two sibling bugs surfaced during verification (other-session Sam paranoid-review): Bug A (multi-manifest path regex, two-line staged_manifest breaks `git show`); Bug B (HEAD content check fires cross-commit-attack false-positive on every legitimate repin because head_actual=OLD content but expected=NEW manifest hash). #138 fix doesn't close them — they're sibling issues in the same area. Tracked as bugs/002.
 
 PR #144 admin-merged 2026-05-03. CR converged after one re-run (the framework's own anti-theatre lint caught 4 theatre tokens in this very spec — fixed with `{verify-by: T142}` annotations + soften, exact dogfood the audit was built for).
+
+## 2026-05-04T07:30:00Z  [[features/006-test-first-mechanical-check-verify-red-before-green]]  feature/proposed-approach
+Sam approved §5: ship Approach A (stash-and-rerun pre-commit hook) as primary with Approach B (pattern-only commit-order check) as automatic fallback when no test runner is configured. Framework's own use case has bash test/run-framework-test.sh so it defaults to A. Defence-in-depth: this is an additional gate alongside existing hooks (manifest pin, scope-guard, post-stop-lint).
