@@ -2,7 +2,7 @@
 
 [PHASE: SPEC]
 
-**Active blocker:** §2 (next action: success)
+**Active blocker:** §3 (next action: user-stories)
 
 ## PHASE: SPEC
 
@@ -14,7 +14,7 @@
 
 ### action: success
 
-- [ ] metric: Pick a metric pattern (volume / speed / quality / engagement) or describe your own. Give a target number AND the current baseline if known.
+- [x] metric: **quality** — a fake-test-first commit attempt is mechanically refused. Measurable as a regression test in the framework's own suite: stage a code+test together where the test passes without the code, run the safety hook → expect refusal with a clear error. **Target**: 1 new regression test passes (binary), AND existing 203+ framework tests still pass (no regression). **Baseline**: today, 0 fake-test-first attempts are caught.
 
 ### action: user-stories
 
