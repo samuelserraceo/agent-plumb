@@ -2,7 +2,7 @@
 
 [PHASE: SPEC]
 
-**Active blocker:** §6 (next action: data-contract)
+**Active blocker:** §7 (next action: flows)
 
 ## PHASE: SPEC
 
@@ -52,7 +52,7 @@
 
 ### action: data-contract
 
-- [ ] approval: draft the data contract, iterate with the user, sync data-model.md, get approval
+- [x] approval: no new entities. The hook reads `parameters.test_runner` from `.sdd/config.md` (existing field shape — no schema change). No `data-model.md` updates. Approved by Sam on 2026-05-04.
 
 ### action: flows
 

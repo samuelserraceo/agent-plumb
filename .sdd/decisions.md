@@ -268,3 +268,6 @@ PR #144 admin-merged 2026-05-03. CR converged after one re-run (the framework's 
 
 ## 2026-05-04T07:30:00Z  [[features/006-test-first-mechanical-check-verify-red-before-green]]  feature/proposed-approach
 Sam approved §5: ship Approach A (stash-and-rerun pre-commit hook) as primary with Approach B (pattern-only commit-order check) as automatic fallback when no test runner is configured. Framework's own use case has bash test/run-framework-test.sh so it defaults to A. Defence-in-depth: this is an additional gate alongside existing hooks (manifest pin, scope-guard, post-stop-lint).
+
+## 2026-05-04T07:35:00Z  [[features/006-test-first-mechanical-check-verify-red-before-green]]  feature/data-contract
+Sam approved §6: no new entities. Hook reads parameters.test_runner from existing config.md shape; no data-model.md updates needed.
