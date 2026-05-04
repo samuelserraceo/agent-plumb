@@ -1,15 +1,15 @@
 # SDD framework — INDEX
 
-**Active:** bugs/003-claims-audit-fails-on-shipped-pr-self-reference-chicken-egg
-**Playbook:** bug
-**Active blocker:** §1 (first action: bug-problem)
+**Active:** features/007-sdd-migrate-refresh-project-s-sdd-tree-from-upstream-framework
+**Playbook:** feature
+**Active blocker:** §1 (first action: problem)
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
 
 ## In flight
+- features/007-sdd-migrate-refresh-project-s-sdd-tree-from-upstream-framework — sdd-migrate — refresh project's .sdd/ tree from upstream framework (PHASE: SPEC)
 
-(none)
 
 
 ## Shipped

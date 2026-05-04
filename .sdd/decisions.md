@@ -292,3 +292,15 @@ Sam approved §5 regression: T159 in test/run-framework-test.sh exports GITHUB_R
 
 ## 2026-05-04T16:10:00Z [[003-claims-audit-fails-on-shipped-pr-self-reference-chicken-egg]] bug/mark-shipped
 SHIPPED. Chicken-egg in claims-audit closed: `claim_shipped_pr_links_merged` now exempts the PR currently being CI'd via $GITHUB_REF + $GITHUB_REPOSITORY scoping. T159 covers regression with both positive and negative controls. PR #154's own CI was the meta-validation — green without admin override. CR cycle 1 only Minors (no Critical/Major); all addressed.
+
+## 2026-05-04T20:30:00Z [[007-sdd-migrate-refresh-project-s-sdd-tree-from-upstream-framework]] feature/proposed-approach
+Sam approved §5: dry-run by default + `--apply` mode with per-file confirmation on conflicts. Hash-aware via the existing manifest-pin SHA-256 algorithm. User-data files (spec.md, INDEX.md, decisions.md, patterns.md, data-model.md, stack.md, principles.md, .sdd/features/**, .sdd/bugs/**, .sdd/refactors/**, .sdd/ideas/**, .sdd/.cache/) excluded by hard-coded regex. Managed sections in CLAUDE.md and config.md only have content between SDD-MANAGED-START/END replaced.
+
+## 2026-05-04T20:30:00Z [[007-sdd-migrate-refresh-project-s-sdd-tree-from-upstream-framework]] feature/data-contract
+Sam approved §6: no new entities. Tool reads existing manifest.json + framework files; writes updated manifest + files in place. No data-model.md changes.
+
+## 2026-05-04T20:30:00Z [[007-sdd-migrate-refresh-project-s-sdd-tree-from-upstream-framework]] feature/out-of-scope
+Sam approved §9: 5 explicit deferrals — 3-way merge (rejected, picked overwrite-with-confirmation), auto-fetch upstream (requires --upstream=<path> for now), schema migration (user re-runs /sdd-config), MCP server queries (live in extensions/, separate update path), --rollback flag (use git revert).
+
+## 2026-05-04T20:30:00Z [[007-sdd-migrate-refresh-project-s-sdd-tree-from-upstream-framework]] feature/acceptance-criteria
+Sam approved §11: 7 ACs — AC1 dry-run on synced project, AC2 dry-run reports ADD, AC3 dry-run reports UPDATE-CLEAN, AC4 dry-run reports UPDATE-CONFLICT, AC5 --apply works + manifest re-pinned, AC6 --apply prompts on conflicts (default keep), AC7 user-data files preserved bit-for-bit.
