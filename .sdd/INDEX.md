@@ -1,15 +1,15 @@
 # SDD framework — INDEX
 
-**Active:** features/006-test-first-mechanical-check-verify-red-before-green
-**Playbook:** feature
-**Active blocker:** §1 (first action: problem)
+**Active:** bugs/003-claims-audit-fails-on-shipped-pr-self-reference-chicken-egg
+**Playbook:** bug
+**Active blocker:** §1 (first action: bug-problem)
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
 
 ## In flight
+- bugs/003-claims-audit-fails-on-shipped-pr-self-reference-chicken-egg — claims-audit fails on shipped-PR self-reference (chicken-egg) (PHASE: SPEC)
 
-(none)
 
 
 ## Shipped
