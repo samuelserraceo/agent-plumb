@@ -97,7 +97,7 @@
 
 - [x] tasks: 7 tasks (T01-T07) — 1:1 with AC1-AC7. T01 introduces the script skeleton (dry-run reporting on a synced project = 0 changes); T02-T07 extend it.
 
-- [ ] T01: Skeleton script + AC1 (synced project = 0 changes). Creates templates/.sdd/scripts/sdd-migrate.sh + mirror, slash command wrapper, hash-computation helper. Reads --upstream path, walks tracked files, prints empty drift summary. → tests/task-001.sh
+- [x] T01 GREEN: Skeleton landed. templates/.sdd/scripts/sdd-migrate.sh (+ mirror) walks 6 tracked dirs (.claude/hooks, .claude/commands, .sdd/scripts, .sdd/actions, .sdd/playbooks, .sdd/skeletons), hashes via the framework's normalised SHA-256, reads prior-shipped hashes from user manifest, categorises into ADD/UPDATE-CLEAN/UPDATE-CONFLICT/REMOVED, and prints summary. Synced project → "in sync" message. T160 added (217/217 passing). → tests/task-001.sh
 - [ ] T02: ADD detection (AC2). Tracked file in upstream, missing in user → reports under ADD. → tests/task-002.sh
 - [ ] T03: UPDATE-CLEAN detection (AC3). User hash matches prior shipped, upstream has newer → reports under UPDATE-CLEAN. → tests/task-003.sh
 - [ ] T04: UPDATE-CONFLICT detection (AC4). User hash differs from BOTH upstream AND prior shipped → reports under UPDATE-CONFLICT. → tests/task-004.sh

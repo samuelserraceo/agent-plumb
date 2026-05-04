@@ -7901,6 +7901,43 @@ else
 fi
 
 # ============================================================
+# T160 — sdd-migrate.sh: dry-run on a synced project reports 0 changes
+#   (closes feature 007 AC1; the full AC1-AC7 coverage builds out as
+#   subsequent BUILD tasks land in the same PR).
+#   RED: script missing or returns drift on a bit-for-bit copy of
+#        upstream.
+# ============================================================
+note "T160: sdd-migrate dry-run on synced project = 0 changes (AC1)"
+SDD_MIGRATE="$FRAMEWORK_ROOT/templates/.sdd/scripts/sdd-migrate.sh"
+if [ ! -x "$SDD_MIGRATE" ]; then
+  bad "T160 sdd-migrate.sh missing or not executable" "$SDD_MIGRATE"
+else
+  d=$(mktemp -d)
+  (
+    cd "$d" || exit 1
+    mkdir -p .sdd .claude
+    cp -R "$FRAMEWORK_ROOT/templates/.sdd/." .sdd/ 2>/dev/null
+    cp -R "$FRAMEWORK_ROOT/templates/.claude/." .claude/ 2>/dev/null
+    out=$(bash "$SDD_MIGRATE" --upstream="$FRAMEWORK_ROOT" 2>&1)
+    ec=$?
+    if [ "$ec" -eq 0 ] \
+       && printf '%s' "$out" | grep -qiE 'in sync|no changes' \
+       && ! printf '%s' "$out" | grep -qE '^\s*[+~!]'; then
+      echo "PASS"
+    else
+      echo "FAIL ec=$ec out=$out"
+    fi
+  ) > "$d/result.txt" 2>&1
+  result=$(grep -E '^PASS|^FAIL' "$d/result.txt" | tail -1)
+  rm -rf "$d"
+  if [ "$result" = "PASS" ]; then
+    ok "T160 sdd-migrate reports 0 changes on synced project"
+  else
+    bad "T160 sdd-migrate reported drift on synced project" "$result"
+  fi
+fi
+
+# ============================================================
 # T141 — anti-theatre lint passes on the in-flight spec (closes #111,
 #   PR #003). Theatre tokens (numerical bounds, currency, enforcement
 #   verbs, quality absolutes) without an adjacent verifier annotation
