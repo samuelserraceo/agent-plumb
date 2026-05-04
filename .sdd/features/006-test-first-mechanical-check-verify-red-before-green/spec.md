@@ -1,8 +1,8 @@
 # test-first mechanical check — verify RED before GREEN
 
-[PHASE: SPEC]
+[PHASE: BUILD]
 
-**Active blocker:** SPEC done — phase advance to BUILD next (run-mode question).
+**Active blocker:** §B1 (next action: run-mode-chosen)
 
 ## PHASE: SPEC
 
@@ -126,3 +126,16 @@
 ### Exit checks
 - [ ] C-spec-acs: ≥1 acceptance criterion exists in §11 — grep -qE '^- \[[ x]\] AC[0-9]+' "$SECTION_FILE" {verify-by: verify-stage.sh}
 - [ ] C-spec-tasks: ≥1 task in plan-decompose section — grep -qE '^- \[[ x]\] T[0-9]+' "$SECTION_FILE" {verify-by: verify-stage.sh}
+
+## PHASE: BUILD
+
+### action: run-mode-chosen
+
+- [ ] mode: How do you want to run BUILD? 1=step-by-step, 2=checkpoint-every-5, 3=full autonomous, 4=Shell Ralph headless. Or adjust.
+
+### action: build-task
+
+(driven by §14 tasks T01-T09 — each task lands as one commit)
+
+### Exit checks
+- [ ] C-build-tasks-green: every task is GREEN (test passing, code committed)
