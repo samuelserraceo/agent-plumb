@@ -71,9 +71,32 @@ if [ -f .sdd/config.md ]; then
   ' .sdd/config.md 2>/dev/null || echo "")
 fi
 
-# Approach B fallback (T03 fills this in). For T01 skeleton: pass
-# through silently when test_runner is empty.
-[ -z "$test_runner" ] && exit 0
+# Approach B: parameters.test_runner empty → commit-order check.
+# For each staged test file: was it committed in a PRIOR commit on this
+# branch? If yes → allow. If no → refuse same-commit pair.
+if [ -z "$test_runner" ]; then
+  while IFS= read -r tf; do
+    [ -z "$tf" ] && continue
+    if [ -z "$(git log --diff-filter=A --pretty=format:%H -- "$tf" 2>/dev/null)" ]; then
+      cat >&2 <<HOOK_ERR
+[pre-commit-test-first] test+code paired in the same commit (no test_runner configured).
+
+  test:  $tf
+  code:  $(printf '%s' "$code_files" | tr '\n' ' ')
+
+The framework's test-first discipline says the test must land in its
+own commit first. This commit pairs both. Either:
+  1. Set parameters.test_runner in .sdd/config.md (enables the
+     stash-and-rerun gate, Approach A).
+  2. Split the commit so the test lands first, then the code.
+
+Refusing — test must land in its own commit first.
+HOOK_ERR
+      exit 2
+    fi
+  done <<< "$test_files"
+  exit 0
+fi
 
 # Approach A: stash code-side files, run test, restore.
 stash_msg="sdd-pre-commit-test-first-$$"

@@ -7320,6 +7320,77 @@ SRC
 fi
 
 # ============================================================
+# T152 — pre-commit-test-first.sh: empty test_runner → Approach B
+#   commit-order check. Same-commit pair refused with canonical message.
+#   Closes feature 006 AC3.
+#   RED: hook lets same-commit pairs through silently when no runner set.
+# ============================================================
+note "T152: pre-commit-test-first Approach B blocks same-commit pair (AC3)"
+TEST_FIRST_HOOK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-test-first.sh"
+if [ ! -x "$TEST_FIRST_HOOK" ]; then
+  bad "T152 hook missing or not executable" "$TEST_FIRST_HOOK"
+else
+  d=$(mktemp -d)
+  (
+    cd "$d" || exit 1
+    git init -q
+    git config user.email t@t.com
+    git config user.name T
+    git config commit.gpgsign false
+    echo init > README.md
+    mkdir -p .sdd
+    cat > .sdd/config.md <<'CFG'
+---
+type: config
+parameters:
+  test_runner: ""
+---
+CFG
+    git add README.md .sdd/config.md
+    git commit -q -m scaffold
+    mkdir -p tests src
+    echo '#!/usr/bin/env bash' > tests/task-003.sh
+    echo '[ -f src/foo.sh ] || exit 1' >> tests/task-003.sh
+    echo 'echo hi' > src/foo.sh
+    chmod +x tests/task-003.sh
+    git add tests/task-003.sh src/foo.sh
+    out=$(bash "$TEST_FIRST_HOOK" </dev/null 2>&1)
+    ec=$?
+    if [ "$ec" -ne 0 ] && printf '%s' "$out" | grep -q 'test must land in its own commit first'; then
+      echo "PASS_BLOCK"
+    else
+      echo "FAIL_BLOCK ec=$ec out=$out"
+    fi
+    git reset --hard HEAD >/dev/null 2>&1
+    git stash drop --quiet 2>/dev/null || true
+    mkdir -p tests src
+    echo '#!/usr/bin/env bash' > tests/task-003.sh
+    echo '[ -f src/foo.sh ] || exit 1' >> tests/task-003.sh
+    chmod +x tests/task-003.sh
+    git add tests/task-003.sh
+    git commit -q -m "test first"
+    echo 'echo hi' > src/foo.sh
+    echo '# refinement' >> tests/task-003.sh
+    git add src/foo.sh tests/task-003.sh
+    out2=$(bash "$TEST_FIRST_HOOK" </dev/null 2>&1)
+    ec2=$?
+    if [ "$ec2" -eq 0 ]; then
+      echo "PASS_ALLOW"
+    else
+      echo "FAIL_ALLOW ec=$ec2 out=$out2"
+    fi
+  ) > "$d/result.txt" 2>&1
+  block_ok=$(grep -c '^PASS_BLOCK' "$d/result.txt" || true)
+  allow_ok=$(grep -c '^PASS_ALLOW' "$d/result.txt" || true)
+  rm -rf "$d"
+  if [ "$block_ok" -eq 1 ] && [ "$allow_ok" -eq 1 ]; then
+    ok "T152 Approach B blocks same-commit + allows prior-commit"
+  else
+    bad "T152 Approach B branch broke" "block_ok=$block_ok allow_ok=$allow_ok (see hook output above)"
+  fi
+fi
+
+# ============================================================
 # T141 — anti-theatre lint passes on the in-flight spec (closes #111,
 #   PR #003). Theatre tokens (numerical bounds, currency, enforcement
 #   verbs, quality absolutes) without an adjacent verifier annotation
