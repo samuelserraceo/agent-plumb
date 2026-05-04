@@ -115,12 +115,12 @@ TRACKED=(
 )
 
 # Lookup table: framework-rel-path → prior-shipped-hash from user manifest.
+# Use a tempfile (bash 3.2 compatible — no associative arrays) with
+# tab-separated path<TAB>hash; grep at lookup time.
 USER_MANIFEST=".sdd/.cache/manifest.json"
-declare -A PRIOR_HASH=()
-if [ -f "$USER_MANIFEST" ]; then
-  while IFS=$'\t' read -r path sha; do
-    [ -n "$path" ] && PRIOR_HASH["$path"]="$sha"
-  done < <(python3 -c "
+PRIOR_TABLE=$(mktemp -t sdd-migrate-prior.XXXXXX) || PRIOR_TABLE=""
+if [ -n "$PRIOR_TABLE" ] && [ -f "$USER_MANIFEST" ]; then
+  python3 -c "
 import json, sys
 try:
     m = json.load(open('$USER_MANIFEST'))
@@ -133,8 +133,15 @@ for section in ('scripts', 'actions', 'playbooks'):
             h = entry.get('expected_sha256', '')
             if p and h:
                 print(f'{p}\t{h}')
-")
+" > "$PRIOR_TABLE" 2>/dev/null
 fi
+prior_hash_for() {
+  local path="$1"
+  [ -z "$PRIOR_TABLE" ] || [ ! -f "$PRIOR_TABLE" ] && { echo ""; return; }
+  awk -F'\t' -v p="$path" '$1 == p { print $2; exit }' "$PRIOR_TABLE"
+}
+# Cleanup temp table on exit
+trap '[ -n "$PRIOR_TABLE" ] && rm -f "$PRIOR_TABLE"' EXIT
 
 # ─── Categorisation ──────────────────────────────────────────────────
 declare -a ADD_LIST=()
@@ -164,7 +171,7 @@ for prefix in "${TRACKED[@]}"; do
       if [ "$user_hash" = "$upstream_hash" ]; then
         :  # synced — silent
       else
-        prior="${PRIOR_HASH[$project_path]:-}"
+        prior=$(prior_hash_for "$project_path")
         if [ -n "$prior" ] && [ "$user_hash" = "$prior" ]; then
           CLEAN_LIST+=("$project_path")
         else
@@ -232,9 +239,79 @@ if [ "$APPLY" -eq 0 ]; then
 fi
 
 # ─── Apply mode ──────────────────────────────────────────────────────
-# T05+T06+T07 build out this path in subsequent commits. T01 ships the
-# dry-run + skeleton; trying --apply now exits with a not-yet message
-# rather than silently doing nothing.
-echo "[sdd-migrate] --apply not yet implemented in T01 skeleton."
-echo "Subsequent BUILD tasks (T05+) will land the apply path."
+applied=0
+
+# Apply each ADD: copy upstream file into user path (creating parent
+# dirs as needed; preserve executable bit for shell scripts).
+for project_path in ${ADD_LIST[@]+"${ADD_LIST[@]}"}; do
+  src="$UPSTREAM/templates/$project_path"
+  dst="$project_path"
+  mkdir -p "$(dirname "$dst")"
+  cp -p "$src" "$dst"
+  echo "[sdd-migrate] + ADDED   $project_path"
+  applied=$((applied + 1))
+done
+
+# Apply each UPDATE-CLEAN: overwrite user file with upstream content.
+for project_path in ${CLEAN_LIST[@]+"${CLEAN_LIST[@]}"}; do
+  src="$UPSTREAM/templates/$project_path"
+  dst="$project_path"
+  cp -p "$src" "$dst"
+  echo "[sdd-migrate] ~ UPDATED $project_path"
+  applied=$((applied + 1))
+done
+
+# UPDATE-CONFLICT prompting — keep / overwrite / show-diff per file.
+# Default response (Enter) is `keep` (safe failure mode: never lose
+# user edits without an explicit 'overwrite' choice).
+for project_path in ${CONFLICT_LIST[@]+"${CONFLICT_LIST[@]}"}; do
+  src="$UPSTREAM/templates/$project_path"
+  dst="$project_path"
+  echo ""
+  echo "[sdd-migrate] CONFLICT: $project_path"
+  echo "  user has local edits; upstream also changed."
+  while true; do
+    printf "  keep / overwrite / show-diff [keep]: "
+    if ! read -r answer; then
+      # stdin closed — treat as keep (safe default)
+      answer=""
+    fi
+    case "${answer:-keep}" in
+      keep|"")
+        echo "[sdd-migrate]   ! kept user version"
+        break ;;
+      overwrite|over)
+        cp -p "$src" "$dst"
+        echo "[sdd-migrate]   ~ overwrote with upstream"
+        applied=$((applied + 1))
+        break ;;
+      show-diff|diff|d)
+        diff "$dst" "$src" || true
+        ;;
+      *)
+        echo "  (unknown — type keep / overwrite / show-diff)"
+        ;;
+    esac
+  done
+done
+
+# Re-pin manifest: copy upstream's manifest into user's .sdd/.cache/.
+# This is the simplest correct behavior — the user's manifest now
+# matches whatever the framework shipped, so subsequent commits stop
+# tripping drift errors. (Manifest only tracks scripts/actions/playbooks
+# at present; hooks aren't in it. So this re-pin doesn't claim more
+# than the framework currently does.)
+upstream_manifest="$UPSTREAM/templates/.sdd/.cache/manifest.json"
+if [ -f "$upstream_manifest" ]; then
+  mkdir -p .sdd/.cache
+  cp -p "$upstream_manifest" .sdd/.cache/manifest.json
+  echo "[sdd-migrate] manifest re-pinned to upstream"
+fi
+
+echo ""
+if [ "$applied" -eq 0 ] && [ ${#CONFLICT_LIST[@]} -eq 0 ]; then
+  echo "[sdd-migrate] no changes applied (project was already in sync)."
+else
+  echo "[sdd-migrate] $applied file(s) applied."
+fi
 exit 0
