@@ -42,6 +42,21 @@ case "$cmd" in
   *) exit 0 ;;
 esac
 
+# T04: only gate BUILD-task commits.
+# When the cmd carries a -m payload (Claude Code path), look for the
+# [SDD:NNN][T<n>] shape that the framework's BUILD-task convention
+# uses. Anything else (spec edits, phase advances, framework chores,
+# mark-shipped) should pass through silently — only the test-first
+# discipline of BUILD-tasks needs the gate.
+# When the cmd is just "git commit" (no -m), assume the caller is a
+# native pre-commit invocation that can't see the message; gate by
+# default in that case.
+if printf '%s' "$cmd" | grep -qE 'git commit.*-m'; then
+  if ! printf '%s' "$cmd" | grep -qE '\[SDD:[^]]+\]\[T[0-9]+'; then
+    exit 0
+  fi
+fi
+
 git rev-parse --git-dir >/dev/null 2>&1 || exit 0
 
 # Find staged files

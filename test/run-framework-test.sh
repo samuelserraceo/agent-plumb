@@ -7391,6 +7391,75 @@ CFG
 fi
 
 # ============================================================
+# T153 — pre-commit-test-first.sh: non-BUILD-task commits pass through
+#   silently. Closes feature 006 AC4.
+#   RED: hook gates spec edits / chores / mark-shipped commits, treating
+#        every paired test+code commit as a BUILD-task — false positives
+#        on routine framework work.
+# ============================================================
+note "T153: pre-commit-test-first only gates BUILD-task commits (AC4)"
+TEST_FIRST_HOOK="$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-test-first.sh"
+if [ ! -x "$TEST_FIRST_HOOK" ]; then
+  bad "T153 hook missing or not executable" "$TEST_FIRST_HOOK"
+else
+  d=$(mktemp -d)
+  (
+    cd "$d" || exit 1
+    git init -q
+    git config user.email t@t.com
+    git config user.name T
+    git config commit.gpgsign false
+    mkdir -p .sdd src
+    cat > .sdd/config.md <<'CFG'
+---
+type: config
+parameters:
+  test_runner: "bash tests/task-004.sh"
+---
+CFG
+    cat > src/foo.sh <<'SRC'
+#!/usr/bin/env bash
+echo "hello"
+SRC
+    chmod +x src/foo.sh
+    git add .sdd/config.md src/foo.sh
+    git commit -q -m scaffold
+    mkdir -p tests
+    cat > tests/task-004.sh <<'TST'
+#!/usr/bin/env bash
+out=$(bash src/foo.sh 2>/dev/null)
+[ "$out" = "hello" ] || exit 1
+TST
+    chmod +x tests/task-004.sh
+    echo '# cosmetic' >> src/foo.sh
+    git add tests/task-004.sh src/foo.sh
+
+    # BUILD-task shape → expect block (theatre)
+    out_a=$(printf '%s' '{"tool_input":{"command":"git commit -m \"[SDD:006][T04] task\""}}' | bash "$TEST_FIRST_HOOK" 2>&1)
+    ec_a=$?
+
+    git stash list 2>/dev/null | head -1 | grep -q . && git stash pop --quiet 2>/dev/null || true
+
+    # spec-edit shape → expect silent pass
+    out_b=$(printf '%s' '{"tool_input":{"command":"git commit -m \"[SDD:006] spec: §X edit\""}}' | bash "$TEST_FIRST_HOOK" 2>&1)
+    ec_b=$?
+
+    if [ "$ec_a" -ne 0 ] && [ "$ec_b" -eq 0 ] && [ -z "$out_b" ]; then
+      echo "PASS"
+    else
+      echo "FAIL ec_a=$ec_a ec_b=$ec_b out_b='$out_b'"
+    fi
+  ) > "$d/result.txt" 2>&1
+  result=$(grep -E '^PASS|^FAIL' "$d/result.txt" | tail -1)
+  rm -rf "$d"
+  if [ "$result" = "PASS" ]; then
+    ok "T153 BUILD-task gated; spec edit silently passes"
+  else
+    bad "T153 BUILD-task filter broke" "$result"
+  fi
+fi
+
+# ============================================================
 # T141 — anti-theatre lint passes on the in-flight spec (closes #111,
 #   PR #003). Theatre tokens (numerical bounds, currency, enforcement
 #   verbs, quality absolutes) without an adjacent verifier annotation
