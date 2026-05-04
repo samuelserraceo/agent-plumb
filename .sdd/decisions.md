@@ -274,3 +274,6 @@ Sam approved §6: no new entities. Hook reads parameters.test_runner from existi
 
 ## 2026-05-04T07:40:00Z  [[features/006-test-first-mechanical-check-verify-red-before-green]]  feature/out-of-scope
 Sam approved §9: 5 explicit deferrals — per-task test command override; multi-commit theatre detection; IDE integration; visual report; auto-fixing the test. This round catches same-commit and commit-order patterns only.
+
+## 2026-05-04T07:50:00Z  [[features/006-test-first-mechanical-check-verify-red-before-green]]  feature/acceptance-criteria
+Sam approved §11: 6 ACs — real test-first allowed; fake test-first refused; fallback when no test runner; no-op for non-BUILD commits; stash always restored; plain-English error message. AC1+AC2 cover the core gate; AC3 covers the fallback shape; AC4-AC6 cover edge / quality.

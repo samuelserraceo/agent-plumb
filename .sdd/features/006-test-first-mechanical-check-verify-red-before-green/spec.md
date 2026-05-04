@@ -2,7 +2,7 @@
 
 [PHASE: SPEC]
 
-**Active blocker:** §11 (next action: acceptance-criteria)
+**Active blocker:** §12 (next action: signoff-steps)
 
 ## PHASE: SPEC
 
@@ -81,7 +81,14 @@
 
 ### action: acceptance-criteria
 
-- [ ] approval: draft the acceptance criteria, run a constraint-coverage check vs §4, iterate, get approval
+- [x] approval: 6 ACs covering both the happy path and the theatre-detection path. Approved by Sam on 2026-05-04.
+
+  - [ ] AC1: real test-first commit (test fails without code, passes with code) → hook stashes / runs / restores cleanly → commit lands. → tests/task-001.sh
+  - [ ] AC2: fake test-first commit (test passes without code) → hook blocks the commit; stderr contains the test path and a fix-it message. → tests/task-002.sh
+  - [ ] AC3: when `config.md` `parameters.test_runner` is empty → hook falls back to Approach B (commit-order check); same-commit pairs refused with "test must land in its own commit first." → tests/task-003.sh
+  - [ ] AC4: non-BUILD-task commits (spec.md edits, framework chores, mark-shipped) → hook exits 0 silently. → tests/task-004.sh
+  - [ ] AC5: stash always restored even if the test run errors mid-flight or is interrupted (use a `trap` for cleanup). → tests/task-005.sh
+  - [ ] AC6: refusal message includes (a) which test is theatre, (b) what test-first means, (c) how to fix. → tests/task-006.sh (mechanical) + {best-effort: Sam at SHIP — confirms readability}
 
 ### action: signoff-steps
 
