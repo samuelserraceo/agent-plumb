@@ -2,7 +2,7 @@
 
 [PHASE: SPEC]
 
-**Active blocker:** §14 (next action: plan-decompose)
+**Active blocker:** §15 (next action: edge-case-sweep)
 
 ## PHASE: SPEC
 
@@ -103,7 +103,14 @@
 
 ### action: plan-decompose
 
-- [ ] tasks: convert acceptance criteria into ordered build tasks (one test file per task)
+- [x] tasks: 6 tasks (T01-T06) — 1:1 with AC1-AC6. T01 introduces the hook (manifest repin in same commit); T02-T06 extend hook logic. Each task adds: hook source + mirror + per-feature test (tests/task-NNN.sh) + framework regression entry in test/run-framework-test.sh.
+
+- [ ] T01: Hook skeleton + Approach A happy path. Creates templates/.claude/hooks/pre-commit-test-first.sh (+ mirror), wires it into settings.json, adds parameters.test_runner field to config.md. Hook stashes code, runs test, restores. Real test-first commit lands. → tests/task-001.sh
+- [ ] T02: Theatre detection. Fake test-first (test passes without code) → hook stops the commit; stderr names the test path. → tests/task-002.sh
+- [ ] T03: Approach B fallback when parameters.test_runner is empty. Same-commit test+code pair → message says "test must land in its own commit first." → tests/task-003.sh
+- [ ] T04: Non-BUILD-task pass-through. spec.md edits / framework chores / mark-shipped → hook exits 0 silently. Only [SDD:NNN][T<n>]-shaped commits get gated. → tests/task-004.sh
+- [ ] T05: trap-based stash restore. Test runner crashes mid-run → stash still gets restored before hook exits. → tests/task-005.sh
+- [ ] T06: Refusal message has 3 elements — which test is theatre, what test-first means, how to fix. → tests/task-006.sh
 
 ### action: edge-case-sweep
 

@@ -2,6 +2,6 @@
   "phase": "SPEC",
   "checks": [
     {"id": "C-spec-acs", "result": "fail"},
-    {"id": "C-spec-tasks", "result": "fail"}
+    {"id": "C-spec-tasks", "result": "pass"}
   ]
 }
