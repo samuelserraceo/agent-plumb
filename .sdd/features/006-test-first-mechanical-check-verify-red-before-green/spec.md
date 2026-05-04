@@ -2,7 +2,7 @@
 
 [PHASE: SPEC]
 
-**Active blocker:** §8 (next action: dependencies)
+**Active blocker:** §9 (next action: out-of-scope)
 
 ## PHASE: SPEC
 
@@ -60,7 +60,7 @@
 
 ### action: dependencies
 
-- [ ] deps: draft external services + pricing math scaled to success-volume targets
+- [x] deps: no new external services. Uses git's existing stash + restore primitives (`git stash push --keep-index` and `git stash pop`), plus the project's already-configured test runner (read from config.md). Cost = $0/mo. {best-effort: Sam at SHIP — confirms no surprise installs}
 
 ### action: out-of-scope
 
