@@ -783,6 +783,7 @@ for owner, repo, num in matches:
   # GitHub Actions exposes the PR number via $GITHUB_REF in the shape
   # `refs/pull/<num>/merge` on pull_request events.
   local current_pr=""
+  local current_repo="${GITHUB_REPOSITORY:-}"  # CR cycle 1 minor: scope to repo+num
   if [ -n "${GITHUB_REF:-}" ]; then
     case "$GITHUB_REF" in
       refs/pull/*/merge|refs/pull/*/head)
@@ -793,7 +794,13 @@ for owner, repo, num in matches:
   local failed=""
   while IFS='|' read -r repo num; do
     [ -z "$num" ] && continue
-    if [ -n "$current_pr" ] && [ "$num" = "$current_pr" ]; then
+    # Exempt only the EXACT PR being CI'd: same repo + same number.
+    # PR numbers can collide across repos, so num-alone would
+    # false-positive on any other repo's PR with the same number.
+    # When current_repo is unset (e.g. local invocation outside Actions)
+    # we still match num — it's the cleanest signal we have.
+    if [ -n "$current_pr" ] && [ "$num" = "$current_pr" ] \
+       && { [ -z "$current_repo" ] || [ "$repo" = "$current_repo" ]; }; then
       continue  # exempt: this PR is the one being CI'd; merge is the next step
     fi
     local state

@@ -7850,14 +7850,21 @@ STUB
   # shellcheck source=/dev/null
   source "$FRAMEWORK_ROOT/test/run-claims-audit.sh"
 
-  # With GITHUB_REF set on PR CI, the current PR (#99999) should be
-  # exempted. The only row in INDEX.md is for #99999 — so an
-  # exemption-aware claim returns 0; a non-aware claim returns 1.
-  export GITHUB_REF="refs/pull/99999/merge"
+  # CR cycle 1 minor: negative control — non-matching PR ref must NOT
+  # be exempted (proves the exemption is PR-number-specific, not
+  # always-pass when any GITHUB_REF is set).
+  export GITHUB_REF="refs/pull/88888/merge"
   if claim_shipped_pr_links_merged 2>/dev/null; then
-    echo "PASS"
+    echo "FAIL — non-matching GITHUB_REF was incorrectly exempted (over-broad)"
   else
-    echo "FAIL — claim returned non-zero with GITHUB_REF set; exemption logic missing"
+    # Good — claim still failed (#99999 in INDEX is OPEN per stub).
+    # Now positive control: matching PR ref IS exempted.
+    export GITHUB_REF="refs/pull/99999/merge"
+    if claim_shipped_pr_links_merged 2>/dev/null; then
+      echo "PASS"
+    else
+      echo "FAIL — claim returned non-zero with matching GITHUB_REF; exemption logic missing"
+    fi
   fi
 ) > "$d/result.txt" 2>&1
 result=$(grep -E '^PASS|^FAIL' "$d/result.txt" | tail -1)

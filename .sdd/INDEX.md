@@ -8,7 +8,8 @@
 
 
 ## In flight
-- bugs/003-claims-audit-fails-on-shipped-pr-self-reference-chicken-egg — claims-audit fails on shipped-PR self-reference (chicken-egg) (PHASE: SPEC)
+
+- bugs/003-claims-audit-fails-on-shipped-pr-self-reference-chicken-egg — claims-audit fails on shipped-PR self-reference (chicken-egg) (PHASE: SHIP)
 
 
 
