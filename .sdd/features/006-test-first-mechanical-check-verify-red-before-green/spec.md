@@ -2,7 +2,7 @@
 
 [PHASE: SPEC]
 
-**Active blocker:** §3 (next action: user-stories)
+**Active blocker:** §4 (next action: ux-brief)
 
 ## PHASE: SPEC
 
@@ -18,7 +18,7 @@
 
 ### action: user-stories
 
-- [ ] stories: Which personas matter? For each: 'As <persona>, I want <action>, so that <outcome>.' 1-5 stories total.
+- [x] stories: 3 personas — Sam (framework user) wants commits with theatre tests refused; future SDD contributors get the same catch even if they don't know test-first discipline; PR reviewers want T01 GREEN to mean test was RED first, not written-to-match-code.
 
 ### action: ux-brief
 
