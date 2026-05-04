@@ -2,7 +2,7 @@
 
 [PHASE: SHIP]
 
-**Active blocker:** §S1 (next action: verify-test-run)
+**Active blocker:** §S5 (next action: learn)
 
 ## PHASE: SPEC
 
@@ -146,19 +146,24 @@
 
 ### action: verify-test-run
 
-- [ ] run-tests: invoke the project's test_runner; assert exit 0 with all assertions reporting PASS.
+- [x] run-tests: bash test/run-framework-test.sh → 215/215 passing (added T150-T158, +9 over the pre-feature 206-test baseline). Per-feature tests/task-001..009.sh all PASS.
 
 ### action: verify-prod-only-acs
 
-- [ ] count-prod-only: count [PROD-ONLY] ACs and either route to INDEX.md "Pending production verification" or note none.
+- [x] count-prod-only: 0 [PROD-ONLY] ACs — every AC verifies locally via per-feature test + framework regression (T150-T158).
 
 ### action: adversarial-review
 
-- [ ] sweep: agent self-reviews the implementation for security / edge-case gaps before pushing PR.
+- [x] sweep: 4 areas reviewed —
+  1. **Hook ordering**: pre-commit-test-first.sh fires LAST in the PreToolUse chain (after rules, stage-verified, no-assumed, no-theatre). Earlier hooks run their checks against the PRE-stash content; this hook stashes only after pair detection passes.
+  2. **Stash safety**: trap fires on EXIT/INT/TERM/HUP. Pop conflicts surface stash ref + recovery hint instead of silent loss (T09/T158).
+  3. **Bypass paths**: hook only gates `[SDD:NNN][T<n>]` commits (T04). Non-SDD or non-BUILD commits pass through silently. `--no-verify` still bypasses entirely — the framework's general policy in CLAUDE.md "Forbidden" applies.
+  4. **Multi-pair atomic-step rule**: T07 catches AI-batched commits (2+ tests). Runner-crash detection (T08) closes the silent-pass-through-on-127 backdoor.
+- [x] gaps-found: none beyond what's already specced (EC3 initial-commit deferred to a later iteration).
 
 ### action: playwright-explore
 
-- [ ] explore: skip — non-UI feature (backend hook only).
+- ⏭ explore: skipped — non-UI feature (backend hook only). [SKIPPED]
 
 ### action: learn
 
