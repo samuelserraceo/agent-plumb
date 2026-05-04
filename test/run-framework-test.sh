@@ -7959,12 +7959,49 @@ else
 
     # ADD drift
     rm -f .claude/hooks/pre-commit-test-first.sh
+
+    # UPDATE-CLEAN drift (CR cycle 1 L7946 fix): make local file differ
+    # from upstream, but pin manifest expected_sha256 to local content
+    # so it's treated as stock-prior content the framework just bumped.
+    cat > .sdd/scripts/resolve-active.sh <<'STALE'
+#!/usr/bin/env bash
+echo "stale stock-prior content"
+STALE
+    stale_hash=$(python3 - <<'PY'
+import hashlib
+p = ".sdd/scripts/resolve-active.sh"
+with open(p, "rb") as f:
+    data = f.read()
+text = data.decode("utf-8", errors="replace")
+if text.startswith("﻿"): text = text[1:]
+text = text.replace("\r\n", "\n").replace("\r", "\n")
+lines = [ln.rstrip() for ln in text.split("\n")]
+while lines and lines[0] == "": lines.pop(0)
+while lines and lines[-1] == "": lines.pop()
+print(hashlib.sha256("\n".join(lines).encode("utf-8")).hexdigest())
+PY
+)
+    python3 - "$stale_hash" <<'PY'
+import json, sys
+hv = sys.argv[1]
+p = ".sdd/.cache/manifest.json"
+with open(p) as f: m = json.load(f)
+for section in ("scripts","actions","playbooks"):
+    sect = m.get(section) or {}
+    for k, v in sect.items():
+        if isinstance(v, dict) and v.get("path") == ".sdd/scripts/resolve-active.sh":
+            v["expected_sha256"] = hv
+with open(p, "w") as f:
+    json.dump(m, f, indent=2)
+PY
+
     # UPDATE-CONFLICT drift (user-edited file, manifest unchanged)
     cat > .sdd/scripts/load-playbook.sh <<'CUSTOM'
 #!/usr/bin/env bash
 # user customisation — should be kept on default Enter
 echo "user override"
 CUSTOM
+
     # User-data sentinels (none must be touched)
     SENTINEL="USER-DATA-T161"
     echo "$SENTINEL" > .sdd/INDEX.md
@@ -7986,10 +8023,51 @@ CUSTOM
     grep -q "$SENTINEL" .sdd/decisions.md || fails="$fails decisions.md-touched"
     grep -q "$SENTINEL" .sdd/patterns.md || fails="$fails patterns.md-touched"
     grep -q "$SENTINEL" .sdd/features/001-fake/spec.md || fails="$fails feature-spec-touched"
+
+    # CR cycle 1 L7946 verify UPDATE-CLEAN actually overwrote the stale file.
+    user_resolve_hash=$(python3 - <<'PY'
+import hashlib
+p = ".sdd/scripts/resolve-active.sh"
+with open(p, "rb") as f: data = f.read()
+text = data.decode("utf-8", errors="replace")
+if text.startswith("﻿"): text = text[1:]
+text = text.replace("\r\n", "\n").replace("\r", "\n")
+lines = [ln.rstrip() for ln in text.split("\n")]
+while lines and lines[0] == "": lines.pop(0)
+while lines and lines[-1] == "": lines.pop()
+print(hashlib.sha256("\n".join(lines).encode("utf-8")).hexdigest())
+PY
+)
+    upstream_resolve_hash=$(python3 - <<PY
+import hashlib
+p = "$FRAMEWORK_ROOT/templates/.sdd/scripts/resolve-active.sh"
+with open(p, "rb") as f: data = f.read()
+text = data.decode("utf-8", errors="replace")
+if text.startswith("﻿"): text = text[1:]
+text = text.replace("\r\n", "\n").replace("\r", "\n")
+lines = [ln.rstrip() for ln in text.split("\n")]
+while lines and lines[0] == "": lines.pop(0)
+while lines and lines[-1] == "": lines.pop()
+print(hashlib.sha256("\n".join(lines).encode("utf-8")).hexdigest())
+PY
+)
+    [ "$user_resolve_hash" = "$upstream_resolve_hash" ] \
+      || fails="$fails UPDATE-CLEAN-not-applied"
+
+    # CR cycle 1 L7993 post-apply idempotence — fresh dry-run = clean.
+    out2=$(bash "$SDD_MIGRATE" --upstream="$FRAMEWORK_ROOT" 2>&1)
+    ec2=$?
+    [ "$ec2" -eq 0 ] || fails="$fails post-dryrun-ec=$ec2"
+    # Note: the kept conflict (load-playbook.sh) WILL still appear as
+    # CONFLICT in the post-apply dry-run (it's expected — user chose
+    # keep). Idempotence here means ADD + UPDATE-CLEAN are resolved.
+    printf '%s' "$out2" | grep -qE '^\s*\+ ' && fails="$fails post-dryrun-still-has-ADD"
+    printf '%s' "$out2" | grep -qE '^\s*~ ' && fails="$fails post-dryrun-still-has-CLEAN"
+
     if [ -z "$fails" ]; then
       echo "PASS"
     else
-      echo "FAIL$fails out=$out"
+      echo "FAIL$fails out=$out out2=$out2"
     fi
   ) > "$d/result.txt" 2>&1
   result=$(grep -E '^PASS|^FAIL' "$d/result.txt" | tail -1)

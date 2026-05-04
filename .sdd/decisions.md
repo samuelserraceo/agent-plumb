@@ -304,3 +304,6 @@ Sam approved §9: 5 explicit deferrals — 3-way merge (rejected, picked overwri
 
 ## 2026-05-04T20:30:00Z [[007-sdd-migrate-refresh-project-s-sdd-tree-from-upstream-framework]] feature/acceptance-criteria
 Sam approved §11: 7 ACs — AC1 dry-run on synced project, AC2 dry-run reports ADD, AC3 dry-run reports UPDATE-CLEAN, AC4 dry-run reports UPDATE-CONFLICT, AC5 --apply works + manifest re-pinned, AC6 --apply prompts on conflicts (default keep), AC7 user-data files preserved bit-for-bit.
+
+## 2026-05-04T21:30:00Z [[007-sdd-migrate-refresh-project-s-sdd-tree-from-upstream-framework]] feature/cr-cycle-1-clarification
+CR cycle 1 clarification on the proposed-approach approval: the original approval text mentioned "managed sections in CLAUDE.md and config.md only have content between SDD-MANAGED-START/END markers replaced." That logic was deferred — the v1 script treats CLAUDE.md and config.md the same as any other tracked file (UPDATE-CONFLICT prompt on user edit). Managed-section auto-update is added to §9 deferrals as a follow-up. Behaviour is unchanged and intentionally so; only the documentation over-promised.

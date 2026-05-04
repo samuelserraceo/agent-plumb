@@ -229,8 +229,11 @@ echo ""
 total_changes=$(( ${#ADD_LIST[@]} + ${#CLEAN_LIST[@]} + ${#CONFLICT_LIST[@]} ))
 
 if [ "$APPLY" -eq 0 ]; then
-  if [ "$total_changes" -eq 0 ]; then
+  if [ "$total_changes" -eq 0 ] && [ ${#REMOVED_LIST[@]} -eq 0 ]; then
     echo "Project is in sync with upstream. No changes needed."
+  elif [ "$total_changes" -eq 0 ] && [ ${#REMOVED_LIST[@]} -gt 0 ]; then
+    echo "Project has ${#REMOVED_LIST[@]} REMOVED file(s) (upstream removed, user has)."
+    echo "REMOVED is left untouched by --apply. Delete manually if you want."
   else
     echo "To apply ADD + UPDATE-CLEAN automatically and prompt on UPDATE-CONFLICT:"
     echo "  bash .sdd/scripts/sdd-migrate.sh --apply --upstream=$UPSTREAM"
@@ -239,27 +242,50 @@ if [ "$APPLY" -eq 0 ]; then
 fi
 
 # ─── Apply mode ──────────────────────────────────────────────────────
+# CR cycle 1 L253 fix: every filesystem op is checked. If any cp / mkdir
+# fails, abort BEFORE re-pinning the manifest (otherwise the manifest
+# would lie about what's on disk).
 applied=0
+apply_error=""
 
 # Apply each ADD: copy upstream file into user path (creating parent
 # dirs as needed; preserve executable bit for shell scripts).
 for project_path in ${ADD_LIST[@]+"${ADD_LIST[@]}"}; do
   src="$UPSTREAM/templates/$project_path"
   dst="$project_path"
-  mkdir -p "$(dirname "$dst")"
-  cp -p "$src" "$dst"
+  if [ ! -f "$src" ]; then
+    apply_error="upstream source missing: $src"
+    break
+  fi
+  if ! mkdir -p "$(dirname "$dst")" 2>/dev/null; then
+    apply_error="mkdir failed for $(dirname "$dst")"
+    break
+  fi
+  if ! cp -p "$src" "$dst" 2>/dev/null; then
+    apply_error="cp failed: $src → $dst"
+    break
+  fi
   echo "[sdd-migrate] + ADDED   $project_path"
   applied=$((applied + 1))
 done
 
 # Apply each UPDATE-CLEAN: overwrite user file with upstream content.
-for project_path in ${CLEAN_LIST[@]+"${CLEAN_LIST[@]}"}; do
-  src="$UPSTREAM/templates/$project_path"
-  dst="$project_path"
-  cp -p "$src" "$dst"
-  echo "[sdd-migrate] ~ UPDATED $project_path"
-  applied=$((applied + 1))
-done
+if [ -z "$apply_error" ]; then
+  for project_path in ${CLEAN_LIST[@]+"${CLEAN_LIST[@]}"}; do
+    src="$UPSTREAM/templates/$project_path"
+    dst="$project_path"
+    if [ ! -f "$src" ]; then
+      apply_error="upstream source missing: $src"
+      break
+    fi
+    if ! cp -p "$src" "$dst" 2>/dev/null; then
+      apply_error="cp failed: $src → $dst"
+      break
+    fi
+    echo "[sdd-migrate] ~ UPDATED $project_path"
+    applied=$((applied + 1))
+  done
+fi
 
 # UPDATE-CONFLICT prompting — keep / overwrite / show-diff per file.
 # Default response (Enter) is `keep` (safe failure mode: never lose
@@ -295,16 +321,33 @@ for project_path in ${CONFLICT_LIST[@]+"${CONFLICT_LIST[@]}"}; do
   done
 done
 
+# CR cycle 1 L253 fix: abort on any apply error before manifest re-pin.
+if [ -n "$apply_error" ]; then
+  echo "" >&2
+  echo "[sdd-migrate] APPLY ABORTED: $apply_error" >&2
+  echo "[sdd-migrate] $applied file(s) applied before failure." >&2
+  echo "[sdd-migrate] manifest NOT re-pinned (would lie about disk state)." >&2
+  echo "[sdd-migrate] re-run after fixing the underlying issue (permission, disk, missing source)." >&2
+  exit 2
+fi
+
 # Re-pin manifest: copy upstream's manifest into user's .sdd/.cache/.
-# This is the simplest correct behavior — the user's manifest now
-# matches whatever the framework shipped, so subsequent commits stop
-# tripping drift errors. (Manifest only tracks scripts/actions/playbooks
-# at present; hooks aren't in it. So this re-pin doesn't claim more
-# than the framework currently does.)
+# Manifest only tracks scripts/actions/playbooks today; hooks/commands/
+# skeletons are NOT in the manifest, so they always show as
+# UPDATE-CONFLICT for any divergence (even stock-prior content). This
+# is a known limitation — see spec.md §9 deferral and the L136 CR
+# finding. Future iteration: extend manifest schema to cover all
+# tracked dirs.
 upstream_manifest="$UPSTREAM/templates/.sdd/.cache/manifest.json"
 if [ -f "$upstream_manifest" ]; then
-  mkdir -p .sdd/.cache
-  cp -p "$upstream_manifest" .sdd/.cache/manifest.json
+  mkdir -p .sdd/.cache 2>/dev/null || {
+    echo "[sdd-migrate] mkdir .sdd/.cache failed; manifest NOT re-pinned" >&2
+    exit 2
+  }
+  if ! cp -p "$upstream_manifest" .sdd/.cache/manifest.json 2>/dev/null; then
+    echo "[sdd-migrate] cp manifest failed; manifest NOT re-pinned" >&2
+    exit 2
+  fi
   echo "[sdd-migrate] manifest re-pinned to upstream"
 fi
 
