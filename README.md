@@ -294,7 +294,7 @@ See [`templates/.sdd/playbooks/feature.md`](templates/.sdd/playbooks/feature.md)
 
 Actions live as separate prose files in [`templates/.sdd/actions/`](templates/.sdd/actions/) — the framework loads them on demand. Forking the framework means forking individual actions, not the whole playbook.
 
-As of v0.13.2, two playbooks ship: `feature` (single-feature work) and `project` (multi-feature initiatives like "build a CRM" or "launch a waitlist + admin dashboard + analytics"). Future releases may add a dedicated `bug` playbook (skipping plan-decompose) and `idea` playbook (single-file capture); the multi-playbook engine itself is shipped, so adding new playbooks is just dropping a `*.md` into `templates/.sdd/playbooks/`.
+As of v1.4.0, four doctrine playbooks ship: `feature` (single-feature work), `project` (multi-feature initiatives like "build a CRM" or "launch a waitlist + admin dashboard + analytics"), `bug` (5-section workflow: symptom → root cause → fix → regression test → lesson), and `refactor` (4-section workflow with `minimal-diff-verify` halt on positive line delta). `idea` is captured via `/idea` as a single file in `.sdd/ideas/` rather than a full playbook. Adding new playbooks is just dropping a `*.md` into `templates/.sdd/playbooks/`.
 
 ---
 
@@ -352,7 +352,7 @@ If you want to customize the workflow rules themselves, you can — but bump `CL
 - **The playbook is 80% of the product.** If a question is weak, the system is weak. Fork and iterate — it's just markdown.
 - **"Non-technical" has limits.** The agent proposes technical options; you decide what feels right. If you don't know what you *want the feature to do*, no workflow saves you.
 - **Hooks have escape hatches.** Each one tells you in plain English how to proceed when blocked legitimately. Read the message — don't try to bypass.
-- **Two playbooks shipped (`feature`, `project`).** The multi-playbook engine carries the rest; adding `bug`, `idea`, `question`, etc. is just dropping a new file in `templates/.sdd/playbooks/` (no code changes).
+- **Four playbooks shipped (`feature`, `project`, `bug`, `refactor`).** The multi-playbook engine carries the rest; adding `idea`, `question`, etc. is just dropping a new file in `templates/.sdd/playbooks/` (no code changes).
 - **Action prose still carries some JS-stack assumptions** (mentions of `tests/task-NNN.mjs`, Tailwind, `gh pr create`). The Playwright extension (`extensions/playwright/`) shows the Lego pattern for runner-specific scaffolding; non-JS adopters can fork the affected actions or write a sibling extension following the same shape.
 - **Hook error messages keep improving cycle by cycle.** v0.13.x rewrote the moat's "manifest repin refused" output for plain-English readability and added an in-band repair path; older hooks still vary in tone.
 - **Multi-feature parallelism: branch-derived active feature.** `INDEX.md`'s `## In flight` block holds multiple work items (one per branch is the typical pattern), and the active feature is now inferred from the current git branch — switching branches switches the active feature with no manual `**Active:**` edit. The `**Active:**` line is the fallback when you're not on an SDD branch (e.g., on `main`). Pipelogic-style 3-5-features-at-once is supported as a first-class flow.

@@ -224,6 +224,7 @@ Once the feature is identified, hand off to the right slash command:
 │   ├── data-model.md                 ← shared entities/fields across features (single source of truth)
 │   ├── stack.md                      ← tech stack (services, providers, version pins, architecture facts) — agent reads on session start
 │   ├── patterns.md                   ← cross-feature lessons (one block per feature; auto-appended by `learn` action)
+│   ├── principles.md                 ← project-wide invariants (e.g. "all dates UTC"); injected on every turn by user-prompt-submit
 │   ├── playbooks/<slug>.md           ← workflow templates (`feature.md`, `project.md`, `bug.md`, `refactor.md` all ship in v1.0)
 │   ├── actions/<slug>.md             ← action files (one per step; per-playbook + cross-cutting actions)
 │   ├── extensions/<slug>.md          ← optional add-ons (Playwright explorer ships v1.0; opt-in via enable.sh)
@@ -250,7 +251,7 @@ Once the feature is identified, hand off to the right slash command:
 
 1. **Per-work-item artifact** (anything that exists because of one specific feature/bug) → goes in `.sdd/<work_item_folder>/<NNN>-<slug>/`. Examples: spec.md, verification.json, wireframe.html, tests, screenshots, architecture diagrams scoped to this feature.
 
-2. **Cross-feature artifact** (anything multiple features benefit from knowing) → goes in one of these top-level files: `.sdd/data-model.md` (entities/fields), `.sdd/patterns.md` (lessons), `.sdd/INDEX.md` (catalog), `.sdd/decisions.md` (timeline), `.sdd/stack.md` (services / providers / version pins / architecture facts). Don't invent a new top-level file.
+2. **Cross-feature artifact** (anything multiple features benefit from knowing) → goes in one of these top-level files: `.sdd/data-model.md` (entities/fields), `.sdd/patterns.md` (lessons), `.sdd/principles.md` (project-wide invariants), `.sdd/INDEX.md` (catalog), `.sdd/decisions.md` (timeline), `.sdd/stack.md` (services / providers / version pins / architecture facts). Don't invent a new top-level file.
 
 3. **Framework-shipped artifact** (a playbook, an action prose, a script, a hook) → goes in its declared folder under `.sdd/` or `.claude/`. Don't put a new playbook at `.sdd/my-playbook.md` — it goes in `.sdd/playbooks/`.
 
