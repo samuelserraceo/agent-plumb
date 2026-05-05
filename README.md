@@ -69,7 +69,7 @@ Each phase has its own actions (small focused steps). You can never skip a phase
 ```bash
 # In Claude Code, add the marketplace (your team's git URL or this repo)
 /plugin marketplace add https://github.com/samuelserraceo/spec-driven-dev-workflow
-/plugin install sdd
+/plugin install sdd@sdd-marketplace
 
 # After install, slash commands and hooks are available immediately.
 # To set up SDD inside a project:
