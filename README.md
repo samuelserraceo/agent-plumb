@@ -64,6 +64,29 @@ Each phase has its own actions (small focused steps). You can never skip a phase
 
 ## Quick start
 
+### Option A — Claude Code plugin (recommended for teams)
+
+```bash
+# In Claude Code, add the marketplace (your team's git URL or this repo)
+/plugin marketplace add https://github.com/samuelserraceo/spec-driven-dev-workflow
+/plugin install sdd
+
+# After install, slash commands and hooks are available immediately.
+# To set up SDD inside a project:
+/sdd-setup
+```
+
+To pull in framework updates later (refresh `.sdd/` from upstream):
+
+```bash
+bash .sdd/scripts/sdd-migrate.sh --upstream=<path-to-sdd-framework-checkout>           # dry-run
+bash .sdd/scripts/sdd-migrate.sh --apply --upstream=<path-to-sdd-framework-checkout>   # apply
+```
+
+The migrate tool keeps your `INDEX.md` / `decisions.md` / `patterns.md` / `data-model.md` / `stack.md` / `principles.md` / `.sdd/features/**` untouched. Read the [feature 007 wireframe](.sdd/features/007-sdd-migrate-refresh-project-s-sdd-tree-from-upstream-framework/wireframe.html) for the full categorisation flow.
+
+### Option B — manual clone + scaffold
+
 ### 1. Clone SDD somewhere stable
 
 ```bash
@@ -271,7 +294,7 @@ See [`templates/.sdd/playbooks/feature.md`](templates/.sdd/playbooks/feature.md)
 
 Actions live as separate prose files in [`templates/.sdd/actions/`](templates/.sdd/actions/) — the framework loads them on demand. Forking the framework means forking individual actions, not the whole playbook.
 
-As of v0.13.2, two playbooks ship: `feature` (single-feature work) and `project` (multi-feature initiatives like "build a CRM" or "launch a waitlist + admin dashboard + analytics"). Future releases may add a dedicated `bug` playbook (skipping plan-decompose) and `idea` playbook (single-file capture); the multi-playbook engine itself is shipped, so adding new playbooks is just dropping a `*.md` into `templates/.sdd/playbooks/`.
+As of v1.4.0, four doctrine playbooks ship: `feature` (single-feature work), `project` (multi-feature initiatives like "build a CRM" or "launch a waitlist + admin dashboard + analytics"), `bug` (5-section workflow: symptom → root cause → fix → regression test → lesson), and `refactor` (4-section workflow with `minimal-diff-verify` halt on positive line delta). `idea` is captured via `/idea` as a single file in `.sdd/ideas/` rather than a full playbook. Adding new playbooks is just dropping a `*.md` into `templates/.sdd/playbooks/`.
 
 ---
 
@@ -329,7 +352,7 @@ If you want to customize the workflow rules themselves, you can — but bump `CL
 - **The playbook is 80% of the product.** If a question is weak, the system is weak. Fork and iterate — it's just markdown.
 - **"Non-technical" has limits.** The agent proposes technical options; you decide what feels right. If you don't know what you *want the feature to do*, no workflow saves you.
 - **Hooks have escape hatches.** Each one tells you in plain English how to proceed when blocked legitimately. Read the message — don't try to bypass.
-- **Two playbooks shipped (`feature`, `project`).** The multi-playbook engine carries the rest; adding `bug`, `idea`, `question`, etc. is just dropping a new file in `templates/.sdd/playbooks/` (no code changes).
+- **Four playbooks shipped (`feature`, `project`, `bug`, `refactor`).** The multi-playbook engine carries the rest; adding `idea`, `question`, etc. is just dropping a new file in `templates/.sdd/playbooks/` (no code changes).
 - **Action prose still carries some JS-stack assumptions** (mentions of `tests/task-NNN.mjs`, Tailwind, `gh pr create`). The Playwright extension (`extensions/playwright/`) shows the Lego pattern for runner-specific scaffolding; non-JS adopters can fork the affected actions or write a sibling extension following the same shape.
 - **Hook error messages keep improving cycle by cycle.** v0.13.x rewrote the moat's "manifest repin refused" output for plain-English readability and added an in-band repair path; older hooks still vary in tone.
 - **Multi-feature parallelism: branch-derived active feature.** `INDEX.md`'s `## In flight` block holds multiple work items (one per branch is the typical pattern), and the active feature is now inferred from the current git branch — switching branches switches the active feature with no manual `**Active:**` edit. The `**Active:**` line is the fallback when you're not on an SDD branch (e.g., on `main`). Pipelogic-style 3-5-features-at-once is supported as a first-class flow.
@@ -342,7 +365,7 @@ If you want to customize the workflow rules themselves, you can — but bump `CL
 
 ## Status
 
-Currently at **v1.0.0** — knowledge-graph foundation + 4 doctrine playbooks (`feature` / `project` / `bug` / `refactor`) + branch-derived active resolution + CI graph-integrity gate + cost-bounded Playwright explorer. Hardened through:
+Currently at **v1.4.0** — knowledge-graph foundation + 4 doctrine playbooks (`feature` / `project` / `bug` / `refactor`) + branch-derived active resolution + CI graph-integrity gate + cost-bounded Playwright explorer + claims-audit harness + mechanical test-first hook + `sdd-migrate.sh` for updatable installs. Hardened through:
 
 - **Phase A (v0.7.5)** — proved the SPEC + BUILD + ship loop on real Next.js + Vercel projects. 26 mutation-verified tests catching catastrophic bug classes.
 - **Phase B-1 (v0.8.0)** — section-locking moat, multi-playbook engine bones, trust-boundary teaching against prompt injection from repo prose, hash-pinned manifest, slim memory layer, append-only audit log. Three rounds of adversarial reviewer council found and closed gaps. 69 tests, all mutation-verified.

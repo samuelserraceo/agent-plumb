@@ -1,3 +1,8 @@
+---
+description: Ask a chat-based AI questions about your project's `.sdd/` corpus (Tier 3). Renders answers with clickable wiki-link citations.
+argument-hint: "<question about your project>"
+---
+
 # /ask — chat-based answers about your project (Tier 3)
 
 Wraps the `synthesise()` MCP query with `format="prose"` for chat-rendered output. Asks a chat AI you've configured (Ollama+Gemma in v1.1; OpenAI/Anthropic via manual config edit) a question about your `.sdd/` corpus and renders the answer with clickable `[[…]]` citations.
