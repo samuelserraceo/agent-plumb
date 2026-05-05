@@ -71,17 +71,25 @@ if [ -n "$missing" ]; then
   exit 1
 fi
 
-# CodeRabbit cycle 3: refuse to overwrite an existing .claude/ — the
-# user may have customised it (their own commands/hooks). If
-# .claude/ exists, surface the conflict explicitly. .sdd/ presence
-# was already gated by the idempotency check above (we only get here
-# if .sdd/ does NOT exist), so it's safe to write.
+# Refuse only if the user has substantive customisations (their own
+# commands, hooks, agents, skills, mcp config). A bare .claude/
+# containing just settings.json is the normal plugin-install state —
+# Claude Code creates that BEFORE this SessionStart hook fires when
+# the user installs SDD as a project-scope plugin. In that case we
+# merge templates/.claude/ INTO the existing .claude/, preserving
+# settings.json (the "enabledPlugins" marker).
+merge_into_existing_claude=0
 if [ -d ".claude" ]; then
-  echo "[SDD init] .claude/ already exists in project — refusing to overwrite." >&2
-  echo "[SDD init] Either move it aside (mv .claude .claude.bak) or merge SDD's" >&2
-  echo "[SDD init] templates/.claude/ contents into yours by hand:" >&2
-  echo "[SDD init]   $TEMPLATE_CLAUDE" >&2
-  exit 1
+  for sub in commands hooks agents skills mcp; do
+    if [ -d ".claude/$sub" ] && [ -n "$(ls -A ".claude/$sub" 2>/dev/null)" ]; then
+      echo "[SDD init] .claude/$sub/ already has user content — refusing to overwrite." >&2
+      echo "[SDD init] Either move .claude aside (mv .claude .claude.bak) or merge SDD's" >&2
+      echo "[SDD init] templates/.claude/ contents into yours by hand:" >&2
+      echo "[SDD init]   $TEMPLATE_CLAUDE" >&2
+      exit 1
+    fi
+  done
+  merge_into_existing_claude=1
 fi
 
 echo "[SDD init] First-time setup of SDD in this project ($PROJECT_DIR)…"
@@ -93,10 +101,50 @@ cp -r "$TEMPLATE_SDD" .sdd || {
   echo "[SDD init] failed to copy .sdd/ into project — check disk space + permissions." >&2
   exit 1
 }
-cp -r "$TEMPLATE_CLAUDE" .claude || {
-  echo "[SDD init] failed to copy .claude/ into project — check disk space + permissions." >&2
-  exit 1
-}
+if [ "$merge_into_existing_claude" -eq 1 ]; then
+  # Plugin install pre-created .claude/ with just settings.json
+  # (containing enabledPlugins). Stash it, copy templates over,
+  # then merge so SDD's hooks land WITHOUT clobbering enabledPlugins.
+  existing_settings_tmp=""
+  if [ -f .claude/settings.json ]; then
+    existing_settings_tmp=$(mktemp -t sdd-init-settings.XXXXXX) || {
+      echo "[SDD init] failed to allocate tempfile for settings merge." >&2
+      exit 1
+    }
+    cp .claude/settings.json "$existing_settings_tmp"
+  fi
+  cp -R "$TEMPLATE_CLAUDE/." .claude/ || {
+    echo "[SDD init] failed to merge .claude/ contents — check disk space + permissions." >&2
+    [ -n "$existing_settings_tmp" ] && rm -f "$existing_settings_tmp"
+    exit 1
+  }
+  if [ -n "$existing_settings_tmp" ]; then
+    if ! python3 - "$existing_settings_tmp" .claude/settings.json <<'PY'
+import json, sys
+prior = json.load(open(sys.argv[1]))
+template = json.load(open(sys.argv[2]))
+# Template wins on overlap (gives SDD its hook registrations); prior's
+# top-level keys (notably enabledPlugins) are layered on top so the
+# plugin-install marker survives.
+merged = {**template, **{k: v for k, v in prior.items() if k != "hooks"}}
+if "hooks" in prior and "hooks" in template:
+    merged["hooks"] = {**template["hooks"], **prior["hooks"]}
+json.dump(merged, open(sys.argv[2], "w"), indent=2)
+PY
+    then
+      echo "[SDD init] settings.json merge failed — restoring plugin marker." >&2
+      cp "$existing_settings_tmp" .claude/settings.json
+      rm -f "$existing_settings_tmp"
+      exit 1
+    fi
+    rm -f "$existing_settings_tmp"
+  fi
+else
+  cp -r "$TEMPLATE_CLAUDE" .claude || {
+    echo "[SDD init] failed to copy .claude/ into project — check disk space + permissions." >&2
+    exit 1
+  }
+fi
 cp "$TEMPLATE_CLAUDE_MD" CLAUDE.md || {
   echo "[SDD init] failed to copy CLAUDE.md — check disk space + permissions." >&2
   exit 1
