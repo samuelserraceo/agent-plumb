@@ -1,3 +1,8 @@
+---
+description: View or change a single SDD framework setting in `.sdd/config.md` without editing YAML by hand.
+argument-hint: "[get|set|reset <key> [value]]"
+---
+
 # /settings — view or change SDD framework settings
 
 **What it does:** prints the resolved settings for this project, or updates a single setting in place. No editor required.

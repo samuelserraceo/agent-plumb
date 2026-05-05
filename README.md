@@ -365,7 +365,7 @@ If you want to customize the workflow rules themselves, you can — but bump `CL
 
 ## Status
 
-Currently at **v1.0.0** — knowledge-graph foundation + 4 doctrine playbooks (`feature` / `project` / `bug` / `refactor`) + branch-derived active resolution + CI graph-integrity gate + cost-bounded Playwright explorer. Hardened through:
+Currently at **v1.4.0** — knowledge-graph foundation + 4 doctrine playbooks (`feature` / `project` / `bug` / `refactor`) + branch-derived active resolution + CI graph-integrity gate + cost-bounded Playwright explorer + claims-audit harness + mechanical test-first hook + `sdd-migrate.sh` for updatable installs. Hardened through:
 
 - **Phase A (v0.7.5)** — proved the SPEC + BUILD + ship loop on real Next.js + Vercel projects. 26 mutation-verified tests catching catastrophic bug classes.
 - **Phase B-1 (v0.8.0)** — section-locking moat, multi-playbook engine bones, trust-boundary teaching against prompt injection from repo prose, hash-pinned manifest, slim memory layer, append-only audit log. Three rounds of adversarial reviewer council found and closed gaps. 69 tests, all mutation-verified.

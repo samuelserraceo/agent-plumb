@@ -297,13 +297,22 @@ EOF
 }
 
 # ============================================================
-# CLAIM: plugin manifest at .claude-plugin/plugin.json with v1.0.0
-# Source: docs/walkthrough.html — footer + .claude-plugin/plugin.json
-# Quote: "Tagged v1.0.0 on commit ec3e711"
+# CLAIM: plugin manifest at .claude-plugin/plugin.json declares
+# a version matching README's "Currently at **vX.Y.Z**" line — i.e.
+# code and prose agree on what version is shipping. Bumping plugin.json
+# without bumping README (or vice versa) trips this claim.
+# Source: README.md — "Currently at **v…**" + .claude-plugin/plugin.json
 # ============================================================
-claim_plugin_manifest_v1_0_0() {
-  [ -f .claude-plugin/plugin.json ] && \
-    grep -q '"version": "1.0.0"' .claude-plugin/plugin.json
+claim_plugin_manifest_version_matches_readme() {
+  [ -f .claude-plugin/plugin.json ] || return 1
+  [ -f README.md ] || return 1
+  local plugin_version
+  plugin_version=$(python3 -c "import json,sys;print(json.load(open('.claude-plugin/plugin.json')).get('version',''))" 2>/dev/null)
+  [ -n "$plugin_version" ] || return 1
+  local readme_version
+  readme_version=$(grep -oE 'Currently at \*\*v[0-9]+\.[0-9]+\.[0-9]+\*\*' README.md | head -1 | sed -E 's/.*v([0-9]+\.[0-9]+\.[0-9]+).*/\1/')
+  [ -n "$readme_version" ] || return 1
+  [ "$plugin_version" = "$readme_version" ]
 }
 
 # ============================================================
@@ -884,7 +893,7 @@ CLAIMS=(
   "manifest_pins_framework_files|Manifest pins ~61 framework files|walkthrough.html Phase B"
   "manifest_hashes_match_disk|Every manifest-pinned hash matches on-disk content|walkthrough.html"
   "stop_lint_refuses_double_active|Stop-lint refuses INDEX.md with double **Active:**|post-stop-lint invariant 1"
-  "plugin_manifest_v1_0_0|Plugin manifest declares v1.0.0|.claude-plugin/plugin.json"
+  "plugin_manifest_version_matches_readme|Plugin manifest version matches README's 'Currently at v…' line|.claude-plugin/plugin.json + README.md"
   "framework_self_hosts_hooks|Framework's root .claude/ has hooks bootstrapped|#136 / #137"
   "playwright_dogfood_files_present|Playwright dogfood files at root|#116 / #139"
   "v1_0_ships_4_playbooks|v1.0 ships 4 playbooks|walkthrough.html"
