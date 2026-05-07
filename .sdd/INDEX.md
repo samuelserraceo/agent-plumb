@@ -1,6 +1,6 @@
 # SDD framework — INDEX
 
-**Active:** features/007-sdd-migrate-refresh-project-s-sdd-tree-from-upstream-framework
+**Active:** features/008-build-the-sdd-on-pi-extension-package
 **Playbook:** feature
 **Active blocker:** §1 (first action: problem)
 
@@ -8,8 +8,8 @@
 
 
 ## In flight
+- features/008-build-the-sdd-on-pi-extension-package — build the SDD-on-pi extension package (PHASE: SPEC)
 
-(none)
 
 
 ## Shipped
