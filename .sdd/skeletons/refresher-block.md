@@ -23,7 +23,7 @@ The "Where we are" line quotes **verbatim** from the work item's §1 prose — *
 The first action of any work-item *fills* §1, so quoting verbatim from §1 is impossible the first time around. This applies to: `problem` (feature), `project-problem` (project), `bug-repro` (bug), `refactor-scope` (refactor). For these specific actions, follow this fallback shape:
 
 ```text
-**Where we are:** <work-item name> — *§1 hasn't been written yet
+**Where we are:** <work-item identifier> — *§1 hasn't been written yet
 because we're at the very first action; everything below is
 groundwork for filling it. The seed line we have so far is:
 "<the user's original /start title or brief seed line, copied
@@ -42,7 +42,7 @@ If §1 exists but is mid-edit (e.g., the user filled `who` but not `what-breaks`
 ## Format (plain English, no jargon)
 
 ```text
-**Where we are:** <work-item name> — <verbatim 1-line quote from §1
+**Where we are:** <work-item identifier> — <verbatim 1-line quote from §1
 prose, copied not paraphrased; if §1 spans paragraphs, take the
 single sentence that best summarises what this thing does for the
 user>.
