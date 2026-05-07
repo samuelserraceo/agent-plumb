@@ -445,13 +445,13 @@ Each rubric section is tagged. Obey the tag:
 
 The non-technical user brings the *what*. You propose the *how*. They adjust together.
 
-**Mechanical enforcement (closes #171) — refresher block before every user-facing action:** every USER-LED action and every AGENT-LED action with `requires_user_approval: true` references `templates/.sdd/skeletons/refresher-block.md` and emits a 3-line refresher BEFORE asking its question:
+**Mechanical enforcement (closes #171) — refresher block before every user-facing action:** every USER-LED action and every AGENT-LED action with `requires_user_approval: true` declares `prelude_refresh: true` in frontmatter and references `templates/.sdd/skeletons/refresher-block.md` in body prose. Before asking its question, the agent emits a 3-section refresher:
 
-- **Where we are:** `<feature/project name> — <one-line plain-English summary of what this thing does for the user>` (pulled from spec.md §1, not paraphrased from memory).
+- **Where we are:** `<work-item name> — <verbatim 1-line quote from the work-item's §1 prose>` (copied not paraphrased; never invented from memory). §1 source differs by mode — features quote §1 Problem, projects quote §1 Vision, bugs quote §1 Reproduction.
 - **Today's question (§N <action-slug>):** what this question is asking, in plain English (translate any technical term on first use).
-- **Why now:** why this question precedes the rest of SPEC.
+- **Why now:** why this question precedes the rest.
 
-Then ask the question. Skip on within-action continuations (e.g. §1.who → §1.pain share context). The lint at `.sdd/scripts/lint-action-prose.sh` asserts every user-facing action references the skeleton; removing the reference fails the lint at commit time. **Why this exists:** non-technical users (Sam et al.) lose track of what's being built when each `/next` jumps straight to the next question; the refresher reanchors them every action boundary.
+Then ask the question. Skip on within-action continuations (e.g. §1.who → §1.pain share context). The lint at `.sdd/scripts/lint-action-prose.sh` enforces both checks (skeleton reference present + `prelude_refresh: true` set); removing either fails the lint at commit time. **Why this exists:** non-technical users (Sam et al.) lose track of what's being built when each `/next` jumps straight to the next question; the refresher reanchors them every action boundary, and the verbatim-quote rule prevents the agent from drifting the §1 prose into engineer-speak.
 
 ---
 

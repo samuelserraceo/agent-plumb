@@ -1,31 +1,45 @@
 # Refresher block — ground the user before every action's question
 
-> **Purpose.** Every USER-LED action and every AGENT-LED-with-approval action references this skeleton. Before issuing the action's question, the agent emits a 3-line refresher to ground the user in *what* is being built, *what* this question asks, and *why* now. Closes [#171](https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/171) — non-technical users were losing context across actions because each `/next` jumped straight to the next question without resurfacing what feature they're in.
+> **Purpose.** Every USER-LED action and every AGENT-LED-with-approval action references this skeleton. Before issuing the action's question, the agent emits a **3-section** refresher (Where we are / Today's question / Why now) to ground the user in *what* is being built, *what* this question asks, and *why* now. Closes [#171](https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/171) — non-technical users were losing context across actions because each `/next` jumped straight to the next question without resurfacing what work-item they're in.
 
 ## When to emit
 
 - **Always:** at the start of every action's user-facing turn, BEFORE the question.
 - **Skip:** within-action continuations. §1 Problem has three step rows (`who`, `pain`, `today`); they share context, so the refresher fires once at §1's start, not three times. Same pattern for any action whose `steps:` array has multiple entries.
 
+## Source-of-truth per work-item mode
+
+The "Where we are" line quotes **verbatim** from the work item's §1 prose — *the spec's first paragraph, exactly as the user wrote it; never paraphrase from memory.* The §1 contents differ by mode:
+
+| Work-item mode    | §1 source-of-truth prose                                          |
+|-------------------|--------------------------------------------------------------------|
+| **feature**       | §1 Problem prose — *who has it / why-now / what-breaks*            |
+| **project**       | §1 Vision prose — *what we're building, who for, the desired state*|
+| **bug**           | §1 Reproduction prose — *what was tried, what happened, what was expected* |
+| **refactor**      | §1 Scope prose — *what's getting moved, why, the boundary*          |
+
+If §1 isn't yet filled, say so plainly: *"§1 isn't filled yet — we're at the very start. Today's question kicks off the refresher chain."*
+
 ## Format (plain English, no jargon)
 
-```
-**Where we are:** <feature/project name> — <one-line plain-English summary
-of what this thing does for the user once it ships>. Pull from spec.md §1
-prose; do not paraphrase from memory.
+```text
+**Where we are:** <work-item name> — <verbatim 1-line quote from §1
+prose, copied not paraphrased; if §1 spans paragraphs, take the
+single sentence that best summarises what this thing does for the
+user>.
 
-**Today's question (§N <action-slug>):** <what this question is asking, in
-plain English. Translate any technical term on first use per CLAUDE.md
-"Non-technical user lens".>
+**Today's question (§N <action-slug>):** <what this question is asking,
+in plain English. Translate any technical term on first use per
+CLAUDE.md "Non-technical user lens".>
 
-**Why now:** <why this question precedes the rest of SPEC. One line.>
+**Why now:** <why this question precedes the rest of the work. One line.>
 ```
 
 Then ask the action's question below.
 
 ## What good looks like
 
-✅ **Good:**
+✅ **Good (feature mode):**
 
 > **Where we are:** F01 Auth + canvas shell — log in, then see every Topishop database table on one screen at /map.
 >
@@ -33,11 +47,19 @@ Then ask the action's question below.
 >
 > **Why now:** §1 captured the WHY; §3 turns that into concrete user-shaped goals that §4 wireframe and §11 acceptance criteria will design against.
 
-❌ **Bad** (jargon, abstract, missing context):
+✅ **Good (project mode):**
+
+> **Where we are:** PipeLogic V2 — a non-technical pipeline editor where Sam sees every database table on one canvas and edits them inline.
+>
+> **Today's question (§3 stakeholders):** who uses this product, who pays, who runs ops? List each persona in plain English.
+>
+> **Why now:** vision tells us *what* we're building; stakeholders tell us *for whom*, which shapes every later spec choice.
+
+❌ **Bad** (jargon, abstract, missing context, paraphrased from memory):
 
 > Now we're at section 3, user-stories. This is a USER-LED step. Provide your stories in the standard format.
 
-The bad version reads like an engineer talking to a database. The good version reads like a colleague catching the user up before asking a question.
+The bad version reads like an engineer talking to a database. The good versions read like a colleague catching the user up before asking a question — and quote §1 prose verbatim so the user never sees a paraphrase that drifts from what they wrote.
 
 ## Plain English first (cross-references CLAUDE.md)
 
@@ -47,4 +69,9 @@ The bad version reads like an engineer talking to a database. The good version r
 
 ## Mechanical enforcement
 
-The lint at `templates/.sdd/scripts/lint-action-prose.sh` asserts every USER-LED + AGENT-LED-with-approval action references this skeleton. Removing the reference fails the lint at commit time.
+Two checks at commit time, run by `templates/.sdd/scripts/lint-action-prose.sh`:
+
+1. **Skeleton reference present** — every USER-LED + AGENT-LED-with-approval action body must contain a link to this skeleton. Removing the link fails the lint.
+2. **`prelude_refresh: true` in frontmatter** — every user-facing action must declare the flag. The flag is the structured signal for tooling (next-action.sh, /next, IDE plugins) so the refresher fires deterministically; the prose directive is the agent-facing instruction. Both are required (foundation 3 — never assume; structured + prose belt-and-braces).
+
+The prose quality of the emitted refresher (does it actually quote §1 verbatim? is it plain English?) is reviewed at PR-merge time — mechanical "is this verbatim?" diffing would be theatre per Foundation 3.

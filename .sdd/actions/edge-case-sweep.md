@@ -2,6 +2,7 @@
 type: action
 slug: edge-case-sweep
 tag: AGENT-LED
+prelude_refresh: true
 title: "Edge-case sweep"
 short_label: "§11.5 Edge-case sweep"
 steps:
@@ -18,7 +19,7 @@ budget:
 requires_user_approval: true
 ---
 
-> **§171 — Refresher first.** BEFORE asking the question below, emit the 3-line refresher per [`refresher-block.md`](../skeletons/refresher-block.md): **Where we are** (feature + 1-line plain-English summary from spec.md §1), **Today's question (§N <slug>)** (what this asks, in plain English), **Why now** (why it precedes the rest). Skip on within-action continuations (e.g. §1.who → §1.pain share context).
+> **§171 — Refresher first.** BEFORE asking the question below, emit the 3-section refresher per [`refresher-block.md`](../skeletons/refresher-block.md): **Where we are** (work-item name + **verbatim 1-line quote** from the work-item's §1 prose — *the spec's first paragraph, exactly as the user wrote it; do not paraphrase from memory*), **Today's question (§N <slug>)** (what this asks, in plain English), **Why now** (why it precedes the rest of the work). Skip on within-action continuations (e.g. §1.who → §1.pain share context).
 
 After §11 ACs are written and `plan-decompose` has mapped them to tasks, the agent looks at the spec and asks: **"what could break that no AC covers?"** The answer is a numbered list of candidates. The user picks which to add as new ACs (and tasks), which to drop, and which to defer.
 

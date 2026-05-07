@@ -2,6 +2,7 @@
 type: action
 slug: playwright-explore
 tag: AGENT-LED
+prelude_refresh: true
 title: "Playwright-driven exploration"
 short_label: "§14 Playwright exploration"
 steps:
@@ -18,7 +19,7 @@ budget:
 requires_user_approval: true
 ---
 
-> **§171 — Refresher first.** BEFORE asking the question below, emit the 3-line refresher per [`refresher-block.md`](../skeletons/refresher-block.md): **Where we are** (feature + 1-line plain-English summary from spec.md §1), **Today's question (§N <slug>)** (what this asks, in plain English), **Why now** (why it precedes the rest). Skip on within-action continuations (e.g. §1.who → §1.pain share context).
+> **§171 — Refresher first.** BEFORE asking the question below, emit the 3-section refresher per [`refresher-block.md`](../skeletons/refresher-block.md): **Where we are** (work-item name + **verbatim 1-line quote** from the work-item's §1 prose — *the spec's first paragraph, exactly as the user wrote it; do not paraphrase from memory*), **Today's question (§N <slug>)** (what this asks, in plain English), **Why now** (why it precedes the rest of the work). Skip on within-action continuations (e.g. §1.who → §1.pain share context).
 
 Tests are GREEN. `adversarial-review` re-read the spec and the diff. Now the explorer **drives the actually-deployed feature** in a real browser, looking for edge cases the spec author didn't think of. This is the empirical layer that pairs with adversarial-review's analytical layer.
 
