@@ -20,11 +20,51 @@ requires_user_approval: true
 
 > **§171 — Refresher first.** BEFORE asking the question below, emit the 3-section refresher per [`refresher-block.md`](../skeletons/refresher-block.md): **Where we are** (work-item identifier + **verbatim 1-line quote** from the work-item's mode-appropriate §1 source — copy it exactly as written; do not paraphrase from memory; if §1 isn't filled yet, use the skeleton's "§1 not yet written" fallback), **Today's question (§N <slug>)** (what this asks, in plain English), **Why now** (why it precedes the rest of the work). Skip on within-action continuations (e.g. §1.who → §1.pain share context).
 
-> **§173/§174 — Grill the user's answer.** AFTER the user answers below, BEFORE writing the answer into spec.md, apply the grill protocol per [`grill-protocol.md`](../skeletons/grill-protocol.md): cap 3 questions max, grill only on vague terms / hidden assumptions / under-specification / compound answers / implied trade-offs — skip clean answers (names, numbers, picked-from-list, binary yes/no). Every grill question is plain English with a concrete example or analogy (per #174); no SQL/code in inline prose; end with "or describe in your own words".
+> **§173/§174 — Grill the user's answer.** AFTER the user answers below, BEFORE writing the answer into spec.md, apply the grill protocol per [`grill-protocol.md`](../skeletons/grill-protocol.md): cap 3 questions max, grill only on vague terms / hidden assumptions / under-specification / compound answers / implied trade-offs — skip clean answers (names, numbers, picked-from-list). Every grill question is plain English with a concrete example or analogy (per #174); no SQL/code in inline prose; end with "or describe in your own words".
 
 Convert `acceptance-criteria` into ordered tasks. Each task = one test file + one commit. This is what BUILD will execute.
 
-**Coverage check FIRST — and it's a TWO-STEP process when gaps exist.** Before drafting any tasks, verify every constraint in `ux-brief` (mobile, accessibility, i18n, locale, dark mode, etc.) is reflected in ≥1 AC in §11. Surface ALL gaps in one go, don't drip them.
+**Fresh-project bootstrap preflight (closes #178) — runs FIRST.** Before the coverage check, before drafting any tasks: detect whether this is the first feature in a fresh project. If yes, auto-prepend a `T00 [CHORE]` task that scaffolds the project skeleton; downstream tasks then assume the skeleton exists. Without this, T01 hits *"file not found: package.json"* on the first BUILD iteration and halts (exactly the failure mode pipelogic_v2 hit at F01 BUILD entry, 2026-05-07).
+
+Detection — stack-aware "is the project skeleton in place?" check (read `.sdd/stack.md` or look for any of these markers at the project root):
+
+| Stack signal           | "Fresh project" if missing             |
+|------------------------|-----------------------------------------|
+| Node / TypeScript      | `package.json`                          |
+| Python                 | `pyproject.toml` OR `requirements.txt`  |
+| Rust                   | `Cargo.toml`                            |
+| Go                     | `go.mod`                                |
+| Ruby                   | `Gemfile`                               |
+| .NET                   | `*.csproj`                              |
+
+If `.sdd/stack.md` declares a stack, use that to pick the marker; otherwise infer from existing files in the project root. If the marker exists, **skip** the bootstrap preflight — the skeleton is already in place. If the marker is missing, this is feature 1 of a fresh project.
+
+If fresh, prepend this task BEFORE T01 — keep it stack-aware. Read `.sdd/stack.md` for the declared stack, then fill the placeholders below from that stack's idioms (don't hardcode Node/Next).
+
+```markdown
+- [ ] T00 [CHORE]: Project bootstrap — install dependencies + framework skeleton
+  Test path: features/<id>/tests/task-000-bootstrap.smoke.<stack-test-ext> (stack-appropriate smoke that verifies the scaffold boots — e.g. "dev server returns 200 on /" for a web app, "binary builds and exits 0" for a CLI, "package imports cleanly" for a library)
+  Effort: S
+  Touches: stack-specific manifest + lockfile + framework-default config + framework entry-point(s)
+  Note: chore-shape — test-first discipline relaxed; the smoke verifies the scaffold boots/runs for the declared stack, not feature behaviour
+```
+
+Stack-specific touches you fill in from `stack.md` (examples — pick the row that matches; the agent populates the actual paths from the project's stack):
+
+| Stack         | Manifest + lockfile             | Framework config              | Entry-point(s)              |
+|---------------|---------------------------------|-------------------------------|------------------------------|
+| Node + Next.js | `package.json` + `pnpm-lock.yaml` | `tsconfig.json`, `next.config.ts` | `src/app/layout.tsx`, `src/app/page.tsx` |
+| Python        | `pyproject.toml` + `requirements.txt` | `ruff.toml`, `mypy.ini`     | `src/main.py` or framework-specific |
+| Rust          | `Cargo.toml` + `Cargo.lock`     | `rust-toolchain.toml`         | `src/main.rs` or `src/lib.rs` |
+| Go            | `go.mod` + `go.sum`             | (often none — toolchain only) | `main.go`                    |
+| Ruby          | `Gemfile` + `Gemfile.lock`      | `.rubocop.yml`                | `config.ru` (Rack) or `app.rb` |
+| .NET          | `*.csproj` + `packages.lock.json` | `Directory.Build.props`     | `Program.cs`                 |
+
+**If `.sdd/stack.md` doesn't yet declare a stack** — i.e. project-bootstrap-time-so-fresh-that-the-stack-isn't-decided-either — pause and ask the user before proceeding: *"What stack are we building this on? I'll fill T00's bootstrap details from your answer and write the stack into stack.md so future actions read it."* Don't guess; this is exactly the *never assume — always ask* doctrine.
+
+The `[CHORE]` tag tells BUILD's run-mode that this task is mechanical (no human spec decision needed) so even checkpoint-every-1 modes proceed without pausing. Downstream tasks (T01+) use the stack's manifest / config / entry-point without re-creating them.
+
+**Coverage check FIRST — and it's a TWO-STEP process when gaps exist.** After the bootstrap preflight (which runs once, never again), verify every constraint in `ux-brief` (mobile, accessibility, i18n, locale, dark mode, etc.) is reflected in ≥1 AC in §11. Surface ALL gaps in one go, don't drip them.
 
 **§11 is section-locked** (`requires_user_approval: true`) — its content is hashed at approval time and the moat refuses any commit that diverges from the hash. So you can't silently add new ACs; that would break section-locking. Split the work into two atomic steps:
 
