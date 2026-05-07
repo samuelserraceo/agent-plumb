@@ -164,6 +164,30 @@ if [ -d "$TEMPLATE_OBSIDIAN" ] && [ ! -d ".obsidian" ]; then
   }
 fi
 
+# Closes #167. Copy opt-in user-runnable extensions (Playwright +
+# Playwright-explorer) from $PLUGIN_ROOT/extensions/ into the
+# project's .sdd/extensions/ so the user can run e.g.
+# `bash .sdd/extensions/playwright/enable.sh` per README + CLAUDE.md
+# instructions. We COPY (not symlink) because:
+#  - These are user-editable opt-ins (the user may tune the
+#    Playwright config or extend the explorer for their stack).
+#  - Symlinks make edits affect the plugin install (cross-project
+#    contamination).
+#  - The MCP server (extensions/sdd-mcp-server) is symlinked
+#    instead because it's auto-loaded machinery, not user-editable.
+mkdir -p .sdd/extensions
+for ext in playwright playwright-explorer; do
+  src="$PLUGIN_ROOT/extensions/$ext"
+  dst=".sdd/extensions/$ext"
+  if [ -d "$src" ] && [ ! -e "$dst" ]; then
+    cp -r "$src" "$dst" || {
+      echo "[SDD init] note: failed to copy extensions/$ext/ — opt-in extension unavailable until you install it manually." >&2
+      continue
+    }
+    echo "[SDD init] Copied extensions/$ext into .sdd/extensions/$ext (opt-in; run \`bash .sdd/extensions/$ext/enable.sh\` to wire into your project)."
+  fi
+done
+
 # Wire git hooksPath if a git repo is present and no conflicting setup
 # is in place. Same conflict-aware logic as start.sh — refuse to
 # silently override an existing Husky/lefthook setup.
