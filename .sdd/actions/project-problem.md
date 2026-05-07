@@ -30,6 +30,14 @@ This is the first thing a future reader needs to know. The project doesn't exist
 
 Three small steps, each its own commit.
 
+> **§170 — Auto-annotate ingested metrics on record.** When you write the user's answer into spec.md (especially the "what hurts" Step 2 — pain examples often carry quantified loss like *"2 hours a week"* / *"$200/mo"* / *"500 rows"* / *"47% drop-off"*), scan for theatre tokens (numerical comparisons, raw counts, currency, percentages, durations, absolutes like *always*/*never*) and append the matching annotation INLINE on the same line so the [no-theatre lint](../scripts/lint-no-theatre.sh) passes — never strip or soften the value to bypass the lint. Annotation choice:
+>
+> - `{best-effort: project-author at SHIP}` — the **default** for self-reported pain quantification ("we lose 2 hours a week" comes from the user's own observation; project-author validates at SHIP).
+> - `{prod-only: <one-line reason>}` — for live-infra-measurable claims (real revenue / real signup-drop / real billing).
+> - `{verify-by: T-NNN}` — when a test will mechanically assert the value (rare in §1 problem-prose; usually doesn't apply here).
+>
+> If unsure, default to `{best-effort: project-author at SHIP}` and ask the user whether to tighten — same Foundation 3 shape as everywhere else (ASK, never assume).
+
 ## Step 1 — Who specifically has this problem?
 
 Don't say "users" or "everyone." Get specific. Common patterns:

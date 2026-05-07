@@ -28,6 +28,14 @@ requires_user_approval: false
 
 A project without a definition of "done" runs forever. Three steps to pin it down.
 
+> **§170 — Auto-annotate ingested metrics on record.** When you write the user's answer into spec.md, scan each metric line for theatre tokens (numerical comparisons like `<5 min` / `≥80%`, raw counts like `100` / `5x`, currency like `$200/mo`, percentages, durations, absolutes like `always` / `never` / `100%`). For each match, append the matching annotation INLINE on the same line so the [no-theatre lint](../scripts/lint-no-theatre.sh) passes — never soften or strip the metric to bypass the lint (that defeats §2's whole point). Annotation choice:
+>
+> - `{best-effort: project-author at SHIP}` — the **default** for human-judged success metrics (NPS, satisfaction, "feels right"). The project author validates at SHIP.
+> - `{prod-only: <one-line reason>}` — for metrics only measurable against live infra (real users, real signups, real $ revenue). Tag the reason explicitly (e.g. *"real signups, no dev synthetic"*).
+> - `{verify-by: T-NNN}` — only when a test exists or will be built that mechanically asserts this value. Most §2 metrics aren't this; don't reach for it.
+>
+> If you can't tell which fits, default to `{best-effort: project-author at SHIP}` and tell the user in your reply: *"I tagged this as best-effort — say if it should be prod-measured or test-bound instead."* Foundation 3: ASK rather than assume which annotation applies.
+
 ## Step 1 — What does the world look like the day this ships?
 
 Describe the moment the project is "live" — not the features, the OUTCOME. Concrete examples:
