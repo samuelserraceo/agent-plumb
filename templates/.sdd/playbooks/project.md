@@ -21,7 +21,7 @@ stages:
       - project-priorities
     exit_checks:
       - { id: C-breakdown-caps, check: "between 3 and 12 capabilities listed in §4 {best-effort: project-author at BREAKDOWN exit} — n=$(awk '/^### §4/{f=1;next} /^### §[0-9]/{f=0} f && /^- /' \"$SECTION_FILE\" | wc -l); [ \"$n\" -ge 3 ] && [ \"$n\" -le 12 ]" }
-      - { id: C-breakdown-priorities, check: "every capability has a priority tier — awk '/^### §4/{f=1;next} /^### §[0-9]/{f=0} f && /^- / && !/\\[(P0|P1|P2|P3|MUST|SHOULD|COULD|WONT)\\]/{exit 1} END{exit 0}' \"$SECTION_FILE\"" }
+      - { id: C-breakdown-priorities, check: "every capability has a priority tier — awk '/^### §4/{f=1;next} /^### §[0-9]/{f=0} f && /^- / && !/\\[(P0|P1|P2|P3|MUST|SHOULD|COULD|WONT)\\]/{bad=1} END{exit bad+0}' \"$SECTION_FILE\"" }
   - id: KICKOFF
     actions:
       - project-queue-features

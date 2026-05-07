@@ -7,7 +7,7 @@
       "trust": "framework"
     },
     "project": {
-      "expected_sha256": "41dc44e558701c007bde8d9d829184028c7524b669a947ec4d6767a83022a1ce",
+      "expected_sha256": "85a7920c8c4246ec94081916f2b1c5d98c53c1eeb98f668610459140912ec6fa",
       "path": ".sdd/playbooks/project.md",
       "trust": "framework"
     },
