@@ -2,12 +2,12 @@
   "extensions": {},
   "playbooks": {
     "feature": {
-      "expected_sha256": "111cf0ed8690da5e17ff76f204251aa236fde3e5646008388d59889cbff60b13",
+      "expected_sha256": "992a69c1986cbeba761320caa578fbbdbd65323f4bbd53f7f7ffe5790b437b5c",
       "path": ".sdd/playbooks/feature.md",
       "trust": "framework"
     },
     "project": {
-      "expected_sha256": "4c6ce120e9000dfe522a38626398cc612fcc330ee05b8a8cdd448eed3b69f29a",
+      "expected_sha256": "85a7920c8c4246ec94081916f2b1c5d98c53c1eeb98f668610459140912ec6fa",
       "path": ".sdd/playbooks/project.md",
       "trust": "framework"
     },
