@@ -24,7 +24,34 @@ requires_user_approval: true
 
 Convert `acceptance-criteria` into ordered tasks. Each task = one test file + one commit. This is what BUILD will execute.
 
-**Coverage check FIRST — and it's a TWO-STEP process when gaps exist.** Before drafting any tasks, verify every constraint in `ux-brief` (mobile, accessibility, i18n, locale, dark mode, etc.) is reflected in ≥1 AC in §11. Surface ALL gaps in one go, don't drip them.
+**Fresh-project bootstrap preflight (closes #178) — runs FIRST.** Before the coverage check, before drafting any tasks: detect whether this is the first feature in a fresh project. If yes, auto-prepend a `T00 [CHORE]` task that scaffolds the project skeleton; downstream tasks then assume the skeleton exists. Without this, T01 hits *"file not found: package.json"* on the first BUILD iteration and halts (exactly the failure mode pipelogic_v2 hit at F01 BUILD entry, 2026-05-07).
+
+Detection — stack-aware "is the project skeleton in place?" check (read `.sdd/stack.md` or look for any of these markers at the project root):
+
+| Stack signal           | "Fresh project" if missing             |
+|------------------------|-----------------------------------------|
+| Node / TypeScript      | `package.json`                          |
+| Python                 | `pyproject.toml` OR `requirements.txt`  |
+| Rust                   | `Cargo.toml`                            |
+| Go                     | `go.mod`                                |
+| Ruby                   | `Gemfile`                               |
+| .NET                   | `*.csproj`                              |
+
+If `.sdd/stack.md` declares a stack, use that to pick the marker; otherwise infer from existing files in the project root. If the marker exists, **skip** the bootstrap preflight — the skeleton is already in place. If the marker is missing, this is feature 1 of a fresh project.
+
+If fresh, prepend this task BEFORE T01:
+
+```markdown
+- [ ] T00 [CHORE]: Project bootstrap — install dependencies + framework skeleton
+  Test path: features/<id>/tests/task-000-bootstrap.smoke.mjs (smoke: dev server returns 200 on /)
+  Effort: S
+  Touches: package.json, lockfile, framework-default config files, tsconfig/eslint/etc, src/app/layout.tsx (Next.js) or equivalent entry-point
+  Note: chore-shape — test-first discipline relaxed; the test asserts the skeleton boots, not feature behaviour
+```
+
+The `[CHORE]` tag tells BUILD's run-mode that this task is mechanical (no human spec decision needed) so even checkpoint-every-1 modes proceed without pausing. Downstream tasks (T01+) use `package.json` / `tsconfig.json` / etc. without re-creating them.
+
+**Coverage check FIRST — and it's a TWO-STEP process when gaps exist.** After the bootstrap preflight (which runs once, never again), verify every constraint in `ux-brief` (mobile, accessibility, i18n, locale, dark mode, etc.) is reflected in ≥1 AC in §11. Surface ALL gaps in one go, don't drip them.
 
 **§11 is section-locked** (`requires_user_approval: true`) — its content is hashed at approval time and the moat refuses any commit that diverges from the hash. So you can't silently add new ACs; that would break section-locking. Split the work into two atomic steps:
 
