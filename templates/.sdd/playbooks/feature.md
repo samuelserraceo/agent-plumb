@@ -25,8 +25,8 @@ stages:
       - plan-decompose
       - edge-case-sweep
     exit_checks:
-      - { id: C-spec-acs,   check: "≥1 acceptance criterion exists in §11 — grep -qE '^- \\[[ x]\\] AC[0-9]+' \"$SECTION_FILE\"" }
-      - { id: C-spec-tasks, check: "≥1 task in plan-decompose section — grep -qE '^- \\[[ x]\\] T[0-9]+' \"$SECTION_FILE\"" }
+      - { id: C-spec-acs,   check: "≥1 acceptance criterion exists in §11 {verify-by: C-spec-acs bash-grep} — grep -qE '^- \\[[ x]\\] AC[0-9]+' \"$SECTION_FILE\"" }
+      - { id: C-spec-tasks, check: "≥1 task in plan-decompose section {verify-by: C-spec-tasks bash-grep} — grep -qE '^- \\[[ x]\\] T[0-9]+' \"$SECTION_FILE\"" }
   - id: BUILD
     actions:
       - run-mode-chosen

@@ -13,21 +13,21 @@ stages:
       - project-success
       - project-stakeholders
     exit_checks:
-      - { id: C-vision-stakeholders, check: "≥1 stakeholder profile in §3" }
-      - { id: C-vision-success, check: "≥1 measurable success metric in §2" }
+      - { id: C-vision-stakeholders, check: "≥1 stakeholder profile in §3 {best-effort: project-author at VISION exit}" }
+      - { id: C-vision-success, check: "≥1 measurable success metric in §2 {best-effort: project-author at VISION exit}" }
   - id: BREAKDOWN
     actions:
       - project-capabilities
       - project-priorities
     exit_checks:
-      - { id: C-breakdown-caps, check: "between 3 and 12 capabilities listed in §4" }
+      - { id: C-breakdown-caps, check: "between 3 and 12 capabilities listed in §4 {best-effort: project-author at BREAKDOWN exit}" }
       - { id: C-breakdown-priorities, check: "every capability has a priority tier" }
   - id: KICKOFF
     actions:
       - project-queue-features
       - project-start-first
     exit_checks:
-      - { id: C-kickoff-queue, check: "INDEX.md `## Backlog` has ≥1 entry" }
+      - { id: C-kickoff-queue, check: "INDEX.md `## Backlog` has ≥1 entry {best-effort: project-author at KICKOFF exit}" }
       - { id: C-kickoff-active, check: "INDEX.md `## In flight` has the first feature in flight" }
 trust: framework
 ---
