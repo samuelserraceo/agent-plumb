@@ -68,6 +68,26 @@ $1"
   fi
 }
 
+# Soft warnings — print but don't block. Closes #175 (the
+# "Idle." infinite loop). Use this for setup-issue messages
+# the agent CAN'T fix in its next turn (e.g. MCP server not
+# installed, $CLAUDE_PLUGIN_ROOT not set). Mixing those into
+# `$violations` made the script exit non-zero, which Claude
+# Code's stop-hook contract reads as "agent must continue
+# working" — so the agent looped on `Idle.` until manual
+# intervention. Soft warnings exit 0 with a clear stderr note;
+# the user fixes them at their own pace.
+warnings=""
+add_warning() {
+  if [ -z "$warnings" ]; then
+    warnings="$1"
+  else
+    warnings="${warnings}
+
+$1"
+  fi
+}
+
 # ============================================================
 # Invariant 1 — INDEX.md has exactly one **Active:** line
 # ============================================================
@@ -639,14 +659,25 @@ print(0)
 PYEOF
 )
       if [ "$_has_wikilinks" = "1" ]; then
-        add_violation "[stop-lint] invariant 8 (wiki-link resolution) is INACTIVE — the
+        # Closes #175 — this is a SOFT warning. The agent can't fix
+        # the MCP-server-not-installed setup issue in its next turn
+        # (it's a per-machine install state, not framework drift). If
+        # we treat it as a hard violation, the script exits 2, Claude
+        # Code reads that as "keep working", the agent emits another
+        # `Idle.` turn, the stop-hook fires again, and we loop. Use
+        # add_warning so the user sees the message but the script
+        # still exits 0.
+        add_warning "[stop-lint] invariant 8 (wiki-link resolution) is INACTIVE — the
   MCP server queries aren't on disk at extensions/sdd-mcp-server/ at the
   project root, and \$CLAUDE_PLUGIN_ROOT isn't set. Wiki-links are NOT
   being checked this turn (and this project DOES use \`[[slug]]\` references).
-  Fix: re-run \`scripts/init.sh\` from the SDD repo (v1.0 init.sh copies
-       the MCP server into every project alongside .sdd/ and .claude/),
-       or set CLAUDE_PLUGIN_ROOT to the SDD plugin path. Without the MCP
-       server, broken \`[[slug]]\` references will pass silently."
+  Fix (closes #175 + #176): re-run \`bin/sdd-init.sh\` (v1.5.1+ symlinks
+       the MCP server into every project automatically), or set
+       \$CLAUDE_PLUGIN_ROOT manually:
+         export CLAUDE_PLUGIN_ROOT=\"\$HOME/.claude/plugins/marketplaces/sdd-marketplace\"
+       Without the MCP server, broken \`[[slug]]\` references pass
+       silently — but you can keep working; this is a setup warning,
+       not framework drift."
       fi
       return 0
     fi
@@ -854,7 +885,29 @@ check_wiki_links_resolve
 check_no_nul_bytes
 check_shipped_rows_have_marker
 
-# Happy path: no violations → silent allow.
+# Closes #175. The script has TWO buckets:
+#  - $violations — hard drift, exit 2 so Claude Code prompts the agent
+#    to act on it next turn.
+#  - $warnings — soft setup notes the agent can't act on, exit 0 with a
+#    plain-English heads-up. Mixing the two caused the infinite `Idle.`
+#    loop on fresh installs (MCP server not yet symlinked → invariant 8
+#    inactive → exit 2 → agent loops).
+#
+# Print warnings first (they're informational), then violations (they
+# block). When only warnings exist, the script still exits 0.
+
+if [ -n "$warnings" ]; then
+  cat >&2 <<EOF
+The end-of-turn health check found setup notes worth surfacing (these
+are warnings — they don't block this stop, and the next agent turn
+won't be forced to fix them):
+
+$warnings
+
+EOF
+fi
+
+# Happy path: no violations → exit 0 (warnings already printed above).
 [ -z "$violations" ] && exit 0
 
 cat >&2 <<EOF
