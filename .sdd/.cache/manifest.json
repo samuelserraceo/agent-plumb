@@ -226,12 +226,12 @@
       "expected_sha256": "06f7fbaef8a39cd4eeffd81674cbf96602bfa90fa950096010753ac3013aed4a"
     },
     "project-problem": {
-      "expected_sha256": "d93a2e7b34b24cbd8242113c0c8a019e2fac2332f7e15d38853d382919342237",
+      "expected_sha256": "d3cc6ffa9e915aedcc8146bb9e2cb62f7db5807e8bff01d8ace86ddf22a8a7c5",
       "path": ".sdd/actions/project-problem.md",
       "trust": "framework"
     },
     "project-success": {
-      "expected_sha256": "6b4f91f99cfea1d0a707ce3ffc63ead15a5ec30b6d80c52f0d329a9d25a99d3b",
+      "expected_sha256": "cc3bb03f3c0569d6f93e2a5b50bd07a87d79cf7d2775d4e576b2d82bfd342de6",
       "path": ".sdd/actions/project-success.md",
       "trust": "framework"
     },
