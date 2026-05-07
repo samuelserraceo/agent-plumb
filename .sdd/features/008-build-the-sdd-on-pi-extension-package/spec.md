@@ -8,9 +8,11 @@
 
 ### action: problem
 
-- [ ] who: Who specifically has this problem? (real persona, not 'users')
+- [x] who: Sam + colleagues using non-Claude models (GPT-5 via Codex, Kimi K2, open-weight models) — locked out of SDD today because it only runs in Claude Code
 - [ ] why-now: Why is it worth solving now?
 - [ ] what-breaks: What breaks (concretely) if it isn't solved?
+
+**Who has this problem:** Sam and his colleagues who use GPT-5 (via Codex), Kimi K2, or other non-Claude models when they code. Today none of them can use SDD because it only runs inside Claude Code. They want SDD's discipline — the test-first rule, the atomic-step-per-commit rhythm, the anti-theatre lint, the trust-boundary state injection — but they're not going to switch CLIs to get it. The framework's reach is currently capped at "people who happen to use Claude Code," which is a small slice of the AI-coding-agent population.
 
 ### action: success
 
