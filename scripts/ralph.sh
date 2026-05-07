@@ -180,7 +180,15 @@ while [ "$iter" -lt "$MAX_ITERS" ]; do
   set -e
 
   if [ $claude_exit -ne 0 ]; then
-    echo "Claude invocation failed (exit $claude_exit). Last 30 lines:"
+    # CR cycle 1 finding: timeout expiry uses exit 124 by convention
+    # (both GNU `timeout` and `gtimeout`) — distinguish so the operator
+    # can see it was time exhaustion, not a crash, and bump
+    # TIMEOUT_PER_ITER if needed.
+    if [ "$claude_exit" -eq 124 ] && [ -n "$TIMEOUT_BIN" ]; then
+      echo "Claude invocation timed out after ${TIMEOUT_PER_ITER}s (exit 124 from $TIMEOUT_BIN). Bump TIMEOUT_PER_ITER (env or .sdd/config.md parameters.ralph.timeout_per_iter) if iterations need longer. Last 30 lines:"
+    else
+      echo "Claude invocation failed (exit $claude_exit). Last 30 lines:"
+    fi
     echo "$output" | tail -30
     exit 1
   fi
