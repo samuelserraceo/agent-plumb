@@ -10,7 +10,7 @@
 
 - [x] who: Sam + colleagues using non-Claude models (GPT-5 via Codex, Kimi K2, open-weight models) — locked out of SDD today because it only runs in Claude Code
 - [x] why-now: Three things just lined up — colleagues actively asking; GPT-5 + Kimi K2 passed the SDD discipline test today; pi.dev ecosystem matured (15+ providers, MCP solved, sibling framework GSD already ported)
-- [ ] what-breaks: What breaks (concretely) if it isn't solved?
+- [x] what-breaks: Strategic — colleagues quietly switch to GSD by attrition, SDD becomes a Sam-only tool. Daily — every SDD session pays full Claude price even for tasks where cheaper models would do fine.
 
 **Who has this problem:** Sam and his colleagues who use GPT-5 (via Codex), Kimi K2, or other non-Claude models when they code. Today none of them can use SDD because it only runs inside Claude Code. They want SDD's discipline — the test-first rule, the atomic-step-per-commit rhythm, the anti-theatre lint, the trust-boundary state injection — but they're not going to switch CLIs to get it. The framework's reach is currently capped at "people who happen to use Claude Code," which is a small slice of the AI-coding-agent population.
 
@@ -21,6 +21,11 @@
 3. **Pi.dev matured into a real ecosystem.** 15+ model providers behind one harness, 40+ community extensions, MCP gap already solved by the community ([pi-mcp-adapter](https://github.com/nicobailon/pi-mcp-adapter), MIT, 599 stars), and a sibling spec-driven framework (GSD via [fulgidus/pi-gsd](https://github.com/fulgidus/pi-gsd)) already ported successfully — confirming the architectural pattern works.
 
 The "if not now, when?" answer: if SDD stays Claude-only for another 6 months while GSD (60.6k stars, already supports 8 CLIs) keeps expanding, SDD risks becoming "the spec-driven framework you only get if you happen to be on Claude Code." That niche shrinks fast.
+
+**What breaks if we don't solve it:** Two concrete things break — one strategic and cumulative, one daily.
+
+1. **Strategic break — colleagues quietly switch to GSD by attrition.** Three months from now, a colleague (call him Marco) wants spec-driven discipline for his GPT-5/Codex setup. He searches "spec-driven framework for GPT-5." Top result: GSD (works on his CLI, 60.6k stars, supports 8 harnesses). Second result: SDD (Claude only). He picks GSD without thinking about it. He learns GSD's conventions, not SDD's. Six months in, when Sam wants colleagues to join SDD work, they all already know GSD and don't see the point of switching. SDD has become a Sam-only tool — not because it's worse, but because it didn't reach where colleagues already work.
+2. **Daily break — every SDD session pays full Claude price.** There are SDD tasks where a cheaper or faster model would do fine: codebase exploration, research recon, simple BUILD tasks on small features. Today, every minute of SDD work bills Claude. With SDD-on-pi, model choice happens per task — Sonnet/Opus where it matters, Haiku/Kimi K2 where it doesn't. Without it, every research session burns Claude tokens unnecessarily.
 
 ### action: success
 
