@@ -11,6 +11,10 @@
 #   MAX_ITERS=20 ./scripts/ralph.sh   # override
 #
 # Requires: claude CLI in PATH, git, agent-browser, .sdd/ with active feature in BUILD phase.
+#   On macOS, `timeout` ships only via Homebrew coreutils — this script
+#   auto-detects and falls back to `gtimeout` if `timeout` isn't on PATH.
+#   Both absent: claude invocations run without a timeout (with a warning).
+#   Install coreutils on macOS: `brew install coreutils`.
 #
 # Halts on: all tasks GREEN (phase advances), halting rule fires, max iterations, Ctrl-C.
 
@@ -63,6 +67,27 @@ case "$TIMEOUT_PER_ITER" in
 esac
 [ "$MAX_ITERS" -gt 0 ] || { echo "ERROR: MAX_ITERS must be > 0 (got: $MAX_ITERS)" >&2; exit 1; }
 [ "$TIMEOUT_PER_ITER" -gt 0 ] || { echo "ERROR: TIMEOUT_PER_ITER must be > 0 (got: $TIMEOUT_PER_ITER)" >&2; exit 1; }
+
+# ─── Detect timeout binary (macOS portability, #177) ───────────────
+# GNU `timeout` ships with coreutils — present on Linux by default,
+# absent on macOS unless `brew install coreutils` is run (which installs
+# it as `gtimeout` by default; plain `timeout` only resolves after
+# /opt/homebrew/opt/coreutils/libexec/gnubin is on PATH).
+# Fall through to no-timeout if neither is found, with a warning.
+if command -v timeout >/dev/null 2>&1; then
+  TIMEOUT_BIN="timeout"
+elif command -v gtimeout >/dev/null 2>&1; then
+  TIMEOUT_BIN="gtimeout"
+else
+  TIMEOUT_BIN=""
+  if [ "$(uname -s)" = "Darwin" ]; then
+    echo "[ralph] note: 'timeout' command not found. On macOS, install via:" >&2
+    echo "             brew install coreutils       # provides 'gtimeout'" >&2
+    echo "         Without it, claude invocations run with NO timeout (could hang indefinitely)." >&2
+  else
+    echo "[ralph] warning: no 'timeout' binary found on PATH — claude invocations will run with NO timeout." >&2
+  fi
+fi
 
 # ─── Preflight ──────────────────────────────────────────────────────
 
@@ -146,7 +171,11 @@ while [ "$iter" -lt "$MAX_ITERS" ]; do
   echo "───── Ralph iteration $iter / $MAX_ITERS ─────"
 
   set +e
-  output=$(timeout "$TIMEOUT_PER_ITER" claude -p "$PROMPT" --dangerously-skip-permissions 2>&1)
+  if [ -n "$TIMEOUT_BIN" ]; then
+    output=$("$TIMEOUT_BIN" "$TIMEOUT_PER_ITER" claude -p "$PROMPT" --dangerously-skip-permissions 2>&1)
+  else
+    output=$(claude -p "$PROMPT" --dangerously-skip-permissions 2>&1)
+  fi
   claude_exit=$?
   set -e
 
