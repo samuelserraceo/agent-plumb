@@ -347,7 +347,7 @@ If you want to customize the workflow rules themselves, you can — but bump `CL
 
 ---
 
-## Honest caveats (current as of v1.4.3)
+## Honest caveats (current as of v1.4.4)
 
 - **The playbook is 80% of the product.** If a question is weak, the system is weak. Fork and iterate — it's just markdown.
 - **"Non-technical" has limits.** The agent proposes technical options; you decide what feels right. If you don't know what you *want the feature to do*, no workflow saves you.
@@ -365,7 +365,7 @@ If you want to customize the workflow rules themselves, you can — but bump `CL
 
 ## Status
 
-Currently at **v1.4.3** — knowledge-graph foundation + 4 doctrine playbooks (`feature` / `project` / `bug` / `refactor`) + branch-derived active resolution + CI graph-integrity gate + cost-bounded Playwright explorer + claims-audit harness + mechanical test-first hook + `sdd-migrate.sh` for updatable installs. Hardened through:
+Currently at **v1.4.4** — knowledge-graph foundation + 4 doctrine playbooks (`feature` / `project` / `bug` / `refactor`) + branch-derived active resolution + CI graph-integrity gate + cost-bounded Playwright explorer + claims-audit harness + mechanical test-first hook + `sdd-migrate.sh` for updatable installs. Hardened through:
 
 - **Phase A (v0.7.5)** — proved the SPEC + BUILD + ship loop on real Next.js + Vercel projects. 26 mutation-verified tests catching catastrophic bug classes.
 - **Phase B-1 (v0.8.0)** — section-locking moat, multi-playbook engine bones, trust-boundary teaching against prompt injection from repo prose, hash-pinned manifest, slim memory layer, append-only audit log. Three rounds of adversarial reviewer council found and closed gaps. 69 tests, all mutation-verified.
