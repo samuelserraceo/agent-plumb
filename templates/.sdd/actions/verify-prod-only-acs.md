@@ -17,6 +17,8 @@ budget:
 requires_user_approval: false
 ---
 
+> **§171 — Refresher first.** BEFORE asking the question below, emit the 3-line refresher per [`refresher-block.md`](../skeletons/refresher-block.md): **Where we are** (feature + 1-line plain-English summary from spec.md §1), **Today's question (§N <slug>)** (what this asks, in plain English), **Why now** (why it precedes the rest). Skip on within-action continuations (e.g. §1.who → §1.pain share context).
+
 For every AC in `acceptance-criteria` tagged `[PROD-ONLY]`, the user walks through it manually after the first prod deploy. These are the things impossible to test in dev (real Stripe charges, real email bounce webhooks, real Turnstile tokens, real DNS propagation).
 
 **If §11 has zero `[PROD-ONLY]` ACs:** auto-skip. Fill with `**No PROD-ONLY ACs to verify.**` and continue.

@@ -17,6 +17,8 @@ budget:
 requires_user_approval: true
 ---
 
+> **§171 — Refresher first.** BEFORE asking the question below, emit the 3-line refresher per [`refresher-block.md`](../skeletons/refresher-block.md): **Where we are** (feature + 1-line plain-English summary from spec.md §1), **Today's question (§N <slug>)** (what this asks, in plain English), **Why now** (why it precedes the rest). Skip on within-action continuations (e.g. §1.who → §1.pain share context).
+
 Draft the regression test that turns "the bug is fixed" from a vibe-check into a mechanical guarantee. The test must fail on the broken code and pass on the fixed code — that's how we know the fix actually worked, and that's how we catch the bug if it ever regresses.
 
 **Required output (fill §5):**

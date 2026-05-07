@@ -17,6 +17,8 @@ budget:
 requires_user_approval: true
 ---
 
+> **§171 — Refresher first.** BEFORE asking the question below, emit the 3-line refresher per [`refresher-block.md`](../skeletons/refresher-block.md): **Where we are** (feature + 1-line plain-English summary from spec.md §1), **Today's question (§N <slug>)** (what this asks, in plain English), **Why now** (why it precedes the rest). Skip on within-action continuations (e.g. §1.who → §1.pain share context).
+
 # §4 — Capabilities (what to build, in shippable chunks)
 
 Now you turn the project into shippable features. Each capability becomes ONE feature — sized within the S/M/L band (S=1-4 BUILD tasks, M=5-10, L=11-15). Anything that would exceed L must split. Don't reach for "1-2 weeks" or other clock-time sizing — per CLAUDE.md doctrine rule 6, the framework sizes work in atomic steps and S/M/L, never in days/weeks (AI is much faster than human-trained estimates).

@@ -19,6 +19,8 @@ budget:
 requires_user_approval: false
 ---
 
+> **§171 — Refresher first.** BEFORE asking the question below, emit the 3-line refresher per [`refresher-block.md`](../skeletons/refresher-block.md): **Where we are** (feature + 1-line plain-English summary from spec.md §1), **Today's question (§N <slug>)** (what this asks, in plain English), **Why now** (why it precedes the rest). Skip on within-action continuations (e.g. §1.who → §1.pain share context).
+
 # §1 — Project problem (who has it, what hurts)
 
 This is the first thing a future reader needs to know. The project doesn't exist for its own sake — it exists because somebody has a problem.

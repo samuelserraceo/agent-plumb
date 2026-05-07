@@ -19,6 +19,8 @@ budget:
 requires_user_approval: false
 ---
 
+> **§171 — Refresher first.** BEFORE asking the question below, emit the 3-line refresher per [`refresher-block.md`](../skeletons/refresher-block.md): **Where we are** (feature + 1-line plain-English summary from spec.md §1), **Today's question (§N <slug>)** (what this asks, in plain English), **Why now** (why it precedes the rest). Skip on within-action continuations (e.g. §1.who → §1.pain share context).
+
 Ask the user: who has this problem, why now, and what breaks if we don't solve it. Each is its own atomic step (one `[ ]` row per sub-question). Cognitive prep is free-form — you can ask all three together if it reads naturally — but each step gets its own commit when the answer lands.
 
 **Push for specifics.** "Users want this" is not enough. Which users — recruiters from Twitter, returning customers, internal team? Doing what — onboarding, paying, checking status? When do they hit the wall — first visit, after 30 days, on mobile? If the user's answer stays vague after one push-back, ask one more time and then move on with the best you've got.

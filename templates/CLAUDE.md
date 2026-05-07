@@ -445,6 +445,14 @@ Each rubric section is tagged. Obey the tag:
 
 The non-technical user brings the *what*. You propose the *how*. They adjust together.
 
+**Mechanical enforcement (closes #171) — refresher block before every user-facing action:** every USER-LED action and every AGENT-LED action with `requires_user_approval: true` references `templates/.sdd/skeletons/refresher-block.md` and emits a 3-line refresher BEFORE asking its question:
+
+- **Where we are:** `<feature/project name> — <one-line plain-English summary of what this thing does for the user>` (pulled from spec.md §1, not paraphrased from memory).
+- **Today's question (§N <action-slug>):** what this question is asking, in plain English (translate any technical term on first use).
+- **Why now:** why this question precedes the rest of SPEC.
+
+Then ask the question. Skip on within-action continuations (e.g. §1.who → §1.pain share context). The lint at `.sdd/scripts/lint-action-prose.sh` asserts every user-facing action references the skeleton; removing the reference fails the lint at commit time. **Why this exists:** non-technical users (Sam et al.) lose track of what's being built when each `/next` jumps straight to the next question; the refresher reanchors them every action boundary.
+
 ---
 
 ## Skippable sections — proactively offer, don't force

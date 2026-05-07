@@ -18,6 +18,8 @@ budget:
 requires_user_approval: true
 ---
 
+> **§171 — Refresher first.** BEFORE asking the question below, emit the 3-line refresher per [`refresher-block.md`](../skeletons/refresher-block.md): **Where we are** (feature + 1-line plain-English summary from spec.md §1), **Today's question (§N <slug>)** (what this asks, in plain English), **Why now** (why it precedes the rest). Skip on within-action continuations (e.g. §1.who → §1.pain share context).
+
 Ask: *"What are we explicitly NOT building this round? Anything related to §1-3 that came up but is off the table — tempting but deferred."*
 
 **Why this matters:** out-of-scope lists are gold for future PRs. If a reviewer asks *"what about admin dashboards?"* you can point to §9: *"explicitly deferred to v2 — see §9."*

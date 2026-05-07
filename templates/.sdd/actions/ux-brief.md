@@ -17,6 +17,8 @@ budget:
 requires_user_approval: true
 ---
 
+> **§171 — Refresher first.** BEFORE asking the question below, emit the 3-line refresher per [`refresher-block.md`](../skeletons/refresher-block.md): **Where we are** (feature + 1-line plain-English summary from spec.md §1), **Today's question (§N <slug>)** (what this asks, in plain English), **Why now** (why it precedes the rest). Skip on within-action continuations (e.g. §1.who → §1.pain share context).
+
 **Skippable for non-UI features** (APIs, cron jobs, data migrations). Proactively offer to skip if `problem`, `success`, and `user-stories` mention no user-facing surface: *"§4 UX brief is for UI-facing features. This one is backend — skip? Reply `skip backend-only feature` (handled inline by `/next`) to continue."*
 
 **If continuing:** read `problem`, `success`, `user-stories`. Extract signals about audience, stakes, mood, screen context, voice. Write back one paragraph of inferred UX direction.

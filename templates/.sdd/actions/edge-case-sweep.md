@@ -18,6 +18,8 @@ budget:
 requires_user_approval: true
 ---
 
+> **§171 — Refresher first.** BEFORE asking the question below, emit the 3-line refresher per [`refresher-block.md`](../skeletons/refresher-block.md): **Where we are** (feature + 1-line plain-English summary from spec.md §1), **Today's question (§N <slug>)** (what this asks, in plain English), **Why now** (why it precedes the rest). Skip on within-action continuations (e.g. §1.who → §1.pain share context).
+
 After §11 ACs are written and `plan-decompose` has mapped them to tasks, the agent looks at the spec and asks: **"what could break that no AC covers?"** The answer is a numbered list of candidates. The user picks which to add as new ACs (and tasks), which to drop, and which to defer.
 
 This is the difference between *"the happy path is tested"* and *"this thing actually works in production."* Most production bugs come from edge cases the original spec missed — empty lists, bad input, slow networks, two users at once. The sweep surfaces them before BUILD starts, not after a user finds them.

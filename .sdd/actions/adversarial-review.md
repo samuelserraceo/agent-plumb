@@ -18,6 +18,8 @@ budget:
 requires_user_approval: true
 ---
 
+> **§171 — Refresher first.** BEFORE asking the question below, emit the 3-line refresher per [`refresher-block.md`](../skeletons/refresher-block.md): **Where we are** (feature + 1-line plain-English summary from spec.md §1), **Today's question (§N <slug>)** (what this asks, in plain English), **Why now** (why it precedes the rest). Skip on within-action continuations (e.g. §1.who → §1.pain share context).
+
 Tests are GREEN. Before we write the lessons-learned, the agent re-reads the feature's `spec.md` + the code that was actually shipped wearing a **hostile reviewer hat** — someone whose job is to find what could break this in production AND what could be made simpler. The goal is to catch the problems we'd rather find now than from a real user (or an attacker) next week, AND to surface complexity we can drop while it's still cheap.
 
 This action is two atomic steps + commits: first the agent drafts the findings, then the user triages each one.
