@@ -205,6 +205,13 @@ if [ -f "$GITIGNORE" ]; then
   if ! grep -qF "/.obsidian/" "$GITIGNORE" 2>/dev/null; then
     gitignore_block="${gitignore_block}# Per-user Obsidian vault state (don't commit; templates/.obsidian/ is the shipped copy)"$'\n'"/.obsidian/"$'\n'
   fi
+  # Closes #176 — extensions/ is a per-machine symlink to the plugin
+  # install's MCP server. The path differs per user (Linux/macOS/WSL),
+  # so it's never committable. Always added preemptively, same shape
+  # as the .obsidian/ rule above.
+  if ! grep -qF "/extensions/" "$GITIGNORE" 2>/dev/null; then
+    gitignore_block="${gitignore_block}# Per-machine symlink to the SDD plugin's MCP server (don't commit; sdd-init.sh manages it)"$'\n'"/extensions/"$'\n'
+  fi
   if [ -n "$gitignore_block" ]; then
     printf '\n%s' "$gitignore_block" >> "$GITIGNORE"
   fi
@@ -215,7 +222,44 @@ else
 
 # Per-user Obsidian vault state (don't commit; templates/.obsidian/ is the shipped copy)
 /.obsidian/
+
+# Per-machine symlink to the SDD plugin's MCP server (don't commit; sdd-init.sh manages it)
+/extensions/
 EOF
+fi
+
+# Closes #176. Symlink the MCP server into the project so post-stop-lint
+# can find it (closes #175 — without the symlink, invariant 8 fires the
+# "MCP missing" warning every turn). The MCP server lives in the plugin
+# install at $PLUGIN_ROOT/extensions/sdd-mcp-server/; project-local hooks
+# look at $PROJECT_DIR/extensions/sdd-mcp-server/.
+#
+# Symlink (not copy): per-machine, points at the user's installed plugin
+# version. When they upgrade the plugin via /plugin install, the symlink
+# auto-resolves to the new version. The /extensions/ entry was added to
+# .gitignore above so the symlink never gets committed.
+MCP_SOURCE="$PLUGIN_ROOT/extensions/sdd-mcp-server"
+MCP_TARGET="$PROJECT_DIR/extensions/sdd-mcp-server"
+if [ -d "$MCP_SOURCE" ]; then
+  if [ -e "$MCP_TARGET" ] || [ -L "$MCP_TARGET" ]; then
+    : # Already linked / present; idempotent silent skip.
+  else
+    mkdir -p "$PROJECT_DIR/extensions"
+    if ln -sfn "$MCP_SOURCE" "$MCP_TARGET" 2>/dev/null; then
+      echo "[SDD init] Symlinked MCP server into project (extensions/sdd-mcp-server → plugin install). Wiki-link resolution active."
+    else
+      cat >&2 <<EOM
+[SDD init] note: couldn't symlink MCP server — wiki-link checking will be silent.
+[SDD init] To enable: ln -sfn "$MCP_SOURCE" "$MCP_TARGET"
+[SDD init] Or set CLAUDE_PLUGIN_ROOT in your shell. (See #175 / #176.)
+EOM
+    fi
+  fi
+else
+  cat >&2 <<EOM
+[SDD init] note: MCP server not found at $MCP_SOURCE — wiki-link checking will be silent.
+[SDD init] This is a setup warning, not a blocker. The framework still works without it.
+EOM
 fi
 
 cat <<EOF
