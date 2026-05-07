@@ -196,6 +196,11 @@ if mkdir -p .sdd/extensions 2>/dev/null; then
     if cp -r "$src" "$dst"; then
       echo "[SDD init] Copied extensions/$ext into .sdd/extensions/$ext (opt-in; run \`bash .sdd/extensions/$ext/enable.sh\` to wire into your project)."
     else
+      # CR cycle 2 (#192): failed cp -r can leave a partial $dst.
+      # Without cleanup, the next init's `[ -e "$dst" ]` skip would
+      # treat a half-broken copy as "already installed" and never
+      # retry. Wipe partial state so re-running sdd-init recovers.
+      rm -rf "$dst" 2>/dev/null || true
       echo "[SDD init] note: failed to copy extensions/$ext/ — opt-in extension unavailable until you install it manually." >&2
     fi
   done
