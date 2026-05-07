@@ -453,6 +453,14 @@ The non-technical user brings the *what*. You propose the *how*. They adjust tog
 
 Then ask the question. Skip on within-action continuations (e.g. §1.who → §1.pain share context). The lint at `.sdd/scripts/lint-action-prose.sh` enforces both checks (skeleton reference present + `prelude_refresh: true` set); removing either fails the lint at commit time. **Why this exists:** non-technical users (Sam et al.) lose track of what's being built when each `/next` jumps straight to the next question; the refresher reanchors them every action boundary, and the verbatim-quote rule prevents the agent from drifting the §1 prose into engineer-speak.
 
+**Mechanical enforcement (closes #173 + #174) — grill the user's answer before recording:** every USER-LED action and every AGENT-LED action with `requires_user_approval: true` references `templates/.sdd/skeletons/grill-protocol.md` and applies the grill protocol AFTER the user's answer, BEFORE writing it into spec.md. The protocol has five question types — restate-to-catch-misinterpretation, interrogate-vague-terms, surface-hidden-assumptions, push-on-under-specification, force-trade-off-recognition — and a hard cap of **3 questions per answer** so users don't feel interrogated.
+
+**Skip the grill on clean answers:** names, numbers, picked-from-list, direct quotes from approved §1-§3 prose, binary yes/no on a binary question. Grilling concrete answers wastes the user's time and trains them to dread `/next`. The grill is a check, not a loop — if the user re-answers identically, record and move on.
+
+**Plain English in every grill question (closes #174):** every grill question translates jargon on first use, gives a concrete example or analogy for each option offered, strips SQL/code/file paths from inline prose, and ends with "or describe in your own words". The protocol's prose quality is reviewed by the user at PR-merge time (foundation 3 — mechanical lint would be theatre); the lint enforces only that the skeleton is referenced.
+
+**Why this exists:** Sam observed during pipelogic_v2 F01 SPEC that USER-LED actions accept answers without challenge, and the failure mode was *"we are getting from the AI exactly what we were avoiding"* — the agent took the user's first vague answer ("fast", "intuitive", "all tables") at face value and shipped it into spec.md. The grill protocol makes interrogation mechanical for spec capture, complementing the halt-on-ambiguity behavioural cue in the never-assume doctrine above.
+
 ---
 
 ## Skippable sections — proactively offer, don't force

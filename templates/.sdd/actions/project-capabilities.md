@@ -20,6 +20,8 @@ requires_user_approval: true
 
 > **§171 — Refresher first.** BEFORE asking the question below, emit the 3-section refresher per [`refresher-block.md`](../skeletons/refresher-block.md): **Where we are** (work-item identifier + **verbatim 1-line quote** from the work-item's mode-appropriate §1 source — copy it exactly as written; do not paraphrase from memory; if §1 isn't filled yet, use the skeleton's "§1 not yet written" fallback), **Today's question (§N <slug>)** (what this asks, in plain English), **Why now** (why it precedes the rest of the work). Skip on within-action continuations (e.g. §1.who → §1.pain share context).
 
+> **§173/§174 — Grill the user's answer.** AFTER the user answers below, BEFORE writing the answer into spec.md, apply the grill protocol per [`grill-protocol.md`](../skeletons/grill-protocol.md): cap 3 questions max, grill only on vague terms / hidden assumptions / under-specification / compound answers / implied trade-offs — skip clean answers (names, numbers, picked-from-list, binary yes/no). Every grill question is plain English with a concrete example or analogy (per #174); no SQL/code in inline prose; end with "or describe in your own words".
+
 # §4 — Capabilities (what to build, in shippable chunks)
 
 Now you turn the project into shippable features. Each capability becomes ONE feature — sized within the S/M/L band (S=1-4 BUILD tasks, M=5-10, L=11-15). Anything that would exceed L must split. Don't reach for "1-2 weeks" or other clock-time sizing — per CLAUDE.md doctrine rule 6, the framework sizes work in atomic steps and S/M/L, never in days/weeks (AI is much faster than human-trained estimates).
