@@ -108,6 +108,14 @@ Tracked outside the v1.0 milestone — see open issues at https://github.com/sam
 - Dedicated security audit pass — separate hostile-reviewer pass on every script.
 - Onboarding video / 5-min demo — once the walkthrough HTML is the canonical surface.
 
+## Ideas
+
+Cheap parking spots — no commitment to build. Promote via `/start` when one earns it.
+
+- [`ideas/001-multi-platform-pi-adapter`](ideas/001-multi-platform-pi-adapter.md) — pi.dev adapter as second harness, unlocking GPT-5/Kimi/Llama via pi's 15+ model providers — captured 2026-05-07
+- [`ideas/002-parallel-wave-execution`](ideas/002-parallel-wave-execution.md) — parallel BUILD-task waves with fresh per-wave contexts (GSD-style) — captured 2026-05-07
+- [`ideas/003-specialized-subagents`](ideas/003-specialized-subagents.md) — small set of role-specialised subagents (researcher / executor / verifier) — captured 2026-05-07
+
 ## How this differs from a downstream user's INDEX.md
 
 A downstream user's `.sdd/INDEX.md` lists features they're building. This file lists the framework's OWN work items — meta, but the same shape. The framework's "features" are the issues that change `templates/`, `.github/workflows/`, `scripts/`, etc.
