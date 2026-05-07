@@ -22,18 +22,29 @@ requires_user_approval: false
 
 > **§173/§174 — Grill the user's answer.** AFTER the user answers below, BEFORE writing the answer into spec.md, apply the grill protocol per [`grill-protocol.md`](../skeletons/grill-protocol.md): cap 3 questions max, grill only on vague terms / hidden assumptions / under-specification / compound answers / implied trade-offs — skip clean answers (names, numbers, picked-from-list, binary yes/no). Every grill question is plain English with a concrete example or analogy (per #174); no SQL/code in inline prose; end with "or describe in your own words".
 
-Ask: how will we know this worked? Push for **numbers**, not vibes.
+Ask: how will we know this worked? Push for **numbers, not vibes** — *but only when numbers are honest*. For foundation/gateway features (auth, canvas, infra, scaffolding) where there's no end-user funnel to measure, numerical metrics become theatre — see the 5th pattern below.
 
-Offer 4-5 metric patterns (and a free-form escape):
+Offer 5 metric patterns (and a free-form escape):
+
 - **Volume** — signups, orders, messages per day/week/month
 - **Speed** — time to first action, response time, conversion rate
 - **Quality** — NPS, error rate, support tickets, completion rate
 - **Engagement** — DAU/WAU/MAU, retention curve, time in app
+- **Clickthrough QA** *(closes #172)* — for foundation/gateway features where the right verification is human-judged at preview-deploy time, not a number. List specific behaviours as `M1`, `M2`, …, each annotated `{best-effort: <reviewer> at SHIP — what they check}`. Honest verification, not a softened number.
 - **Or describe your own**
 
-User picks one or two and gives target numbers. If they say "it works well," ask: *"What does 'well' look like as a number? Compared to what baseline?"*
+**When to propose Clickthrough QA *first*:** if the feature has no end-user-facing measurement surface (no funnel, no latency baseline, no error-rate signal yet) AND it's sized S or M (foundation features tend to be small) AND brief §3 persona explicitly trusts a human reviewer (e.g. *"reviews via clickthrough, not diffs"*), lead with this pattern. Don't force a numerical metric where none can honestly be measured — the user will push back and you'll have to redo §2.
 
-**Output:** fill `spec.md` under `### §2 Success` with one short paragraph per metric chosen — include the target number AND the current baseline if known. Capture the user's words; don't reframe.
+**Format for Clickthrough QA metrics:**
+
+```text
+- M1: User can log in, land on /map, and see every database table as a card. {best-effort: Sam at SHIP — clickthrough on preview deploy, no synthetic traffic}
+- M2: Each card click opens a panel showing the table's columns + first 50 rows. {best-effort: Sam at SHIP — manual test, ≥3 random tables}
+```
+
+User picks one or two and gives target numbers (or behaviours). If they say *"it works well,"* ask: *"What does 'well' look like — a number compared to a baseline, or a list of clickthrough behaviours a human will check on the preview deploy?"*
+
+**Output:** fill `spec.md` under `### §2 Success` with one short paragraph per metric chosen — include the target number AND the current baseline if known, OR the list of `M1`/`M2`/… behaviours with their `{best-effort:}` annotations. Per CLAUDE.md (§170 directive on auto-annotation): every numerical metric line gets `{best-effort:}` / `{prod-only:}` / `{verify-by:}` annotation inline at record time. Capture the user's words; don't reframe.
 
 **What it looks like:**
 
