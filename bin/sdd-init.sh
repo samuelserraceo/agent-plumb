@@ -244,13 +244,19 @@ if [ -d "$MCP_SOURCE" ]; then
   if [ -e "$MCP_TARGET" ] || [ -L "$MCP_TARGET" ]; then
     : # Already linked / present; idempotent silent skip.
   else
-    mkdir -p "$PROJECT_DIR/extensions"
-    if ln -sfn "$MCP_SOURCE" "$MCP_TARGET" 2>/dev/null; then
+    # CR cycle 1 (#190): fold mkdir into the same condition as ln
+    # so a read-only-fs failure goes through the non-fatal warning
+    # path instead of `set -e` aborting the script silently. The
+    # rest of init has already succeeded by this point — losing
+    # wiki-link checking is a soft warning, not a reason to fail
+    # the whole bootstrap.
+    if mkdir -p "$PROJECT_DIR/extensions" 2>/dev/null && \
+       ln -sfn "$MCP_SOURCE" "$MCP_TARGET" 2>/dev/null; then
       echo "[SDD init] Symlinked MCP server into project (extensions/sdd-mcp-server → plugin install). Wiki-link resolution active."
     else
       cat >&2 <<EOM
 [SDD init] note: couldn't symlink MCP server — wiki-link checking will be silent.
-[SDD init] To enable: ln -sfn "$MCP_SOURCE" "$MCP_TARGET"
+[SDD init] To enable: mkdir -p "$PROJECT_DIR/extensions" && ln -sfn "$MCP_SOURCE" "$MCP_TARGET"
 [SDD init] Or set CLAUDE_PLUGIN_ROOT in your shell. (See #175 / #176.)
 EOM
     fi
