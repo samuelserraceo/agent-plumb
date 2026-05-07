@@ -27,7 +27,7 @@ The first action of any work-item *fills* §1, so quoting verbatim from §1 is i
 because we're at the very first action; everything below is
 groundwork for filling it. The seed line we have so far is:
 "<the user's original /start title or brief seed line, copied
-verbatim — even if it runs long, do not trim>"*.
+verbatim; trim if it's already > 80 chars>"*.
 
 **Today's question (§N <action-slug>):** <plain English ask>.
 

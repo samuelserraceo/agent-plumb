@@ -234,6 +234,21 @@ for f in "${TARGETS[@]}"; do
       violations=$((violations + 1))
     fi
   fi
+
+  # Check 4 (#173/#174): user-facing actions must also reference the
+  # grill-protocol skeleton so the agent interrogates the user's answer
+  # (vague terms, hidden assumptions, under-specification, compound
+  # answers, implied trade-offs) BEFORE writing it to spec.md. The
+  # protocol mandates plain English + concrete examples in every grill
+  # question (closes #174). Same scope as Checks 2 and 3: USER-LED OR
+  # AGENT-LED-with-approval-true (the actions that pause for human
+  # input). Mechanical actions (AGENT-LED-with-approval-false) skip.
+  if is_user_facing "$f"; then
+    if ! printf '%s' "$body" | grep -qF 'grill-protocol.md'; then
+      echo "[lint-action-prose] $f — missing grill-protocol.md reference (user-facing actions must direct the agent to grill vague/ambiguous answers before recording — see templates/.sdd/skeletons/grill-protocol.md)" >&2
+      violations=$((violations + 1))
+    fi
+  fi
 done
 
 if [ "$violations" -gt 0 ]; then
