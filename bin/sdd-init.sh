@@ -164,6 +164,50 @@ if [ -d "$TEMPLATE_OBSIDIAN" ] && [ ! -d ".obsidian" ]; then
   }
 fi
 
+# Closes #167. Copy opt-in user-runnable extensions (Playwright +
+# Playwright-explorer) from $PLUGIN_ROOT/extensions/ into the
+# project's .sdd/extensions/ so the user can run e.g.
+# `bash .sdd/extensions/playwright/enable.sh` per README + CLAUDE.md
+# instructions. We COPY (not symlink) because:
+#  - These are user-editable opt-ins (the user may tune the
+#    Playwright config or extend the explorer for their stack).
+#  - Symlinks make edits affect the plugin install (cross-project
+#    contamination).
+#  - The MCP server (extensions/sdd-mcp-server) is symlinked
+#    instead because it's auto-loaded machinery, not user-editable.
+# CR cycle 1 (#192): two fixes:
+#   - Major: guard `mkdir -p` so a read-only-fs failure doesn't
+#     abort the whole init under `set -e`. Optional bootstrap
+#     should be fully non-fatal.
+#   - Minor: warn (don't silently skip) when an extension source
+#     directory is missing in the plugin install — that's a
+#     packaging issue worth surfacing.
+if mkdir -p .sdd/extensions 2>/dev/null; then
+  for ext in playwright playwright-explorer; do
+    src="$PLUGIN_ROOT/extensions/$ext"
+    dst=".sdd/extensions/$ext"
+    if [ ! -d "$src" ]; then
+      echo "[SDD init] note: extensions/$ext/ is missing in plugin install at $src — skipping (opt-in extension unavailable; plugin packaging may be incomplete)." >&2
+      continue
+    fi
+    if [ -e "$dst" ]; then
+      continue  # Already present; idempotent silent skip.
+    fi
+    if cp -r "$src" "$dst"; then
+      echo "[SDD init] Copied extensions/$ext into .sdd/extensions/$ext (opt-in; run \`bash .sdd/extensions/$ext/enable.sh\` to wire into your project)."
+    else
+      # CR cycle 2 (#192): failed cp -r can leave a partial $dst.
+      # Without cleanup, the next init's `[ -e "$dst" ]` skip would
+      # treat a half-broken copy as "already installed" and never
+      # retry. Wipe partial state so re-running sdd-init recovers.
+      rm -rf "$dst" 2>/dev/null || true
+      echo "[SDD init] note: failed to copy extensions/$ext/ — opt-in extension unavailable until you install it manually." >&2
+    fi
+  done
+else
+  echo "[SDD init] note: failed to create .sdd/extensions/ — skipping optional extension bootstrap (the framework still works without opt-in extensions)." >&2
+fi
+
 # Wire git hooksPath if a git repo is present and no conflicting setup
 # is in place. Same conflict-aware logic as start.sh — refuse to
 # silently override an existing Husky/lefthook setup.
