@@ -13,8 +13,8 @@ stages:
       - project-success
       - project-stakeholders
     exit_checks:
-      - { id: C-vision-stakeholders, check: "≥1 stakeholder profile in §3 {best-effort: project-author at VISION exit} — awk '/^### §3/{f=1;next} /^### §[0-9]/{f=0} f && /^[-*]|^[A-Z]/' \"$SECTION_FILE\" | grep -q ." }
-      - { id: C-vision-success, check: "≥1 measurable success metric in §2 {best-effort: project-author at VISION exit} — awk '/^### §2/{f=1;next} /^### §[0-9]/{f=0} f && /^[-*]|^[A-Z]/' \"$SECTION_FILE\" | grep -q ." }
+      - { id: C-vision-stakeholders, check: "≥1 stakeholder profile in §3 {best-effort: project-author at VISION exit} — awk '/^### §3/{f=1;next} /^### §[0-9]/{f=0} f && (/^[-*]/ || /^[A-Z]/)' \"$SECTION_FILE\" | grep -q ." }
+      - { id: C-vision-success, check: "≥1 measurable success metric in §2 {best-effort: project-author at VISION exit} — awk '/^### §2/{f=1;next} /^### §[0-9]/{f=0} f && (/^[-*]/ || /^[A-Z]/)' \"$SECTION_FILE\" | grep -q ." }
   - id: BREAKDOWN
     actions:
       - project-capabilities
