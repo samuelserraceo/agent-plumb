@@ -74,6 +74,60 @@ is_qualifying() {
   esac
 }
 
+get_approval() {
+  # Extract `requires_user_approval:` value from frontmatter (true/false).
+  local file="$1"
+  awk '
+    /^---[[:space:]]*$/ { fm = !fm; next }
+    fm && /^requires_user_approval:/ {
+      sub(/^requires_user_approval:[[:space:]]*/, "")
+      gsub(/[[:space:]]/, "")
+      print
+      exit
+    }
+  ' "$file"
+}
+
+is_user_facing() {
+  # Returns 0 for actions that pause for user input or approval — i.e.
+  # USER-LED (always asks) OR AGENT-LED with requires_user_approval: true
+  # (drafts and waits for the user to approve before recording).
+  # These are the actions that benefit from the §171 refresher block;
+  # AGENT-LED-with-approval-false actions run mechanically and don't
+  # need to re-ground the user mid-flight.
+  #
+  # CR feedback (PR #181 cycle 1): normalise the approval value before
+  # comparison — YAML accepts `true`, `"true"`, `'true'`, `TRUE`,
+  # `True`, all of which mean the same thing. Without normalisation,
+  # a quoted-string value silently flipped the action to "not
+  # user-facing" and the refresher requirement was skipped.
+  local file="$1" tag appr
+  tag=$(get_tag "$file")
+  appr=$(get_approval "$file")
+  appr="${appr//\"/}"          # strip double quotes
+  appr="${appr//\'/}"          # strip single quotes
+  appr="$(printf '%s' "$appr" | tr '[:upper:]' '[:lower:]')"
+  case "$tag" in
+    USER-LED) return 0 ;;
+    AGENT-LED) [ "$appr" = "true" ] && return 0 || return 1 ;;
+    *) return 1 ;;
+  esac
+}
+
+get_prelude_refresh() {
+  # Extract `prelude_refresh:` value from frontmatter (true/false/missing).
+  local file="$1"
+  awk '
+    /^---[[:space:]]*$/ { fm = !fm; next }
+    fm && /^prelude_refresh:/ {
+      sub(/^prelude_refresh:[[:space:]]*/, "")
+      gsub(/[[:space:]]/, "")
+      print
+      exit
+    }
+  ' "$file"
+}
+
 check_ambiguous_tag() {
   # If a file's tag string contains BOTH "USER-LED" and "AGENT-LED"
   # substrings (e.g. "USER-LED,AGENT-LED"), refuse: the action's
@@ -147,6 +201,38 @@ for f in "${TARGETS[@]}"; do
   if ! printf '%s' "$body" | grep -qF '**What it looks like:**'; then
     echo "[lint-action-prose] $f — missing 'What it looks like:' example block (USER-LED/AGENT-LED actions must ship a concrete plain-English example the agent can mirror)" >&2
     violations=$((violations + 1))
+  fi
+
+  # Check 2 (#171): user-facing actions must reference the refresher
+  # skeleton so the agent emits the 3-section "Where we are / Today's
+  # question / Why now" block BEFORE asking the action's question.
+  # Scope: USER-LED (always pauses for input) OR AGENT-LED with
+  # requires_user_approval: true (pauses for approval). AGENT-LED
+  # with approval=false runs mechanically — no refresher needed.
+  if is_user_facing "$f"; then
+    if ! printf '%s' "$body" | grep -qF 'refresher-block.md'; then
+      echo "[lint-action-prose] $f — missing refresher-block.md reference (user-facing actions must direct the agent to emit the §171 refresher before the question — see templates/.sdd/skeletons/refresher-block.md)" >&2
+      violations=$((violations + 1))
+    fi
+  fi
+
+  # Check 3 (#171, CR cycle 1): user-facing actions must declare
+  # `prelude_refresh: true` in frontmatter. Issue #171 explicit
+  # text: "Each action prose file should declare prelude_refresh:
+  # true in frontmatter (default true; can be false for purely
+  # sequential actions)". The frontmatter flag is the structured
+  # signal for tooling (next-action.sh, /next, IDE plugins) so the
+  # refresher fires deterministically. Prose-only control was
+  # brittle — flagged Major × 4 by CR.
+  if is_user_facing "$f"; then
+    pr=$(get_prelude_refresh "$f")
+    pr="${pr//\"/}"
+    pr="${pr//\'/}"
+    pr="$(printf '%s' "$pr" | tr '[:upper:]' '[:lower:]')"
+    if [ "$pr" != "true" ]; then
+      echo "[lint-action-prose] $f — missing 'prelude_refresh: true' in frontmatter (user-facing actions must set this flag so the §171 refresher fires deterministically; see issue #171)" >&2
+      violations=$((violations + 1))
+    fi
   fi
 done
 

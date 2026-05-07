@@ -2,6 +2,7 @@
 type: action
 slug: signoff-steps
 tag: USER-LED
+prelude_refresh: true
 title: "§12 Human sign-off steps"
 short_label: "Sign-off steps"
 steps:
@@ -16,6 +17,8 @@ budget:
   max_commits: 1
 requires_user_approval: false
 ---
+
+> **§171 — Refresher first.** BEFORE asking the question below, emit the 3-section refresher per [`refresher-block.md`](../skeletons/refresher-block.md): **Where we are** (work-item identifier + **verbatim 1-line quote** from the work-item's mode-appropriate §1 source — copy it exactly as written; do not paraphrase from memory; if §1 isn't filled yet, use the skeleton's "§1 not yet written" fallback), **Today's question (§N <slug>)** (what this asks, in plain English), **Why now** (why it precedes the rest of the work). Skip on within-action continuations (e.g. §1.who → §1.pain share context).
 
 Ask: *"Besides the automated tests we've written, what manual steps do YOU need to take before we ship? These are the smoke tests only a human can do."*
 

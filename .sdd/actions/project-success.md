@@ -2,6 +2,7 @@
 type: action
 slug: project-success
 tag: USER-LED
+prelude_refresh: true
 title: "Project success"
 short_label: "§2 Success"
 steps:
@@ -18,6 +19,8 @@ budget:
   max_commits: 3
 requires_user_approval: false
 ---
+
+> **§171 — Refresher first.** BEFORE asking the question below, emit the 3-section refresher per [`refresher-block.md`](../skeletons/refresher-block.md): **Where we are** (work-item identifier + **verbatim 1-line quote** from the work-item's mode-appropriate §1 source — copy it exactly as written; do not paraphrase from memory; if §1 isn't filled yet, use the skeleton's "§1 not yet written" fallback), **Today's question (§N <slug>)** (what this asks, in plain English), **Why now** (why it precedes the rest of the work). Skip on within-action continuations (e.g. §1.who → §1.pain share context).
 
 # §2 — Project success (what does "done" look like)
 
