@@ -19,7 +19,7 @@ budget:
 requires_user_approval: true
 ---
 
-> **§171 — Refresher first.** BEFORE asking the question below, emit the 3-section refresher per [`refresher-block.md`](../skeletons/refresher-block.md): **Where we are** (work-item name + **verbatim 1-line quote** from the work-item's §1 prose — *the spec's first paragraph, exactly as the user wrote it; do not paraphrase from memory*), **Today's question (§N <slug>)** (what this asks, in plain English), **Why now** (why it precedes the rest of the work). Skip on within-action continuations (e.g. §1.who → §1.pain share context).
+> **§171 — Refresher first.** BEFORE asking the question below, emit the 3-section refresher per [`refresher-block.md`](../skeletons/refresher-block.md): **Where we are** (work-item name + **verbatim 1-line quote** from the work-item's mode-appropriate §1 source — copy it exactly as written; do not paraphrase from memory; if §1 isn't filled yet, use the skeleton's "§1 not yet written" fallback), **Today's question (§N <slug>)** (what this asks, in plain English), **Why now** (why it precedes the rest of the work). Skip on within-action continuations (e.g. §1.who → §1.pain share context).
 
 Tests are GREEN. Before we write the lessons-learned, the agent re-reads the feature's `spec.md` + the code that was actually shipped wearing a **hostile reviewer hat** — someone whose job is to find what could break this in production AND what could be made simpler. The goal is to catch the problems we'd rather find now than from a real user (or an attacker) next week, AND to surface complexity we can drop while it's still cheap.
 

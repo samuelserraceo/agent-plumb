@@ -447,7 +447,7 @@ The non-technical user brings the *what*. You propose the *how*. They adjust tog
 
 **Mechanical enforcement (closes #171) — refresher block before every user-facing action:** every USER-LED action and every AGENT-LED action with `requires_user_approval: true` declares `prelude_refresh: true` in frontmatter and references `templates/.sdd/skeletons/refresher-block.md` in body prose. Before asking its question, the agent emits a 3-section refresher:
 
-- **Where we are:** `<work-item name> — <verbatim 1-line quote from the work-item's §1 prose>` (copied not paraphrased; never invented from memory). §1 source differs by mode — features quote §1 Problem, projects quote §1 Vision, bugs quote §1 Reproduction.
+- **Where we are:** `<work-item name> — <verbatim 1-line quote from the work-item's mode-appropriate §1 source>` (copied not paraphrased; never invented from memory). §1 source differs by mode — features quote §1 Problem, projects quote §1 Vision, bugs quote §1 Reproduction, refactors quote §1 Scope. The full mapping (and the "§1 not yet written" fallback for first-action-of-a-new-work-item flows like `problem` / `project-problem` / `bug-repro` / `refactor-scope`) lives in `templates/.sdd/skeletons/refresher-block.md`.
 - **Today's question (§N <action-slug>):** what this question is asking, in plain English (translate any technical term on first use).
 - **Why now:** why this question precedes the rest.
 

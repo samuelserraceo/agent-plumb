@@ -18,7 +18,26 @@ The "Where we are" line quotes **verbatim** from the work item's §1 prose — *
 | **bug**           | §1 Reproduction prose — *what was tried, what happened, what was expected* |
 | **refactor**      | §1 Scope prose — *what's getting moved, why, the boundary*          |
 
-If §1 isn't yet filled, say so plainly: *"§1 isn't filled yet — we're at the very start. Today's question kicks off the refresher chain."*
+### "§1 not yet written" fallback — the chicken-and-egg case
+
+The first action of any work-item *fills* §1, so quoting verbatim from §1 is impossible the first time around. This applies to: `problem` (feature), `project-problem` (project), `bug-repro` (bug), `refactor-scope` (refactor). For these specific actions, follow this fallback shape:
+
+```text
+**Where we are:** <work-item name> — *§1 hasn't been written yet
+because we're at the very first action; everything below is
+groundwork for filling it. The seed line we have so far is:
+"<the user's original /start title or brief seed line, copied
+verbatim; trim if it's already > 80 chars>"*.
+
+**Today's question (§N <action-slug>):** <plain English ask>.
+
+**Why now:** §1 is the foundation every later question references —
+that's why this question runs first.
+```
+
+Once §1 has been filled by THIS action's commit, every subsequent action quotes from the now-existing §1 prose. The fallback fires once per work-item, at the first user-facing turn.
+
+If §1 exists but is mid-edit (e.g., the user filled `who` but not `what-breaks` yet), quote whatever HAS been written; if all three §1 step rows are still `[ ]`, you're still in the fallback case — say so.
 
 ## Format (plain English, no jargon)
 
