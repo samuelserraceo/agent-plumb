@@ -115,6 +115,7 @@ Cheap parking spots — no commitment to build. Promote via `/start` when one ea
 - [`ideas/001-multi-platform-pi-adapter`](ideas/001-multi-platform-pi-adapter.md) — pi.dev adapter as second harness, unlocking GPT-5/Kimi/Llama via pi's 15+ model providers — captured 2026-05-07
 - [`ideas/002-parallel-wave-execution`](ideas/002-parallel-wave-execution.md) — parallel BUILD-task waves with fresh per-wave contexts (GSD-style) — captured 2026-05-07
 - [`ideas/003-specialized-subagents`](ideas/003-specialized-subagents.md) — small set of role-specialised subagents (researcher / executor / verifier) — captured 2026-05-07
+- [`ideas/004-remove-success-from-feature-playbook`](ideas/004-remove-success-from-feature-playbook.md) — drop §2 Success from feature playbook, lean on §11 Acceptance Criteria as the AI-verifiable success layer — captured 2026-05-08
 
 ## How this differs from a downstream user's INDEX.md
 
