@@ -313,3 +313,6 @@ SHIPPED. Channel B (project-template tree) update flow now mechanical via `bash 
 
 ## 2026-05-08T07:48:18Z [[008-build-the-sdd-on-pi-extension-package]] feature/proposed-approach
 Sam approved §5: hybrid approach (C) — develop in `extensions/sdd-pi-extension/` inside SDD repo, auto-publish to npm as `sdd-pi-adapter`. 4 moving parts (TS extension, prompts/, package.json#pi manifest, reuse existing `.sdd/` brain). 4 key technical choices acknowledged (TS, manifest, `pi-mcp-adapter` peer, git pre-commit hooks for enforcement). Out of scope: ideas 002 (parallel waves), 003 (subagents), 004 (remove §2 from playbook). Section hash: `5acb3e7a74987fb8e45a8419396c737a8d9724b049d73a72d23d566d4f2ce90f`.
+
+## 2026-05-08T08:19:57Z [[008-build-the-sdd-on-pi-extension-package]] feature/data-contract
+Sam approved §6: no new project-state entities. Pi adapter reads existing `.sdd/` brain via the same scripts; no new fields/tables/files in user data. One new framework-level entity added to `data-model.md`: `Pi extension package` (analogous to existing `Hook`, `Action`, `Playbook`, `Setup brick`, `Extension`). 4 edge cases at the data layer asked-and-answered (parallel Claude+pi installs, session_start re-runs, missing pi-mcp-adapter peer, simultaneous session_start from both harnesses). Section hash: `8811645a9a7172b185ca47d8eb9da151a57f32ee4a9cb652669bdba4a79c7a41`.

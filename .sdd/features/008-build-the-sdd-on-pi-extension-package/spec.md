@@ -112,7 +112,29 @@ This keeps 008 focused on one harness adapter, no scope creep.
 
 ### action: data-contract
 
-- [ ] approval: draft the data contract, iterate with the user, sync data-model.md, get approval
+- [x] approval: No new project-state entities. One new framework-level concept added to data-model.md ([[entity:pi-extension-package]]). Existing entities ([[entity:Action]], [[entity:Playbook]], [[entity:Hook]], [[entity:Setup-brick]]) gain no new fields.
+
+**Data contract:** No new project-state entities. Pi adapter is a new way to *access* the existing brain — it doesn't add fields, tables, or files to user data.
+
+| Layer | Change | Why |
+|---|---|---|
+| **Project state** (spec.md, INDEX.md, decisions.md, patterns.md, principles.md, data-model.md, stack.md, .sdd/features/**, .sdd/bugs/**) | No changes | Pi adapter reads them as-is via the same scripts |
+| **Framework data-model.md** | One addition: `Pi extension package` entity (analogous to `Hook`, `Action`, `Playbook`, `Setup brick`) | Distributable unit type the framework should describe so future work knows it exists |
+| **Existing entities** ([[entity:Action]], [[entity:Playbook]], [[entity:Hook]], [[entity:Setup-brick]]) | No new fields | |
+| **Relations** | None added/removed | |
+
+**New framework entity** (added to `.sdd/data-model.md` in this commit):
+
+> **Pi extension package** — a pi.dev distributable. Lives at `extensions/sdd-pi-extension/` in this repo, published to npm as `sdd-pi-adapter`. Has a `package.json#pi` manifest declaring `extensions:` and `prompts:` paths. The TypeScript extension file at `src/sdd-pi.ts` registers handlers for pi's `context`, `session_start`, `tool_call`, and `tool_result` events plus instant slash-commands via `pi.registerCommand`. Auto-discovered by pi when installed via `pi install npm:sdd-pi-adapter`.
+
+**Edge cases at the data layer (asked-and-answered):**
+
+1. **Both Claude Code and pi.dev SDD installed in the same project.** Both adapters read the same `.sdd/` brain — no conflict. State file is shared; only the access mechanism differs.
+2. **Pi `session_start` runs with existing `.pi/sdd/` content.** Per pi-gsd's HRN-01 pattern: copy missing framework files only, leave existing user-edits untouched.
+3. **User installs `sdd-pi-adapter` without `pi-mcp-adapter`.** SDD methodology still works — the MCP server simply isn't reachable from pi. Soft dep, not hard.
+4. **Pi.dev and Claude Code `session_start` hooks run on the same project simultaneously.** Each writes to its own harness dir (`.claude/` vs `.pi/`); the shared `.sdd/` brain isn't touched by session-start. No race.
+
+**Approved by Sam: 2026-05-08.** Hash recorded in decisions.md audit trail (verification.json deferred to phase-advance time per the v0.8 moat convention discovered during §5).
 
 ### action: flows
 
