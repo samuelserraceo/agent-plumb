@@ -55,9 +55,11 @@ For 008 specifically, this means: when SPEC → BUILD → SHIP completes and §1
 
 (Names are placeholders — Sam to swap with real colleagues' names if useful before SHIP.)
 
-### action: ux-brief
+### action: ux-brief [SKIPPED]
 
-- [ ] brief: infer the UX direction from problem, success, and user stories
+- ⏭ brief: skipped — backend-only feature — CLI extension, no UI surface
+
+**§4 skipped:** SDD-on-pi is a CLI extension — no screens, no visual layout, no motion. Visualisation for this non-UI feature lives in §13 Wireframe (flow + architecture diagram + concrete CLI usage examples) per the wireframe-redesign rule.
 
 ### action: proposed-approach
 
