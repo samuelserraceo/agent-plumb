@@ -138,7 +138,80 @@ This keeps 008 focused on one harness adapter, no scope creep.
 
 ### action: flows
 
-- [ ] flows: draft 1-3 critical flows, each referencing the user story it implements
+- [x] flows: 2 critical flows — (1) first-time install + first SDD task (covers stories 2/3/4: Marco/Lucia/new evaluator); (2) multi-model task routing within one session (covers story 1: Sam's per-task model switching). Visual diagram deferred to §13 Wireframe per non-UI visualisation rule.
+
+**Flows (2 critical, mapped to user stories):**
+
+### Flow 1 — First-time install + first SDD task (stories 2, 3, 4)
+
+```
+1. Colleague has a project they want to SDD-ify; pi.dev installed already.
+2. They run: pi install npm:sdd-pi-adapter
+   → pi auto-discovers the package's #pi manifest
+   → extension's session_start fires
+   → copies framework `.sdd/` brain into `.pi/sdd/` via the HRN-01
+     copy-on-first-run pattern (preserves any existing user files)
+   → 9 slash-commands now available (/sdd-start, /sdd-next, /sdd-ship,
+     /sdd-status, /sdd-compress, /sdd-skip, /sdd-bug, /sdd-idea,
+     /sdd-config)
+3. (Optional) They run: pi install npm:pi-mcp-adapter
+   → adds `.pi/mcp.json` config so SDD's MCP server is reachable
+   → without this, slash-commands still work; only MCP-flavored state
+     queries become unreachable (soft dep)
+4. They open pi.dev in their project, switch model with /model:
+   → pick claude-sonnet-4-6, gpt-5, kimi-k2-instruct, llama-4-maverick,
+     ollama:custom, or any of pi's 15+ providers
+5. They type: /sdd-start build a waitlist landing page
+   → prompt template loads, pi calls bash .sdd/scripts/start.sh "..."
+   → scaffolds .sdd/features/001-build-a-waitlist-landing-page/spec.md
+   → updates INDEX.md, prints "Run /sdd-next to continue"
+6. They type: /sdd-next
+   → pi.on("context") hook injects current SDD state
+     (INDEX.md, active spec.md, principles.md, stack.md, data-model.md,
+     patterns.md — same content the Claude Code UserPromptSubmit hook
+     injects today)
+   → model reads §1.who prompt, asks the user "Who has this problem?"
+   → user answers, model commits as `[SDD:001] spec: problem/who`
+7. Walk continues identically to Claude Code — same actions, same
+   atomic-step rule, same anti-theatre lint, same pre-commit chain
+   (running through git pre-commit hooks now, not pi's tool_call event).
+```
+
+**What's the same as Claude Code:** slash command surface, action prose, framework scripts, commit shape, safety rails — all reused from `.sdd/`.
+
+**What's different:** the model is whatever pi has selected (`/model`); the harness dir is `.pi/sdd/` (not `.claude/`); the slash-command prefix is `sdd-` (pi convention; Claude Code uses bare `/start /next /ship`). User experience matches what they'd get on Claude Code in spirit; the surface details differ at the harness boundary.
+
+### Flow 2 — Multi-model task routing within one session (story 1)
+
+```
+1. Sam is in pi.dev, mid-feature on an SDD work item.
+2. He's about to do a heavy codebase exploration step (research recon
+   — lots of file reads, big context, low reasoning demand).
+3. He runs: /model
+   → pi shows model picker; Sam selects a cheaper/larger-context model
+     (haiku-3-5, kimi-k2, etc.)
+4. He runs: /sdd-next
+   → pi.on("context") hook injects state same as before
+   → cheap model does the recon, returns synthesis
+   → atomic-step commit lands as `[SDD:NNN] spec: <action>/<step>`
+5. Next sub-step is a BUILD-TASK code step (needs reasoning quality).
+6. Sam runs: /model again
+   → switches back to claude-sonnet-4-6, opus-4, or gpt-5
+   → continues with /sdd-next
+7. The session is one continuous SDD flow; only the LLM behind it
+   changes per task.
+```
+
+**Net for Sam:** pay Claude prices only on steps that need Claude-quality reasoning. Cheaper models for everything else. Same SDD discipline applied throughout.
+
+**What enables this:** pi.dev's native `/model` command + the fact that SDD's action prose is model-agnostic (the discipline test passed 2/2 today across GPT-5.5 and Kimi K2, confirming the rules travel cleanly across model families).
+
+### Out of scope for §7 (handled elsewhere)
+
+- **Visual flow diagram** (boxes-and-arrows showing pi.dev → extension → SDD scripts → state files) → §13 Wireframe per the non-UI visualisation rule.
+- **Adapter update flow** (using existing `sdd-migrate.sh` to refresh the framework brain in `.pi/sdd/`) → not a critical-path user flow; documented in the README at SHIP time.
+
+**Approved by Sam: 2026-05-08.**
 
 ### action: dependencies
 

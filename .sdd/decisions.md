@@ -316,3 +316,6 @@ Sam approved §5: hybrid approach (C) — develop in `extensions/sdd-pi-extensio
 
 ## 2026-05-08T08:19:57Z [[008-build-the-sdd-on-pi-extension-package]] feature/data-contract
 Sam approved §6: no new project-state entities. Pi adapter reads existing `.sdd/` brain via the same scripts; no new fields/tables/files in user data. One new framework-level entity added to `data-model.md`: `Pi extension package` (analogous to existing `Hook`, `Action`, `Playbook`, `Setup brick`, `Extension`). 4 edge cases at the data layer asked-and-answered (parallel Claude+pi installs, session_start re-runs, missing pi-mcp-adapter peer, simultaneous session_start from both harnesses). Section hash: `8811645a9a7172b185ca47d8eb9da151a57f32ee4a9cb652669bdba4a79c7a41`.
+
+## 2026-05-08T08:54:29Z [[008-build-the-sdd-on-pi-extension-package]] feature/flows
+Sam approved §7: 2 critical flows. Flow 1 (install + first SDD task) covers user stories 2, 3, 4 (Marco/Lucia/new evaluator first-time experience). Flow 2 (multi-model task routing within one session via pi's /model command) covers story 1 (Sam's per-task model switching). Visual diagram deferred to §13 Wireframe per non-UI visualisation rule. Adapter-update flow declared out-of-scope (handled by existing sdd-migrate.sh, documented in README at SHIP). Section hash: `bf9fc6257c1e8b57627bc4bd035842bceec6b180114d85f840f6af65ad7b471c`.
