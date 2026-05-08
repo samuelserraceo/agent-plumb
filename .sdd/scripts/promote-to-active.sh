@@ -274,8 +274,26 @@ if os.path.isfile(index_path):
         idx = f.read()
 
     # Find the backlog row matching this work item.
+    # CR cycle 3 finding (#195): track whether we actually moved a row,
+    # so we don't blindly update **Active:** when the row wasn't found
+    # in ## Backlog (e.g. user manually created the spec via /start --queued
+    # then hand-edited INDEX.md to put it directly under In flight, or
+    # an earlier promote-to-active partially completed). Pointing
+    # **Active:** at an item that isn't in ## In flight is a worse
+    # state than warning and leaving INDEX.md unchanged.
+    moved_to_in_flight = False
     backlog_match = re.search(r"(?ms)^## Backlog\b.*?(?=^## |\Z)", idx)
     in_flight_match = re.search(r"(?ms)^## In flight\b.*?(?=^## |\Z)", idx)
+
+    # If the work item is ALREADY under ## In flight (e.g. someone
+    # promoted it manually before running this command), treat it as
+    # already-moved and let the **Active:** + Active blocker updates
+    # proceed. The phase line in spec.md was already flipped above.
+    if in_flight_match:
+        ifl_text = in_flight_match.group(0)
+        if re.search(rf"^[ \t]*-\s+{re.escape(rel)}\b", ifl_text, re.MULTILINE):
+            moved_to_in_flight = True
+
     if backlog_match:
         bl_start, bl_end = backlog_match.span()
         bl = backlog_match.group(0)
@@ -286,6 +304,7 @@ if os.path.isfile(index_path):
         )
         row_match = row_pat.search(bl)
         if row_match:
+            moved_to_in_flight = True
             row = row_match.group(0)
             # Strip "(scaffolded, PHASE: QUEUED)" → "(PHASE: <first_stage_id>)" so
             # the row reads correctly under In flight.
@@ -334,27 +353,44 @@ if os.path.isfile(index_path):
                 # No In flight section — create one with this row.
                 idx = idx[:bl_start] + new_bl + "\n## In flight\n\n" + new_row + idx[bl_end:]
 
-    # Update **Active:** line to point at this work item.
-    if re.search(r"^\*\*Active:\*\*", idx, re.MULTILINE):
-        idx = re.sub(
-            r"^\*\*Active:\*\*[^\n]*",
-            f"**Active:** {rel}",
-            idx,
-            count=1,
-            flags=re.MULTILINE,
-        )
-    else:
-        # Prepend at the top.
-        idx = f"**Active:** {rel}\n\n" + idx
+    # CR cycle 3 finding (#195): only update **Active:** when we
+    # actually moved (or confirmed) this item into ## In flight. If the
+    # row isn't anywhere in INDEX.md, pointing **Active:** at it would
+    # leave the file inconsistent (Active references something that's
+    # not in flight). Warn and skip the pointer update — spec.md still
+    # got the PHASE flip, so the user can re-run /promote-to-active
+    # after fixing INDEX.md by hand.
+    if moved_to_in_flight:
+        # Update **Active:** line to point at this work item.
+        if re.search(r"^\*\*Active:\*\*", idx, re.MULTILINE):
+            idx = re.sub(
+                r"^\*\*Active:\*\*[^\n]*",
+                f"**Active:** {rel}",
+                idx,
+                count=1,
+                flags=re.MULTILINE,
+            )
+        else:
+            # Prepend at the top.
+            idx = f"**Active:** {rel}\n\n" + idx
 
-    # Update **Active blocker:** at top to point at first action.
-    if re.search(r"^\*\*Active blocker:\*\*", idx, re.MULTILINE):
-        idx = re.sub(
-            r"^\*\*Active blocker:\*\*[^\n]*",
-            f"**Active blocker:** §1 (first action: {first_action_slug or 'n/a'})",
-            idx,
-            count=1,
-            flags=re.MULTILINE,
+        # Update **Active blocker:** at top to point at first action.
+        if re.search(r"^\*\*Active blocker:\*\*", idx, re.MULTILINE):
+            idx = re.sub(
+                r"^\*\*Active blocker:\*\*[^\n]*",
+                f"**Active blocker:** §1 (first action: {first_action_slug or 'n/a'})",
+                idx,
+                count=1,
+                flags=re.MULTILINE,
+            )
+    else:
+        print(
+            f"[/promote-to-active] warning: {rel} not found in ## Backlog or ## In flight — INDEX.md row update skipped.",
+            file=sys.stderr,
+        )
+        print(
+            "                     spec.md PHASE was flipped, but **Active:** stays as-is. Add the row by hand and re-run if you want it active.",
+            file=sys.stderr,
         )
 
     # Atomic write — same pattern as the spec.md update above.

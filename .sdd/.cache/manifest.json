@@ -104,7 +104,7 @@
       "trust": "framework"
     },
     "promote-to-active": {
-      "expected_sha256": "c1c043e6a3e1e06c97207bff330b31a58cfef9357246c2af5d514718c1222ec0",
+      "expected_sha256": "6a48a5c438cc5b652a59b7bc49da1059b1c2e1740eeedcdc8996c0ecaa0795f5",
       "path": ".sdd/scripts/promote-to-active.sh",
       "trust": "framework"
     }
