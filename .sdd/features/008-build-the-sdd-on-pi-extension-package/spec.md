@@ -215,7 +215,37 @@ This keeps 008 focused on one harness adapter, no scope creep.
 
 ### action: dependencies
 
-- [ ] deps: draft external services + pricing math scaled to success-volume targets
+- [x] deps: zero new framework-borne service costs. Pi.dev (free, MIT), pi-mcp-adapter (free, MIT, optional), npm (free), GitHub Actions (free for public repo), TypeScript+tsup+vitest (all free toolchain). LLM costs borne by user; pi.dev supports OAuth subscription login (Claude Pro/Max, ChatGPT Plus/Pro, GitHub Copilot) AND API keys, so colleagues can use existing subscriptions without provisioning new keys.
+
+**Dependencies — external services (zero new framework-borne cost):**
+
+| Dependency | What it is | Cost to us | Cost to user | Risk |
+|---|---|---|---|---|
+| **pi.dev** (`@mariozechner/pi-coding-agent`) | The host CLI our extension plugs into | Free (MIT) | Free | Pre-1.0 — API may shift; we follow pi's version closely (pi-gsd does the same) |
+| **pi-mcp-adapter** | Community MCP bridge; SDD's MCP server reachable from pi | Free (MIT, 599 stars) | Free | Optional; if abandoned, document fallback (skip MCP) |
+| **npm registry** | Distribution path — we publish `sdd-pi-adapter` | Free (public package) | Free (public install) | Low — npm is mature infrastructure |
+| **GitHub Actions** | Workflow that auto-publishes the npm package on release tag | Free for public repo (already used by SDD) | N/A | Low — already a SDD dep |
+| **TypeScript + tsup + vitest** | Build + test toolchain (matches pi.dev / pi-gsd stack) | Free | Free | Low — standard, widely-used |
+
+**LLM costs (borne by user, not framework) — pi.dev supports two auth modes:**
+
+| Model family | Auth via OAuth subscription (`/login`) | Auth via API key | Notes |
+|---|---|---|---|
+| **Anthropic** (Claude Sonnet/Opus/Haiku) | ✅ Claude Pro/Max | ✅ ANTHROPIC_API_KEY | Same as Claude Code today |
+| **OpenAI** (GPT-5, GPT-4) | ✅ ChatGPT Plus/Pro | ✅ OPENAI_API_KEY | New for SDD users |
+| **GitHub Copilot** | ✅ Copilot subscription | (subscription only) | Pi.dev bonus — free for SDD users who already have Copilot |
+| **Google** (Gemini Pro/Flash) | ❌ (not documented) | ✅ Google API key (Gemini or Vertex) | New for SDD users |
+| **Open-weight** (Kimi K2, Llama, DeepSeek) | ❌ | ✅ Provider-specific keys (OpenRouter, Bedrock) or local Ollama | New for SDD users |
+
+**Important UX implication:** colleagues with existing **Claude Pro/Max, ChatGPT Plus/Pro, or Copilot subscriptions can run SDD-on-pi without provisioning a separate API key.** They run `/login`, pick their provider, and authenticate via the subscription they already pay for. Lowers the install friction for stories 2/3/4 substantially.
+
+**Pricing math scaled to success-volume targets — N/A.**
+
+Per §2's bridge to §11, success is mechanical (every §11 AC passes on both harnesses). There's no volume target to scale pricing math against. The framework adds zero cost-per-use; user LLM costs are unchanged from "whatever the user pays today running their model directly." If anything, SDD-on-pi's `/model` switching helps users pay LESS by routing cheap-tasks to cheap models.
+
+(Speculative pricing figures intentionally omitted — costs vary too widely by model and usage to commit to a number that means anything. Same anti-theatre discipline applied across SDD specs.)
+
+**Approved by Sam: 2026-05-08.**
 
 ### action: out-of-scope
 
