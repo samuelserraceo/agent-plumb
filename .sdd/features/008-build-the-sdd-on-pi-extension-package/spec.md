@@ -41,7 +41,19 @@ For 008 specifically, this means: when SPEC → BUILD → SHIP completes and §1
 
 ### action: user-stories
 
-- [ ] stories: Which personas matter? For each: 'As <persona>, I want <action>, so that <outcome>.' 1-5 stories total.
+- [x] stories: 4 stories — Sam (multi-model task routing), Marco (GPT-5/Codex user), Lucia (open-weight Kimi K2/Llama user), New evaluator (first-time SDD trial without committing to Claude Code)
+
+**User stories (4 total):**
+
+1. **Sam — multi-model task routing.** As Sam, I want to use different models for different SDD tasks (cheaper models like Haiku or Kimi K2 for codebase research and small BUILD steps; Opus/Sonnet for planning and complex code), so that I cut SDD session cost by routing each task to the right model — without losing the atomic-step discipline.
+
+2. **Marco — GPT-5 / Codex user.** As a colleague who codes with GPT-5 in Codex every day, I want to run SDD's SPEC → BUILD → SHIP loop inside pi.dev driving GPT-5, so that I get SDD's atomic-step discipline and anti-theatre rules without leaving my preferred model.
+
+3. **Lucia — open-weight model user.** As a colleague running Kimi K2 (or Llama, or DeepSeek) for cost or privacy reasons, I want to run SDD on pi.dev with my local/open-weight model, so that I get SDD's rigour at a fraction of the inference cost.
+
+4. **New evaluator — first-time SDD trial.** As someone curious about SDD but not yet using Claude Code, I want to try SDD via pi.dev with whatever model I already use, so that I can test SDD's value without committing to a new CLI as the entry point.
+
+(Names are placeholders — Sam to swap with real colleagues' names if useful before SHIP.)
 
 ### action: ux-brief
 
