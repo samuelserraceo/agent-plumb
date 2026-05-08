@@ -93,7 +93,7 @@ Reply: **yes** / **no** / **not sure**
 
 ## What the agent does after all 6 questions
 
-For each question, records the answer + chosen provider (or "none yet" / "tbd" / "none in product runtime") in `.sdd/stack.md` under `## Extras`. The agent does NOT install or configure any of these in this step — that's a separate auto-walk install flow (#67). What this step captures is the CHOICE; the install walks happen later, gated on the choice.
+For each question, records the answer + chosen provider (or "none yet" / "tbd" / "none in product runtime — dev-side only") in `.sdd/stack.md` under `## Extras`. The agent does NOT install or configure any of these in this step — that's a separate auto-walk install flow (#67). What this step captures is the CHOICE; the install walks happen later, gated on the choice.
 
 ## What gets recorded
 
