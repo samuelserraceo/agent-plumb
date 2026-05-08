@@ -339,7 +339,15 @@ Plus one already-handled-elsewhere (not in §9 list because it has its own home)
 
 ### action: signoff-steps
 
-- [ ] manual-steps: What manual smoke tests do YOU need to do before SHIP, beyond the automated tests? 1-5 bullets.
+- [x] manual-steps: 5 manual checks before SHIP — fresh-machine install dry-run; one full atomic step in pi.dev (real session); model-switching mid-session test; /sdd-status visual check; (optional) MCP integration smoke
+
+**Manual smoke tests Sam will run before SHIP (beyond T200-T211):**
+
+1. **Fresh-machine install dry-run.** On a clean machine: install pi.dev → `pi install npm:sdd-pi-adapter` → open pi → verify all 9 slash commands appear in `/` autocomplete. Catches install/manifest issues automated tests miss.
+2. **One full atomic step in pi.dev.** Fresh test project: `/sdd-start build a fake feature` → `/sdd-next` → answer §1.who → verify the commit lands cleanly through git pre-commit hooks. Catches state-injection or commit-flow regressions in real use.
+3. **Model-switching mid-session.** Mid-feature, run `/model` to switch from Claude Sonnet to GPT-5 (or Kimi K2 via NVIDIA Build, whichever is at hand). Run `/sdd-next`. Verify the `[FRAMEWORK INSTRUCTIONS]` / `[PROJECT DATA]` state markers still appear in the new model's context.
+4. **`/sdd-status` visual sanity check.** Run `/sdd-status` and visually confirm the output (current phase, blocker, next suggested action) reads naturally. Tests don't fully assert UX feel.
+5. **(Optional) MCP integration smoke.** Install `pi-mcp-adapter`, drop `.pi/mcp.json` referencing the SDD MCP server, run a query through pi's mcp proxy tool. Skip if MCP isn't part of the rollout plan.
 
 ### action: wireframe
 
