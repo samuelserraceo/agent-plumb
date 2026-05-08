@@ -249,8 +249,20 @@ Per §2's bridge to §11, success is mechanical (every §11 AC passes on both ha
 
 ### action: out-of-scope
 
-- [ ] list: What are we explicitly NOT building this round? 1-5 bullets, each: name + reason. Empty is fine.
+- [x] list: 5 explicit deferrals — parallel waves (idea 002), specialised subagents (idea 003), §2 removal (idea 004), other-CLI adapters, CI publish-workflow refinements
 - [ ] approval: user_approves
+
+**Out of scope for feature 008 — 5 explicit deferrals:**
+
+1. **Parallel wave execution** ([[ideas/002-parallel-wave-execution]]) — separate feature after 008 ships. Most useful when paired with multi-model + subagents; building parallel waves before the basic adapter exists is premature.
+2. **Specialised subagents** (researcher / executor / verifier role-splitting, [[ideas/003-specialized-subagents]]) — separate feature. Same dependency story: subagents pay off most once multi-model is real.
+3. **Removing §2 Success from the feature playbook** ([[ideas/004-remove-success-from-feature-playbook]]) — separate framework feature, not part of 008. Captured live during 008's §2 walkthrough; will get its own SPEC → BUILD → SHIP cycle.
+4. **Adapters for other CLIs** (Cursor, Aider, Windsurf, Codex direct) — pi.dev already reaches 15+ model providers via one adapter, so these aren't blocking. Future case-by-case work if specific demand surfaces.
+5. **CI publish-workflow refinements** (changesets, semver automation, conventional-commits parsing) — start with a simple tag-based npm publish in 008; refine if friction surfaces. Pillar 1 (Simplicity) — don't add tooling complexity until it earns its keep.
+
+Plus one already-handled-elsewhere (not in §9 list because it has its own home):
+
+- **Visual flow diagram** (boxes-and-arrows pi.dev → extension → SDD scripts → state files) — deferred to §13 Wireframe per the non-UI visualisation rule.
 
 ### action: non-functional
 
