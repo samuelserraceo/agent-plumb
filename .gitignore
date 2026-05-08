@@ -25,3 +25,4 @@ node_modules/
 # first session). Without this, every commit cycle has a stale
 # 'Warning: 1 uncommitted change' on PR creation.
 /CLAUDE.md
+.sdd/.cache/last-warnings.txt

@@ -896,8 +896,75 @@ check_shipped_rows_have_marker
 # Print warnings first (they're informational), then violations (they
 # block). When only warnings exist, the script still exits 0.
 
+# ============================================================
+# Loop detection (closes #198 — same warning N turns without
+# escalation caused a 1h54m hang during pipelogic_v2 F01).
+#
+# Read previous-turn warnings from cache. Compare with this turn's.
+# If they match (same warning fired again with no recovery in
+# between), escalate: try a known auto-fix OR upgrade the warning
+# text to a STRONGER alert so the user notices.
+#
+# Always write current warnings to the cache so next turn can
+# compare. Cache file is gitignored (runtime stamp, per-machine).
+# ============================================================
+LAST_WARN_FILE="$PROJECT_DIR/.sdd/.cache/last-warnings.txt"
+prev_warnings=""
+if [ -f "$LAST_WARN_FILE" ]; then
+  prev_warnings=$(cat "$LAST_WARN_FILE" 2>/dev/null || echo "")
+fi
+# Best-effort write; don't fail the hook if cache write fails.
+mkdir -p "$(dirname "$LAST_WARN_FILE")" 2>/dev/null
+printf '%s' "$warnings" > "$LAST_WARN_FILE" 2>/dev/null || true
+
+loop_detected=0
+if [ -n "$warnings" ] && [ -n "$prev_warnings" ] && [ "$warnings" = "$prev_warnings" ]; then
+  loop_detected=1
+fi
+
+# Known auto-fix: MCP server not symlinked. If the warning matches
+# the documented #175/#176 pattern, attempt to symlink and tell
+# the user. The symlink is idempotent (ln -sfn) so re-running is
+# safe. If the symlink succeeds, the warning will not fire next
+# turn — loop self-resolves.
+if [ "$loop_detected" -eq 1 ] && \
+   echo "$warnings" | grep -q "MCP server queries aren't on disk at extensions/sdd-mcp-server/"; then
+  PLUGIN_ROOT_GUESS="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/marketplaces/sdd-marketplace}"
+  if [ -d "$PLUGIN_ROOT_GUESS/extensions/sdd-mcp-server" ]; then
+    if mkdir -p "$PROJECT_DIR/extensions" 2>/dev/null && \
+       ln -sfn "$PLUGIN_ROOT_GUESS/extensions/sdd-mcp-server" \
+               "$PROJECT_DIR/extensions/sdd-mcp-server" 2>/dev/null; then
+      cat >&2 <<EOM
+[stop-lint] auto-fix applied — the same MCP-server-missing warning fired
+on 2 consecutive turns, so I symlinked the MCP server from your plugin
+install at $PLUGIN_ROOT_GUESS. Wiki-link resolution will be active on
+the next turn. (Closes #176 retroactively for already-installed
+projects.)
+EOM
+      # Clear the warning cache so we don't re-fire if the symlink
+      # didn't help for some reason — let next turn re-detect.
+      printf '' > "$LAST_WARN_FILE" 2>/dev/null || true
+      exit 0
+    fi
+  fi
+fi
+
 if [ -n "$warnings" ]; then
-  cat >&2 <<EOF
+  if [ "$loop_detected" -eq 1 ]; then
+    cat >&2 <<EOF
+⚠️  REPEAT WARNING — the SAME end-of-turn warning fired 2 turns in a row.
+The framework couldn't auto-fix it. Whatever's wrong needs YOUR attention
+before more agent turns make it worse:
+
+$warnings
+
+If this keeps firing, halt the agent (Ctrl-C) and either fix the
+underlying setup issue or remove the warning's source from the project.
+The 'check runs every turn' contract means a stuck warning loops forever
+without surfacing — this escalated message exists to break that silence.
+EOF
+  else
+    cat >&2 <<EOF
 The end-of-turn health check found setup notes worth surfacing (these
 are warnings — they don't block this stop, and the next agent turn
 won't be forced to fix them):
@@ -905,6 +972,7 @@ won't be forced to fix them):
 $warnings
 
 EOF
+  fi
 fi
 
 # Happy path: no violations → exit 0 (warnings already printed above).
