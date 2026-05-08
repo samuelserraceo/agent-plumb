@@ -351,7 +351,19 @@ Plus one already-handled-elsewhere (not in §9 list because it has its own home)
 
 ### action: wireframe
 
-- [ ] wireframe: draft wireframe.html — UI screens for UI features OR flow + architecture for non-UI features
+- [x] wireframe: Non-UI wireframe.html with 3-layer architecture diagram (pi.dev / SDD-on-pi adapter / shared SDD brain), Flow 1 (install + first SDD task), Flow 2 (multi-model task routing), 3 concrete CLI examples (install + autocomplete, /sdd-status, /sdd-next showing trust markers). Generated from .sdd/skeletons/wireframe-non-ui.html.
+
+**Wireframe:** `.sdd/features/008-build-the-sdd-on-pi-extension-package/wireframe.html`
+
+Per the v1.2 wireframe-redesign rule, non-UI features get visualisation too — flow + architecture + concrete CLI examples a non-technical reviewer can read end-to-end without reading code. The wireframe shows:
+
+1. **3-layer architecture** — pi.dev (host CLI, blue), SDD-on-pi adapter (green, this feature), shared SDD brain (amber, reused from Claude Code).
+2. **Flow 1** — first-time install + first SDD task (7 steps, mapped to user stories 2/3/4).
+3. **Flow 2** — multi-model task routing within one session (5 steps, mapped to story 1).
+4. **Concrete CLI examples** — three terminal transcripts: install + slash-command autocomplete; `/sdd-status` instant zero-LLM output; `/sdd-next` showing the `[FRAMEWORK INSTRUCTIONS]` / `[PROJECT DATA]` trust markers in the model's context.
+5. **Out-of-scope panel** — explicit list of what the wireframe deliberately does NOT show (Cursor/Aider adapters, parallel waves, subagents, §2 removal).
+
+Sam approved 2026-05-08 after preview in Chrome.
 
 ### action: plan-decompose
 
