@@ -250,7 +250,7 @@ Per §2's bridge to §11, success is mechanical (every §11 AC passes on both ha
 ### action: out-of-scope
 
 - [x] list: 5 explicit deferrals — parallel waves (idea 002), specialised subagents (idea 003), §2 removal (idea 004), other-CLI adapters, CI publish-workflow refinements
-- [ ] approval: user_approves
+- [x] approval: Sam locked §9 — 2026-05-08
 
 **Out of scope for feature 008 — 5 explicit deferrals:**
 
