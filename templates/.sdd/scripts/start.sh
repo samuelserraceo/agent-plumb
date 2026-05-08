@@ -42,6 +42,7 @@ EOF
 # Parse args.
 PLAYBOOK_OVERRIDE=""
 EXTENDS=""
+QUEUED=0
 TITLE=""
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -60,6 +61,16 @@ while [ $# -gt 0 ]; do
     --extends)
       EXTENDS="$2"
       shift 2
+      ;;
+    --queued)
+      # Closes #169. Scaffold the work item with [PHASE: QUEUED]
+      # instead of the playbook's first stage. Used by project-
+      # queue-features (and manual operators) to pre-create backlog
+      # folders that don't yet count as active. /next refuses to
+      # advance on a QUEUED phase — the user runs /promote-to-active
+      # <id> when they're ready to start that feature for real.
+      QUEUED=1
+      shift
       ;;
     *)
       # Everything else joins as the title (allows multi-word without quotes).
@@ -148,7 +159,7 @@ fi
 # Read config + figure out which playbook to use.
 # Validate playbook exists. Compute next NNN. Derive slug from title.
 # Scaffold spec.md + update INDEX.md. All in one python3 block for safety.
-TITLE_INPUT="$TITLE" PLAYBOOK_OVERRIDE="$PLAYBOOK_OVERRIDE" EXTENDS="$EXTENDS" PROJ="$PROJECT_DIR" python3 <<'PYEOF'
+TITLE_INPUT="$TITLE" PLAYBOOK_OVERRIDE="$PLAYBOOK_OVERRIDE" EXTENDS="$EXTENDS" QUEUED="$QUEUED" PROJ="$PROJECT_DIR" python3 <<'PYEOF'
 import json, os, re, sys
 
 proj = os.environ["PROJ"]
@@ -340,8 +351,18 @@ if extends_raw:
 # For each action, include `### action: <slug>` with one [ ] row per step
 # declared in that action's frontmatter (F4 atomic-step granularity).
 first_stage = stages[0]
-first_stage_id = first_stage.get("id", "SPEC")
+first_stage_id_real = first_stage.get("id", "SPEC")
 sub_slugs = first_stage.get("actions", []) or []
+
+# Closes #169. When --queued is passed, scaffold the work item with
+# [PHASE: QUEUED] instead of the playbook's first stage. The PROSE
+# blocks (action headings, step rows, exit checks) still get written
+# from the first stage so the spec.md is structurally complete — only
+# the PHASE line differs. /next refuses to advance on QUEUED;
+# /promote-to-active flips QUEUED → first_stage_id_real when the user
+# is ready to start the work for real.
+queued = os.environ.get("QUEUED", "0") == "1"
+first_stage_id = "QUEUED" if queued else first_stage_id_real
 
 # Helper — read one action's `steps:` frontmatter list. Returns [] if the
 # action file is missing or has no steps. Per-step `[ ]` rows are written
@@ -361,24 +382,36 @@ def load_action_steps(action_slug):
         return []
     return meta.get("steps", []) or []
 
-# Spec.md frontmatter — only emitted when there's structured data to record
-# (extends:). Keeps the no-extends case free of empty YAML noise.
-frontmatter_lines = []
+# Spec.md frontmatter — always emit `playbook:` so /promote-to-active
+# (and any future tooling) can resolve the work item's playbook
+# without falling back to global INDEX.md / config.md metadata. CR
+# cycle 1 finding (#195): a queued bug/refactor created while INDEX
+# pointed at `feature` would otherwise be promoted into the wrong
+# phase. Frontmatter wins; INDEX.md is the fallback only.
+frontmatter_lines = [
+    "---",
+    f"playbook: {chosen}",
+]
 if extends_resolved:
-    frontmatter_lines = [
-        "---",
-        f"extends:",
-        f"  - {extends_resolved}",
-        "---",
-        "",
-    ]
+    frontmatter_lines.append("extends:")
+    frontmatter_lines.append(f"  - {extends_resolved}")
+frontmatter_lines.append("---")
+frontmatter_lines.append("")
+
+if queued:
+    blocker_line = (
+        f"**Active blocker:** queued — run `/promote-to-active` when ready "
+        f"to start (will flip PHASE to {first_stage_id_real} and pick up §1 = {sub_slugs[0] if sub_slugs else 'n/a'})"
+    )
+else:
+    blocker_line = f"**Active blocker:** §1 (first action: {sub_slugs[0] if sub_slugs else 'n/a'})"
 
 spec_lines = list(frontmatter_lines) + [
     f"# {title}",
     "",
     f"[PHASE: {first_stage_id}]",
     "",
-    f"**Active blocker:** §1 (first action: {sub_slugs[0] if sub_slugs else 'n/a'})",
+    blocker_line,
     "",
 ]
 if extends_resolved:
@@ -447,12 +480,36 @@ else:
     index_text = ""
 
 # Replace or insert the active block at the top.
-header_lines = [
-    f"**Active:** {work_item_rel}",
-    f"**Playbook:** {chosen}",
-    f"**Active blocker:** §1 (first action: {sub_slugs[0] if sub_slugs else 'n/a'})",
-    "",
-]
+# Closes #169. When --queued is passed, the new work item should NOT
+# become Active — it's scaffolded for later. Preserve whatever
+# **Active:** value the existing INDEX.md already has (or leave the
+# canonical "(none)" placeholder if no Active line exists). Only the
+# non-queued path overwrites Active.
+existing_active_line = None
+existing_blocker_line = None
+existing_playbook_line = None
+for line in index_text.split("\n"):
+    if existing_active_line is None and line.startswith("**Active:**"):
+        existing_active_line = line
+    if existing_blocker_line is None and line.startswith("**Active blocker:**"):
+        existing_blocker_line = line
+    if existing_playbook_line is None and line.startswith("**Playbook:**"):
+        existing_playbook_line = line
+
+if queued:
+    header_lines = [
+        existing_active_line or "**Active:** _(none)_",
+        existing_playbook_line or f"**Playbook:** {chosen}",
+        existing_blocker_line or "**Active blocker:** _(none)_",
+        "",
+    ]
+else:
+    header_lines = [
+        f"**Active:** {work_item_rel}",
+        f"**Playbook:** {chosen}",
+        f"**Active blocker:** §1 (first action: {sub_slugs[0] if sub_slugs else 'n/a'})",
+        "",
+    ]
 
 # Strip ANY **Active:**/**Playbook:**/**Active blocker:** lines from the
 # entire body. UAT v0.10.1 finding: the original "from the top until first
@@ -478,23 +535,43 @@ while new_lines and new_lines[0].strip() == "":
 # can sit in `## In flight` simultaneously; **Active:** at the top points
 # to whichever one the user is working on RIGHT NOW.
 body = "\n".join(new_lines).strip()
-if "## In flight" not in body:
-    body += "\n\n## In flight\n\n" + f"- {work_item_rel} — {title} (PHASE: {first_stage_id})\n"
+# Closes #169. Queued work items go to ## Backlog (scaffolded but not
+# active) instead of ## In flight. The row carries an explicit
+# "(scaffolded, PHASE: QUEUED)" marker so a future reader can see this
+# folder exists on disk vs the legacy "text-only" backlog entries that
+# project-queue-features writes.
+target_section = "## Backlog" if queued else "## In flight"
+default_section = (
+    "\n\n## Backlog\n\n" if queued else "\n\n## In flight\n\n"
+)
+new_entry = (
+    f"- {work_item_rel} — {title} (scaffolded, PHASE: {first_stage_id})"
+    if queued
+    else f"- {work_item_rel} — {title} (PHASE: {first_stage_id})"
+)
+
+if target_section not in body:
+    body += default_section + new_entry + "\n"
 else:
-    # Append under ## In flight section. Three cases:
+    # Append under target section. Three cases:
     #  1. The "_(none yet)_" placeholder is still in place (fresh project) → replace it
-    #  2. Other in-flight items already exist → insert this one as new top item under the heading
+    #  2. Other entries already exist → insert this one as new top item under the heading
     #  3. The section heading exists but has only the HTML comment + blank lines → insert under heading
     # CodeRabbit cycle 1 fix (PR #47): the earlier regex had a fragile match that
     # didn't account for the placeholder wrapped in italics or for the comment
     # being on the same line as the heading. Now: try replace first, fall back
     # to a heading-anchored insert that works regardless of section state.
-    new_entry = f"- {work_item_rel} — {title} (PHASE: {first_stage_id})"
     # CodeRabbit cycle 2 (PR #47): scope the placeholder replacement to
     # the `## In flight` section only. Earlier `"_(none yet)_" in body`
     # would match the placeholder in any section if one ever migrated
     # there. Now: extract the section first, modify it, splice back.
-    section_match = re.search(r"(?ms)^## In flight\b.*?(?=^## |\Z)", body)
+    # Match the target section heading (## Backlog or ## In flight).
+    section_re = (
+        r"(?ms)^## Backlog\b.*?(?=^## |\Z)"
+        if queued
+        else r"(?ms)^## In flight\b.*?(?=^## |\Z)"
+    )
+    section_match = re.search(section_re, body)
     if section_match:
         sec_start, sec_end = section_match.span()
         in_flight_section = section_match.group(0)
@@ -518,8 +595,13 @@ else:
                 "",
                 in_flight_section,
             )
+            heading_anchor = (
+                r"(## Backlog\b[^\n]*\n)((?:<!--[^>]*-->[^\n]*\n)?)"
+                if queued
+                else r"(## In flight\b[^\n]*\n)((?:<!--[^>]*-->[^\n]*\n)?)"
+            )
             in_flight_section = re.sub(
-                r"(## In flight\b[^\n]*\n)((?:<!--[^>]*-->[^\n]*\n)?)",
+                heading_anchor,
                 r"\1\2" + new_entry + "\n",
                 in_flight_section,
                 count=1,
@@ -572,10 +654,23 @@ except Exception:
     raise
 
 # --- Plain-English success message to stdout ---
+# CR cycle 1 finding (#195): when --queued, the user must NOT be told
+# to run /next — the work item is queued, not active. Direct them at
+# /promote-to-active instead. The "active = ..." line was misleading
+# the user into thinking the queued scaffold was their new active
+# focus; that's exactly the failure mode #169 closes.
 print(f"[/start] scaffolded: {work_item_rel}")
-print(f"   - spec.md created with {len(sub_slugs)} actions in stage '{first_stage_id}'")
-print(f"   - INDEX.md updated (active = {work_item_rel}, playbook = {chosen})")
-print()
-print("Next: run /next to start the first action.")
-print(f"      I'll ask you about §1 ({sub_slugs[0] if sub_slugs else 'n/a'}) first.")
+if queued:
+    print(f"   - spec.md created with {len(sub_slugs)} actions, marked PHASE: QUEUED")
+    print(f"   - INDEX.md updated (added to ## Backlog, **Active:** unchanged)")
+    print()
+    print("Next: this scaffold is queued — not yet active. When you're ready to start it:")
+    print(f"      /promote-to-active {work_item_rel.split('/')[-1]}")
+    print(f"      That flips PHASE to {first_stage_id_real} and makes it the active feature.")
+else:
+    print(f"   - spec.md created with {len(sub_slugs)} actions in stage '{first_stage_id}'")
+    print(f"   - INDEX.md updated (active = {work_item_rel}, playbook = {chosen})")
+    print()
+    print("Next: run /next to start the first action.")
+    print(f"      I'll ask you about §1 ({sub_slugs[0] if sub_slugs else 'n/a'}) first.")
 PYEOF

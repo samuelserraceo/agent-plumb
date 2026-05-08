@@ -143,6 +143,22 @@ if not phase:
     sys.stderr.write('{"error":"no [PHASE: X] line found"}\n')
     sys.exit(1)
 
+# Closes #169. Refuse to advance on a QUEUED feature. Queued items
+# are pre-active scaffolds — folder + spec.md exist, but the user
+# hasn't promoted them to "actively worked on" yet. /next on a queued
+# feature would prematurely start asking §1 questions, breaking the
+# user's mental model that only one feature is "in flight" at a time.
+# The plain-English fix path: run /promote-to-active <id> to flip
+# QUEUED → the playbook's first stage; OR pick a different active
+# feature (one that's already in flight) by checking out its branch.
+if phase == "QUEUED":
+    sys.stderr.write(
+        '{"error":"phase is QUEUED — this feature is scaffolded but not '
+        'yet active. Run /promote-to-active to start it for real, '
+        'or check out a different in-flight feature\'s branch."}\n'
+    )
+    sys.exit(1)
+
 # 2. Walk active phase body. Track fence state and the most recent
 # `### action: <slug>` heading. Skip work-item placeholders. Return the
 # first `[ ]` line + the action slug active at that point.

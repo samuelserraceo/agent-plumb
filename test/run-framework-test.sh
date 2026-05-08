@@ -101,6 +101,14 @@ mkproj_v08() {
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/revert-phase.sh"         "$d/.sdd/scripts/revert-phase.sh" 2>/dev/null || true
   chmod +x "$d/.sdd/scripts/revert-phase.sh" 2>/dev/null || true
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/check-setup-answer.sh"   "$d/.sdd/scripts/check-setup-answer.sh" 2>/dev/null || true
+  # CR cycle 1 finding (#195): promote-to-active.sh is manifest-tracked
+  # in v1.5.2+. Silently skipping the copy with `|| true` would leave the
+  # mock project missing a tracked file, causing the moat hash-pin check
+  # to fail with a confusing message ("file declared in manifest but not
+  # on disk"). Fail-fast surfaces packaging issues immediately instead.
+  cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/promote-to-active.sh"    "$d/.sdd/scripts/promote-to-active.sh" \
+    || { echo "[mkproj_v08] failed to copy promote-to-active.sh from \$FRAMEWORK_ROOT — broken framework checkout?" >&2; return 1; }
+  chmod +x "$d/.sdd/scripts/promote-to-active.sh"
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/scope-guard-config.sh"   "$d/.sdd/scripts/scope-guard-config.sh" 2>/dev/null || true
   chmod +x "$d/.sdd/scripts/scope-guard-config.sh" 2>/dev/null || true
   chmod +x "$d/.sdd/scripts/check-setup-answer.sh" 2>/dev/null || true

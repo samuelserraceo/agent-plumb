@@ -44,7 +44,7 @@
       "trust": "framework"
     },
     "start.sh": {
-      "expected_sha256": "0de5ae55438b10f51cda9782f9f479317a7a8cfa06afd50b1dfc8abfa8fc7de8",
+      "expected_sha256": "ce8a1915a202aa0d6dac019175f249bf71965e3007d335a288ed5f6eaf7fd3b1",
       "path": ".sdd/scripts/start.sh",
       "trust": "framework"
     },
@@ -59,7 +59,7 @@
       "trust": "framework"
     },
     "next-action.sh": {
-      "expected_sha256": "ddb8fd2185d0ae23ccf9f32f9c66c632a9e24b214bbdc1d10ab971991a873c35",
+      "expected_sha256": "7e8775ec2a448008275aef43d52cab3718bb5a6f39b21fbc3d7f3dcab5ef94c0",
       "path": ".sdd/scripts/next-action.sh",
       "trust": "framework"
     },
@@ -101,6 +101,11 @@
     "status-banner.sh": {
       "expected_sha256": "71a120809c389f305d876ad3e450d852cca4dbc342295f6c09024312daac2684",
       "path": ".sdd/scripts/status-banner.sh",
+      "trust": "framework"
+    },
+    "promote-to-active": {
+      "expected_sha256": "6a48a5c438cc5b652a59b7bc49da1059b1c2e1740eeedcdc8996c0ecaa0795f5",
+      "path": ".sdd/scripts/promote-to-active.sh",
       "trust": "framework"
     }
   },
