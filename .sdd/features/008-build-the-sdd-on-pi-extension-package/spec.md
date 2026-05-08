@@ -29,7 +29,15 @@ The "if not now, when?" answer: if SDD stays Claude-only for another 6 months wh
 
 ### action: success
 
-- [ ] metric: Pick a metric pattern (volume / speed / quality / engagement) or describe your own. Give a target number AND the current baseline if known.
+- [x] metric: Success = every §11 acceptance criterion passes on both Claude Code AND pi.dev harnesses, verified mechanically by the framework's standard verification path {verify-by: §11 AC pass via verify-stage.sh}
+
+**Success metric:** Mechanical, not market.
+
+When every acceptance criterion in §11 passes on both Claude Code AND pi.dev harnesses, verified mechanically by the framework's standard verification path (`verify-stage.sh`), this feature is done. {verify-by: §11 AC pass via verify-stage.sh}
+
+Market metrics — colleague adoption, model-cost reduction, engagement, etc. — are intentionally **not** part of §2 here. They're market signals that arrive weeks or months after ship; treating them as success-gates would violate SDD's anti-theatre doctrine (which says: every spec claim must be mechanically verifiable, soft-annotated, or named as live-infra-only). Sam captured this concern as `ideas/004-remove-success-from-feature-playbook.md` mid-walkthrough — the framework cleanup will remove §2 entirely after 008 ships, leaning on §11 as the canonical success layer.
+
+For 008 specifically, this means: when SPEC → BUILD → SHIP completes and §11 has all-green ACs running on both harnesses, the feature has shipped successfully. Adoption signals come later, separately.
 
 ### action: user-stories
 
