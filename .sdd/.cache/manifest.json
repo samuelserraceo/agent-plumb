@@ -59,7 +59,7 @@
       "trust": "framework"
     },
     "next-action.sh": {
-      "expected_sha256": "7e8775ec2a448008275aef43d52cab3718bb5a6f39b21fbc3d7f3dcab5ef94c0",
+      "expected_sha256": "b044cb7505c334fc7714bdcd1bbe0c7b273ab157356ec65faabbc8aa4a74dba3",
       "path": ".sdd/scripts/next-action.sh",
       "trust": "framework"
     },

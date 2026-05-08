@@ -194,7 +194,13 @@ for line in spec_lines:
         continue
     # Skip `[ ]` lines that are work-item placeholders (AC<N>, T<N>, C-<N>) —
     # those are filled by other mechanisms (BUILD task lifecycle / verify-stage).
-    if re.match(r'^\s*-\s*\[ \]\s+(AC|T|C-)[A-Za-z0-9_-]', line):
+    #
+    # Closes #197. The regex now accepts BOLD or non-bold labels:
+    # `- [ ] AC1: ...` (canonical) AND `- [ ] **AC1:** ...` (bolded by
+    # agents for emphasis). Without this, bolded labels fall through to
+    # the generic step-row branch and stall /next at §11→§13 forever
+    # — bricking SPEC for non-technical users.
+    if re.match(r'^\s*-\s*\[ \]\s+(\*\*)?(AC|T|C-)[A-Za-z0-9_-]', line):
         continue
     if "[ ]" in line:
         first_open_line = line
