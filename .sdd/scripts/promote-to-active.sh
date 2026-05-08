@@ -243,8 +243,29 @@ new_spec = re.sub(
     flags=re.MULTILINE,
 )
 
-with open(spec_path, "w", encoding="utf-8") as f:
-    f.write(new_spec)
+# CR cycle 2 finding (#195) Nitpick: atomic write pattern (matches
+# the one start.sh uses for INDEX.md). A crash mid-write would leave
+# spec.md half-flipped — top says SPEC, body still QUEUED. Tempfile +
+# os.replace makes the swap atomic so an interruption either leaves
+# the old QUEUED state intact or commits the new SPEC state cleanly.
+import tempfile
+spec_dir = os.path.dirname(spec_path) or "."
+fd, tmp_path = tempfile.mkstemp(prefix=".spec.md.tmp.", dir=spec_dir)
+try:
+    with os.fdopen(fd, "w", encoding="utf-8") as tmpf:
+        tmpf.write(new_spec)
+        tmpf.flush()
+        try:
+            os.fsync(tmpf.fileno())
+        except OSError:
+            pass  # fsync isn't critical; some filesystems refuse it
+    os.replace(tmp_path, spec_path)
+except Exception:
+    try:
+        os.unlink(tmp_path)
+    except OSError:
+        pass
+    raise
 
 # 6. Update INDEX.md: move row from ## Backlog to ## In flight, set **Active:** to this item.
 index_path = os.path.join(proj, ".sdd", "INDEX.md")
@@ -336,8 +357,24 @@ if os.path.isfile(index_path):
             flags=re.MULTILINE,
         )
 
-    with open(index_path, "w", encoding="utf-8") as f:
-        f.write(idx)
+    # Atomic write — same pattern as the spec.md update above.
+    idx_dir = os.path.dirname(index_path) or "."
+    fd_idx, tmp_idx = tempfile.mkstemp(prefix=".INDEX.md.tmp.", dir=idx_dir)
+    try:
+        with os.fdopen(fd_idx, "w", encoding="utf-8") as tmpf:
+            tmpf.write(idx)
+            tmpf.flush()
+            try:
+                os.fsync(tmpf.fileno())
+            except OSError:
+                pass
+        os.replace(tmp_idx, index_path)
+    except Exception:
+        try:
+            os.unlink(tmp_idx)
+        except OSError:
+            pass
+        raise
 
 # 7. Tell the user.
 print(f"[/promote-to-active] {rel} promoted: PHASE QUEUED → {first_stage_id}.")
