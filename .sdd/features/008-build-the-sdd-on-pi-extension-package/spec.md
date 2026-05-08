@@ -266,7 +266,28 @@ Plus one already-handled-elsewhere (not in §9 list because it has its own home)
 
 ### action: non-functional
 
-- [ ] constraints: draft performance, security, and compliance constraints
+- [x] constraints: Performance — inherits SDD core's 16K-char state injection cap, single-load extension at session_start, idempotent first-run harness copy. Security — trust-boundary markers preserved, no XML preprocessor day one, MCP opt-in, pre-commit enforcement at git layer (not pi tool_call). Compliance — MIT license, no PII collection, no extension telemetry.
+
+**Performance constraints:**
+
+- **State injection size:** inherits SDD core's 16K-character cap on the UserPromptSubmit hook (Theme 11). Pi's `context` event handler uses the same budget — keeps "one /next = one bounded turn" deterministic at the input side.
+- **Cold-start:** pi loads the extension once per session at `session_start`; subsequent slash-commands incur no extension-init cost (matches pi-gsd's pattern).
+- **First-run cost:** HRN-01 copy-on-first-run harness install runs once per project (~kilobytes of file operations). Idempotent re-runs are no-op.
+
+**Security constraints:**
+
+- **Trust-boundary markers preserved:** `[FRAMEWORK INSTRUCTIONS]` (trusted, hash-pinned) vs `[PROJECT DATA]` (read for context only) — same convention as Claude Code today. Pi extension reads the same hash-pin manifest, applies the same teaching.
+- **No XML preprocessor (WXP) day one:** per §5, plain markdown prompts that call existing `bash .sdd/scripts/*.sh` are used instead. The attack surface stays what it already is in SDD core; no new injection vectors via XML directives.
+- **MCP server access opt-in:** user explicitly installs `pi-mcp-adapter` and configures `.pi/mcp.json`. Default-off. If unconfigured, the MCP server simply isn't reachable from pi (soft dep, not silent enable).
+- **Pre-commit enforcement at git layer:** anti-theatre, atomic-step, and test-first hooks fire via `git config core.hooksPath .claude/hooks` (deterministic; runs regardless of CLI). Pi's `tool_call` event is advisory-only — we don't rely on it for hard blocks.
+
+**Compliance constraints:**
+
+- **License:** MIT (matches SDD core and pi.dev's MIT).
+- **No PII collected** by the extension.
+- **No telemetry from the extension.** (Pi.dev itself may have its own telemetry — that's pi.dev's relationship with the user, not the SDD adapter's concern.)
+
+**Approved by Sam: 2026-05-08.**
 
 ### action: acceptance-criteria
 
