@@ -1,0 +1,56 @@
+name: sdd-ci
+
+# CI workflow shipped by /sdd-setup (closes #199). Runs on every PR + push
+# to main. Mark as REQUIRED in GitHub branch protection if you want PRs
+# blocked until this passes.
+#
+# This is a starter — customise as your stack grows. The framework
+# regenerates this file from templates/.sdd/scripts/templates/ only when
+# you re-run /sdd-config 004-browser-tests; otherwise hand-edits stick.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm tsc --noEmit
+
+      - name: Unit tests
+        run: pnpm test
+
+      # Playwright runs only if the extension was enabled
+      # (extensions/playwright/enable.sh creates playwright.config.ts).
+      - name: Install Playwright browsers
+        if: hashFiles('playwright.config.ts') != ''
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: E2E tests
+        if: hashFiles('playwright.config.ts') != ''
+        run: pnpm exec playwright test
+
+      - name: Upload Playwright report on failure
+        if: failure() && hashFiles('playwright.config.ts') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

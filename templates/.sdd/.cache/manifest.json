@@ -28,9 +28,19 @@
       "path": ".sdd/scripts/advance.sh",
       "trust": "framework"
     },
+    "check-setup-answer.sh": {
+      "expected_sha256": "e845cf3b5e33f7bfc32a8292dbf39ab5b2edf168f851c73dbbc1e3dab9405d0e",
+      "path": ".sdd/scripts/check-setup-answer.sh",
+      "trust": "framework"
+    },
     "hash-section.sh": {
       "expected_sha256": "f042a987b7386d435b521d364a36603323edda611dc885ab9694d4ace95158ac",
       "path": ".sdd/scripts/hash-section.sh",
+      "trust": "framework"
+    },
+    "install-ci-workflow.sh": {
+      "expected_sha256": "06b58832808c3d75c8112cee14484cdde0dd21c207a81cb65bdf838d1c21e437",
+      "path": ".sdd/scripts/install-ci-workflow.sh",
       "trust": "framework"
     },
     "load-playbook.sh": {
@@ -38,49 +48,9 @@
       "path": ".sdd/scripts/load-playbook.sh",
       "trust": "framework"
     },
-    "reapprove.sh": {
-      "expected_sha256": "ba510f673de549638ed8eaaa2985c28f44600d0f18be794e9fc138b2c5444d9a",
-      "path": ".sdd/scripts/reapprove.sh",
-      "trust": "framework"
-    },
-    "start.sh": {
-      "expected_sha256": "ce8a1915a202aa0d6dac019175f249bf71965e3007d335a288ed5f6eaf7fd3b1",
-      "path": ".sdd/scripts/start.sh",
-      "trust": "framework"
-    },
-    "resolve-parameters.sh": {
-      "expected_sha256": "5ae0749cdad9dc9699f8b660db9444acdabe15ac845e8a0d091612c21672a04c",
-      "path": ".sdd/scripts/resolve-parameters.sh",
-      "trust": "framework"
-    },
-    "read-events.sh": {
-      "expected_sha256": "a031012ea1e06534f14f252ac723156e9a922d6d3df36c4919274a5f70f4f408",
-      "path": ".sdd/scripts/read-events.sh",
-      "trust": "framework"
-    },
     "next-action.sh": {
       "expected_sha256": "b044cb7505c334fc7714bdcd1bbe0c7b273ab157356ec65faabbc8aa4a74dba3",
       "path": ".sdd/scripts/next-action.sh",
-      "trust": "framework"
-    },
-    "validate-sdd-path.sh": {
-      "expected_sha256": "5035174640d824d171c1d551bf51794651069b1b362de910c7b51954256a7ec6",
-      "path": ".sdd/scripts/validate-sdd-path.sh",
-      "trust": "framework"
-    },
-    "settings.sh": {
-      "expected_sha256": "fec99003a06fa0522cc612e3e8d6076a799c646186e90a19bb392ce82b93eae7",
-      "path": ".sdd/scripts/settings.sh",
-      "trust": "framework"
-    },
-    "revert-phase.sh": {
-      "expected_sha256": "829038bd2de8c85c63fe98d4b2e4bb6962f39541777dfc9558eca355400535fa",
-      "path": ".sdd/scripts/revert-phase.sh",
-      "trust": "framework"
-    },
-    "check-setup-answer.sh": {
-      "expected_sha256": "e845cf3b5e33f7bfc32a8292dbf39ab5b2edf168f851c73dbbc1e3dab9405d0e",
-      "path": ".sdd/scripts/check-setup-answer.sh",
       "trust": "framework"
     },
     "post-stop-lint.sh": {
@@ -88,9 +58,19 @@
       "path": ".claude/hooks/post-stop-lint.sh",
       "trust": "framework"
     },
-    "scope-guard-config.sh": {
-      "expected_sha256": "563471257c044faf256b871054dec502c90431414406345e02320c16d1d59620",
-      "path": ".sdd/scripts/scope-guard-config.sh",
+    "promote-to-active": {
+      "expected_sha256": "6a48a5c438cc5b652a59b7bc49da1059b1c2e1740eeedcdc8996c0ecaa0795f5",
+      "path": ".sdd/scripts/promote-to-active.sh",
+      "trust": "framework"
+    },
+    "read-events.sh": {
+      "expected_sha256": "a031012ea1e06534f14f252ac723156e9a922d6d3df36c4919274a5f70f4f408",
+      "path": ".sdd/scripts/read-events.sh",
+      "trust": "framework"
+    },
+    "reapprove.sh": {
+      "expected_sha256": "ba510f673de549638ed8eaaa2985c28f44600d0f18be794e9fc138b2c5444d9a",
+      "path": ".sdd/scripts/reapprove.sh",
       "trust": "framework"
     },
     "resolve-active.sh": {
@@ -98,14 +78,39 @@
       "path": ".sdd/scripts/resolve-active.sh",
       "trust": "framework"
     },
+    "resolve-parameters.sh": {
+      "expected_sha256": "5ae0749cdad9dc9699f8b660db9444acdabe15ac845e8a0d091612c21672a04c",
+      "path": ".sdd/scripts/resolve-parameters.sh",
+      "trust": "framework"
+    },
+    "revert-phase.sh": {
+      "expected_sha256": "829038bd2de8c85c63fe98d4b2e4bb6962f39541777dfc9558eca355400535fa",
+      "path": ".sdd/scripts/revert-phase.sh",
+      "trust": "framework"
+    },
+    "scope-guard-config.sh": {
+      "expected_sha256": "563471257c044faf256b871054dec502c90431414406345e02320c16d1d59620",
+      "path": ".sdd/scripts/scope-guard-config.sh",
+      "trust": "framework"
+    },
+    "settings.sh": {
+      "expected_sha256": "fec99003a06fa0522cc612e3e8d6076a799c646186e90a19bb392ce82b93eae7",
+      "path": ".sdd/scripts/settings.sh",
+      "trust": "framework"
+    },
+    "start.sh": {
+      "expected_sha256": "ce8a1915a202aa0d6dac019175f249bf71965e3007d335a288ed5f6eaf7fd3b1",
+      "path": ".sdd/scripts/start.sh",
+      "trust": "framework"
+    },
     "status-banner.sh": {
       "expected_sha256": "71a120809c389f305d876ad3e450d852cca4dbc342295f6c09024312daac2684",
       "path": ".sdd/scripts/status-banner.sh",
       "trust": "framework"
     },
-    "promote-to-active": {
-      "expected_sha256": "6a48a5c438cc5b652a59b7bc49da1059b1c2e1740eeedcdc8996c0ecaa0795f5",
-      "path": ".sdd/scripts/promote-to-active.sh",
+    "validate-sdd-path.sh": {
+      "expected_sha256": "5035174640d824d171c1d551bf51794651069b1b362de910c7b51954256a7ec6",
+      "path": ".sdd/scripts/validate-sdd-path.sh",
       "trust": "framework"
     }
   },
