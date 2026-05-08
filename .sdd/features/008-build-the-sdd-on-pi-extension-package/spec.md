@@ -291,7 +291,51 @@ Plus one already-handled-elsewhere (not in §9 list because it has its own home)
 
 ### action: acceptance-criteria
 
-- [ ] approval: draft the acceptance criteria, run a constraint-coverage check vs §4, iterate, get approval
+- [x] approval: 12 ACs drafted (AC1-AC12), each with {verify-by: T-NNN} annotation. T200-T211 reserved. Sam approved 2026-05-08.
+
+**Acceptance criteria (12 ACs — every claim has a {verify-by: T-NNN} annotation):**
+
+- [ ] AC1: extensions/sdd-pi-extension/package.json includes a "pi" field with "extensions:" (path to compiled extension JS) and "prompts:" (path to prompts directory). {verify-by: T200}
+
+- [ ] AC2: `pi install npm:sdd-pi-adapter` in a fresh project succeeds and pi recognises 9 new slash commands: /sdd-start, /sdd-next, /sdd-ship, /sdd-status, /sdd-compress, /sdd-skip, /sdd-bug, /sdd-idea, /sdd-config. {verify-by: T201}
+
+- [ ] AC3: pi.on("context") handler injects [FRAMEWORK INSTRUCTIONS] and [PROJECT DATA] markers around the same content the Claude Code UserPromptSubmit hook injects today (INDEX.md, active spec.md, principles.md, stack.md, data-model.md, patterns.md). {verify-by: T202}
+
+- [ ] AC4: First-run session_start copies framework files from the package into the project's `.pi/sdd/` via the HRN-01 copy-on-first-run pattern; second run is a no-op (no overwrites of user-edited files). {verify-by: T203}
+
+- [ ] AC5: /sdd-start <title> invokes `bash .sdd/scripts/start.sh "$ARGUMENTS"`, scaffolds features/NNN-<slug>/spec.md, and updates INDEX.md. {verify-by: T204}
+
+- [ ] AC6: /sdd-next invokes the /next flow via prompt template; resolves the active blocker via next-action.sh; asks/proposes per the action's tag (USER-LED / AGENT-LED / BUILD-TASK). {verify-by: T205}
+
+- [ ] AC7: /sdd-status is an instant zero-LLM command registered via pi.registerCommand; outputs current phase, blocker, and suggested next action without any LLM round-trip. {verify-by: T206}
+
+- [ ] AC8: /sdd-ship invokes the ship flow — pushes the branch, opens or updates the PR, polls CI per the existing scripts. {verify-by: T207}
+
+- [ ] AC9: Multi-model discipline regression — the BUILD-TASK calculator-add fixture from the 2026-05-08 discipline test passes when run through pi.dev under BOTH claude-sonnet-4-6 AND one non-Claude model (GPT-5 OR Kimi K2 OR Llama). Captures cross-model regression on the atomic-step rule. {verify-by: T208}
+
+- [ ] AC10: pi-mcp-adapter integration — when pi-mcp-adapter is installed AND `.pi/mcp.json` references the existing SDD MCP server, the SDD MCP tools become reachable via pi's mcp proxy tool. {verify-by: T209}
+
+- [ ] AC11: Pre-commit enforcement at git layer — anti-theatre, atomic-step, and test-first hooks fire deterministically when committing through pi.dev (matching what fires in Claude Code today). {verify-by: T210}
+
+- [ ] AC12: NPM publish workflow — `.github/workflows/publish-pi-adapter.yml` runs on a release tag matching `pi-v*`; publishes the `extensions/sdd-pi-extension/` folder to npm as `sdd-pi-adapter`; re-running on the same tag is a no-op. {verify-by: T211}
+
+**Coverage check vs §4 / §5 / §1-3 / §6 / §7 / §8 / §10:**
+
+- §1 personas (Sam, Marco, Lucia, new evaluator) → AC2, AC3, AC4, AC9, AC10
+- §2 success (mechanical via §11 ACs on both harnesses) → all ACs
+- §3 user stories → AC2 (install path covers all 4 stories), AC9 (multi-model proves story 1)
+- §5 approach (4 moving parts) → AC1, AC2, AC3, AC4, AC5, AC6
+- §6 data contract (no new state entities) → negative claim; no AC needed
+- §7 flows (install + multi-model routing) → AC2, AC4, AC9
+- §8 dependencies (git pre-commit, pi-mcp-adapter optional) → AC10, AC11
+- §10 non-functional (16K injection cap, opt-in MCP, MIT) → AC3, AC10, AC11
+
+**Out of scope for §11 ACs (already declared in §9):**
+
+- Adapters for other CLIs beyond pi → no AC.
+- Parallel waves → no AC (idea 002, separate feature).
+- Specialised subagents → no AC (idea 003, separate feature).
+- Nice-feeling UX → best-effort; AC9 is the closest mechanical proxy via discipline regression.
 
 ### action: signoff-steps
 
