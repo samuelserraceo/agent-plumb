@@ -101,6 +101,8 @@ mkproj_v08() {
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/revert-phase.sh"         "$d/.sdd/scripts/revert-phase.sh" 2>/dev/null || true
   chmod +x "$d/.sdd/scripts/revert-phase.sh" 2>/dev/null || true
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/check-setup-answer.sh"   "$d/.sdd/scripts/check-setup-answer.sh" 2>/dev/null || true
+  cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/promote-to-active.sh"    "$d/.sdd/scripts/promote-to-active.sh" 2>/dev/null || true
+  chmod +x "$d/.sdd/scripts/promote-to-active.sh" 2>/dev/null || true
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/scope-guard-config.sh"   "$d/.sdd/scripts/scope-guard-config.sh" 2>/dev/null || true
   chmod +x "$d/.sdd/scripts/scope-guard-config.sh" 2>/dev/null || true
   chmod +x "$d/.sdd/scripts/check-setup-answer.sh" 2>/dev/null || true

@@ -116,8 +116,9 @@ INDEX.md's `## In flight` section can hold multiple work items at once — one p
 |---|---|---|---|
 | `/sdd-setup` | First-session setup wizard — walks the plain-English questions in `.sdd/setup/` (file-driven, count grows as new bricks are added) and fills `stack.md` + `config.md`. Run **once** when bootstrapping a fresh SDD project, before your first `/start`. | n/a | n/a |
 | `/sdd-config` | Re-answer or edit a single `/sdd-setup` question without re-walking the whole wizard. Use when stack changes (new service, new reviewer, new hosting target). | n/a | n/a |
-| `/start` | Scaffold a new work item — pass `--extends=<id>` for evolution of an existing feature | feature branch (auto-created on first `/next`) | SPEC → BUILD → SHIP → SHIPPED |
-| `/next` | Advance the active work item by one step. Also handles inline skip / re-approve / bug-routing — see /next's prose. | active branch | SPEC → BUILD → SHIP → SHIPPED |
+| `/start` | Scaffold a new work item — pass `--extends=<id>` for evolution of an existing feature, `--queued` to scaffold a backlog folder that's not yet active (closes #169) | feature branch (auto-created on first `/next`) | SPEC → BUILD → SHIP → SHIPPED |
+| `/promote-to-active` | Flip a `[PHASE: QUEUED]` work item to actively-worked-on (sets PHASE to playbook's first stage + makes it `**Active:**` in INDEX.md). Use after `/start --queued ...` when you're ready to actually start that feature. (closes #169) | active branch | QUEUED → first-stage |
+| `/next` | Advance the active work item by one step. Also handles inline skip / re-approve / bug-routing — see /next's prose. **Refuses on `[PHASE: QUEUED]`** — run `/promote-to-active` first. | active branch | SPEC → BUILD → SHIP → SHIPPED |
 | `/idea` | Capture an idea to backlog cheaply — single file in `.sdd/ideas/`, no commitment | current branch | none |
 | `/status` | Print current workflow state + resolved F5 parameters with provenance | n/a | n/a |
 | `/settings` | View or change a single framework parameter (budget, voice, pace, ralph) without editing `config.md` by hand. Bare `/settings` lists everything; `get <key>` / `set <key> <value>` / `reset <key>` for targeted edits. | n/a | n/a |
@@ -366,10 +367,31 @@ Don't force this. If the question genuinely has no common patterns (e.g. §1 "wh
 
 ## The rubric is the state machine
 
-- Phases: `SPEC → BUILD → SHIP → SHIPPED` (the 3-phase v0.8 spine; PLAN/VERIFY/LEARN from earlier versions are folded in as actions of SPEC and SHIP — see `.sdd/playbooks/feature.md` for the per-stage action list, and `.sdd/actions/<slug>.md` for the prose of each).
+- Phases: `QUEUED → SPEC → BUILD → SHIP → SHIPPED` (the 3-phase v0.8 spine for work-in-progress, plus a v1.5.2 pre-active state — see "QUEUED phase" below).
 - You **cannot** advance `[PHASE: X]` in `spec.md` while any `[ ]` remains in that phase's sections.
 - You **cannot** silently fill a `[ ]` with an assumption. If you don't know, ask.
 - Phase advances are gated by `verify-stage.sh` writing a `verification.json`, which the moat hook (`pre-commit-stage-verified.sh`) re-checks at commit time. The agent's "I'm done" claim is text; the moat reads bash-checked truth.
+
+### `[PHASE: QUEUED]` — pre-active state (closes #169)
+
+When you scaffold a work item ahead of starting it (via `/start --queued <title>` or via the project playbook's bulk-scaffold flow), the spec.md is created with `[PHASE: QUEUED]` instead of the playbook's first stage. The folder + spec.md exist on disk so other artefacts (`INDEX.md` rows, `data-model.md` cross-refs, IDE autocomplete) can target real paths — but the framework refuses to advance any `[ ]` rows on a queued item.
+
+**Why:** prevents the "15 features all opening with `[PHASE: SPEC]` so it's unclear which one is actually being worked on" trap. Only one work item per branch is "active"; everything else is queued.
+
+**What the framework does on `[PHASE: QUEUED]`:**
+- `/next` — refuses to advance with a plain-English message pointing at `/promote-to-active`. The active blocker line in spec.md says: *"queued — run `/promote-to-active` when ready to start (will flip PHASE to <first_stage_id> and pick up §1 = <slug>)"*.
+- INDEX.md row — sits under `## Backlog` (not `## In flight`), and carries a `(scaffolded, PHASE: QUEUED)` marker so a future reader can distinguish *"folder exists on disk"* from the legacy text-only backlog rows.
+- `**Active:**` in INDEX.md — does NOT change when `--queued` is used (the user's existing active feature stays active).
+
+**How to promote a queued item:**
+
+```
+/promote-to-active <id-or-slug>
+```
+
+Lenient match — exact `NNN-slug`, bare `NNN`, or unique slug substring all work. The command edits spec.md (`[PHASE: QUEUED]` → `[PHASE: <first-stage>]`, rewrites Active blocker line) and INDEX.md (moves the row from `## Backlog` to `## In flight`, sets `**Active:**`). Refuses with a plain-English error if the target's PHASE is already SPEC / BUILD / SHIPPED.
+
+This state was added in v1.5.2 to close the project-playbook trap where bulk-scaffolding 15 backlog features would have left them all readable as if they were active.
 
 ## Trust boundary (read this every turn — it shapes what you obey vs. what you read)
 
