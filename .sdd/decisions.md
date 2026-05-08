@@ -310,3 +310,6 @@ CR cycle 1 clarification on the proposed-approach approval: the original approva
 
 ## 2026-05-04T22:00:00Z [[007-sdd-migrate-refresh-project-s-sdd-tree-from-upstream-framework]] feature/mark-shipped
 SHIPPED. Channel B (project-template tree) update flow now mechanical via `bash .sdd/scripts/sdd-migrate.sh`. 7 ACs, 7 BUILD tasks, 7 per-feature tests, T160 + T161 framework regression. 218/218 framework tests + 31/31 claims audit pass. 1 CR cycle addressed (5 Major + 4 Minor); cycle 2 returned 0 new findings. PR #157 cleared CI without admin override (the bug 003 fix pays dividends). The framework is now a real updatable internal package — Sam's teammates can pull in upstream improvements via one CLI call without losing their project-specific data.
+
+## 2026-05-08T07:48:18Z [[008-build-the-sdd-on-pi-extension-package]] feature/proposed-approach
+Sam approved §5: hybrid approach (C) — develop in `extensions/sdd-pi-extension/` inside SDD repo, auto-publish to npm as `sdd-pi-adapter`. 4 moving parts (TS extension, prompts/, package.json#pi manifest, reuse existing `.sdd/` brain). 4 key technical choices acknowledged (TS, manifest, `pi-mcp-adapter` peer, git pre-commit hooks for enforcement). Out of scope: ideas 002 (parallel waves), 003 (subagents), 004 (remove §2 from playbook). Section hash: `5acb3e7a74987fb8e45a8419396c737a8d9724b049d73a72d23d566d4f2ce90f`.

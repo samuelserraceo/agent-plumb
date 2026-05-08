@@ -63,7 +63,52 @@ For 008 specifically, this means: when SPEC → BUILD → SHIP completes and §1
 
 ### action: proposed-approach
 
-- [ ] approval: draft the approach with 2 alternatives and tradeoffs, iterate with the user, get approval
+- [x] approval: Approved approach (C) — hybrid: develop in `extensions/sdd-pi-extension/` inside the SDD repo, auto-publish to npm as `sdd-pi-adapter`. 4 moving parts (TS extension, prompts/, package.json#pi manifest, reuse existing .sdd/ brain) + 4 key technical choices acknowledged.
+
+**Recommended approach (C — hybrid):** Ship `extensions/sdd-pi-extension/` inside the existing SDD repo, then auto-publish it to npm as `sdd-pi-adapter`.
+
+**Moving parts (4):**
+
+1. **One TypeScript extension file** — `src/sdd-pi.ts` (~300-400 lines), modeled on pi-gsd's `pi-gsd-hooks.ts`. Hooks: `pi.on("context")` for state injection (the equivalent of our existing UserPromptSubmit hook); `pi.on("session_start")` for one-time install (copies `.sdd/` brain into `.pi/sdd/`, version-checks); `pi.registerCommand(...)` for instant zero-LLM commands like `/sdd-status`.
+2. **A small `prompts/` folder** — 9 thin templates (`sdd-start.md`, `sdd-next.md`, `sdd-ship.md`, `sdd-status.md`, `sdd-compress.md`, `sdd-skip.md`, `sdd-bug.md`, `sdd-idea.md`, `sdd-config.md`). Each is a 5-line markdown file that includes the existing `.sdd/actions/*.md` prose unchanged via pi's prompt-template `$ARGUMENTS` mechanism.
+3. **A `package.json#pi` manifest** — three lines telling pi.dev where the extension entry point and prompt templates live. Standard pi convention; pi-gsd v2.x uses identical shape.
+4. **Reuse existing `.sdd/` brain unchanged** — `.sdd/scripts/`, `.sdd/actions/`, `.sdd/playbooks/`, `.sdd/state files`. The extension's `session_start` handler copies them into the project's `.pi/sdd/` on first run, replacing only stale framework files (idempotent), with user-edits preserved via the same copy-on-first-run pattern pi-gsd uses (HRN-01).
+
+**Why this answers §1-3:**
+
+- **§1** — colleagues using non-Claude models install with one line (`pi install npm:sdd-pi-adapter`) and immediately have `/sdd-start /sdd-next /sdd-ship` available in pi.dev with whatever model they prefer.
+- **§2** — mechanical success: every §11 AC passes on both Claude Code AND pi.dev harnesses, verified via `verify-stage.sh`. The discipline test that passed 2/2 today (GPT-5.5 + Kimi K2) becomes a permanent regression test inside §11.
+- **§3** — all four user stories covered: Sam's per-task model routing (story 1) via pi's native `/model` switcher; Marco/Lucia get GPT-5/Kimi K2 native (stories 2-3); new evaluators install pi.dev once and try SDD without committing to Claude Code (story 4).
+
+**Alternatives considered (3):**
+
+- **(A) In-repo only, no npm publish.** Extension lives in `extensions/sdd-pi-extension/`. Users clone the SDD repo to use it. Rejected — install friction kills stories 2/3/4 (colleagues won't clone an unfamiliar repo).
+- **(B) Separate npm-only repo `sdd-pi-adapter`.** Brand-new GitHub repo, published to npm. Mirrors pi-gsd's pattern. Rejected — version-coupling pain between two repos; SDD core changes break adapter silently; iteration during formative weeks is slower.
+- **(C) Hybrid: in-repo + auto-publish to npm** ⭐ recommended — best of both worlds; one source of truth + clean install UX. Slight CI complexity (publish workflow) is the only cost.
+
+**What we trade off:**
+
+- **Cost:** ~30-60 minutes of GitHub Actions YAML once for the publish workflow; zero ongoing cost.
+- **Complexity:** SDD repo grows by one folder; build step adds an npm publish artifact.
+- **Time-to-ship:** (C) is slightly slower than (A) to write but immediately useful when shipped. (B) is slowest overall.
+- **Debt:** (C) couples adapter release cadence to SDD repo cadence. If we later want to release the adapter on its own schedule, that's a future migration to (B). Acceptable given the adapter design will be stable by then.
+
+**Key technical choices for sign-off (4):**
+
+1. **TypeScript for the extension code.** Type-checked code = fewer silent bugs. Slightly more tooling than plain JS but follows pi.dev's own stack (pi.dev itself is TS). Risk: TS major-version upgrades occasionally break things; we follow pi.dev's version to mitigate.
+2. **`package.json#pi` manifest as the contract with pi.dev.** Three lines pointing pi at the extension entry + prompts dir. Standard, documented, pi-gsd uses it stably. Risk: pi.dev pre-1.0 changes the shape — low likelihood but worth tracking.
+3. **`pi-mcp-adapter` (community package, MIT, 599 stars) required for SDD's MCP integration.** Bridges pi.dev to MCP servers like our existing `extensions/sdd-mcp-server/`. Risk: pi-mcp-adapter abandoned or breaks — mitigated by documenting a fallback (skip MCP; SDD methodology still works without it).
+4. **Pre-commit enforcement moves to git pre-commit hooks (not pi's `tool_call` event).** Pi's `tool_call` is advisory-only — it can warn but not block, which is insufficient for SDD's anti-theatre / atomic-step / test-first guards. Git pre-commit hooks fire deterministically at commit time regardless of CLI. Cost: user needs `git config core.hooksPath .claude/hooks` (the friction we hit today). Risk: bypassed with `--no-verify` — same as today, explicit user choice.
+
+**Out of scope here (defer to follow-up features):**
+
+- **Parallel wave execution** ([[ideas/002-parallel-wave-execution]]) — separate feature after 008.
+- **Specialized subagents** ([[ideas/003-specialized-subagents]]) — separate feature after 008.
+- **Removing §2 Success from the feature playbook** ([[ideas/004-remove-success-from-feature-playbook]]) — separate framework feature after 008.
+
+This keeps 008 focused on one harness adapter, no scope creep.
+
+**Approved by Sam: 2026-05-08.** Section content hashed and locked into `verification.json`; downstream edits will trigger inline re-approval per CLAUDE.md.
 
 ### action: data-contract
 
