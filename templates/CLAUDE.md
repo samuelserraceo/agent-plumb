@@ -385,7 +385,7 @@ When you scaffold a work item ahead of starting it (via `/start --queued <title>
 
 **How to promote a queued item:**
 
-```
+```text
 /promote-to-active <id-or-slug>
 ```
 

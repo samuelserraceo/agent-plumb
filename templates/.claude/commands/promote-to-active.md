@@ -9,7 +9,7 @@ Closes [#169](https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/
 
 ## Usage
 
-```
+```text
 /promote-to-active 002-profile-setup
 /promote-to-active 002              # bare NNN works too (lenient match)
 /promote-to-active profile-setup    # bare slug also works

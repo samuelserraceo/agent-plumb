@@ -212,10 +212,22 @@ if not first_stage_id:
     sys.exit(1)
 
 # 5. Write the updated spec.md.
+# CR cycle 1 finding (#195) Critical: flip BOTH the top `[PHASE: X]`
+# marker line AND the body section heading `## PHASE: X`. next-action.sh
+# walks `## PHASE: <phase>` to find the phase body — leaving it at
+# QUEUED while the top says SPEC would cause /next to skip the section
+# entirely and treat the stage as already complete.
 new_spec = re.sub(
     r"^\[PHASE:\s*QUEUED\]",
     f"[PHASE: {first_stage_id}]",
     spec_text,
+    count=1,
+    flags=re.MULTILINE,
+)
+new_spec = re.sub(
+    r"^## PHASE:\s*QUEUED\s*$",
+    f"## PHASE: {first_stage_id}",
+    new_spec,
     count=1,
     flags=re.MULTILINE,
 )
@@ -264,10 +276,21 @@ if os.path.isfile(index_path):
             )
             # Remove from backlog.
             new_bl = bl[:row_match.start()] + bl[row_match.end():]
+
+            # CR cycle 1 finding (#195) Minor: strip empty-state
+            # placeholders ("_(none yet)_" / "(none)") from In flight
+            # before prepending the new row. Without this, a project
+            # promoting its first queued feature would show both the
+            # placeholder AND the new row simultaneously.
+            def _strip_placeholders(s):
+                s = s.replace("_(none yet)_", "").replace("_(none)_", "")
+                s = re.sub(r"(?m)^[ \t]*\(none(?:\s+yet)?\)[ \t]*\n?", "", s)
+                return s
+
             # If In flight section exists, prepend the row under its heading.
             if in_flight_match:
                 if_start, if_end = in_flight_match.span()
-                ifl = in_flight_match.group(0)
+                ifl = _strip_placeholders(in_flight_match.group(0))
                 # If In flight comes AFTER backlog in the file, splice carefully.
                 if if_start > bl_end:
                     # Update backlog first (earlier in file), then in flight.

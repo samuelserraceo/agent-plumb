@@ -44,7 +44,7 @@
       "trust": "framework"
     },
     "start.sh": {
-      "expected_sha256": "1fb80d499ccf44220a7d7e0be9186047c18352a5db4b235f428a020efe19a2e3",
+      "expected_sha256": "ce8a1915a202aa0d6dac019175f249bf71965e3007d335a288ed5f6eaf7fd3b1",
       "path": ".sdd/scripts/start.sh",
       "trust": "framework"
     },
@@ -104,7 +104,7 @@
       "trust": "framework"
     },
     "promote-to-active": {
-      "expected_sha256": "fff5f0c50b6fcd74e51258f28b6afe80b4a003f7c59bf9018346ea89060a5778",
+      "expected_sha256": "9f33d6180c8059f07355dcb1826bbf2b9b2918e12024ffdda579da16fef301b5",
       "path": ".sdd/scripts/promote-to-active.sh",
       "trust": "framework"
     }

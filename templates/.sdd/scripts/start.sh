@@ -382,17 +382,21 @@ def load_action_steps(action_slug):
         return []
     return meta.get("steps", []) or []
 
-# Spec.md frontmatter — only emitted when there's structured data to record
-# (extends:). Keeps the no-extends case free of empty YAML noise.
-frontmatter_lines = []
+# Spec.md frontmatter — always emit `playbook:` so /promote-to-active
+# (and any future tooling) can resolve the work item's playbook
+# without falling back to global INDEX.md / config.md metadata. CR
+# cycle 1 finding (#195): a queued bug/refactor created while INDEX
+# pointed at `feature` would otherwise be promoted into the wrong
+# phase. Frontmatter wins; INDEX.md is the fallback only.
+frontmatter_lines = [
+    "---",
+    f"playbook: {chosen}",
+]
 if extends_resolved:
-    frontmatter_lines = [
-        "---",
-        f"extends:",
-        f"  - {extends_resolved}",
-        "---",
-        "",
-    ]
+    frontmatter_lines.append("extends:")
+    frontmatter_lines.append(f"  - {extends_resolved}")
+frontmatter_lines.append("---")
+frontmatter_lines.append("")
 
 if queued:
     blocker_line = (
@@ -650,10 +654,23 @@ except Exception:
     raise
 
 # --- Plain-English success message to stdout ---
+# CR cycle 1 finding (#195): when --queued, the user must NOT be told
+# to run /next — the work item is queued, not active. Direct them at
+# /promote-to-active instead. The "active = ..." line was misleading
+# the user into thinking the queued scaffold was their new active
+# focus; that's exactly the failure mode #169 closes.
 print(f"[/start] scaffolded: {work_item_rel}")
-print(f"   - spec.md created with {len(sub_slugs)} actions in stage '{first_stage_id}'")
-print(f"   - INDEX.md updated (active = {work_item_rel}, playbook = {chosen})")
-print()
-print("Next: run /next to start the first action.")
-print(f"      I'll ask you about §1 ({sub_slugs[0] if sub_slugs else 'n/a'}) first.")
+if queued:
+    print(f"   - spec.md created with {len(sub_slugs)} actions, marked PHASE: QUEUED")
+    print(f"   - INDEX.md updated (added to ## Backlog, **Active:** unchanged)")
+    print()
+    print("Next: this scaffold is queued — not yet active. When you're ready to start it:")
+    print(f"      /promote-to-active {work_item_rel.split('/')[-1]}")
+    print(f"      That flips PHASE to {first_stage_id_real} and makes it the active feature.")
+else:
+    print(f"   - spec.md created with {len(sub_slugs)} actions in stage '{first_stage_id}'")
+    print(f"   - INDEX.md updated (active = {work_item_rel}, playbook = {chosen})")
+    print()
+    print("Next: run /next to start the first action.")
+    print(f"      I'll ask you about §1 ({sub_slugs[0] if sub_slugs else 'n/a'}) first.")
 PYEOF
