@@ -367,7 +367,52 @@ Sam approved 2026-05-08 after preview in Chrome.
 
 ### action: plan-decompose
 
-- [ ] tasks: convert acceptance criteria into ordered build tasks (one test file per task)
+- [x] tasks: 12 ordered T-tasks (T200-T211, one per AC). Foundation first (T200 manifest → T201 install → T203 HRN-01 → T202 context injection), then features (T204 /sdd-start → T205 /sdd-next → T206 /sdd-status → T207 /sdd-ship), then integration (T210 git pre-commit → T209 MCP), final regression (T208 multi-model discipline), publish workflow last (T211).
+
+**BUILD task plan — 12 ordered T-tasks (one test file per AC):**
+
+```
+- [ ] T200 (RED): assert extensions/sdd-pi-extension/package.json
+  contains a "pi" field with both "extensions:" (path to compiled JS)
+  and "prompts:" (path to prompts dir) — proves AC1
+- [ ] T201 (RED): in a fixture project, `pi install npm:sdd-pi-adapter`
+  completes successfully and pi recognises 9 sdd-* slash commands
+  — proves AC2
+- [ ] T203 (RED): on a fresh project, first session_start of the
+  extension copies framework files from package gsd/ into .pi/sdd/
+  via HRN-01; second invocation is no-op for user-edited files
+  — proves AC4
+- [ ] T202 (RED): pi.on("context") handler injects [FRAMEWORK INSTRUCTIONS]
+  and [PROJECT DATA] markers around the same content the Claude Code
+  UserPromptSubmit hook injects today (INDEX.md, active spec.md,
+  principles.md, stack.md, data-model.md, patterns.md) — proves AC3
+- [ ] T204 (RED): /sdd-start "<title>" invokes bash .sdd/scripts/start.sh
+  with $ARGUMENTS, scaffolds features/NNN-<slug>/spec.md, updates
+  INDEX.md — proves AC5
+- [ ] T205 (RED): /sdd-next resolves the active blocker via
+  next-action.sh and asks/proposes per the action tag — proves AC6
+- [ ] T206 (RED): /sdd-status renders phase + blocker + suggested next
+  action without invoking any LLM (verified via tool-call audit)
+  — proves AC7
+- [ ] T207 (RED): /sdd-ship pushes the branch, opens or updates the PR,
+  polls CI per existing scripts — proves AC8
+- [ ] T210 (RED): committing through pi.dev fires the same git
+  pre-commit hook chain that fires from Claude Code (anti-theatre
+  lint, atomic-step rule, test-first check) — proves AC11
+- [ ] T209 (RED): with pi-mcp-adapter installed and a fixture
+  .pi/mcp.json that references the SDD MCP server, querying via pi's
+  mcp proxy returns SDD tool results — proves AC10
+- [ ] T208 (RED): the BUILD-TASK calculator-add fixture from the
+  2026-05-08 discipline test passes through pi.dev under both
+  claude-sonnet-4-6 AND one non-Claude model (GPT-5 OR Kimi K2 OR
+  Llama) — proves AC9 (multi-model regression)
+- [ ] T211 (RED): pushing a release tag matching `pi-v*` triggers
+  .github/workflows/publish-pi-adapter.yml; tag is published to
+  npm as sdd-pi-adapter; re-running on the same tag is a no-op
+  — proves AC12
+```
+
+**Order rationale:** foundation (manifest → install → HRN-01 → context-injection) before features (slash commands), then orthogonal git-pre-commit enforcement, then optional MCP integration, multi-model regression near the end, NPM publish last. Each AC has exactly one T-task; clean 1-to-1 coverage.
 
 ### action: edge-case-sweep
 
