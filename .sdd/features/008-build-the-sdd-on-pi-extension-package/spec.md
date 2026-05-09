@@ -416,8 +416,25 @@ Sam approved 2026-05-08 after preview in Chrome.
 
 ### action: edge-case-sweep
 
-- [ ] ec-sweep: draft
+- [x] ec-sweep: 10 candidate edge cases drafted (worktree config conflict #4 was hit live during /start; pi pre-1.0 churn #1; pi-mcp-adapter abandonment #2; NPM_TOKEN rotation #3; concurrent SDD sessions #5; old pi version #6; Windows shell #7; /sdd-status with no project #8; discipline-test model drift #9; anti-theatre over-flagging #10). Next ec-pick assigns each to AC/task or accept-as-known-risk.
 - [ ] ec-pick: ask
+
+**Edge-case sweep — 10 candidates:**
+
+| # | Edge case | Risk | Plausible mitigation |
+|---|---|---|---|
+| 1 | Pi.dev API breaks during BUILD (pi is pre-1.0) | Medium | Pin pi version in package.json devDependencies; manual update gate; track pi-mono releases |
+| 2 | pi-mcp-adapter abandoned mid-build | Low | Documented fallback: skip MCP, methodology still works (already in §10) |
+| 3 | NPM_TOKEN secret rotation breaks tag publish | Medium | Document in §12 manual signoff; CI fails loudly with clear message |
+| 4 | **worktree config (extensions.worktreeConfig=true) overrides core.hooksPath at worktree level** | **HIGH — hit live today during /start** | Install script detects + warns user with the exact `git config --worktree core.hooksPath .claude/hooks` command |
+| 5 | Two SDD sessions simultaneously across Claude Code + pi.dev on the same project | Low | Both write to same INDEX.md, last-write-wins; user concern, not framework concern; document in README |
+| 6 | Old pi.dev version lacks `context` event | Medium | session_start does pi version check; plain-English error if version too old |
+| 7 | User on Windows | High for that user, low for v1 audience | Document "macOS/Linux only for v1" in install README; Windows support is a separate framework feature |
+| 8 | /sdd-status invoked when no SDD project exists | Low | Instant command falls back to "no SDD project found — run /sdd-start to initialise" |
+| 9 | Discipline test (T208) fails for a new model | Medium | AC9 requires ONE non-Claude model (OR-of-three); isolate failing model in report |
+| 10 | Anti-theatre lint over-flags pi-specific terms (e.g. "USD" / "dollar" today) | Low | Use `{best-effort: <who>}` annotation pattern; document in BUILD-phase notes for adapter contributors |
+
+Next /next runs `ec-pick` — Sam picks which become ACs/tasks vs. accepted-as-known-risk.
 
 ### Exit checks
 - [ ] C-spec-acs: ≥1 acceptance criterion exists in §11 — grep -qE '^- \[[ x]\] AC[0-9]+' "$SECTION_FILE" {verify-by: verify-stage.sh}
