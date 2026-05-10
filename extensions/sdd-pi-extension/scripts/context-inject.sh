@@ -12,7 +12,14 @@ set -uo pipefail
 project=""
 while [ $# -gt 0 ]; do
   case "$1" in
-    --project) project="$2"; shift 2 ;;
+    --project)
+      if [ $# -lt 2 ] || [ -z "${2:-}" ]; then
+        echo "[sdd-pi] --project requires a directory argument" >&2
+        exit 2
+      fi
+      project="$2"
+      shift 2
+      ;;
     *) echo "[sdd-pi] unknown flag: $1" >&2; exit 2 ;;
   esac
 done
