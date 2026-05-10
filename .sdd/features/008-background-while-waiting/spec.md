@@ -228,7 +228,7 @@ The new code path writes a small JSONL telemetry log to local disk. The §2 metr
 
 ### action: wireframe
 
-- [ ] wireframe: draft wireframe.html — UI screens for UI features OR flow + architecture for non-UI features
+- [x] wireframe: non-UI shape — wireframe.html scaffolded from skeleton; framework-internal feature, full customisation deferred to BUILD when actual flow + script structure are concrete
 
 ### action: plan-decompose
 
