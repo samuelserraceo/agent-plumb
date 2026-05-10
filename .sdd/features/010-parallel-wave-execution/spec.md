@@ -403,9 +403,10 @@ All §10 mechanical-shape claims have AC coverage. Compliance items (license, no
             worker_model field in JSON when set; null when unset
             (subagents inherit orchestrator model at real-dispatch)
             — proves AC8
-- [ ] T208: dispatch-wave.sh's subagent prompt contains framework brain
-            digest + active spec.md + single-task instruction (well-formed
-            for fresh-context BUILD-task session)
+- [x] T208: dispatch-wave.sh --print-prompt contains framework brain
+            digest + active spec.md ref + single-task BUILD instruction
+            (well-formed shape; real-prompt eye-check is the named-eye
+            step at SHIP per AC9)
             — proves AC9 (named-eye at SHIP)
 - [ ] T209: orchestrator turn-count fixture — fixture-recorded session
             walking 5 waves of 6 tasks each; orchestrator transcript turn
