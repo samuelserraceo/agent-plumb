@@ -145,7 +145,24 @@ Field meanings:
 
 ### action: dependencies
 
-- [ ] deps: draft external services + pricing math scaled to success-volume targets
+- [x] deps: external services — none. New code surface ships inside SDD's existing infra (CR-poll loop, `.sdd/.cache/`). Local-disk telemetry log writes; no cloud writes, no API calls, no rate-limited services.
+
+**External services**
+
+None. The feature ships within SDD's existing infrastructure:
+
+- Existing CR-poll loop (extended in place; one new script call)
+- Existing `.sdd/.cache/` directory (gitignored)
+- Existing CodeRabbit + GitHub Actions for the SDD repo's own dev loop (observed by the wait-detection logic; their behaviour is unchanged)
+
+**Pricing math**
+
+The new code path writes a small JSONL telemetry log to local disk. The §2 metric reporting tooling is grep + count — local computation. No cloud write, API call, or rate-limited service is added by this feature {best-effort: Sam at SHIP — verify by reading the diff}.
+
+**Out of §8**
+
+- Future "advance-N+1" parallel-feature work (deferred from §5 Approach C) might need cross-worktree coordination, but that is out of scope here
+- Real metric reporting infrastructure (dashboards, etc.) — telemetry stays local for now
 
 ### action: out-of-scope
 
