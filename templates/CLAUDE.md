@@ -715,11 +715,11 @@ When the agent is waiting on an external process (CodeRabbit review, CI run, dep
 
 - Speculative response drafts to likely CR concerns
 
-**Out-of-scope set** — never do these in a wait window without explicit user authorisation:
+**Out-of-scope set** — these are not automated background work. Surface to the user when the situation arises; the user does them, not the agent:
 
 - Edits to files outside the current feature's scope
-- Force-push, anything destructive
-- Changes to shared corpus files (patterns.md, decisions.md, data-model.md, stack.md) — those go through normal SPEC walks
+- Force-push or any other destructive git operation (these stay manual even with user approval — surface and let the user run them)
+- Changes to shared corpus files (patterns.md, decisions.md, data-model.md, stack.md) — those go through normal SPEC walks, not background-mode
 
 ## Forbidden
 

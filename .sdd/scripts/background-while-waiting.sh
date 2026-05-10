@@ -95,6 +95,10 @@ if [ "${1:-}" = "--update-last-action" ]; then
     exit 2
   fi
   choice="$2"
+  case "$choice" in
+    re-read-corpus|pre-fetch-next-feature|draft-pr-description|draft-commit-msgs|speculative-cr-response|none-skipped) ;;
+    *) echo "background-while-waiting: invalid choice: $choice" >&2; usage >&2; exit 2 ;;
+  esac
   if [ ! -f "$LOG" ]; then
     echo "background-while-waiting: log file not found: $LOG" >&2
     exit 3
