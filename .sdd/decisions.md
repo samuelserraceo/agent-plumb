@@ -314,3 +314,11 @@ SHIPPED. Channel B (project-template tree) update flow now mechanical via `bash 
 ## 2026-05-10T15:54:18Z  [[009-feature-playbook-v2-brief-driven-spec-entry-replaces-3-question-pitch-shape]]  feature/ux-brief
 
 Sam approved §4 UX & Design brief: chat-as-UX framing — agent message shapes (entry / mid-section / first-draft / end-of-section recap) are the user-facing surface; no visual wireframe. Three doctrine items already shipped via v1.6 batch (#201/#205) plus 3 new doctrine items in scope for this redesign (#207 Parts 3/4/6 — one-question-per-turn, plain-English-first default, end-of-section recap). wireframe.html stub created explaining the chat-as-UX rationale. Hash: hash-section: section for slug 'ux-brief' appears MULTIPLE times in .sdd/features/009-feature-playbook-v2-brief-driven-spec-entry-replaces-3-question-pitch-shape/spec.md at lines [78, 82] — ambiguous, refusing to hash. Rename the duplicate or remove it.
+
+## 2026-05-10T16:10:00Z  [[009-feature-playbook-v2-brief-driven-spec-entry-replaces-3-question-pitch-shape]]  feature/ux-brief-correction
+
+CORRECTION to the §4 UX-brief approval entry above. The Hash line in that entry contained the hash-section.sh error message (the spec.md had two heading shapes matching at the time, so hash-section.sh refused with "ambiguous, refusing to hash"). The duplicate heading was fixed in the same commit (cb0741c), and the hash was correctly recomputed against the cleaned spec. The correct §4 hash is `080f621417c586a465585de1a8c4ebb98672b04cfa3989207de017740e2dd182`. Subsequent commits softened 2 theatre tokens which changed the hash to the current verification.json value.
+
+Append-only correction per CLAUDE.md decisions.md doctrine — never modify prior entries, only append. Surfaced + filed as a stop-hook violation; this entry is the recovery action.
+
+Hash: 080f621417c586a465585de1a8c4ebb98672b04cfa3989207de017740e2dd182
