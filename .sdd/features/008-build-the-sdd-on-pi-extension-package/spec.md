@@ -485,7 +485,7 @@ Sam approved 2026-05-08 after preview in Chrome.
 
 ### action: push-pr
 
-- [ ] push-and-open: branch pushed; PR opened or updated
+- [x] push-and-open: branch pushed (claude/compassionate-neumann-afce99 → origin); PR #214 opened — https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/214
 
 ### action: verify-ci-green
 
