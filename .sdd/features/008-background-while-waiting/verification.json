@@ -1,0 +1,18 @@
+{
+  "phase": "SPEC",
+  "approved_sections": {
+    "proposed-approach": "bd8864317134bd659e514c5d408a84ef18d3d1315904965414f053b59cafc6ee",
+    "data-contract": "8195d8a9e62ca297d94eb15cb098e7831008b5ca9785eacf8f1b2434d5606037",
+    "flows": "3e88618334cc24758477e198f978f08fcfa2a1d8dc9296a0c6c78a48226e085e",
+    "dependencies": "d7b9061975e656ed8e298c4c57e434ca5a0642ffb6b9600f573174a8da2cd7a5",
+    "out-of-scope": "e7f62cea99f79889ebffc1cb2c2016f8b52f0562689145c49c26c5efea8b1d25",
+    "non-functional": "e5b3ac1617b3e394291eca470f736857ea9427eade69950a5df359476e4116eb",
+    "acceptance-criteria": "80e2e2953623f58eed62535e453f1a480a36684acc39c545dc75f3fac585849c",
+    "plan-decompose": "94a8519c3752c7944b1c73c104fd9f1d7d38fcdc748edcd05552baf29380a8cd",
+    "edge-case-sweep": "802cef1cb279c31bda4a968212bcae62ee2c88d467531c0b627e7c7c4bd4161e"
+  },
+  "checks": [
+    {"id": "C-spec-acs", "result": "fail"},
+    {"id": "C-spec-tasks", "result": "fail"}
+  ]
+}

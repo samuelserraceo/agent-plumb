@@ -37,7 +37,45 @@ playbook: feature
 
 ### action: proposed-approach
 
-- [ ] approval: draft the approach with 2 alternatives and tradeoffs, iterate with the user, get approval
+- [x] approval: B — doctrine + instrumentation (CLAUDE.md doctrine + background-while-waiting.sh trigger script + marker log for §2 metric)
+
+**Recommended approach — B (doctrine + instrumentation)**
+
+A small bash script (`.sdd/scripts/background-while-waiting.sh`) gets called by the existing CR-poll loop when it enters a wait window. The script emits a marker (for the §2 metric counter) and prints the safe-set actions for the agent to consider. The agent does the actual background work; the script is the trigger + measurement.
+
+Doctrine lives in two places:
+
+- `templates/CLAUDE.md` — ships to user projects via /sdd-setup
+- `.sdd/CLAUDE.md` — framework's own dogfooding copy
+
+Both list three sets:
+
+- **Low-risk** — re-read corpus (patterns.md, decisions.md, data-model.md), pre-fetch next-feature context, draft PR description, draft commit messages
+- **Judgement-required** — speculative responses to likely CR concerns
+- **Out-of-scope** — edits outside current feature, force-push, changes to shared corpus files
+
+Why this answers the brief:
+
+- §1 problem (deadtime) → script triggers on deadtime entry
+- §2 metric → marker emit count is the counted variable
+- §3 stories — story 1 maps to the safe-set as a category; stories 2-4 are concrete instances inside it
+
+**Alternatives considered**
+
+- **Approach A — doctrine only.** Same CLAUDE.md sections, no script. Simpler, fewer moving parts. *Why not recommended:* §2's metric requires a mechanical marker emit count. Without the script we'd be shipping a metric we can't verify — anti-theatre territory.
+- **Approach C — A + B + parallel-feature integration.** B plus: when INDEX shows 2+ features in flight (#42 territory), the script proactively suggests "advance feature N+1 by one safe step." *Why not recommended:* #42 just shipped; "advance N+1 by one step" is undefined behaviour. Better to ship B, learn how the loop behaves, then layer C in a follow-up if savings warrant.
+
+**What we trade off**
+
+- A small bash script's worth of new surface area — adds something that could break (mitigation: regression test added in plan-decompose)
+- One extra log line per wait window in `.sdd/.cache/` (minor noise)
+
+**Key technical choices for sign-off**
+
+- **Language:** plain bash — no new dependencies, runs wherever SDD already runs (macOS / Linux)
+- **Marker log format:** append-only JSONL under `.sdd/.cache/background-emit.log` per session — easy to count for the §2 metric
+- **Behaviour boundary:** the script *lists candidates*, doesn't *do* the work — the agent picks. No surprise actions outside the agent's awareness
+- **Trigger point:** existing CR-poll loop's wait function — single integration point, no parallel new infrastructure
 
 ### action: data-contract
 
