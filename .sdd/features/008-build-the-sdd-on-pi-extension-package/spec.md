@@ -372,7 +372,7 @@ Sam approved 2026-05-08 after preview in Chrome.
 **BUILD task plan — 12 ordered T-tasks (one test file per AC):**
 
 ```
-- [ ] T200 (RED): assert extensions/sdd-pi-extension/package.json
+- [x] T200 (GREEN): assert extensions/sdd-pi-extension/package.json
   contains a "pi" field with both "extensions:" (path to compiled JS)
   and "prompts:" (path to prompts dir) — proves AC1
 - [ ] T201 (RED): in a fixture project, `pi install npm:sdd-pi-adapter`
