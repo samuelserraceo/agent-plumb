@@ -34,7 +34,7 @@ silently rot.
 
 Run once per model under test:
 
-```
+```bash
 mkdir /tmp/calc-replay && cd /tmp/calc-replay
 git init -q && git config core.hooksPath .claude/hooks
 cp -R <repo>/extensions/sdd-pi-extension/fixtures/calculator-add/* .
