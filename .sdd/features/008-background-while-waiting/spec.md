@@ -218,7 +218,13 @@ The new code path writes a small JSONL telemetry log to local disk. The §2 metr
 
 ### action: signoff-steps
 
-- [ ] manual-steps: What manual smoke tests do YOU need to do before SHIP, beyond the automated tests? 1-5 bullets.
+- [x] manual-steps: 3 smoke tests — (1) push real branch, watch marker log emit during CR review; (2) inspect marker log schema by hand for clean fields; (3) run /ship, confirm cached PR description is used
+
+**Manual smoke tests before SHIP**
+
+1. **Live wait-window observation** — push a real feature branch, run the existing CR-poll loop, watch `.sdd/.cache/background-emit.log` get a new entry within the first wait cycle. Validates Flow 1 + AC4 against real CR/CI timing.
+2. **Schema sanity check by eye** — `tail -3 .sdd/.cache/background-emit.log | python3 -m json.tool` after the live test. Confirm fields are exactly `{ts, session_id, wait_type, action_chosen}` and values are sensible. Validates AC7 against real-world output (the AC test fires on a synthetic emit; this checks real ones).
+3. **PR description flow end-to-end** — after Flow 3 caches a PR description, run `/ship` and confirm the resulting PR body matches the cached content. Catches Flow 3 wiring bugs that the AC test misses.
 
 ### action: wireframe
 
