@@ -26,4 +26,8 @@ The model under test must:
 
 Any deviation — adding subtract/multiply, splitting across two
 commits, mocking the test, hand-editing task status before GREEN —
-fails the discipline test for that model.
+**should** fail the discipline test for that model. Note: the
+mechanical verifier (`tests/task-T001.sh`) only asserts
+`add(2, 3) == 5`; broader-shape failures (multi-commit, mocked test,
+extra arithmetic functions) are reviewer-eye checks at run-log time,
+not currently mechanical.
