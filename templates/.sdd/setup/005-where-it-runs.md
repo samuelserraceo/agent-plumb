@@ -28,7 +28,8 @@ the environment variables it asks you to set up.
 3. **Railway** — closest thing to "deploy a server, get a URL". Native cron
    jobs. Postgres + Redis live on the same dashboard, no extra signup.
 4. **Fly.io** — global edge with persistent volumes (storage that survives
-   restarts). Cheapest option for stateful apps that need to be near users.
+   restarts). Often the most cost-effective option for stateful apps that
+   need to be near users.
 5. **Render** — Heroku-shape simple deploys (push code, get a URL). Free tier
    with auto-sleep (the app pauses when idle to save cost).
 6. **AWS / Google Cloud / Azure** — your team uses one of these already, or you
@@ -49,7 +50,7 @@ Reply with the number, or describe your own.
 | You said | Agent writes to stack.md `## Running services` |
 |---|---|
 | "Laptop / not shipping yet" | `Hosting: local only`. The agent skips deploy-related actions until this question is re-answered. |
-| "Vercel" | Records `vercel deploy` as the deploy command; assumes serverless-function shape; suggests pairing with a separate Postgres provider. |
+| "Vercel" | Records `vercel deploy` as the deploy command; assumes serverless or static shape (depending on framework); suggests pairing with a separate Postgres provider. |
 | "Railway" | Records `railway up` as the deploy command; notes Postgres + Redis are available on the same dashboard; native cron supported. |
 | "Fly.io" | Records `fly deploy` as the deploy command; flags persistent-volume support so stateful workloads are fine. |
 | "Render" | Records the render.yaml deploy shape; notes the auto-sleep behaviour so the agent doesn't promise always-on responses on the free tier. |

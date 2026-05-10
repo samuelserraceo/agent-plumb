@@ -128,10 +128,23 @@ for spec in "${TARGETS[@]}"; do
   for i in "${!LINES[@]}"; do
     line="${LINES[$i]}"
 
-    # Ignore-block markers (HTML comments, exact match). Toggle BEFORE
-    # the fence/scan logic so a marker inside a fence still wouldn't
-    # fire (markers in fenced examples are inert anyway, but the toggle
-    # keeps them inert without depending on fence state).
+    # Toggle fence state on any line that contains ``` at start (after
+    # optional whitespace). Don't scan tokens INSIDE fenced blocks.
+    # CR cycle 1 (PR #213): fence MUST come before markers — otherwise
+    # an unbalanced marker inside a fence example (e.g. a teaching
+    # example showing the start marker but not the end) would set
+    # in_ignore_block=1, and the closing ``` line would hit the
+    # in_ignore_block check first → continue → fence never closes →
+    # the rest of the file silently dropped from scanning.
+    if [[ "$line" =~ ^[[:space:]]*\`\`\` ]]; then
+      in_fence=$((1 - in_fence))
+      continue
+    fi
+    if [ "$in_fence" -eq 1 ]; then continue; fi
+
+    # Ignore-block markers (HTML comments, exact match). Only fire when
+    # NOT inside a fence — markers in fenced documentation examples are
+    # inert by construction (the fence guard above already skipped them).
     if [[ "$line" == *"<!-- lint-no-theatre:ignore-block-start -->"* ]]; then
       in_ignore_block=1
       continue
@@ -141,13 +154,6 @@ for spec in "${TARGETS[@]}"; do
       continue
     fi
     if [ "$in_ignore_block" -eq 1 ]; then continue; fi
-
-    # Toggle fence state on any line that contains ``` at start (after
-    # optional whitespace). Don't scan tokens INSIDE fenced blocks.
-    if [[ "$line" =~ ^[[:space:]]*\`\`\` ]]; then
-      in_fence=$((1 - in_fence))
-      continue
-    fi
     if [ "$in_fence" -eq 1 ]; then continue; fi
 
     # Strip inline `code` spans before matching tokens. This way

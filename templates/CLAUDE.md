@@ -746,7 +746,7 @@ Never end a turn with "What's next: §X" alone. Always include HOW the user acts
 
 ### Hard cap on turn length (closes #205)
 
-**Every end-of-turn message must be ≤ 5 lines unless the user explicitly asked for detail.** This is non-negotiable signal hygiene — non-technical users scroll past long wraps and miss the call-to-action entirely. F01 of pipelogic_v2 had multiple end-of-turn wraps blowing the cap by 5-12x (one was 60 lines), and the actual instruction got lost in the noise.
+**Every end-of-turn message must be ≤ 5 newline-delimited lines unless the user explicitly asked for detail.** *(The cap counts actual `\n` characters, not visual UI wrapping — a single 200-character line still counts as 1 line.)* This is non-negotiable signal hygiene — non-technical users scroll past long wraps and miss the call-to-action entirely. F01 of pipelogic_v2 had multiple end-of-turn wraps blowing the cap by 5-12x (one was 60 lines), and the actual instruction got lost in the noise.
 
 When you'd be tempted to write more:
 - Lead with the call-to-action in line 1.
@@ -762,7 +762,7 @@ Hard cap exemptions (the user explicitly opted in): they typed `/explain`, `/sta
 
 > *"Approve §<N>? Reply `approve` or tell me what to change."*
 
-Do NOT emit a 6-step "what happens on approve" framework-mechanics block by default — non-technical users don't care HOW the framework records the approval (hash → verification.json → decisions.md → commit → advance.sh → INDEX). They care WHAT they're approving and how to react. Move the ceremony details behind an explicit `approve --explain` (or just print them only if the user asks "what happens when I approve?"). F01's spec ceremonies repeated the 6-step block ~9 times (~54 lines of pure framework-mechanics noise per spec) — every approval doubled in length without adding decision-relevant content.
+Do NOT emit a 6-step "what happens on approve" framework-mechanics block by default — non-technical users don't care HOW the framework records the approval (hash → verification.json → decisions.md → commit → advance.sh → INDEX). They care WHAT they're approving and how to react. **Print the ceremony details only when the user asks a free-form question** (e.g., *"what happens when I approve?"*, *"show me the steps"*, *"how do you record this?"*). There is no `approve --explain` flag; the trigger is the user's question, not a command-line switch. F01's spec ceremonies repeated the 6-step block ~9 times (~54 lines of pure framework-mechanics noise per spec) — every approval doubled in length without adding decision-relevant content.
 
 <!-- SDD-MANAGED-END -->
 
