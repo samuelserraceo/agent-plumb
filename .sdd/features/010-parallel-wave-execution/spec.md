@@ -366,7 +366,7 @@ All §10 mechanical-shape claims have AC coverage. Compliance items (license, no
 **BUILD task plan — 12 ordered T-tasks (one test file per AC):**
 
 ```text
-- [ ] T200: next-action.sh recognises [WAVE: N] markers in plan-decompose
+- [x] T200: next-action.sh recognises [WAVE: N] markers in plan-decompose
             and returns { tag: WAVE-DISPATCH, wave: N, tasks: [...] }
             — proves AC1
 - [ ] T201: scaffold .sdd/scripts/dispatch-wave.sh — accepts <wave-N>
