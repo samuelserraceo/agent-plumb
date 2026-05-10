@@ -1,15 +1,15 @@
 # SDD framework — INDEX
 
-**Active:** features/007-sdd-migrate-refresh-project-s-sdd-tree-from-upstream-framework
+**Active:** features/008-background-while-waiting
 **Playbook:** feature
-**Active blocker:** §1 (first action: problem)
+**Active blocker:** BUILD (first action: run-mode-chosen)
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
 
 ## In flight
+- features/008-background-while-waiting — background while waiting (PHASE: BUILD)
 
-(none)
 
 
 ## Ideas

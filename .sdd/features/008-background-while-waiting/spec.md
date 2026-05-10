@@ -4,9 +4,9 @@ playbook: feature
 
 # background while waiting
 
-[PHASE: SPEC]
+[PHASE: BUILD]
 
-**Active blocker:** §1 (first action: problem)
+**Active blocker:** BUILD (first action: run-mode-chosen)
 
 ## PHASE: SPEC
 
@@ -260,7 +260,56 @@ The new code path writes a small JSONL telemetry log to local disk. The §2 metr
 - **EC6 — Long-running wait with multiple actions**: script supports multiple `--update-last-action` invocations; `action_chosen` reflects the LAST action taken. **Decision: accept as-is** — documented; metric still counts the wait once.
 
 ### Exit checks
-
-### Exit checks
 - [ ] C-spec-acs: ≥1 acceptance criterion exists in §11 {verify-by: C-spec-acs bash-grep} — grep -qE '^- \[[ x]\] AC[0-9]+' "$SECTION_FILE"
 - [ ] C-spec-tasks: ≥1 task in plan-decompose section {verify-by: C-spec-tasks bash-grep} — grep -qE '^- \[[ x]\] T[0-9]+' "$SECTION_FILE"
+
+## PHASE: BUILD
+
+### action: run-mode-chosen
+
+- [ ] mode: pick run mode (step-by-step | checkpoint-every-5 | full-autonomous | shell-Ralph)
+
+### action: build-task
+
+(driven by §14 tasks T1-T8 — each task lands as one commit per the test → code → green inner loop)
+
+### Exit checks
+- [ ] C-build-tasks-green: every task is GREEN (test passing, code committed)
+
+## PHASE: SHIP
+
+### action: verify-test-run
+
+- [ ] test-run: run full test suite, record results
+
+### action: verify-prod-only-acs
+
+- [ ] prod-only: walk PROD-ONLY ACs (none for this feature)
+
+### action: adversarial-review
+
+- [ ] review: hostile review pass
+
+### action: playwright-explore
+
+- [ ] explore: playwright exploration (skipped — non-UI feature)
+
+### action: learn
+
+- [ ] lesson: append learning to patterns.md if applicable
+
+### action: push-pr
+
+- [ ] pr: push branch, open PR
+
+### action: verify-ci-green
+
+- [ ] ci: confirm CI green and CR clean
+
+### action: mark-shipped
+
+- [ ] shipped: mark INDEX.md, append decisions.md SHIPPED entry
+
+### Exit checks
+- [ ] C-ship-pr-url: PR URL recorded in INDEX.md Shipped section
+- [ ] C-ship-marked: .shipped marker file exists in feature folder

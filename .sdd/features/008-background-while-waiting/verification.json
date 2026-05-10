@@ -1,5 +1,5 @@
 {
-  "phase": "SPEC",
+  "phase": "BUILD",
   "approved_sections": {
     "proposed-approach": "bd8864317134bd659e514c5d408a84ef18d3d1315904965414f053b59cafc6ee",
     "data-contract": "d88317334246cce918fb92bc61069c79e23e44afe4b3cded97751b8c3fc0e10f",
@@ -11,8 +11,5 @@
     "plan-decompose": "85e0ff457a70eb68cda0a923eb2e925721c8ab7cea01dbdc3bf998eb84e0ca42",
     "edge-case-sweep": "b447938dc72a76f69dc9c9be20326589682c190bc3efec8fb15f871dfd46b26f"
   },
-  "checks": [
-    {"id": "C-spec-acs", "result": "pass"},
-    {"id": "C-spec-tasks", "result": "pass"}
-  ]
+  "checks": []
 }
