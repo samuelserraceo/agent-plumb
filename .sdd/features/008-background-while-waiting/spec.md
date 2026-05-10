@@ -14,7 +14,7 @@ playbook: feature
 
 - [x] who: SDD project owner (Sam) dogfooding the framework on its own development loop — the immediate-and-only person hitting CR/CI deadtime today; downstream SDD users inherit benefit
 - [x] why-now: v1.5+ improvement queue is bottlenecked on CR/CI idle time; #42 parallel-features already shipped giving the agent a concrete "next safe thing" target; landing 004 first compounds savings on every subsequent v1.6+ improvement
-- [ ] what-breaks: What breaks (concretely) if it isn't solved?
+- [x] what-breaks: every shipped framework feature carries 15-30 min of agent + Sam idle wall-clock; the v1.5+ improvement queue ships much slower than it could; deadtime breaks Sam's flow and burns attention with nothing to do
 
 ### action: success
 
