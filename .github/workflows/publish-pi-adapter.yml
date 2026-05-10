@@ -1,0 +1,42 @@
+name: Publish sdd-pi-adapter
+
+on:
+  push:
+    tags:
+      - 'pi-v*'
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Publish sdd-pi-adapter to npm
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: extensions/sdd-pi-extension
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Skip if version already published (idempotence on tag re-run)
+        id: check
+        run: |
+          name=$(npm pkg get name | tr -d '"')
+          version=$(npm pkg get version | tr -d '"')
+          if npm view "$name@$version" version >/dev/null 2>&1; then
+            echo "already=true" >> "$GITHUB_OUTPUT"
+            echo "$name@$version already on npm — re-run is a no-op"
+          else
+            echo "already=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: npm publish
+        if: steps.check.outputs.already != 'true'
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
