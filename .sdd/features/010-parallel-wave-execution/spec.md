@@ -377,10 +377,14 @@ All §10 mechanical-shape claims have AC coverage. Compliance items (license, no
             returns the existing tag/action/step shape (no WAVE-DISPATCH);
             current sequential walk unchanged
             — proves AC3
-- [ ] T203: spec.md row isolation under wave merges — 3 wave-tasks each
-            editing only its own task row, simulated 3-way merge succeeds
-            without conflict
-            — proves AC4
+- [x] T203: spec.md row isolation via orchestrator-flips (revised contract)
+            — wave-tasks commit only their test+code (disjoint files);
+            orchestrator flips all wave-task rows in one atomic spec.md
+            edit. Git only sees one spec.md edit per wave; no parallel
+            edits, no merge needed. Original 3-way-merge framing was
+            incorrect (adjacent rows have overlapping diff context).
+            — proves AC4 (with revised architectural contract; §6 EC#9
+            + §7 Flow 1 wording to be updated at SHIP)
 - [ ] T204: dispatch-wave.sh subagent commits trigger the same git
             pre-commit chain (anti-theatre, atomic-step, test-first,
             append-only) — captured pre-commit output during fixture dispatch
