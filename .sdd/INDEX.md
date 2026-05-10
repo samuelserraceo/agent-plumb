@@ -1,6 +1,6 @@
 # SDD framework — INDEX
 
-**Active:** features/007-sdd-migrate-refresh-project-s-sdd-tree-from-upstream-framework
+**Active:** features/009-feature-playbook-v2-brief-driven-spec-entry-replaces-3-question-pitch-shape
 **Playbook:** feature
 **Active blocker:** §1 (first action: problem)
 
@@ -8,8 +8,8 @@
 
 
 ## In flight
+- features/009-feature-playbook-v2-brief-driven-spec-entry-replaces-3-question-pitch-shape — feature playbook v2 — brief-driven SPEC entry replaces 3-question Pitch shape (PHASE: SPEC)
 
-(none)
 
 
 ## Shipped
