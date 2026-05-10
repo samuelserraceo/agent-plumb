@@ -1,6 +1,16 @@
 #!/usr/bin/env bash
-# T03: brief-intake.md instructs the agent to pre-fill §1, §3, §6, §7, §8, §10
-# AC3: After brief-summarise, sections show pre-filled prose drawn from brief
+# T03: prose-contract — brief-intake.md NAMES the 6 pre-fill targets
+# (§1, §3, §6, §7, §8, §10) plus the 2 standard-ceremony exclusions
+# (§11 ACs + §14 plan-decompose).
+#
+# AC3 is the runtime claim "after brief-summarise, sections in spec.md show
+# pre-filled prose drawn from the brief". That claim is BEHAVIOURAL — it
+# requires an LLM agent to read brief-intake.md and follow its instructions
+# against a real brief. This framework (markdown + bash) has no automated
+# way to run an LLM action against a fixture, so the BEHAVIOURAL half of
+# AC3 is verified manually at §12 sign-off (when Sam first walks F010+
+# through the new flow with a real brief). T03 verifies only the PROSE
+# CONTRACT — that the action prose tells the agent the right things.
 set -euo pipefail
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )/../../../.." && pwd )"
 ACTION="$ROOT/templates/.sdd/actions/brief-intake.md"

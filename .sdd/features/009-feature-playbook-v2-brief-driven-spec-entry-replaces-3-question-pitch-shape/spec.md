@@ -331,6 +331,7 @@ Total: 6×S/XS + 5×M = ~feature-shaped (~2-3 days human pace; AI multiplier app
 - [x] ec-pick: AUTONOMOUS DRAFT — Sam picks which edges to add as ACs on return
 
 ### Exit checks
+
 - [ ] C-spec-acs: ≥1 acceptance criterion exists in §11 {verify-by: C-spec-acs bash-grep} — grep -qE '^- \[[ x]\] AC[0-9]+' "$SECTION_FILE"
 - [ ] C-spec-tasks: ≥1 task in plan-decompose section {verify-by: C-spec-tasks bash-grep} — grep -qE '^- \[[ x]\] T[0-9]+' "$SECTION_FILE"
 
