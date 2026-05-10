@@ -2674,7 +2674,7 @@ spec="$d/.sdd/features/001-step-rich-json-test/spec.md"
 out=$(bash "$NEXT_ACTION" "$spec" 2>&1)
 cd - >/dev/null
 rm -rf "$d"
-# First open [ ] should be the `who` step under `problem` action; tag USER-LED.
+# First open [ ] should be the `brief` step under `brief-intake` action; tag USER-LED.
 if echo "$out" | grep -q '"action":[[:space:]]*"brief-intake"' \
    && echo "$out" | grep -q '"step":[[:space:]]*"brief"' \
    && echo "$out" | grep -q '"tag":[[:space:]]*"USER-LED"' \

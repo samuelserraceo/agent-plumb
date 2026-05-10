@@ -1,6 +1,6 @@
 # Brief template (v2) — for SDD project / feature intake
 
-> **What this is.** A reusable template a non-technical founder can fill in (or paste from their head) to describe what they want to build. The SDD agent reads this once, grills any vague terms, summarises its understanding back, and uses it to PRE-FILL §3 user-stories, §4 ux-brief, §6 data-contract, §7 flows, §8 dependencies, §9 out-of-scope, §10 non-functional, and §11 acceptance-criteria.
+> **What this is.** A reusable template a non-technical founder can fill in (or paste from their head) to describe what they want to build. The SDD agent reads this once, grills any vague terms, summarises its understanding back, and uses it to PRE-FILL the 6 sections in brief-intake's contract: §1 problem, §3 user-stories, §6 data-contract, §7 flows, §8 dependencies, §10 non-functional. §11 ACs, §12 sign-off, and §14 plan-decompose stay placeholders pending the standard ceremony — see `.sdd/actions/brief-intake.md` for the authoritative scope.
 >
 > **Why this exists.** Replaces the §1 Problem 3-question shape (*"who has it / why-now / what-breaks"*) which Sam called *"startup-pitch BS"* during the F01 audit on 2026-05-08. Free-form intake is faster, more honest, and lets the agent do the structuring.
 >
@@ -177,18 +177,15 @@ When you paste/upload this filled-in brief into `/start --queued <feature-name>`
 1. **Reads the whole brief** — Pass 1 minimum, Pass 2/3 if present.
 2. **Grills any vague terms** per the §173/§174 protocol — *"You said 'all tables'. Including views? Including matviews? `pl_draft.*` schemas too?"*
 3. **Summarises understanding** — *"Here's what I read. Confirm or tell me what to fix."* Single restate-block; not a 30-line wall.
-4. **Pre-fills SPEC sections** from the brief:
+4. **Pre-fills SPEC sections** from the brief — exactly the 6 sections in brief-intake's contract:
    - §1 Problem ← prose from sections 1 + 2
    - §3 User stories ← personas from section 3 + behaviours from section 4
-   - §4 UX brief ← look-and-feel from section 6
    - §6 Data contract ← entities derivable from section 4 (M1/M2/M3) + uploads from section 14
    - §7 Flows ← M1/M2/M3 walk-throughs from section 4
    - §8 Dependencies ← stack from section 8
-   - §9 Out-of-scope ← non-goals from section 5
    - §10 Non-functional ← reality constraints from section 10
-   - §11 Acceptance criteria ← clickthrough M1/M2/M3 from section 4
-   - §12 Signoff steps ← from section 12 (sign-off surface)
-   - `principles.md` ← locked rules from section 9
+
+   §11 Acceptance criteria, §12 Sign-off, and §14 plan-decompose stay placeholders pending the standard ceremony. §4 UX brief, §9 Out-of-scope, and `principles.md` (which earlier draft templates claimed) are NOT pre-filled in this version — they're follow-up USER-LED questions if the brief didn't cover them.
 5. **Hands you the pre-filled spec.md** — you only fill the gaps the brief didn't cover. Most projects have ~3-5 follow-up questions instead of ~20.
 
 Each pre-filled section still goes through the standard SPEC ceremony — agent proposes the pre-fill, you approve / adjust / reject. The brief is a **shortcut**, not a bypass: the moat (hash-locked sections, append-only decisions, manifest pin) still fires.

@@ -9,12 +9,15 @@ fails=0
 
 run() {
   local label="$1"; shift
-  if "$@" >/dev/null 2>&1; then
+  local tmp; tmp="$(mktemp)"
+  if "$@" >"$tmp" 2>&1; then
     echo "  ✓ $label"
   else
     echo "  ✗ $label"
+    sed 's/^/    /' "$tmp"
     fails=$((fails+1))
   fi
+  rm -f "$tmp"
 }
 
 # AC1 — brief-intake action exists with the prompt

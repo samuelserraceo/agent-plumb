@@ -19,7 +19,7 @@ requires_user_approval: false
 ---
 
 > **§171 — Refresher first.** BEFORE asking the question below, emit the 3-section refresher per [`refresher-block.md`](../skeletons/refresher-block.md): **Where we are** (work-item identifier — for first-action-of-a-new-work-item flows like this one, use the skeleton's "§1 not yet written" fallback since the brief IS what fills §1), **Today's question (§0 brief-intake)** (paste a brief OR upload a doc OR use the template), **Why now** (the brief lets us pre-fill §1, §3, §6, §7, §8, §10 — saves 15+ follow-up questions).
-
+>
 > **§173/§174 — Grill the user's answer.** AFTER the user pastes the brief, BEFORE writing it into spec.md, apply the grill protocol per [`grill-protocol.md`](../skeletons/grill-protocol.md) — but adapted for brief intake: grill on vague terms in §1.who-has-it / §1.why-now / hidden assumptions in §11 ACs / under-specification in §6 entities. Cap at 3 questions max.
 
 # Brief intake (replaces §1 problem for new features)

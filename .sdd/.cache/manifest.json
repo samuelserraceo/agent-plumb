@@ -132,7 +132,7 @@
       "trust": "framework"
     },
     "brief-intake": {
-      "expected_sha256": "c88f9c1499dec52249852049e7801f7e045ddc67f673c7aa794ac3d3869415d9",
+      "expected_sha256": "7814e89cc203de70988d822fb9a0e1df171eb6ce2a8ff603bc9125652cae3a4c",
       "path": ".sdd/actions/brief-intake.md",
       "trust": "framework"
     },
