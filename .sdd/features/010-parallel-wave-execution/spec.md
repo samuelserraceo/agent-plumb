@@ -418,10 +418,11 @@ All §10 mechanical-shape claims have AC coverage. Compliance items (license, no
             §12 signoff references both harnesses. Live walk (the actual
             equivalent-output check) is PROD-ONLY at SHIP first walk.
             — proves AC11 (PROD-ONLY at SHIP first walk)
-- [ ] T211: end-to-end real-session wave dispatch — real Claude Code
-            session walks fixture spec.md with 3 wave-tasks, verifies 3
-            parallel Agent calls dispatch + 9 atomic commits land + all
-            3 task rows flip to GREEN
+- [x] T211: end-to-end chain structurally wired — next-action.sh emits
+            WAVE-DISPATCH → dispatch-wave.sh accepts the fixture + mock
+            3/3-PASS results → returns rc=0 with structured per-task
+            report. Real-session walk (live Agent tool, 9 actual atomic
+            commits) is PROD-ONLY at SHIP first walk.
             — proves AC12 (PROD-ONLY at SHIP first walk)
 ```
 
