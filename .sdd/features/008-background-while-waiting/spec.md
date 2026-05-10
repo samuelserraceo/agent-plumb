@@ -295,7 +295,7 @@ The new code path writes a small JSONL telemetry log to local disk. The §2 metr
 
 ### action: verify-prod-only-acs
 
-- [ ] prod-only: walk PROD-ONLY ACs (none for this feature)
+- [x] prod-only: no PROD-ONLY ACs in §11 — all 7 ACs are mechanically verifiable locally
 
 ### action: adversarial-review
 
