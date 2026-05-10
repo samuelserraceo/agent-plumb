@@ -443,3 +443,11 @@ Cosmetic re-approval of §14 plan-decompose: removed "(~2-3 days human pace; AI 
 
 Hash: 5edcff324888790bdbc8c3affd392142d30b5f639ca454162c7d3b9e223d6152
 main
+
+## 2026-05-10T21:15:00Z  [[009-background-while-waiting]]  feature/mark-shipped
+
+SHIPPED via PR #218 (squash-merged to main at commit aee2f32, 2026-05-10T21:10:33Z). Background-while-waiting doctrine + emit script + metric helper now in main. Originally scaffolded as feature 008 on a long-running brainstorm worktree; renamed to 009 mid-PR to resolve ID collision with origin's just-shipped 008-build-the-sdd-on-pi-extension-package (#214). Second collision surfaced at merge time when #219's brief-driven-SPEC also took feature 009 — both 009 features coexist on main with different slugs (`009-background-while-waiting` vs `009-feature-playbook-v2-…`); the framework's branch-derived active resolution handles this via exact-slug matching.
+
+9 CR review cycles, ~17 unique findings closed. Tests 218/218 framework + 7/7 per-feature GREEN through the merge.
+
+This entry is appended after the leftover `main` line on line 445 (a remnant from the GitHub UI merge conflict resolution that the append-only contract prevents me from removing — preserved as historical noise). This cleanup PR fixes INDEX.md merge markers + the In-flight → Shipped move + .shipped marker for 009-background-while-waiting. The stray `main` line in this file at line 445 is documented but unfixable without bypassing append-only.

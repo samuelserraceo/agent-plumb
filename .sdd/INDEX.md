@@ -1,22 +1,14 @@
 # SDD framework — INDEX
 
-claude/clever-herschel-af8c27
-**Active:** features/009-background-while-waiting
-**Playbook:** feature
-**Active blocker:** SHIP (first action: verify-test-run)
-=======
 **Active:** features/009-feature-playbook-v2-brief-driven-spec-entry-replaces-3-question-pitch-shape
 **Playbook:** feature
 **Active blocker:** BUILD T01 (brief-intake action)
-main
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
 
 ## In flight
-- features/009-background-while-waiting — background while waiting (PHASE: SHIP)
-
-claude/clever-herschel-af8c27
+- features/009-feature-playbook-v2-brief-driven-spec-entry-replaces-3-question-pitch-shape — v1.6 feature playbook v2 — brief-driven SPEC entry (PHASE: BUILD)
 
 
 ## Ideas
@@ -28,14 +20,16 @@ claude/clever-herschel-af8c27
 - ideas/005-auto-advance-agent-led-steps — default `requires_user_approval` false; setup-time automation-level toggle; extends BUILD-autonomy across SPEC/SHIP — captured 2026-05-10
 - ideas/006-plain-english-sweep-sdd-prose — survey + rewrite SDD's user-facing prose to match brief-builder v0.4's plain-English bar (jargon → notes-from-a-colleague tone) — captured 2026-05-10
 - ideas/007-cross-branch-feature-id-collision — three SDD rules (append-only / cofile-block / wiki-link resolution) collide on git merges when two branches both scaffold the same feature ID — captured 2026-05-10
-=======
-- features/009-feature-playbook-v2-brief-driven-spec-entry-replaces-3-question-pitch-shape — feature playbook v2 — brief-driven SPEC entry replaces 3-question Pitch shape (PHASE: BUILD)
-
-
-main
 
 
 ## Shipped
+
+- **[[009-background-while-waiting]]** — closes the agent-idle gap during CR/CI wait windows. Ships `.sdd/scripts/background-while-waiting.sh` (emit + `--list-candidates` + `--update-last-action`) + `.sdd/scripts/background-metric.sh` helper + "Background while waiting" doctrine section in `templates/CLAUDE.md`. Agent reads doctrine post-push, picks from the safe-set (re-read corpus, pre-fetch next-feature context, draft PR description, draft commit msgs), declares the chosen action via `--update-last-action`. Marker log at `.sdd/.cache/background-emit.log` (JSONL, gitignored) is the §2 metric counter. Cross-process locking via mkdir-as-lockdir (portable, no flock dep). Originally scaffolded as feature 008; renamed to 009 mid-PR to resolve ID collision with merged 008-pi-adapter (PR #214). 9 CR review cycles (~17 unique findings closed; 2 hash-locked sections re-approved twice for AC + metric-consistency fixes). 218/218 framework + 7/7 per-feature tests GREEN.
+  - Shipped: 2026-05-10 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/218
+  - Data-model: (none — single new internal telemetry log, gitignored)
+  - Extends: (root); ships idea 004 from the speed-improvements brainstorm captured the same day
+  - Patterns: 1 lesson appended ("Behavioural triggers belong in CLAUDE.md doctrine, not in discrete loops" — from T4 re-scope during BUILD)
+  - Deferred: cross-branch ID-collision pattern (idea 007) — surfaced by this PR's two folder renames (008→009 mid-PR after collision with origin's pi-adapter, then 009 number collision with #219's brief-driven feature). Filed as idea 007 for future framework work.
 
 - **[[008-build-the-sdd-on-pi-extension-package]]** — closes SDD's "Claude Code only" lock by shipping `sdd-pi-adapter`, a pi.dev extension that brings SDD's spec-driven workflow to any model behind pi's harness (15+ providers: Anthropic, OpenAI, Google, Ollama, Bedrock, Groq, xAI, OpenRouter, etc.). Same `/sdd-start /sdd-next /sdd-ship` loop, same atomic-step-per-commit discipline, same anti-theatre lint, same trust-boundary state injection — running on whatever model the user picks via pi's `/model` command. Hand-written CommonJS extension at `extensions/sdd-pi-extension/dist/sdd-pi.js` registers three pi lifecycle handlers: `pi.on("context")` for state injection (AC3), `pi.on("session_start")` for HRN-01 install + worktree-config check (AC4), `pi.registerCommand("sdd-status")` for instant zero-LLM status (AC7). Validated by 2/2 single-turn discipline test (GPT-5.5 + Kimi K2) before BUILD, then by 13/13 mechanical AC tests (T200-T212) at SHIP. T212 added mid-SHIP after partial e2e surfaced that manifest declared `dist/sdd-pi.js` but no such file existed — closed via test → code → green. 3 CR review cycles (24/25 findings closed; C2-4 MD022 deferred — append-only contract on decisions.md blocks blank-line edits to historical entries). 218/218 framework + 13/13 per-feature GREEN.
   - Shipped: 2026-05-10 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/214
