@@ -147,7 +147,81 @@ Future-proofing note: if waves later need to carry per-wave metadata (e.g. the m
 
 ### action: flows
 
-- [ ] flows: draft 1-3 critical flows, each referencing the user story it implements
+- [x] flows: 3 flows — wave dispatch happy path (orchestrator → 3 parallel Agent calls → 9 atomic commits land, orchestrator gains ~1 turn not 30); wave-task failure mid-wave (partial wave is honest, Sam picks retry/abandon/pause); multi-model wave (wave-tasks on Haiku/Kimi K2 while orchestrator stays on Sonnet — the killer combo from §5). Sam approved 2026-05-10.
+
+**Critical flows (3 total):**
+
+### Flow 1 — Wave dispatch happy path
+
+Trigger: `/next` is invoked when the active spec.md has BUILD tasks marked `[WAVE: 1]`. Implements user story #1 (wall-clock win) and #3 (multi-component scaffolding).
+
+```text
+1. /next reads spec.md → next-action.sh resolves
+   { tag: WAVE-DISPATCH, wave: 1, tasks: [T200, T201, T202] }
+2. /next invokes .sdd/scripts/dispatch-wave.sh 1 <spec-path>
+3. dispatch-wave.sh spawns 3 Agent calls in parallel:
+     Agent("ralph BUILD T200") + Agent("ralph BUILD T201") + Agent("ralph BUILD T202")
+   Each agent gets: fresh ~0-turn context + the SDD framework brain + its single
+   BUILD task prompt + the model selected by pi/Claude Code's /model.
+4. Each agent runs the existing test → code → green sequence as 3 atomic commits
+   on the same branch. Pre-commit hooks (anti-theatre, atomic-step, test-first)
+   fire on each commit independently. Each agent only edits its own task row +
+   its own task files (test, code).
+5. dispatch-wave.sh awaits all 3 Agent calls (synchronous wait, no polling).
+6. When all return success, dispatch-wave.sh exits 0 and /next reports
+   "wave 1 done: T200/T201/T202 GREEN (9 commits)".
+7. Orchestrator's next /next picks up the next blocker (e.g. T203 sequential, or
+   wave 2).
+```
+
+Postcondition: 3 wave-tasks × 3 atomic commits each = 9 commits landed on the branch in non-deterministic order; spec.md has 3 newly-flipped GREEN markers; orchestrator's context has gained ~1 turn (just the dispatch + report-back), not 30+.
+
+### Flow 2 — Wave-task fails mid-wave
+
+Trigger: Same as Flow 1, but T201's Agent run hits a pre-commit hook rejection. Implements user story #2 (orchestrator quality past turn ~50 — partial-wave handling is honest, not silently broken).
+
+```text
+1-3. Same as Flow 1 (dispatch 3 wave-tasks).
+4. T200 + T202 land 3 atomic commits each cleanly. T201's Agent hits the
+   anti-theatre lint on its `test` step (the test contains a guard-shaped
+   sentence without a {verify-by} annotation). Pre-commit blocks; the Agent
+   reports "commit failed" back to dispatch-wave.sh.
+5. dispatch-wave.sh collects results: 2/3 PASS, 1/3 FAIL.
+6. /next reports to Sam:
+     "Wave 1 finished partially:
+        ✓ T200 (3 commits landed)
+        ✓ T202 (3 commits landed)
+        ✗ T201: pre-commit hook blocked the test step
+                (anti-theatre claim on line 7 of tests/task-T201.sh —
+                the guard-shaped sentence on line 7 needs a verify-by annotation)
+      Reply `retry T201`, `abandon wave 1 + advance`, or `pause` to fix
+      manually."
+7. Sam picks one. Orchestrator continues per Sam's pick.
+```
+
+Postcondition: spec.md has 2 GREEN markers + 1 still-RED for T201; the partial wave is honest about what landed. No silent half-state.
+
+### Flow 3 — Multi-model wave (the killer combo)
+
+Trigger: Sam configures pi.dev (or Claude Code) with two models — Sonnet for the orchestrator session, Haiku/Kimi K2 for sub-agent workers — then invokes `/next` on a wave-marked BUILD plan. Implements user story #4 (Lucia-style cost-conscious adopter).
+
+```text
+1-2. /next + dispatch-wave.sh same as Flow 1.
+3. dispatch-wave.sh reads .sdd/config.md or environment for the
+   `wave_worker_model` setting. If set to "haiku", each Agent call passes
+   model="claude-haiku-4-x" (or pi.dev equivalent). Falls back to inheriting
+   the orchestrator's model if unset (safe default).
+4. The 3 wave-task agents run on Haiku at lower per-token cost while the
+   orchestrator (still on Sonnet) waits.
+5. Wave-task atomic-step rules + pre-commit hooks all impose the same SDD
+   discipline regardless of which model executes — the discipline travels
+   with the framework brain (.sdd/CLAUDE.md + hooks), not with the model.
+6. Wave finishes. dispatch-wave.sh reports cost/wall-clock numbers to Sam
+   (best-effort — pi.dev exposes a per-Agent cost field; Claude Code SDK
+   does too) {best-effort: per-Agent cost reporting at SHIP time, dependent on harness SDK exposing it}.
+```
+
+Postcondition: Same correctness as Flow 1, lower cost + faster wall-clock. The orchestrator stays on Sonnet for the planning + coordination work where it earns its rate; cheaper models do the mechanical BUILD steps where Haiku/Kimi K2 are sufficient.
 
 ### action: dependencies
 
