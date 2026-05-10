@@ -79,3 +79,5 @@ Same shape pattern as v1.0 `parameters.mcp.semantic_search` and Playwright-explo
 ## How this differs from a downstream user's data-model.md
 
 A downstream user's `data-model.md` lists user-facing entities (e.g. User, Subscription, Order). This file lists the framework's OWN entities — playbook, action, hook, brick, etc. Same shape, different domain.
+
+<!-- F009 (feature-playbook-v2-brief-driven-spec-entry, 2026-05-10) — no entity changes; framework-prose-only redesign. See .sdd/features/009-*/spec.md §6. -->

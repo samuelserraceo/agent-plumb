@@ -322,3 +322,9 @@ CORRECTION to the §4 UX-brief approval entry above. The Hash line in that entry
 Append-only correction per CLAUDE.md decisions.md doctrine — never modify prior entries, only append. Surfaced + filed as a stop-hook violation; this entry is the recovery action.
 
 Hash: 080f621417c586a465585de1a8c4ebb98672b04cfa3989207de017740e2dd182
+
+## 2026-05-10T16:11:59Z  [[009-feature-playbook-v2-brief-driven-spec-entry-replaces-3-question-pitch-shape]]  feature/proposed-approach
+
+AUTONOMOUS DRAFT (Sam away, "keep going independently" directive). Recommended approach: 4 sub-PRs sequenced vertical-first per #207 + #211. PR-A (brief-intake action + skeleton + playbook swap) is the spine; PR-B (delete §2 success), PR-C (one-question-per-turn doctrine), PR-D (plain-English-first default) widen. Alternatives 1 (mega-PR), 2 (4 features), 3 (won't-fix) considered + rejected. Risk register: walking-skeleton viability check in PR-A's §11 AC; backward-compat for in-flight features; CLAUDE.md cross-reference drift. Sam to re-approve or amend on return.
+
+Hash: 4648c8f0404053e4ef9f254e93baa2140769e374031602b297fc40b004abc5c2

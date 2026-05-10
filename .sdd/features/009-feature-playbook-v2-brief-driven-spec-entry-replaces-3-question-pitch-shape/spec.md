@@ -6,7 +6,7 @@ playbook: feature
 
 [PHASE: SPEC]
 
-**Active blocker:** §5 (action: proposed-approach)
+**Active blocker:** §6 (action: data-contract)
 
 ## PHASE: SPEC
 
@@ -109,7 +109,45 @@ Already proven in this SPEC ceremony — §2 was skipped honestly with a documen
 
 ### action: proposed-approach
 
-- [ ] approval: draft the approach with 2 alternatives and tradeoffs, iterate with the user, get approval
+- [x] approval: AUTONOMOUS DRAFT — sub-PR sequencing per #207; Sam to re-approve on return
+
+#### Recommended approach: 4 sub-PRs, vertical-first, sequenced
+
+Per issue #207, ship the redesign as 4 independently-mergeable sub-PRs. Apply the walking-skeleton primitive (#211) to v1.6 itself: PR-A is the spine; PR-B/C/D widen.
+
+| Sub-PR | Scope | Depends on | Vertical role |
+|---|---|---|---|
+| **PR-A** | New `brief-intake` action + `brief-summarise` skeleton + project-bootstrap path; `feature.md` playbook frontmatter swap (`problem` -> `brief-intake` as first action) | none (depends only on existing v1.6 batch) | walking-skeleton — proves the brief-paste -> §1-§7 prefill path works end-to-end |
+| **PR-B** | Delete `success` from `feature.md` stages; mark `success.md` deprecated; clickthrough-QA pattern (#172) becomes default §11 AC shape | PR-A merged | widens — removes redundant §2 |
+| **PR-C** | One-question-at-a-time CLAUDE.md doctrine; audit `requires_user_approval` flags on §13/§15 (drop to false); add to lint-action-prose checks | PR-A merged (touches refresher block) | widens — turn shape |
+| **PR-D** | Plain-English-first default in AGENT-LED draft prose; foldable `<details>` for technical detail; §6 data-contract upload-invitation prose | PR-A merged | widens — voice |
+
+#### Why these 4 not 1 mega-PR
+
+- Each PR is independently rebaseable + revertable. If PR-D regresses voice, only voice prose reverts; the brief-intake spine survives.
+- CR cycles per PR are bounded — small PRs converge in 1-2 cycles each (proven across v1.5.3/v1.5.4/v1.6 batches we just shipped).
+- Downstream users on Channel B (`sdd-migrate.sh`) can adopt incrementally — they could land PR-A only and defer the rest until they've internalised the new shape.
+
+#### Alternatives considered (rejected)
+
+**Alt 1: One mega-PR (~30 files, ~600 LOC).** Tempting because all 4 parts compose into one coherent UX. Rejected: blast radius too large; if any one part breaks downstream projects' SPEC ceremonies, the whole thing reverts. v1.5.3's CR cycle 3 (small PR) converged in 30 min; a mega-PR would likely take 3+ cycles and 3+ hours of CR latency.
+
+**Alt 2: 4 separate features (F009-F012)**, each one full SPEC->BUILD->SHIP loop. Rejected: each feature would need its own brief, its own §1-§15, its own moat-dance. The 4 sub-PRs share so much context (#207 issue body, F009 SPEC artefacts) that splitting into 4 features creates spec-duplication. One feature with 4 sub-PRs is the right granularity.
+
+**Alt 3: Skip the redesign entirely; close #207 as won't-fix.** Rejected: F01/pipelogic_v2 audit produced concrete evidence (line-numbered transcript hits) that the current SPEC ceremony breaks down on non-startup work. The evidence is too strong to ignore.
+
+#### Risk summary
+
+- **Walking-skeleton risk** — if PR-A's brief-paste path doesn't actually save SPEC time, the rest of v1.6 is unjustified. Mitigation: PR-A's §11 AC includes a measurable check ("walking through F010+ with brief-intake takes <half the turns of a 3-question Pitch start"). If PR-A fails that AC, halt and revisit before PR-B/C/D.
+- **Backward-compat risk** — existing in-flight features (like F009 itself, F008 pi.dev port) were started under the old SPEC shape. Mitigation: PR-A's `brief-intake` action checks `INDEX.md ## In flight` for pre-existing features and falls back to the old `problem` action for those. Only NEW features (`/start` after PR-A merges) use brief-intake.
+- **Documentation drift** — CLAUDE.md doctrine has many cross-references; PRs A/C/D all touch CLAUDE.md. Mitigation: PR-A lands the structural change; PR-C and PR-D append to CLAUDE.md without overwriting PR-A's edits.
+
+#### What this approach explicitly is NOT
+- Not a rewrite of the entire feature playbook — only the entry actions (problem -> brief-intake) and a few mid-spec voice doctrines change.
+- Not a deprecation of the 3-question Pitch shape — Story 2 (engineer opt-out) keeps it accessible via a flag.
+- Not a deferred-question system — the brief-paste pre-fills sections, but USER-LED steps still ask for confirmation per CLAUDE.md no-assume doctrine — best-effort agent self-check at every USER-LED entry.
+
+**Status:** AUTONOMOUS DRAFT. Sam was away when this was committed; the user-approval step on §5 is deferred. He can `/re-approve proposed-approach` on return after reviewing this prose, or push back via `tweak <part>: <change>`.
 
 ### action: data-contract
 
