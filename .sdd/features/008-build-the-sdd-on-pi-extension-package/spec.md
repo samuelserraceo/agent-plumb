@@ -416,8 +416,8 @@ Sam approved 2026-05-08 after preview in Chrome.
 
 ### action: edge-case-sweep
 
-- [x] ec-sweep: 10 candidate edge cases drafted (worktree config conflict #4 was hit live during /start; pi pre-1.0 churn #1; pi-mcp-adapter abandonment #2; NPM_TOKEN rotation #3; concurrent SDD sessions #5; old pi version #6; Windows shell #7; /sdd-status with no project #8; discipline-test model drift #9; anti-theatre over-flagging #10). Next ec-pick assigns each to AC/task or accept-as-known-risk.
-- [ ] ec-pick: ask
+- [x] ec-sweep: 10 candidate edge cases drafted (worktree config conflict #4 was hit live during /start; pi pre-1.0 churn #1; pi-mcp-adapter abandonment #2; NPM_TOKEN rotation #3; concurrent SDD sessions #5; old pi version #6; Windows shell #7; /sdd-status with no project #8; discipline-test model drift #9; anti-theatre over-flagging #10).
+- [x] ec-pick: 0 new ACs added (§11 stays hash-locked). 3 edge cases folded into existing T-tasks (#4 → T201, #6 → T203, #8 → T206). 6 documented at SHIP (#1, #2, #3, #5, #7, #10). #9 already covered by AC9's OR-of-three structure.
 
 **Edge-case sweep — 10 candidates:**
 
@@ -434,7 +434,22 @@ Sam approved 2026-05-08 after preview in Chrome.
 | 9 | Discipline test (T208) fails for a new model | Medium | AC9 requires ONE non-Claude model (OR-of-three); isolate failing model in report |
 | 10 | Anti-theatre lint over-flags pi-specific terms (e.g. "USD" / "dollar" today) | Low | Use `{best-effort: <who>}` annotation pattern; document in BUILD-phase notes for adapter contributors |
 
-Next /next runs `ec-pick` — Sam picks which become ACs/tasks vs. accepted-as-known-risk.
+**ec-pick disposition (Sam approved 2026-05-10):**
+
+| # | Edge case | Disposition |
+|---|---|---|
+| 1 | Pi pre-1.0 churn | Documented at SHIP — pin pi version in package.json devDependencies; track pi-mono releases |
+| 2 | pi-mcp-adapter abandonment | Already covered in §10 fallback (skip MCP, methodology still works) |
+| 3 | NPM_TOKEN rotation | Already covered in §12 manual signoff |
+| 4 | Worktree config override | Folded into T201 — install test asserts conflict detection + actionable command |
+| 5 | Concurrent CC + pi sessions | Accepted as known risk — user-level concern; document in README |
+| 6 | Old pi version | Folded into T203 — session_start adds pi version check |
+| 7 | Windows | Accepted as known risk + explicit deferral (already in §9) |
+| 8 | /sdd-status without SDD project | Folded into T206 — instant command falls back to "no SDD project found" message |
+| 9 | Discipline test fails for new model | Already covered by AC9's OR-of-three structure |
+| 10 | Anti-theatre lint over-flagging | Documented at SHIP — BUILD-phase notes show `{best-effort: <who>}` escape pattern |
+
+**Net effect:** 0 new ACs added (§11 stays hash-locked, no re-approval flow). 3 ACs scope-expanded in spirit (T201/T203/T206 absorb sub-assertions). 6 documented at SHIP. AC9 already handles #9.
 
 ### Exit checks
 - [ ] C-spec-acs: ≥1 acceptance criterion exists in §11 — grep -qE '^- \[[ x]\] AC[0-9]+' "$SECTION_FILE" {verify-by: verify-stage.sh}
