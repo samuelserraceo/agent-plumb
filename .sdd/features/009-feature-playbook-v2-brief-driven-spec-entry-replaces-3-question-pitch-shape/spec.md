@@ -6,7 +6,7 @@ playbook: feature
 
 [PHASE: SPEC]
 
-**Active blocker:** §6 (action: data-contract)
+**Active blocker:** §7 (action: flows)
 
 ## PHASE: SPEC
 
@@ -151,7 +151,19 @@ Per issue #207, ship the redesign as 4 independently-mergeable sub-PRs. Apply th
 
 ### action: data-contract
 
-- [ ] approval: draft the data contract, iterate with the user, sync data-model.md, get approval
+- [x] approval: no entity changes — F009 is framework-prose-only; data-model.md marker added in §5 commit
+
+#### §6 Data Contract
+
+F009 introduces no new entities, fields, or schema changes. The redesign is
+framework-prose-only — action files, skeletons, doctrine sections in
+CLAUDE.md, and playbook frontmatter. No data-model entries are created or
+modified.
+
+A one-line marker comment was added to `.sdd/data-model.md` in the §5 commit
+acknowledging this and pointing at this §6 for context.
+
+**Status:** AUTONOMOUS DRAFT. Sam approves on return.
 
 ### action: flows
 

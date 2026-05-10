@@ -328,3 +328,9 @@ Hash: 080f621417c586a465585de1a8c4ebb98672b04cfa3989207de017740e2dd182
 AUTONOMOUS DRAFT (Sam away, "keep going independently" directive). Recommended approach: 4 sub-PRs sequenced vertical-first per #207 + #211. PR-A (brief-intake action + skeleton + playbook swap) is the spine; PR-B (delete §2 success), PR-C (one-question-per-turn doctrine), PR-D (plain-English-first default) widen. Alternatives 1 (mega-PR), 2 (4 features), 3 (won't-fix) considered + rejected. Risk register: walking-skeleton viability check in PR-A's §11 AC; backward-compat for in-flight features; CLAUDE.md cross-reference drift. Sam to re-approve or amend on return.
 
 Hash: 4648c8f0404053e4ef9f254e93baa2140769e374031602b297fc40b004abc5c2
+
+## 2026-05-10T16:19:21Z  [[009-feature-playbook-v2-brief-driven-spec-entry-replaces-3-question-pitch-shape]]  feature/data-contract
+
+AUTONOMOUS DRAFT (Sam away). §6 marked complete: F009 introduces no entity changes — framework-prose-only redesign. data-model.md marker added in §5 commit. Sam re-approves on return.
+
+Hash: 8125a98d7c9b15828ec4066f6af3f3f0fb9e00cdddc6675fafd7c73b0ed6ba4f
