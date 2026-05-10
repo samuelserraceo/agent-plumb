@@ -217,6 +217,60 @@ for line in spec_lines:
         first_open_line = line
         break
 
+# 3a-pre. BUILD phase + no other open [ ] in BUILD body → check whether the
+# spec's plan-decompose section declares any [WAVE: N] markers. If so, emit
+# a WAVE-DISPATCH tag carrying the smallest open wave's task IDs (source order).
+# Specs without [WAVE:] markers fall through to the normal transition signal,
+# preserving the linear-mode regression contract (AC3).
+#
+# The plan-decompose T-task rows live inside a ```text fenced block by
+# convention (see .sdd/actions/plan-decompose.md), so this scan deliberately
+# ignores fence state within the plan-decompose section. Non-positive-integer
+# markers ([WAVE: 0], [WAVE: foo]) are skipped — they don't contribute a wave
+# and don't produce a WAVE-DISPATCH on their own.
+def _find_next_wave():
+    in_plan = False
+    waves = {}  # wave_n (int) -> [T-IDs] in source order
+    for ln in spec_lines:
+        if ln.startswith("### "):
+            in_plan = bool(re.match(r'^###\s+action:\s+plan-decompose\s*$', ln))
+            continue
+        if ln.startswith("## "):
+            in_plan = False
+            continue
+        if not in_plan:
+            continue
+        m = re.match(r'^\s*-\s*\[ \]\s+(T\d+)\s+\[WAVE:\s*(\d+)\s*\]\s*:', ln)
+        if not m:
+            continue
+        wave_n = int(m.group(2))
+        if wave_n < 1:
+            continue
+        waves.setdefault(wave_n, []).append(m.group(1))
+    if not waves:
+        return None
+    smallest = min(waves)
+    return smallest, waves[smallest]
+
+if phase == "BUILD" and first_open_line is None:
+    wave_result = _find_next_wave()
+    if wave_result is not None:
+        wave_n, task_ids = wave_result
+        emit({
+            "phase": phase,
+            "action": "build-task",
+            "step": None,
+            "tag": "WAVE-DISPATCH",
+            "wave": wave_n,
+            "tasks": task_ids,
+            "prompt": None,
+            "field": None,
+            "sub_action": None,
+            "transition": None,
+            "parameters": None,
+        })
+        sys.exit(0)
+
 # 3a. No open [ ] in active phase → transition signal.
 if first_open_line is None:
     nxt = NEXT_PHASE.get(phase, "")
