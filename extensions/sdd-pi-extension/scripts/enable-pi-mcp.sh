@@ -26,7 +26,14 @@ fi
 project=""
 while [ $# -gt 0 ]; do
   case "$1" in
-    --project) project="$2"; shift 2 ;;
+    --project)
+      if [ $# -lt 2 ] || [ -z "${2:-}" ]; then
+        echo "[sdd-pi] --project requires a directory argument" >&2
+        exit 2
+      fi
+      project="$2"
+      shift 2
+      ;;
     *) echo "[sdd-pi] unknown flag: $1" >&2; exit 2 ;;
   esac
 done
@@ -50,7 +57,16 @@ if os.path.exists(cfg_path):
         except json.JSONDecodeError:
             print(f"[sdd-pi] {cfg_path} is not valid JSON; refusing to clobber", file=sys.stderr)
             sys.exit(1)
-servers = cfg.setdefault("mcpServers", {})
+if not isinstance(cfg, dict):
+    print(f"[sdd-pi] {cfg_path} must contain a JSON object at top level", file=sys.stderr)
+    sys.exit(1)
+servers = cfg.get("mcpServers")
+if servers is None:
+    servers = {}
+    cfg["mcpServers"] = servers
+elif not isinstance(servers, dict):
+    print(f"[sdd-pi] {cfg_path} has non-object mcpServers; refusing to clobber", file=sys.stderr)
+    sys.exit(1)
 servers["sdd"] = {"type": "stdio", "command": pybin, "args": [server]}
 with open(cfg_path, "w") as f:
     json.dump(cfg, f, indent=2)
