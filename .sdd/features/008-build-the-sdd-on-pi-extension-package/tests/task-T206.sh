@@ -50,6 +50,18 @@ if [ ! -f "$SCRIPT" ]; then
   fails+=("framework script missing: $SCRIPT")
 fi
 
+# --- Self-host parity check (CR cycle 2 #9). The slash command shells
+# out to `bash .sdd/scripts/status.sh` (the root copy, NOT the template).
+# Without checking the root copy too, the script could disappear or
+# drift and the test would still pass while /sdd-status breaks. Assert
+# both files exist + are byte-identical.
+ROOT_SCRIPT="$FRAMEWORK_ROOT/.sdd/scripts/status.sh"
+if [ ! -f "$ROOT_SCRIPT" ]; then
+  fails+=("root script missing: $ROOT_SCRIPT (HRN-01 self-host parity broken)")
+elif [ -f "$SCRIPT" ] && ! diff -q "$SCRIPT" "$ROOT_SCRIPT" >/dev/null 2>&1; then
+  fails+=("root and template status.sh differ — self-host drift between $SCRIPT and $ROOT_SCRIPT")
+fi
+
 # --- End-to-end: only run if the script exists (avoids cascading
 # failures when the contract gap is the script itself). ---
 if [ -f "$SCRIPT" ]; then
