@@ -359,7 +359,64 @@ All §10 mechanical-shape claims have AC coverage. Compliance items (license, no
 
 ### action: plan-decompose
 
-- [ ] tasks: convert acceptance criteria into ordered build tasks (one test file per task)
+- [x] tasks: 12 ordered T-tasks T200-T211 (one-per-AC, 1:1 mapping). Sequential — 010 itself ships linearly because of the chicken-and-egg (the wave dispatcher being built is what would dispatch waves). Foundation first (T200 next-action.sh parser → T201 dispatch-wave.sh skeleton → T202 linear regression → T203 row isolation), then dispatch behaviour incrementally (T204 hooks → T205 failure → T206 trust markers → T207 multi-model → T208 prompt shape), then turn-count fixture (T209), then PROD-ONLY confirmations at SHIP (T210 multi-harness, T211 real session). 011+ features benefit immediately.
+
+**BUILD task plan — 12 ordered T-tasks (one test file per AC):**
+
+```text
+- [ ] T200: next-action.sh recognises [WAVE: N] markers in plan-decompose
+            and returns { tag: WAVE-DISPATCH, wave: N, tasks: [...] }
+            — proves AC1
+- [ ] T201: scaffold .sdd/scripts/dispatch-wave.sh — accepts <wave-N>
+            <spec-path> args, structured JSON result on stdout, executable
+            bit + correct shebang
+            — proves AC2
+- [ ] T202: linear-mode regression — spec.md without [WAVE:] markers
+            returns the existing tag/action/step shape (no WAVE-DISPATCH);
+            current sequential walk unchanged
+            — proves AC3
+- [ ] T203: spec.md row isolation under wave merges — 3 wave-tasks each
+            editing only its own task row, simulated 3-way merge succeeds
+            without conflict
+            — proves AC4
+- [ ] T204: dispatch-wave.sh subagent commits trigger the same git
+            pre-commit chain (anti-theatre, atomic-step, test-first,
+            append-only) — captured pre-commit output during fixture dispatch
+            — proves AC5
+- [ ] T205: dispatch-wave.sh emits partial-wave report on a failed
+            wave-task (mocked Agent return) — exits non-zero, structured
+            PASS/FAIL list with diagnostic
+            — proves AC6
+- [ ] T206: dispatch-wave.sh's Agent invocations carry the trust-boundary
+            markers ([FRAMEWORK INSTRUCTIONS] / [PROJECT DATA]) in the
+            prompt — verified by inspecting captured Agent call args
+            — proves AC7
+- [ ] T207: dispatch-wave.sh respects parameters.wave.worker_model in
+            config.md — Agent calls pass model field; falls back to
+            orchestrator's model when unset
+            — proves AC8
+- [ ] T208: dispatch-wave.sh's subagent prompt contains framework brain
+            digest + active spec.md + single-task instruction (well-formed
+            for fresh-context BUILD-task session)
+            — proves AC9 (named-eye at SHIP)
+- [ ] T209: orchestrator turn-count fixture — fixture-recorded session
+            walking 5 waves of 6 tasks each; orchestrator transcript turn
+            count grows by ~10 (5 dispatch + 5 report-back), not ~30
+            — proves AC10 (best-effort, declared fixture count)
+- [ ] T210: multi-harness parity — same dispatch-wave.sh produces
+            equivalent partial-wave reports on Claude Code AND pi.dev
+            against the same fixture spec.md
+            — proves AC11 (PROD-ONLY at SHIP first walk)
+- [ ] T211: end-to-end real-session wave dispatch — real Claude Code
+            session walks fixture spec.md with 3 wave-tasks, verifies 3
+            parallel Agent calls dispatch + 9 atomic commits land + all
+            3 task rows flip to GREEN
+            — proves AC12 (PROD-ONLY at SHIP first walk)
+```
+
+**Order rationale:** foundation first (T200 next-action.sh parser → T201 dispatch-wave.sh skeleton → T202 linear regression → T203 row isolation), then dispatch behaviour incrementally (T204 hooks → T205 failure → T206 trust markers → T207 multi-model → T208 prompt shape), then bound observability (T209 turn-count fixture), then PROD-ONLY confirmations at SHIP (T210 multi-harness, T211 real session). Each AC has 1:1 coverage with one T-task.
+
+**Why no waves within 010 itself:** chicken-and-egg — the wave dispatcher being built is what would dispatch waves. T204-T208 all extend `dispatch-wave.sh`'s code, so even if we wanted to wave-dispatch them, they'd conflict on the same file. **First feature that benefits from 010's waves: 011 onward.**
 
 ### action: edge-case-sweep
 
