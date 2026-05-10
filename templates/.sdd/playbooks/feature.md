@@ -11,7 +11,6 @@ stages:
     actions:
       - brief-intake
       - problem
-      - success
       - user-stories
       - ux-brief
       - proposed-approach
