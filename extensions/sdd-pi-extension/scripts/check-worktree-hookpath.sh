@@ -26,8 +26,14 @@ fi
 worktree_hookpath="$(git config --worktree --get core.hooksPath 2>/dev/null || echo)"
 
 EXPECTED=".claude/hooks"
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+EXPECTED_ABS="$REPO_ROOT/.claude/hooks"
 
-if [ "$worktree_hookpath" = "$EXPECTED" ]; then
+# Accept the relative form, the absolute equivalent, and the absolute
+# form with a trailing slash — all three resolve to the same hook dir.
+if [ "$worktree_hookpath" = "$EXPECTED" ] || \
+   [ "$worktree_hookpath" = "$EXPECTED_ABS" ] || \
+   [ "$worktree_hookpath" = "${EXPECTED_ABS}/" ]; then
   exit 0
 fi
 
