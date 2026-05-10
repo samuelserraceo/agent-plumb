@@ -88,6 +88,8 @@ if [ -x "$SCRIPT" ]; then
     else
       assert_fail "T3 action_chosen update" "last line: $last_line"
     fi
+  else
+    assert_fail "T3 log file exists after --update-last-action" "$LOG missing"
   fi
 fi
 
