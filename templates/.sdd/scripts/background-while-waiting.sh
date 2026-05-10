@@ -40,6 +40,25 @@ else
   CACHE_DIR="$REPO_ROOT/.sdd/.cache"
 fi
 LOG="$CACHE_DIR/background-emit.log"
+LOCKDIR="$CACHE_DIR/.background-emit.lock.d"
+
+# Cross-process lock for both append and --update-last-action paths.
+# mkdir is atomic on POSIX so two parallel runs serialize on this directory.
+# Portable across macOS (no flock by default) and Linux. Releases on EXIT.
+acquire_lock() {
+  mkdir -p "$CACHE_DIR" 2>/dev/null || return 1
+  local i=0
+  while ! mkdir "$LOCKDIR" 2>/dev/null; do
+    i=$((i + 1))
+    if [ "$i" -gt 50 ]; then
+      echo "background-while-waiting: lock acquisition timeout (50 retries × 0.1s)" >&2
+      return 1
+    fi
+    sleep 0.1
+  done
+  trap 'rmdir "$LOCKDIR" 2>/dev/null' EXIT
+  return 0
+}
 
 CANDIDATES=(
   re-read-corpus
@@ -99,6 +118,10 @@ if [ "${1:-}" = "--update-last-action" ]; then
     re-read-corpus|pre-fetch-next-feature|draft-pr-description|draft-commit-msgs|speculative-cr-response|none-skipped) ;;
     *) echo "background-while-waiting: invalid choice: $choice" >&2; usage >&2; exit 2 ;;
   esac
+  if ! acquire_lock; then
+    echo "background-while-waiting: failed to acquire log lock" >&2
+    exit 3
+  fi
   if [ ! -f "$LOG" ]; then
     echo "background-while-waiting: log file not found: $LOG" >&2
     exit 3
@@ -139,9 +162,13 @@ case "$wait_type" in
   *) echo "background-while-waiting: invalid wait_type: $wait_type" >&2; usage >&2; exit 2 ;;
 esac
 
-# Ensure cache dir exists.
+# Ensure cache dir exists + acquire lock for the append path.
 if ! mkdir -p "$CACHE_DIR" 2>/dev/null; then
   echo "background-while-waiting: failed to create cache dir $CACHE_DIR" >&2
+  exit 3
+fi
+if ! acquire_lock; then
+  echo "background-while-waiting: failed to acquire log lock" >&2
   exit 3
 fi
 
