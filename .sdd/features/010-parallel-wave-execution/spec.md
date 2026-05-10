@@ -390,7 +390,7 @@ All §10 mechanical-shape claims have AC coverage. Compliance items (license, no
             fires pre-commit on a sentinel fixture; real subagent
             chain-firing verified at SHIP via AC12 PROD-ONLY walk
             — proves AC5
-- [ ] T205: dispatch-wave.sh emits partial-wave report on a failed
+- [x] T205: dispatch-wave.sh emits partial-wave report on a failed
             wave-task (mocked Agent return) — exits non-zero, structured
             PASS/FAIL list with diagnostic
             — proves AC6
