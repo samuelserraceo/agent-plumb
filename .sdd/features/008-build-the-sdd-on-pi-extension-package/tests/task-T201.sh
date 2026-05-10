@@ -72,6 +72,17 @@ for name in "${EXPECTED[@]}"; do
   fi
 done
 
+# Tighten to "exactly N" — CR cycle 2 #6. Without this, drift is silent
+# (e.g. an extra prompts/sdd-experiment.md sneaks in, AC2 still says
+# "9 commands" but reality has 10). Enforces the contract counted in
+# §11 AC2 + §13 wireframe + the slash-command surface advertised to
+# users.
+actual_count=$(find "$PROMPTS_DIR" -maxdepth 1 -type f -name 'sdd-*.md' | wc -l | tr -d ' ')
+expected_count=${#EXPECTED[@]}
+if [ "$actual_count" -ne "$expected_count" ]; then
+  fails+=("count mismatch: prompts/sdd-*.md has $actual_count files, AC2 declares exactly $expected_count")
+fi
+
 # Folded EC #4 — worktree config detection script must exist and contain
 # the exact actionable git command for the user to run.
 WORKTREE_CHECK="$EXT_ROOT/scripts/check-worktree-hookpath.sh"
