@@ -64,7 +64,38 @@ Stack-specific touches you fill in from `stack.md` (examples — pick the row th
 
 The `[CHORE]` tag tells BUILD's run-mode that this task is mechanical (no human spec decision needed) so even checkpoint-every-1 modes proceed without pausing. Downstream tasks (T01+) use the stack's manifest / config / entry-point without re-creating them.
 
-**Coverage check FIRST — and it's a TWO-STEP process when gaps exist.** After the bootstrap preflight (which runs once, never again), verify every constraint in `ux-brief` (mobile, accessibility, i18n, locale, dark mode, etc.) is reflected in ≥1 AC in §11. Surface ALL gaps in one go, don't drip them.
+## Walking-skeleton T01 (closes #211 — vertical-first doctrine)
+
+**Why this exists.** AI agents default to **horizontal building**: complete one architectural layer before starting the next. Result: months of beautiful surface code that breaks at the first real integration. The cure is **vertical-first** (also called walking skeleton, tracer bullet, steel thread): pick one narrow story that exercises every architectural layer in the simplest way possible, then widen by adding more vertical slices. Each slice forces real cross-layer integration on real code; abstractions emerge from demand, not premature design. Dogfood evidence: pipelogic_v2 F01's planned T15 (theme toggle) assumed the full app shell existed across multiple layers — it didn't, and BUILD halted on iteration 1. patterns.md captured this as *"Foundation features need a T0 bootstrap task"* — that lesson became #178's bootstrap preflight (which scaffolds the runtime). **#211 is the next layer up: when the stack declares ≥3 architectural layers, T01 itself should be a vertical slice through ALL of them, not a single-layer increment.**
+
+**Detection — when does this apply?** Read `.sdd/stack.md` and count distinct architectural layers it declares. Common layer markers:
+
+| Layer | stack.md signal |
+|---|---|
+| Frontend | `Web: Next.js / React / Vue / SvelteKit / …` |
+| Backend / API | `Backend: Node / FastAPI / Rails / …` |
+| Database | `Data store: Postgres / Mongo / Redis / …` |
+| Job runner | `Cron / queue / worker: …` |
+| External service | `Third-party: Stripe / Resend / Cloudflare / …` |
+| Agent layer | `MCP server: enabled` / `Tier 3: enabled` |
+
+**If stack.md declares ≥3 distinct layers AND this is the project's first behaviour-touching feature** (no prior shipped feature has exercised all layers end-to-end — check INDEX.md `## Shipped`), the walking-skeleton check fires. Otherwise skip — the project already has a vertical proven by prior shipped work, or it's small enough that T01 = a single AC is fine.
+
+**The check (two paths, parallel to the §4-constraints coverage check below).**
+
+1. **Read §11.** Does at least one existing AC touch every layer end-to-end? *Concrete test: imagine the AC's success line — does proving it require writing or reading data through every architectural layer named in stack.md? If yes, that AC is the walking-skeleton candidate.*
+2. **(a) If yes → T01 maps to that AC.** Note the AC explicitly in T01's prose: *"T01: <AC text> — walking-skeleton (touches every layer; subsequent tasks widen)."* Mark its `touches:` with paths from each layer (e.g., `app/page.tsx + app/api/route.ts + db/migrations/0001_init.sql + extensions/sdd-mcp-server/server.py`). No extra AC needed.
+3. **(b) If no → propose adding a walking-skeleton AC + re-approve §11.** Surface to the user: *"§11's ACs are layer-specific (each touches one or two layers, not all of them). For an N-layer project, BUILD will fall into the horizontal trap unless T01 lights up the whole stack first. I propose adding **AC<N>: <single-sentence story that touches every layer, even if each layer is trivial>**. Then T01 maps to it; subsequent tasks widen by adding behaviour ACs."* Same two-step pattern as the §4-constraints check below: user approves the new AC → §11 re-approved via inline `/re-approve` → THEN draft tasks.
+
+**Concrete example — pipelogic_v2's 7-layer stack.** stack.md declares: Frontend (Next.js) + Backend (Next API routes) + Database (Postgres) + Compute layer (SQL views) + Apps layer (saved queries) + Agent layer (MCP) + Sources layer (CSV/GSheet ingestion). 7 layers. F02's walking-skeleton AC could be:
+
+> *"AC1: User uploads `orders.csv` → row count appears in the Map page within 5 seconds. Then typing 'top SKU last week?' into the agent returns a SKU string that matches the manually-computed answer from the CSV."*
+
+That single AC, when proven, requires every layer working: source ingestion (L1), table storage (L2), materialised view query (L3), frontend display (L4), saved query app (L5), agent invocation (L6) — plus the Map page (L0). T01 maps to it, T01's `touches:` names a path from each layer, and the test asserts the end-to-end behaviour. Subsequent F02 tasks (T02+) widen by adding behaviour-only ACs that don't introduce new layers.
+
+**Decline path.** If the user has a reason to skip the walking-skeleton (e.g., *"L6 agent isn't built yet — F02 only ships L0-L5"*), they can decline. Record the reason in `decisions.md`; downstream features carry the gap.
+
+**Coverage check FIRST — and it's a TWO-STEP process when gaps exist.** After the bootstrap preflight (which runs once, never again) AND the walking-skeleton check (also once-per-project), verify every constraint in `ux-brief` (mobile, accessibility, i18n, locale, dark mode, etc.) is reflected in ≥1 AC in §11. Surface ALL gaps in one go, don't drip them.
 
 **§11 is section-locked** (`requires_user_approval: true`) — its content is hashed at approval time and the moat refuses any commit that diverges from the hash. So you can't silently add new ACs; that would break section-locking. Split the work into two atomic steps:
 
