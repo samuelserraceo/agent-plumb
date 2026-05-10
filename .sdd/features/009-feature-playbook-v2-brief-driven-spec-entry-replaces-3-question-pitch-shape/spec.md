@@ -6,7 +6,7 @@ playbook: feature
 
 [PHASE: SPEC]
 
-**Active blocker:** §2 (first action: success)
+**Active blocker:** §3 (action: user-stories)
 
 ## PHASE: SPEC
 
@@ -35,9 +35,17 @@ Four things break, drawn directly from #207's *"What's wrong with the current SP
 3. **The agent records first-pass answers without challenge.** Even after #173/#174 shipped grill protocol, the doctrine-default still leans toward "record" over "interrogate." Sam invented the grill protocol himself mid-§2 because the framework wasn't pushing back.
 4. **Bundled multi-question turns + technical-prose-first drafts** violate doctrine but fire anyway. Sam had to ASK for plain English at §5 (line 4518) and again at §11 (line 26474) of the F01 transcript.
 
-### action: success
+### action: success [SKIPPED]
 
-- [ ] metric: Pick a metric pattern (volume / speed / quality / engagement) or describe your own. Give a target number AND the current baseline if known.
+- ⏭ metric: skipped — out of scope — this redesign deletes §2 from the playbook (per #207 Part 2; argued in §5 proposed-approach)
+
+### §2 Success [SKIPPED]
+
+**Skipped on purpose** — out of scope — this redesign deletes §2 from the playbook (per #207 Part 2; argued in §5 proposed-approach)
+
+§2 success metrics for this very feature would be self-defeating. The feature's own §5 proposed-approach is going to argue for **deleting §2 from the feature playbook entirely** (issue #207 Part 2: *"§2 Success folded into §11 ACs"*). Filling in success metrics would create theatre: drafting a metric that the feature's own design says shouldn't exist.
+
+Honest discipline: skip with documented reason. Verification of this redesign's success lives in §11 ACs (e.g., *"§2 success removed from feature playbook frontmatter; existing F009 spec.md is the last to use §2"*). That's the §11-as-the-source-of-truth pattern that #207 itself argues for — applied to its own SPEC ceremony as proof.
 
 ### action: user-stories
 
