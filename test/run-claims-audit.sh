@@ -538,6 +538,11 @@ EXPECTED = {
     'wireframe':           False,  # §13 — mechanical
     'edge-case-sweep':     False,  # §15 — mechanical
 }
+# CR cycle 1: scan ONLY the YAML frontmatter (between the first two '---'
+# fences) — not the full markdown body. Without this, a prose example
+# line like 'requires_user_approval: true' could satisfy the regex and
+# silently bypass the regression lock.
+FRONTMATTER_RE = re.compile(r'\A---\n(.*?)\n---', re.DOTALL)
 violations = []
 for slug, want in EXPECTED.items():
     p = f'templates/.sdd/actions/{slug}.md'
@@ -546,9 +551,15 @@ for slug, want in EXPECTED.items():
     except FileNotFoundError:
         violations.append(f'{slug}: action file missing at {p}')
         continue
-    m = re.search(r'^requires_user_approval:[ \t]+(true|false)', text, re.MULTILINE)
+    fm_match = FRONTMATTER_RE.match(text)
+    if not fm_match:
+        violations.append(f'{slug}: no YAML frontmatter found at top of file')
+        continue
+    frontmatter = fm_match.group(1)
+    m = re.search(r'^requires_user_approval:[ \t]+(true|false)[ \t]*$',
+                  frontmatter, re.MULTILINE)
     if not m:
-        violations.append(f'{slug}: no requires_user_approval flag in frontmatter')
+        violations.append(f'{slug}: no requires_user_approval flag in YAML frontmatter')
         continue
     got = m.group(1) == 'true'
     if got != want:
