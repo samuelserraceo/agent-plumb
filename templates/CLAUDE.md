@@ -798,6 +798,38 @@ When in doubt: ask ONE thing, wait, then decide.
 
 The `lint-action-prose.sh` lint warns when an action's `**What it looks like:**` example block contains 2+ unrelated questions in a single turn — best-effort detection (heuristic: count distinct `?` tokens in adjacent prose).
 
+### Plain-English-first as default for AGENT-LED actions (closes #207 Part 4)
+
+**Every AGENT-LED draft starts with the plain-English version. Technical detail (architecture, libraries, file paths, version pins, format reliability tables, parsing behaviour) goes inside a `<details>` foldable block** so the user opts INTO the engineer-shape detail rather than wading through it by default. The convention:
+
+```markdown
+**What it looks like:**
+
+<plain-English first paragraph — what the agent will say in the user's words>
+
+<details>
+<summary>Show technical detail (X, Y, Z)</summary>
+
+<engineer-shape detail — architecture, libraries, version pins, parse behaviour, format support, etc.>
+
+</details>
+
+**End the turn with:** *"Reply `approve` ..."*
+```
+
+The `<summary>` line names what's behind the fold (helps the user decide whether to expand). The plain-English half is the DEFAULT view; the `<details>` half is hidden until the user clicks (or scrolls in chat-as-UX).
+
+**When does an action need this?** Only when there's genuine technical detail to fold. Many AGENT-LED actions (e.g. `flows`, `learn`, `mark-shipped`, `non-functional`, `bug-*`, `verify-*`) are already plain-English-by-content because they don't have heavy technical machinery to explain — adding an empty `<details>` would be ceremony for ceremony's sake. Use the foldable when:
+
+- The example mentions specific libraries / SDKs / version pins
+- The example mentions file paths / config keys / hashes / SQL / JSON shapes
+- The example has a format-support table or a "how the parser handles X" reliability tier
+- The example has architecture / sequencing / cross-component handshake detail
+
+`templates/.sdd/actions/proposed-approach.md` is the canonical example (architecture diagram + libraries + version pins inside the fold). `templates/.sdd/actions/data-contract.md` ships the second example (supported-formats reliability table + parse failure path inside the fold). Future AGENT-LED actions should follow this pattern when adding technical detail.
+
+The `claim_v16_plain_english_first_canonical_examples_have_details` claim in `test/run-claims-audit.sh` mechanically verifies that the two canonical examples (`proposed-approach.md` + `data-contract.md`) keep the foldable so a regression flipping them back to engineer-shape gets caught at CI time.
+
 <!-- SDD-MANAGED-END -->
 
 <!-- ════════════════════════════════════════════════════════════════════
