@@ -13,7 +13,7 @@ playbook: feature
 ### action: problem
 
 - [x] who: non-technical founders walking SPEC ceremonies on real projects
-- [ ] why-now: Why is it worth solving now?
+- [x] why-now: F01 audit (2026-05-08) produced 4 concrete failure modes; doctrine alone insufficient
 - [ ] what-breaks: What breaks (concretely) if it isn't solved?
 
 ### §1 Problem
@@ -21,6 +21,10 @@ playbook: feature
 #### who-has-it
 
 Non-technical founders (Sam et al.) walking through SPEC ceremonies on real projects. Specifically anyone who hits §1's three-question Pitch shape ("who / why-now / what-breaks") on work that isn't a customer-facing startup feature — foundation features, internal tools, framework dogfooding. The friction was first observed across pipelogic_v2's F01 SPEC ceremony; same shape will hit any non-startup work.
+
+#### why-now
+
+The F01/pipelogic_v2 audit on 2026-05-08 produced concrete evidence — four specific failure modes captured live in the transcript (line numbers cited in #207). Sam invented the grill protocol himself mid-§2 because the framework wasn't pushing back; that's clear signal doctrine alone isn't enough and structural redesign is needed. Earlier point fixes (#173/#174 grill protocol, #110 plain-English lint, #171 refresher block) closed individual leaks but didn't address the entry shape itself. The cumulative friction is now well-evidenced enough to warrant a v1.6 anchor change.
 
 ### action: success
 
