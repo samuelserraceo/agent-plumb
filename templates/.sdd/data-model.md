@@ -1,3 +1,4 @@
+<!-- lint-no-theatre:ignore-block-start -->
 # Data Model
 
 > Single source of truth for every entity, field, relation, and state transition in the project.
@@ -12,6 +13,7 @@
 - **Constraints:** spell out `NOT NULL`, `UNIQUE`, `PRIMARY KEY`, `FOREIGN KEY → <table>.<field>`, `DEFAULT <value>`, `CHECK (<expr>)`.
 - **State fields:** if an entity has a lifecycle, use an explicit `enum` type and list every valid transition.
 - **Naming:** `snake_case` for fields, `CamelCase` for entity names.
+<!-- lint-no-theatre:ignore-block-end -->
 
 ---
 
