@@ -389,7 +389,7 @@ Sam approved 2026-05-08 after preview in Chrome.
 - [x] T204 (GREEN): /sdd-start "<title>" invokes bash .sdd/scripts/start.sh
   with $ARGUMENTS, scaffolds features/NNN-<slug>/spec.md, updates
   INDEX.md — proves AC5
-- [ ] T205 (RED): /sdd-next resolves the active blocker via
+- [x] T205 (GREEN): /sdd-next resolves the active blocker via
   next-action.sh and asks/proposes per the action tag — proves AC6
 - [ ] T206 (RED): /sdd-status renders phase + blocker + suggested next
   action without invoking any LLM (verified via tool-call audit)
