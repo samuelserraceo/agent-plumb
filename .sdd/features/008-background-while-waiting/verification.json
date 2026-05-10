@@ -8,11 +8,11 @@
     "out-of-scope": "90c91803438fd2496cecf33b98b731f042b543935ed85abb18ed7243c2919988",
     "non-functional": "4bcb9a25be0d317c1a140af7e236ab8cb1ee82d245ed9765217fa94442ce0d48",
     "acceptance-criteria": "43ac3c0ec3d0d7b69d5ef74031211e51a906624c4fcd0e17758afb0e2fac2b3e",
-    "plan-decompose": "94a8519c3752c7944b1c73c104fd9f1d7d38fcdc748edcd05552baf29380a8cd",
+    "plan-decompose": "85e0ff457a70eb68cda0a923eb2e925721c8ab7cea01dbdc3bf998eb84e0ca42",
     "edge-case-sweep": "802cef1cb279c31bda4a968212bcae62ee2c88d467531c0b627e7c7c4bd4161e"
   },
   "checks": [
     {"id": "C-spec-acs", "result": "pass"},
-    {"id": "C-spec-tasks", "result": "fail"}
+    {"id": "C-spec-tasks", "result": "pass"}
   ]
 }

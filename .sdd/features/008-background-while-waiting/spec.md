@@ -232,7 +232,18 @@ The new code path writes a small JSONL telemetry log to local disk. The §2 metr
 
 ### action: plan-decompose
 
-- [ ] tasks: convert acceptance criteria into ordered build tasks (one test file per task)
+- [x] tasks: 8 ordered tasks — T1 emit-marker, T2 list-candidates flag, T3 update-last-action flag, T4 CR-poll integration, T5 templates/CLAUDE.md doctrine, T6 .sdd/CLAUDE.md doctrine, T7 metric helper, T8 schema validation
+
+**Build tasks**
+
+- [x] T1 — emit marker on manual trigger (covers AC1): create `.sdd/scripts/background-while-waiting.sh` with positional arg `<wait_type>`. Append a JSONL line to `.sdd/.cache/background-emit.log` with schema `{ts, session_id, wait_type, action_chosen: "pending"}`. Test: `test/background-emit-test.sh` calls script with `cr-poll`, parses last log line as JSON, asserts schema and values.
+- [x] T2 — list candidates flag (covers AC2): extend script with `--list-candidates` flag. Prints 4 safe-set candidate names to stderr (re-read-corpus, pre-fetch-next-feature, draft-pr-description, draft-commit-msgs). Test: extends T1's test — calls with `--list-candidates`, captures stderr, asserts 4 candidate names present.
+- [x] T3 — update-last-action flag (covers AC3): extend script with `--update-last-action <choice>` flag. Reads last log line, updates `action_chosen`, writes back. Test: extends T1 — chain emit + update, parse last line, assert `action_chosen` updated.
+- [x] T4 — CR-poll loop integration (covers AC4): locate existing CR-poll loop script in `.sdd/scripts/`, add a call to background-while-waiting.sh on each wait-window entry. Test: run CR-poll in dry-run/test mode, assert log gets a new entry per wait.
+- [x] T5 — doctrine in templates/CLAUDE.md (covers AC5 part 1): add "Background while waiting" section listing low-risk, judgement-required, and out-of-scope sets. Test: grep section heading + 3 set labels in templates/CLAUDE.md.
+- [x] T6 — doctrine in .sdd/CLAUDE.md (covers AC5 part 2): mirror T5's content into the framework's own dogfood CLAUDE.md. Test: grep section heading + 3 set labels in .sdd/CLAUDE.md; also assert content matches T5's.
+- [x] T7 — metric grep helper (covers AC6): add `.sdd/scripts/background-metric.sh` that runs `wc -l` minus `grep -c '"action_chosen": "none-skipped"'` over the log. Prints count to stdout. Test: prep synthetic log with mixed action_chosen values, run helper, assert correct count.
+- [x] T8 — schema validation test (covers AC7): add a parse-and-assert test that reads every line, parses JSON, asserts key set equals `{ts, session_id, wait_type, action_chosen}`. Test: prep synthetic log; run schema validator; assert no extra keys, no missing keys, no unparseable lines.
 
 ### action: edge-case-sweep
 
