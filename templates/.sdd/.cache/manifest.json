@@ -131,6 +131,36 @@
       "path": ".sdd/actions/adversarial-review.md",
       "trust": "framework"
     },
+    "brief-intake": {
+      "expected_sha256": "c88f9c1499dec52249852049e7801f7e045ddc67f673c7aa794ac3d3869415d9",
+      "path": ".sdd/actions/brief-intake.md",
+      "trust": "framework"
+    },
+    "bug-fix": {
+      "path": ".sdd/actions/bug-fix.md",
+      "trust": "framework",
+      "expected_sha256": "2fa3d149a7e2ee3000cf7c950a3f590d2e365379879631ef3327aa2c6396c9ef"
+    },
+    "bug-problem": {
+      "path": ".sdd/actions/bug-problem.md",
+      "trust": "framework",
+      "expected_sha256": "8794d185caa260eb63b6d55598fbc688a6c0ab6b98f5b79fdcec7a264c9a7e25"
+    },
+    "bug-regression-test": {
+      "path": ".sdd/actions/bug-regression-test.md",
+      "trust": "framework",
+      "expected_sha256": "098b8885f0d941750f0ed8c5617ee5435f6c382263df9f8bc0497ca333fa08f7"
+    },
+    "bug-repro": {
+      "path": ".sdd/actions/bug-repro.md",
+      "trust": "framework",
+      "expected_sha256": "09c1b6448736de974f8f0fbc9ce91b2349feed1d566ed3bb80268596e1abc1dc"
+    },
+    "bug-root-cause": {
+      "path": ".sdd/actions/bug-root-cause.md",
+      "trust": "framework",
+      "expected_sha256": "1b6e6ad9cdb3173a47eabf5b9d4e7d7649dd814c3d2b28f20b9480b0be1f7cc9"
+    },
     "build-task": {
       "expected_sha256": "0358fe70194456768825e9e8e2c5b950eaa48593531cf37aa25f35ce57b01e65",
       "path": ".sdd/actions/build-task.md",
@@ -146,15 +176,29 @@
       "path": ".sdd/actions/dependencies.md",
       "trust": "framework"
     },
+    "edge-case-sweep": {
+      "expected_sha256": "8feb75fd9e286fea13176101d6120f52a6dbeb89ee6deaf5e65b0873f67b2757",
+      "path": ".sdd/actions/edge-case-sweep.md",
+      "trust": "framework"
+    },
     "flows": {
       "expected_sha256": "ab3bfff69aa2e0c2c54c06089a2bf5faf07e2fdd88c7fe628130d8fedacda99b",
       "path": ".sdd/actions/flows.md",
       "trust": "framework"
     },
+    "learn": {
+      "path": ".sdd/actions/learn.md",
+      "expected_sha256": "06f7fbaef8a39cd4eeffd81674cbf96602bfa90fa950096010753ac3013aed4a"
+    },
     "mark-shipped": {
       "expected_sha256": "97bfafb8726eb95a84fc656b68c243b316fb7369ee5da488a7d642b9bc2e7629",
       "path": ".sdd/actions/mark-shipped.md",
       "trust": "framework"
+    },
+    "minimal-diff-verify": {
+      "path": ".sdd/actions/minimal-diff-verify.md",
+      "trust": "framework",
+      "expected_sha256": "32a8f00021259b90a4ecb67ebf696a95f64220cd48f02c7cda3e42e3239233a7"
     },
     "non-functional": {
       "expected_sha256": "ec5185ae13f28dde058432c63e248bb872360bc307ea8cdca69598a0cf2e43fc",
@@ -171,14 +215,49 @@
       "path": ".sdd/actions/plan-decompose.md",
       "trust": "framework"
     },
-    "edge-case-sweep": {
-      "expected_sha256": "8feb75fd9e286fea13176101d6120f52a6dbeb89ee6deaf5e65b0873f67b2757",
-      "path": ".sdd/actions/edge-case-sweep.md",
+    "playwright-explore": {
+      "expected_sha256": "2f9edd6d89d706e58095a4842cbde23546ce7ba6e1ff3b5d4038850c70244dba",
+      "path": ".sdd/actions/playwright-explore.md",
       "trust": "framework"
     },
     "problem": {
-      "expected_sha256": "ba9f182cec5e9fdb2b8878a10db4078e677e7025af6e3252458ed3bf96de9b76",
+      "expected_sha256": "08c1296d51d66611fe1f63ea53cc19568ad1fd21ba0e42eb04d7d490733f26ea",
       "path": ".sdd/actions/problem.md",
+      "trust": "framework"
+    },
+    "project-capabilities": {
+      "expected_sha256": "db6b0cc1722c280824f85bd276d9faae6114b6e9258c8dec291e457e2eef4d7d",
+      "path": ".sdd/actions/project-capabilities.md",
+      "trust": "framework"
+    },
+    "project-priorities": {
+      "expected_sha256": "5abe77ef2a59547bd34408cf4c027aa07b4e6272951715714add207bceaf7ad4",
+      "path": ".sdd/actions/project-priorities.md",
+      "trust": "framework"
+    },
+    "project-problem": {
+      "expected_sha256": "d3cc6ffa9e915aedcc8146bb9e2cb62f7db5807e8bff01d8ace86ddf22a8a7c5",
+      "path": ".sdd/actions/project-problem.md",
+      "trust": "framework"
+    },
+    "project-queue-features": {
+      "expected_sha256": "b13c0a32d59e12617e4c2ee412c10f32239b1a98a98e4f70679ca337fa61125a",
+      "path": ".sdd/actions/project-queue-features.md",
+      "trust": "framework"
+    },
+    "project-stakeholders": {
+      "expected_sha256": "2d6911dcbebf412537742e1b40a799503f8b3ea09a376d88414ddef26dc7ebf4",
+      "path": ".sdd/actions/project-stakeholders.md",
+      "trust": "framework"
+    },
+    "project-start-first": {
+      "expected_sha256": "69df0a0e4b6d63c508579b9db402dd7f7e9cad2591558e84c8a5e7fe11433541",
+      "path": ".sdd/actions/project-start-first.md",
+      "trust": "framework"
+    },
+    "project-success": {
+      "expected_sha256": "cc3bb03f3c0569d6f93e2a5b50bd07a87d79cf7d2775d4e576b2d82bfd342de6",
+      "path": ".sdd/actions/project-success.md",
       "trust": "framework"
     },
     "proposed-approach": {
@@ -190,6 +269,21 @@
       "expected_sha256": "09550c98e1f4e94aa8f278a10b436c161cf4990006b217fc85eb8cac1905554f",
       "path": ".sdd/actions/push-pr.md",
       "trust": "framework"
+    },
+    "refactor-approach": {
+      "path": ".sdd/actions/refactor-approach.md",
+      "trust": "framework",
+      "expected_sha256": "92d225ed7f5176b449ff54248b9594664151f6b2a4ad3cd7e4523ee920c3ef72"
+    },
+    "refactor-scope": {
+      "path": ".sdd/actions/refactor-scope.md",
+      "trust": "framework",
+      "expected_sha256": "1d9a68760d4b0a2bb7f3039821db66fecb82c3d180b295698bef69ee52905511"
+    },
+    "regression-coverage": {
+      "path": ".sdd/actions/regression-coverage.md",
+      "trust": "framework",
+      "expected_sha256": "2a44545e04219b19f5fdb77f2ea0337a7d5692525ca50d05dcba6044205b1ee7"
     },
     "run-mode-chosen": {
       "expected_sha256": "6fea5e56209b6c96dc5a2be4ea91ec169a260ba31dd7f9684d5267271eb9fdf2",
@@ -235,95 +329,6 @@
       "expected_sha256": "9903cd9a8740cc5a2a0569d9376d6aeeb09b63e265f9748840e88c66b93aaa50",
       "path": ".sdd/actions/wireframe.md",
       "trust": "framework"
-    },
-    "learn": {
-      "path": ".sdd/actions/learn.md",
-      "expected_sha256": "06f7fbaef8a39cd4eeffd81674cbf96602bfa90fa950096010753ac3013aed4a"
-    },
-    "project-problem": {
-      "expected_sha256": "d3cc6ffa9e915aedcc8146bb9e2cb62f7db5807e8bff01d8ace86ddf22a8a7c5",
-      "path": ".sdd/actions/project-problem.md",
-      "trust": "framework"
-    },
-    "project-success": {
-      "expected_sha256": "cc3bb03f3c0569d6f93e2a5b50bd07a87d79cf7d2775d4e576b2d82bfd342de6",
-      "path": ".sdd/actions/project-success.md",
-      "trust": "framework"
-    },
-    "project-stakeholders": {
-      "expected_sha256": "2d6911dcbebf412537742e1b40a799503f8b3ea09a376d88414ddef26dc7ebf4",
-      "path": ".sdd/actions/project-stakeholders.md",
-      "trust": "framework"
-    },
-    "project-capabilities": {
-      "expected_sha256": "db6b0cc1722c280824f85bd276d9faae6114b6e9258c8dec291e457e2eef4d7d",
-      "path": ".sdd/actions/project-capabilities.md",
-      "trust": "framework"
-    },
-    "project-priorities": {
-      "expected_sha256": "5abe77ef2a59547bd34408cf4c027aa07b4e6272951715714add207bceaf7ad4",
-      "path": ".sdd/actions/project-priorities.md",
-      "trust": "framework"
-    },
-    "project-queue-features": {
-      "expected_sha256": "b13c0a32d59e12617e4c2ee412c10f32239b1a98a98e4f70679ca337fa61125a",
-      "path": ".sdd/actions/project-queue-features.md",
-      "trust": "framework"
-    },
-    "project-start-first": {
-      "expected_sha256": "69df0a0e4b6d63c508579b9db402dd7f7e9cad2591558e84c8a5e7fe11433541",
-      "path": ".sdd/actions/project-start-first.md",
-      "trust": "framework"
-    },
-    "playwright-explore": {
-      "expected_sha256": "2f9edd6d89d706e58095a4842cbde23546ce7ba6e1ff3b5d4038850c70244dba",
-      "path": ".sdd/actions/playwright-explore.md",
-      "trust": "framework"
-    },
-    "bug-problem": {
-      "path": ".sdd/actions/bug-problem.md",
-      "trust": "framework",
-      "expected_sha256": "8794d185caa260eb63b6d55598fbc688a6c0ab6b98f5b79fdcec7a264c9a7e25"
-    },
-    "bug-repro": {
-      "path": ".sdd/actions/bug-repro.md",
-      "trust": "framework",
-      "expected_sha256": "09c1b6448736de974f8f0fbc9ce91b2349feed1d566ed3bb80268596e1abc1dc"
-    },
-    "bug-root-cause": {
-      "path": ".sdd/actions/bug-root-cause.md",
-      "trust": "framework",
-      "expected_sha256": "1b6e6ad9cdb3173a47eabf5b9d4e7d7649dd814c3d2b28f20b9480b0be1f7cc9"
-    },
-    "bug-fix": {
-      "path": ".sdd/actions/bug-fix.md",
-      "trust": "framework",
-      "expected_sha256": "2fa3d149a7e2ee3000cf7c950a3f590d2e365379879631ef3327aa2c6396c9ef"
-    },
-    "bug-regression-test": {
-      "path": ".sdd/actions/bug-regression-test.md",
-      "trust": "framework",
-      "expected_sha256": "098b8885f0d941750f0ed8c5617ee5435f6c382263df9f8bc0497ca333fa08f7"
-    },
-    "refactor-scope": {
-      "path": ".sdd/actions/refactor-scope.md",
-      "trust": "framework",
-      "expected_sha256": "1d9a68760d4b0a2bb7f3039821db66fecb82c3d180b295698bef69ee52905511"
-    },
-    "regression-coverage": {
-      "path": ".sdd/actions/regression-coverage.md",
-      "trust": "framework",
-      "expected_sha256": "2a44545e04219b19f5fdb77f2ea0337a7d5692525ca50d05dcba6044205b1ee7"
-    },
-    "refactor-approach": {
-      "path": ".sdd/actions/refactor-approach.md",
-      "trust": "framework",
-      "expected_sha256": "92d225ed7f5176b449ff54248b9594664151f6b2a4ad3cd7e4523ee920c3ef72"
-    },
-    "minimal-diff-verify": {
-      "path": ".sdd/actions/minimal-diff-verify.md",
-      "trust": "framework",
-      "expected_sha256": "32a8f00021259b90a4ecb67ebf696a95f64220cd48f02c7cda3e42e3239233a7"
     }
   }
 }

@@ -2675,12 +2675,12 @@ out=$(bash "$NEXT_ACTION" "$spec" 2>&1)
 cd - >/dev/null
 rm -rf "$d"
 # First open [ ] should be the `who` step under `problem` action; tag USER-LED.
-if echo "$out" | grep -q '"action":[[:space:]]*"problem"' \
-   && echo "$out" | grep -q '"step":[[:space:]]*"who"' \
+if echo "$out" | grep -q '"action":[[:space:]]*"brief-intake"' \
+   && echo "$out" | grep -q '"step":[[:space:]]*"brief"' \
    && echo "$out" | grep -q '"tag":[[:space:]]*"USER-LED"' \
-   && echo "$out" | grep -q '"prompt":[[:space:]]*"Who specifically' \
-   && echo "$out" | grep -q '"field":[[:space:]]*"§1.who-has-it"'; then
-  ok "T69 next-action returns enriched JSON (action=problem step=who tag=USER-LED prompt+field present)"
+   && echo "$out" | grep -q '"prompt":[[:space:]]*"Paste your brief' \
+   && echo "$out" | grep -q '"field":[[:space:]]*"§0.brief"'; then
+  ok "T69 next-action returns enriched JSON (action=brief-intake step=brief tag=USER-LED prompt+field present)"
 else
   bad "T69 enriched JSON missing fields" "got: $out"
 fi
@@ -2948,8 +2948,8 @@ out=$(bash "$NEXT_ACTION" "$spec" 2>&1)
 cd - >/dev/null
 rm -rf "$d"
 if echo "$out" | grep -q '"parameters":[[:space:]]*null' \
-   && echo "$out" | grep -q '"action":[[:space:]]*"problem"' \
-   && echo "$out" | grep -q '"step":[[:space:]]*"who"'; then
+   && echo "$out" | grep -q '"action":[[:space:]]*"brief-intake"' \
+   && echo "$out" | grep -q '"step":[[:space:]]*"brief"'; then
   ok "T75b missing INDEX.md → parameters=null but action/step still resolve (graceful)"
 else
   bad "T75b graceful degradation broken" "got: $out"
