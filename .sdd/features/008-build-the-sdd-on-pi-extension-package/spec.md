@@ -382,7 +382,7 @@ Sam approved 2026-05-08 after preview in Chrome.
   extension copies framework files from package gsd/ into .pi/sdd/
   via HRN-01; second invocation is no-op for user-edited files
   — proves AC4
-- [ ] T202 (RED): pi.on("context") handler injects [FRAMEWORK INSTRUCTIONS]
+- [x] T202 (GREEN): pi.on("context") handler injects [FRAMEWORK INSTRUCTIONS]
   and [PROJECT DATA] markers around the same content the Claude Code
   UserPromptSubmit hook injects today (INDEX.md, active spec.md,
   principles.md, stack.md, data-model.md, patterns.md) — proves AC3
