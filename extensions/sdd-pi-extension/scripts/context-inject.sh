@@ -26,7 +26,14 @@ done
 
 [ -n "$project" ] || { echo "[sdd-pi] missing required flag: --project" >&2; exit 2; }
 
-cd "$project" 2>/dev/null || exit 0
+# Distinguish "invalid project path" (loud — wiring/config bug) from
+# "valid path but no SDD" (silent — by design, mirrors Claude Code hook).
+if [ ! -d "$project" ]; then
+  echo "[sdd-pi] --project does not point at a directory: $project" >&2
+  exit 2
+fi
+cd "$project" || { echo "[sdd-pi] cannot cd into --project: $project" >&2; exit 2; }
+# Valid dir but no SDD project — silent pass-through (matches Claude hook).
 [ -d .sdd ] && [ -f .sdd/INDEX.md ] || exit 0
 
 echo "=== SDD STATE (injected by hook — do not ignore) ==="
