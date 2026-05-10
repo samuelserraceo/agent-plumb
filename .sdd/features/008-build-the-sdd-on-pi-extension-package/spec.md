@@ -478,8 +478,10 @@ Sam approved 2026-05-08 after preview in Chrome.
 
 ### action: learn
 
-- [ ] summary: 1-paragraph plain-English summary of what shipped + why
+- [x] summary: Shipped sdd-pi-adapter — pi.dev extension bringing SDD's spec-driven workflow to any model behind pi's harness (15+ providers). Same /sdd-* slash commands, same atomic-step discipline, same anti-theatre lint, running on whatever model pi's /model picks. Removes the "Claude Code only" lock for SDD adoption. Validated by 2/2 single-turn discipline test pre-BUILD + 12/12 mechanical ACs at SHIP.
 - [ ] lessons: append 0-3 lessons to .sdd/patterns.md if any new patterns emerged
+
+**Summary:** Shipped `sdd-pi-adapter` — a pi.dev extension that brings SDD's spec-driven workflow to any model behind pi's harness (15+ providers: Anthropic, OpenAI, Google, Ollama, Bedrock, Groq, xAI, OpenRouter, etc.). Same `/sdd-start /sdd-next /sdd-ship` loop, same atomic-step-per-commit discipline, same anti-theatre lint, same trust-boundary state injection — running on whatever model the user picks via pi's `/model` command. **Why:** SDD's reach was capped at "people who happen to use Claude Code." Colleagues wanting SDD's discipline on GPT-5 (via Codex), Kimi K2 (via NVIDIA Build), or open-weight models had to switch CLIs to get it. SDD-on-pi removes the lock — colleagues install one npm package and run SDD on whatever model they were already using. Validated by a 2/2 single-turn discipline test (GPT-5.5 + Kimi K2) before BUILD, and by 12/12 mechanical AC tests (T200-T211) at SHIP. Claude Code SDD continues to work unchanged in parallel.
 
 ### action: push-pr
 
