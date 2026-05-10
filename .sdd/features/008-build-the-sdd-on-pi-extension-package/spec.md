@@ -367,9 +367,9 @@ Sam approved 2026-05-08 after preview in Chrome.
 
 ### action: plan-decompose
 
-- [x] tasks: 12 ordered T-tasks (T200-T211, one per AC). Foundation first (T200 manifest → T201 install → T203 HRN-01 → T202 context injection), then features (T204 /sdd-start → T205 /sdd-next → T206 /sdd-status → T207 /sdd-ship), then integration (T210 git pre-commit → T209 MCP), final regression (T208 multi-model discipline), publish workflow last (T211).
+- [x] tasks: 13 ordered T-tasks (T200-T212). T200-T211 are one-per-AC; T212 added post-cycle-2 to close the runtime-wiring gap surfaced by partial e2e (strengthens AC1/3/4/7). Foundation first (T200 manifest → T201 install → T203 HRN-01 → T202 context injection), then features (T204 /sdd-start → T205 /sdd-next → T206 /sdd-status → T207 /sdd-ship), then integration (T210 git pre-commit → T209 MCP), final regression (T208 multi-model discipline), publish workflow last (T211), runtime-wiring strengthener appended (T212).
 
-**BUILD task plan — 12 ordered T-tasks (one test file per AC):**
+**BUILD task plan — 13 ordered T-tasks (T200-T211 one-per-AC + T212 runtime-wiring strengthener):**
 
 ```text
 - [x] T200 (GREEN): assert extensions/sdd-pi-extension/package.json
@@ -421,7 +421,7 @@ Sam approved 2026-05-08 after preview in Chrome.
   AC7 (instant zero-LLM /sdd-status registered).
 ```
 
-**Order rationale:** foundation (manifest → install → HRN-01 → context-injection) before features (slash commands), then orthogonal git-pre-commit enforcement, then optional MCP integration, multi-model regression near the end, NPM publish last. Each AC has exactly one T-task; clean 1-to-1 coverage.
+**Order rationale:** foundation (manifest → install → HRN-01 → context-injection) before features (slash commands), then orthogonal git-pre-commit enforcement, then optional MCP integration, multi-model regression near the end, NPM publish last, runtime-wiring strengthener (T212) appended post-cycle-2. Each of T200-T211 has 1:1 coverage with one AC (12 ACs = 12 tests); T212 (added post-cycle-2) strengthens the runtime wiring underlying AC1/3/4/7 by asserting the manifest-declared JS extension loads + registers its three pi lifecycle handlers — proves the bash scripts are actually wired to pi's runtime, not just declared in the manifest.
 
 ### action: edge-case-sweep
 
@@ -475,11 +475,11 @@ Sam approved 2026-05-08 after preview in Chrome.
 
 ### action: build-task
 
-(driven by §14 tasks T200-T211 — each task lands as one commit)
+(driven by §14 tasks T200-T212 — each task lands as one commit; T212 added post-cycle-2 during SHIP)
 
 ### Exit checks
 
-- [x] C-build-tasks-green: T200-T211 all GREEN; framework tests pass {verify-by: verify-stage.sh}
+- [x] C-build-tasks-green: T200-T212 all GREEN; framework tests pass {verify-by: verify-stage.sh}
 
 ## PHASE: SHIP
 
