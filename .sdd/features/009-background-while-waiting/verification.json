@@ -2,7 +2,7 @@
   "phase": "SHIP",
   "approved_sections": {
     "proposed-approach": "bd8864317134bd659e514c5d408a84ef18d3d1315904965414f053b59cafc6ee",
-    "data-contract": "4d817fa58bc6fbff846f055aee5270dc6603575657bc2cc74c9fadff9386f8e4",
+    "data-contract": "8eaf53e7cce8bc92c7f3512da3ce093b0342ccfdc14f04ec94cdb65633e4b3ec",
     "flows": "66844618419017843a0d315a0506f260417a9025e13a604c1042bcacbd5d99fb",
     "dependencies": "853da94ef21ec525d66af4afe6e260859ce9b4a17b92912fcaf6964c51528cbb",
     "out-of-scope": "90c91803438fd2496cecf33b98b731f042b543935ed85abb18ed7243c2919988",

@@ -18,7 +18,7 @@ playbook: feature
 
 ### action: success
 
-- [x] metric: engagement — 100% of CR/CI waits ≥3 min trigger ≥1 always-safe background action {verify-by: marker emit count in CR-poll loop == wait-event count, measured across next 5 framework features after 008 ships}; baseline 0% today (current poll loop is idle) {verify-by: grep .sdd/scripts/ for background-emit calls — expect zero matches at HEAD~0}
+- [x] metric: engagement — 100% of CR/CI waits ≥3 min trigger ≥1 always-safe background action {verify-by: marker emit count in CR-poll loop == wait-event count, measured across next 5 framework features after 009 ships}; baseline 0% today (current poll loop is idle) {verify-by: grep .sdd/scripts/ for background-emit calls — expect zero matches at HEAD~0}
 
 ### action: user-stories
 
@@ -96,7 +96,7 @@ Field meanings:
 - `ts` — timestamp at emit, ISO-8601 UTC, chronologically sortable
 - `session_id` — 8 hex chars, generated per session — lets per-session counts compute
 - `wait_type` — the trigger that fired (initial set: cr-poll, ci-poll, other)
-- `action_chosen` — what the agent did during that wait window. The §2 metric counts rows where `action_chosen != "none-skipped"`
+- `action_chosen` — what the agent did during that wait window. The §2 metric counts rows where `action_chosen` is neither `"pending"` nor `"none-skipped"` (consistent with `background-metric.sh` and AC6)
 
 **Out of §6 scope:**
 
