@@ -459,7 +459,9 @@ Sam approved 2026-05-08 after preview in Chrome.
 
 ### action: run-mode-chosen
 
-- [ ] mode: pick run mode (step-by-step / checkpoint / full-autonomous) per CLAUDE.md
+- [x] mode: Shell Ralph (headless) — Sam runs ./scripts/ralph.sh in a separate terminal; each task is a fresh Claude invocation. Best for the 36 atomic commits of T200-T211.
+
+**Run mode:** Shell Ralph (headless)
 
 ### action: build-task
 
