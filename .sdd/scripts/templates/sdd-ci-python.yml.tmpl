@@ -10,6 +10,14 @@ on:
   push:
     branches: [main]
 
+# Least-privilege GITHUB_TOKEN — repo defaults grant write to a lot we don't
+# need here. This workflow only reads source + reports check status; nothing
+# pushes tags, comments on PRs, or modifies releases. If your project ADDS
+# steps that need more (e.g. uploading release assets), add the specific
+# permission here rather than relying on repo-default writes.
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -34,7 +42,16 @@ jobs:
 
       - name: Type check (mypy)
         run: |
-          if command -v mypy >/dev/null 2>&1; then mypy . || true; else echo "mypy not installed; skipping"; fi
+          # Mypy runs only when present (projects opt in by adding mypy to
+          # their dev deps). When it IS present, real type errors fail the
+          # job — no `|| true` suppression. If you'd rather treat mypy as
+          # advisory until your codebase is annotated, drop this step
+          # entirely or add `continue-on-error: true` at the step level.
+          if command -v mypy >/dev/null 2>&1; then
+            mypy .
+          else
+            echo "mypy not installed; skipping"
+          fi
 
       - name: Unit tests (pytest)
         run: pytest -v
