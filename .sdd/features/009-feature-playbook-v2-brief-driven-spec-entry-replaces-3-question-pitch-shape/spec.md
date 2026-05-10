@@ -6,7 +6,7 @@ playbook: feature
 
 [PHASE: SPEC]
 
-**Active blocker:** §11 (action: acceptance-criteria)
+**Active blocker:** §12 (action: signoff-steps)
 
 ## PHASE: SPEC
 
@@ -234,7 +234,37 @@ Explicitly NOT in this redesign (filed separately or deferred):
 
 ### action: acceptance-criteria
 
-- [ ] approval: draft the acceptance criteria, run a constraint-coverage check vs §4, iterate, get approval
+- [x] approval: 10 ACs covering 4 sub-PRs (PR-A walking-skeleton + PR-B/C/D widening) — AUTONOMOUS DRAFT
+
+#### §11 Acceptance Criteria
+
+10 ACs covering the 4 sub-PRs from §5. Each AC is verifiable at SHIP time; none are "feature exists" claims.
+
+**PR-A — brief-intake + skeleton + playbook frontmatter swap (walking-skeleton):**
+
+- [ ] AC1: Running `/start <title>` on a NEW feature (post-PR-A) shows the brief-paste prompt instead of the 3-question Pitch shape (verifiable: grep the agent's first turn output for "Paste your brief" vs "who has this problem")
+- [ ] AC2: Pasting a brief that follows the v2 template at `.sdd/ideas/2026-05-08-brief-template-v2.md` produces a brief-summarise turn within the same /next cycle (no extra round-trip)
+- [ ] AC3: After brief-summarise, sections §1, §3, §6, §7, §8, §10 in `spec.md` show pre-filled prose drawn from the brief (each section has at least one verbatim quote or derived bullet); §11 + §14 stay placeholder pending the standard ceremony
+- [ ] AC4: `/start <title>` on an EXISTING in-flight feature (started before PR-A merged) still walks the old `problem` action (no breakage of pre-PR-A specs)
+
+**PR-B — delete §2 success from feature playbook:**
+
+- [ ] AC5: `templates/.sdd/playbooks/feature.md` frontmatter no longer lists `success` in the SPEC stage's actions; `templates/.sdd/actions/success.md` carries a `deprecated: true` field with a migration note
+- [ ] AC6: F009's spec.md is the LAST framework feature in `.sdd/features/` to have a `### action: success` heading; F010+ specs scaffold without one (verifiable: `grep "### action: success" .sdd/features/0??-*/spec.md` returns only F009 + earlier features)
+
+**PR-C — one-question-at-a-time doctrine + autonomous AGENT-LED audit:**
+
+- [ ] AC7: CLAUDE.md "Non-technical user lens" section gains a "One question per turn" subsection with the doctrine line; `lint-action-prose.sh` warns when an action's "What it looks like" example bundles 2+ questions
+- [ ] AC8: §13 wireframe + §15 edge-case-sweep action frontmatters drop `requires_user_approval` from `true` to `false` (technical/mechanical, no product judgement)
+
+**PR-D — plain-English-first default + foldable technical detail:**
+
+- [ ] AC9: AGENT-LED actions emit plain-English first drafts wrapped in `<details>` for technical detail, AS DEFAULT (not just lint-enforced retroactively); a representative AGENT-LED action (e.g., `proposed-approach.md`) shows the new pattern in its "What it looks like" block
+- [ ] AC10: `templates/.sdd/actions/data-contract.md` prose includes an explicit upload-invitation paragraph naming the supported formats (markdown / CSV / JSON / plain text / PDF / screenshots) and the failure path
+
+**Coverage check vs §4:** §4's 4 doctrine items (one-question-per-turn, plain-English-first, end-of-section recap, document-upload UX) all map to ACs above (AC7+AC8 → one-question; AC9 → plain-English-first; end-of-section recap covered structurally by AC2's "within the same /next cycle" check; AC10 → upload UX). No §4 constraint without AC backing.
+
+**Status:** AUTONOMOUS DRAFT. §11 is section-locked once approved; Sam re-approves on return via `/re-approve acceptance-criteria`.
 
 ### action: signoff-steps
 

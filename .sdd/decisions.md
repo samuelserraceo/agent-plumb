@@ -343,3 +343,9 @@ AUTONOMOUS DRAFT BATCH (Sam away). §7 flows: 1 critical flow (agent walks SPEC 
 §8 hash: 189851bf44f05855b8748f0010d8fcd43486980486c4846ead47994067661df3
 §9 hash: 3301f0df4a4bd1b44cbc91bc7b1611c73190bbe9d905df3a3e6c871084430b55
 §10 hash: 1a02d084a9680e723cf7b0e7a619c30d838dfa9f97fdbae32fd5c19707308226
+
+## 2026-05-10T16:22:21Z  [[009-feature-playbook-v2-brief-driven-spec-entry-replaces-3-question-pitch-shape]]  feature/acceptance-criteria
+
+AUTONOMOUS DRAFT (Sam away). §11 ships 10 ACs covering 4 sub-PRs from §5: AC1-AC4 PR-A (walking-skeleton: brief-intake action + skeleton + playbook swap + backward-compat); AC5-AC6 PR-B (delete §2 from playbook); AC7-AC8 PR-C (one-question-per-turn doctrine + autonomous AGENT-LED audit on §13/§15); AC9-AC10 PR-D (plain-English-first default + §6 upload prose). §4 coverage: all 4 doctrine items map to ACs. Section-locked at this hash; Sam re-approves on return.
+
+Hash: d19a4fdbe268b3f2c65b2dbdda27608410d7e6a560bfbde248f7bab332134221
