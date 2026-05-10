@@ -80,15 +80,17 @@ For 010 specifically: when SPEC → BUILD → SHIP completes and §11 has all-gr
 Concretely, a BUILD plan might look like:
 
 ```text
-- [ ] T200 [WAVE: 1]: scaffold endpoint A
-- [ ] T201 [WAVE: 1]: scaffold endpoint B
-- [ ] T202 [WAVE: 1]: scaffold endpoint C
-- [ ] T203: integration test (depends on T200-T202, runs sequentially)
-- [ ] T204 [WAVE: 2]: docs sweep
-- [ ] T205 [WAVE: 2]: type-check sweep
+- TEX-1 [WAVE: 1]: scaffold endpoint A
+- TEX-2 [WAVE: 1]: scaffold endpoint B
+- TEX-3 [WAVE: 1]: scaffold endpoint C
+- TEX-4: integration test (depends on TEX-1..TEX-3, runs sequentially)
+- TEX-5 [WAVE: 2]: docs sweep
+- TEX-6 [WAVE: 2]: type-check sweep
 ```
 
-Wave 1 dispatches T200/T201/T202 in parallel; orchestrator waits; then T203 runs sequentially; then Wave 2 dispatches T204/T205 in parallel.
+(Illustrative IDs `TEX-N` used here so the spec's own task-ID parser doesn't conflate this example with the real T200-T211 plan in §14.)
+
+Wave 1 dispatches TEX-1/TEX-2/TEX-3 in parallel; orchestrator waits; then TEX-4 runs sequentially; then Wave 2 dispatches TEX-5/TEX-6 in parallel.
 
 Trade-offs:
 
