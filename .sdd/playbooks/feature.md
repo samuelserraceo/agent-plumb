@@ -9,8 +9,8 @@ terminal_state: SHIPPED
 stages:
   - id: SPEC
     actions:
+      - brief-intake
       - problem
-      - success
       - user-stories
       - ux-brief
       - proposed-approach

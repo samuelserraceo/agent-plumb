@@ -108,6 +108,10 @@ mkproj_v08() {
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/install-ci-workflow.sh"  "$d/.sdd/scripts/install-ci-workflow.sh" \
     || { echo "[mkproj_v08] failed to copy install-ci-workflow.sh from \$FRAMEWORK_ROOT — broken framework checkout?" >&2; return 1; }
   chmod +x "$d/.sdd/scripts/install-ci-workflow.sh"
+  # install-mcp-server.sh is manifest-tracked in v1.5.4+ (closes #209).
+  cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/install-mcp-server.sh"   "$d/.sdd/scripts/install-mcp-server.sh" \
+    || { echo "[mkproj_v08] failed to copy install-mcp-server.sh from \$FRAMEWORK_ROOT — broken framework checkout?" >&2; return 1; }
+  chmod +x "$d/.sdd/scripts/install-mcp-server.sh"
   # CR cycle 1 finding (#195): promote-to-active.sh is manifest-tracked
   # in v1.5.2+. Silently skipping the copy with `|| true` would leave the
   # mock project missing a tracked file, causing the moat hash-pin check
@@ -1871,7 +1875,7 @@ fi
 #   RED: advance.sh fails to update INDEX.md, or updates to wrong slug,
 #        or doesn't recognize the active action's position in stage.
 # ============================================================
-note "T56: advance.sh moves active blocker within a stage (problem → success)"
+note "T56: advance.sh moves active blocker within a stage (problem → user-stories — success removed in v1.6)"
 d=$(mkproj_v08)
 cd "$d"
 cat > .sdd/INDEX.md <<'EOF'
@@ -1889,8 +1893,8 @@ bash "$ADVANCE_SH" "$d" >/dev/null 2>&1
 out=$(grep '^\*\*Active blocker:\*\*' .sdd/INDEX.md)
 cd - >/dev/null
 rm -rf "$d"
-if echo "$out" | grep -q 'action: success'; then
-  ok "T56 advanced problem → success within SPEC stage"
+if echo "$out" | grep -q 'action: user-stories'; then
+  ok "T56 advanced problem → user-stories within SPEC stage (v1.6: success removed from playbook)"
 else
   bad "T56 advance failed within stage" "active blocker line: $out"
 fi
@@ -2670,13 +2674,13 @@ spec="$d/.sdd/features/001-step-rich-json-test/spec.md"
 out=$(bash "$NEXT_ACTION" "$spec" 2>&1)
 cd - >/dev/null
 rm -rf "$d"
-# First open [ ] should be the `who` step under `problem` action; tag USER-LED.
-if echo "$out" | grep -q '"action":[[:space:]]*"problem"' \
-   && echo "$out" | grep -q '"step":[[:space:]]*"who"' \
+# First open [ ] should be the `brief` step under `brief-intake` action; tag USER-LED.
+if echo "$out" | grep -q '"action":[[:space:]]*"brief-intake"' \
+   && echo "$out" | grep -q '"step":[[:space:]]*"brief"' \
    && echo "$out" | grep -q '"tag":[[:space:]]*"USER-LED"' \
-   && echo "$out" | grep -q '"prompt":[[:space:]]*"Who specifically' \
-   && echo "$out" | grep -q '"field":[[:space:]]*"§1.who-has-it"'; then
-  ok "T69 next-action returns enriched JSON (action=problem step=who tag=USER-LED prompt+field present)"
+   && echo "$out" | grep -q '"prompt":[[:space:]]*"Paste your brief' \
+   && echo "$out" | grep -q '"field":[[:space:]]*"§0.brief"'; then
+  ok "T69 next-action returns enriched JSON (action=brief-intake step=brief tag=USER-LED prompt+field present)"
 else
   bad "T69 enriched JSON missing fields" "got: $out"
 fi
@@ -2920,7 +2924,7 @@ cd - >/dev/null
 rm -rf "$d"
 if echo "$out" | grep -q '"parameters":[[:space:]]*{' \
    && echo "$out" | grep -q '"plain_english":[[:space:]]*true' \
-   && echo "$out" | grep -q '"max_minutes":[[:space:]]*5'; then
+   && echo "$out" | grep -q '"max_minutes":[[:space:]]*15'; then
   ok "T75 next-action.sh embeds parameters block (project + action cascade visible)"
 else
   bad "T75 parameters block missing or wrong" "got: $out"
@@ -2944,8 +2948,8 @@ out=$(bash "$NEXT_ACTION" "$spec" 2>&1)
 cd - >/dev/null
 rm -rf "$d"
 if echo "$out" | grep -q '"parameters":[[:space:]]*null' \
-   && echo "$out" | grep -q '"action":[[:space:]]*"problem"' \
-   && echo "$out" | grep -q '"step":[[:space:]]*"who"'; then
+   && echo "$out" | grep -q '"action":[[:space:]]*"brief-intake"' \
+   && echo "$out" | grep -q '"step":[[:space:]]*"brief"'; then
   ok "T75b missing INDEX.md → parameters=null but action/step still resolve (graceful)"
 else
   bad "T75b graceful degradation broken" "got: $out"

@@ -36,9 +36,35 @@ Reply with the number, or describe your own.
 
 | You said | Agent action |
 |---|---|
-| "Yes — turn it on" | Runs `bash extensions/sdd-mcp-server/enable.sh` automatically. The script registers the server with Claude Code (creates `.mcp.json` in this project, or updates `~/.claude.json` if `SDD_MCP_TARGET=user` is set). Verifies the registration. Records `parameters.mcp.enabled: true` in `.sdd/config.md`. |
+| "Yes — turn it on" | Records `parameters.mcp.enabled: true` in `.sdd/config.md`. |
 | "No" | Records `parameters.mcp.enabled: false`. You can re-enable any time via `/sdd-config mcp-server`. |
 | "Tell me more" | Agent reads the explanation block below to you in plain English, then re-asks. |
+
+**Then, regardless of which option was picked**, the agent runs
+`bash .sdd/scripts/install-mcp-server.sh --quiet`. The script reads
+`parameters.mcp.enabled` from `config.md` and:
+
+- If **true**: invokes `extensions/sdd-mcp-server/enable.sh` to write `.mcp.json` with the `sdd` mcpServer entry, verifies the registration landed, and reports the outcome.
+- If **false** / unset / deferred: self-skips silently so the wizard prose can call it unconditionally.
+
+Same shape as brick 004's `install-ci-workflow.sh` (#199). Idempotent:
+re-runs preserve existing `.mcp.json` registrations unless `--force`.
+
+**Halt on registration failure.** If `install-mcp-server.sh` exits non-zero (e.g., the symlink to `extensions/sdd-mcp-server/` is broken, or `enable.sh` itself failed), the wizard MUST stop here — don't move to the next brick with a half-installed MCP server. The script's stderr names the actual problem in plain English; the typical fix is one of:
+
+- **Symlink missing:** `bash bin/sdd-init.sh` re-runs the framework installer, which re-creates the `extensions/sdd-mcp-server/` symlink to your plugin install.
+- **PyYAML missing:** `pip3 install --user PyYAML`, then re-run `/sdd-config 007-mcp-server`.
+- **enable.sh wrote a malformed `.mcp.json`:** capture the stderr from the script and report — this is a framework bug, not user error.
+
+Once fixed, re-run `/sdd-config 007-mcp-server` to retry the install.
+
+**Why this matters (closes #209).** Pre-v1.5.4 the wizard ASKED brick 007
+and RECORDED `mcp.enabled: true` — but never actually invoked `enable.sh`.
+`config.md` carried a `pending_install: true` flag that documented the
+gap but no one reconciled it. Users were promised 40-60% token saving
+they didn't get; verified against `pipelogic_v2` F01 transcript (zero
+`mcp__sdd__*` tool calls in 33,838 lines). v1.5.4 closes the contract:
+wizard records → script wires → MCP server is real.
 
 ## Tell me more (the long version)
 

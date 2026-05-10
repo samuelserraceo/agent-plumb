@@ -311,6 +311,7 @@ CR cycle 1 clarification on the proposed-approach approval: the original approva
 ## 2026-05-04T22:00:00Z [[007-sdd-migrate-refresh-project-s-sdd-tree-from-upstream-framework]] feature/mark-shipped
 SHIPPED. Channel B (project-template tree) update flow now mechanical via `bash .sdd/scripts/sdd-migrate.sh`. 7 ACs, 7 BUILD tasks, 7 per-feature tests, T160 + T161 framework regression. 218/218 framework tests + 31/31 claims audit pass. 1 CR cycle addressed (5 Major + 4 Minor); cycle 2 returned 0 new findings. PR #157 cleared CI without admin override (the bug 003 fix pays dividends). The framework is now a real updatable internal package — Sam's teammates can pull in upstream improvements via one CLI call without losing their project-specific data.
 
+claude/clever-herschel-af8c27
 ## 2026-05-10T17:30:00Z [[008-background-while-waiting]] feature/proposed-approach
 Sam approved §5: Approach B — doctrine + instrumentation. CLAUDE.md doctrine (low-risk / judgement-required / out-of-scope sets) shipped to both `templates/CLAUDE.md` and `.sdd/CLAUDE.md`. New `.sdd/scripts/background-while-waiting.sh` triggers on CR-poll loop wait-window entry, emits a marker line to `.sdd/.cache/background-emit.log` for the §2 metric counter, and prints safe-set candidates for the agent to consider. Alternatives A (doctrine-only — can't verify §2 metric) and C (A+B+parallel-feature integration — premature on undefined #42 behaviour) deferred.
 
@@ -337,3 +338,108 @@ Sam re-approved §11 with two AC fixes. AC5 corrected: doctrine target is `templ
 
 ## 2026-05-10T21:05:00Z [[009-background-while-waiting]] feature/data-contract (re-approved-2)
 Sam re-approved §6 with the metric-consistency fix from CR cycle 9. The `action_chosen` field-meaning paragraph was rewritten from "rows where action_chosen != 'none-skipped'" to "rows where action_chosen is neither 'pending' nor 'none-skipped' (consistent with background-metric.sh and AC6)". This propagates the AC6 metric semantics into the data-contract section so all three references (T7 helper, AC6, §6 schema) agree. Section hash bumped to 8eaf53e7cce8bc92c7f3512da3ce093b0342ccfdc14f04ec94cdb65633e4b3ec. Reason: CR cycle 9 finding on metric definition mismatch across sections.
+=======
+## 2026-05-10T15:54:18Z  [[009-feature-playbook-v2-brief-driven-spec-entry-replaces-3-question-pitch-shape]]  feature/ux-brief
+
+Sam approved §4 UX & Design brief: chat-as-UX framing — agent message shapes (entry / mid-section / first-draft / end-of-section recap) are the user-facing surface; no visual wireframe. Three doctrine items already shipped via v1.6 batch (#201/#205) plus 3 new doctrine items in scope for this redesign (#207 Parts 3/4/6 — one-question-per-turn, plain-English-first default, end-of-section recap). wireframe.html stub created explaining the chat-as-UX rationale. Hash: hash-section: section for slug 'ux-brief' appears MULTIPLE times in .sdd/features/009-feature-playbook-v2-brief-driven-spec-entry-replaces-3-question-pitch-shape/spec.md at lines [78, 82] — ambiguous, refusing to hash. Rename the duplicate or remove it.
+
+## 2026-05-10T16:10:00Z  [[009-feature-playbook-v2-brief-driven-spec-entry-replaces-3-question-pitch-shape]]  feature/ux-brief-correction
+
+CORRECTION to the §4 UX-brief approval entry above. The Hash line in that entry contained the hash-section.sh error message (the spec.md had two heading shapes matching at the time, so hash-section.sh refused with "ambiguous, refusing to hash"). The duplicate heading was fixed in the same commit (cb0741c), and the hash was correctly recomputed against the cleaned spec. The correct §4 hash is `080f621417c586a465585de1a8c4ebb98672b04cfa3989207de017740e2dd182`. Subsequent commits softened 2 theatre tokens which changed the hash to the current verification.json value.
+
+Append-only correction per CLAUDE.md decisions.md doctrine — never modify prior entries, only append. Surfaced + filed as a stop-hook violation; this entry is the recovery action.
+
+Hash: 080f621417c586a465585de1a8c4ebb98672b04cfa3989207de017740e2dd182
+
+## 2026-05-10T16:11:59Z  [[009-feature-playbook-v2-brief-driven-spec-entry-replaces-3-question-pitch-shape]]  feature/proposed-approach
+
+AUTONOMOUS DRAFT (Sam away, "keep going independently" directive). Recommended approach: 4 sub-PRs sequenced vertical-first per #207 + #211. PR-A (brief-intake action + skeleton + playbook swap) is the spine; PR-B (delete §2 success), PR-C (one-question-per-turn doctrine), PR-D (plain-English-first default) widen. Alternatives 1 (mega-PR), 2 (4 features), 3 (won't-fix) considered + rejected. Risk register: walking-skeleton viability check in PR-A's §11 AC; backward-compat for in-flight features; CLAUDE.md cross-reference drift. Sam to re-approve or amend on return.
+
+Hash: 4648c8f0404053e4ef9f254e93baa2140769e374031602b297fc40b004abc5c2
+
+## 2026-05-10T16:19:21Z  [[009-feature-playbook-v2-brief-driven-spec-entry-replaces-3-question-pitch-shape]]  feature/data-contract
+
+AUTONOMOUS DRAFT (Sam away). §6 marked complete: F009 introduces no entity changes — framework-prose-only redesign. data-model.md marker added in §5 commit. Sam re-approves on return.
+
+Hash: 8125a98d7c9b15828ec4066f6af3f3f0fb9e00cdddc6675fafd7c73b0ed6ba4f
+
+## 2026-05-10T16:21:01Z  [[009-feature-playbook-v2-brief-driven-spec-entry-replaces-3-question-pitch-shape]]  feature/flows-deps-oos-nfs-batch
+
+AUTONOMOUS DRAFT BATCH (Sam away). §7 flows: 1 critical flow (agent walks SPEC with brief paste, replaces 3-question Pitch). §8 dependencies: no external services; framework-prose-only. §9 out-of-scope: 5 items (evolve-flow, lint enforcement, i18n, multi-modal upload, backward-incompat). §10 non-functional: thin — no perf/security/compliance impact; turn-count drop measured at SHIP. Sam re-approves on return.
+
+§7 hash: 91c2b5e15526ad13aee2244fcc91ec685d7fdce4b0359e5e56282934e9e8aaa9
+§8 hash: 189851bf44f05855b8748f0010d8fcd43486980486c4846ead47994067661df3
+§9 hash: 3301f0df4a4bd1b44cbc91bc7b1611c73190bbe9d905df3a3e6c871084430b55
+§10 hash: 1a02d084a9680e723cf7b0e7a619c30d838dfa9f97fdbae32fd5c19707308226
+
+## 2026-05-10T16:22:21Z  [[009-feature-playbook-v2-brief-driven-spec-entry-replaces-3-question-pitch-shape]]  feature/acceptance-criteria
+
+AUTONOMOUS DRAFT (Sam away). §11 ships 10 ACs covering 4 sub-PRs from §5: AC1-AC4 PR-A (walking-skeleton: brief-intake action + skeleton + playbook swap + backward-compat); AC5-AC6 PR-B (delete §2 from playbook); AC7-AC8 PR-C (one-question-per-turn doctrine + autonomous AGENT-LED audit on §13/§15); AC9-AC10 PR-D (plain-English-first default + §6 upload prose). §4 coverage: all 4 doctrine items map to ACs. Section-locked at this hash; Sam re-approves on return.
+
+Hash: d19a4fdbe268b3f2c65b2dbdda27608410d7e6a560bfbde248f7bab332134221
+
+## 2026-05-10T16:24:25Z  [[009-feature-playbook-v2-brief-driven-spec-entry-replaces-3-question-pitch-shape]]  feature/signoff-wireframe-plan-edges-batch
+
+AUTONOMOUS DRAFT BATCH (Sam away). §12 sign-off: 3 manual smokes (brief-paste E2E on fresh F010, backward-compat on F009, lint+framework-test). §13 wireframe: SKIPPED (chat-as-UX, established §4). §14 plan-decompose: 11 tasks (T01-T11) — T01-T10 map 1:1 to AC1-AC10; T11 is integration smoke. Walking-skeleton check: pass (single architectural layer). T00 bootstrap: skip (framework is shell + markdown). §15 edge-case-sweep: 6 ECs drafted; Sam picks which become ACs on return.
+
+§12 hash: c50656e1c8fef9e070e2f9a895da39f0ffd5fbd29491baca9edffe0067a7270c
+§13 hash: e680716ea0613223e38ea67f6d8ac146aff37e9ed2e3c8fb09bccb2826dfd1ae
+§14 hash: 6c3bc089e9a3ff20a0255e57789ddf11d2eea73c243235fae9d24dedeb02d64d
+§15 hash: 2e71ffe58a4a5aa18311d223bad385793f650b01925b9c1ae95b26a13f7a7ec8
+
+## 2026-05-10T17:02:26Z  [[009-feature-playbook-v2-brief-driven-spec-entry-replaces-3-question-pitch-shape]]  feature/phase-advance-SPEC-to-BUILD
+
+PHASE ADVANCE: SPEC → BUILD. Sam re-approved all 5 AUTONOMOUS DRAFT sections (§5 proposed-approach, §6 data-contract, §9 out-of-scope, §11 acceptance-criteria, §14 plan-decompose) at his return. verification.json now has 10 approved_sections entries + both C-spec-acs and C-spec-tasks pass. F009 SPEC is locked.
+
+Next: BUILD T01 (brief-intake action prose drafted as the first user-facing surface change).
+
+## 2026-05-08T07:48:18Z [[008-build-the-sdd-on-pi-extension-package]] feature/proposed-approach
+Sam approved §5: hybrid approach (C) — develop in `extensions/sdd-pi-extension/` inside SDD repo, auto-publish to npm as `sdd-pi-adapter`. 4 moving parts (TS extension, prompts/, package.json#pi manifest, reuse existing `.sdd/` brain). 4 key technical choices acknowledged (TS, manifest, `pi-mcp-adapter` peer, git pre-commit hooks for enforcement). Out of scope: ideas 002 (parallel waves), 003 (subagents), 004 (remove §2 from playbook). Section hash: `5acb3e7a74987fb8e45a8419396c737a8d9724b049d73a72d23d566d4f2ce90f`.
+
+## 2026-05-08T08:19:57Z [[008-build-the-sdd-on-pi-extension-package]] feature/data-contract
+Sam approved §6: no new project-state entities. Pi adapter reads existing `.sdd/` brain via the same scripts; no new fields/tables/files in user data. One new framework-level entity added to `data-model.md`: `Pi extension package` (analogous to existing `Hook`, `Action`, `Playbook`, `Setup brick`, `Extension`). 4 edge cases at the data layer asked-and-answered (parallel Claude+pi installs, session_start re-runs, missing pi-mcp-adapter peer, simultaneous session_start from both harnesses). Section hash: `8811645a9a7172b185ca47d8eb9da151a57f32ee4a9cb652669bdba4a79c7a41`.
+
+## 2026-05-08T08:54:29Z [[008-build-the-sdd-on-pi-extension-package]] feature/flows
+Sam approved §7: 2 critical flows. Flow 1 (install + first SDD task) covers user stories 2, 3, 4 (Marco/Lucia/new evaluator first-time experience). Flow 2 (multi-model task routing within one session via pi's /model command) covers story 1 (Sam's per-task model switching). Visual diagram deferred to §13 Wireframe per non-UI visualisation rule. Adapter-update flow declared out-of-scope (handled by existing sdd-migrate.sh, documented in README at SHIP). Section hash: `bf9fc6257c1e8b57627bc4bd035842bceec6b180114d85f840f6af65ad7b471c`.
+
+## 2026-05-08T09:32:35Z [[008-build-the-sdd-on-pi-extension-package]] feature/dependencies
+Sam approved §8: zero new framework-borne service costs. Pi.dev (free MIT), pi-mcp-adapter (free MIT, optional), npm (free), GitHub Actions (free for public repo), TypeScript+tsup+vitest toolchain (all free). LLM costs borne by user. **Critical UX win discovered during this section:** pi.dev supports OAuth subscription login (Claude Pro/Max, ChatGPT Plus/Pro, GitHub Copilot) in addition to API keys — colleagues with existing subscriptions can run SDD-on-pi without provisioning a separate API key, substantially lowering install friction for stories 2/3/4. No `cost_limit_usd`-style theatre figures included (consistent with anti-theatre doctrine). Section hash: `a32f7ab7c0b26a49cfdb7226fa1cc6508e2dce450dbe16b5ebc86cfc694620ad`.
+
+## 2026-05-08T10:21:28Z [[008-build-the-sdd-on-pi-extension-package]] feature/out-of-scope
+Sam approved §9: 5 explicit deferrals — (1) parallel wave execution (idea 002, separate feature post-008); (2) specialised subagents (idea 003, separate feature; pairs best with multi-model + waves); (3) removing §2 Success from feature playbook (idea 004, separate framework feature; concern surfaced live during 008's §2 walk); (4) adapters for other CLIs beyond pi (Cursor/Aider/Windsurf/Codex direct — pi already reaches 15+ models, others case-by-case); (5) CI publish-workflow refinements (changesets/semver/conventional-commits — start simple with tag-based npm publish, refine if friction surfaces). Visual flow diagram has its own home in §13 Wireframe (not §9). Section hash: `0415b88f25e99f1bd5abf37475a6db96f384791c539b2c36633ef96114d297c6`.
+
+## 2026-05-08T10:51:28Z [[008-build-the-sdd-on-pi-extension-package]] feature/non-functional
+Sam approved §10: performance/security/compliance constraints. Performance — inherits SDD core's 16K-char state injection cap (Theme 11), single-load extension at session_start, idempotent first-run harness copy (HRN-01 pattern). Security — trust-boundary markers preserved unchanged from Claude Code, no XML preprocessor day one (plain markdown + bash scripts only), MCP opt-in via explicit pi-mcp-adapter install, pre-commit enforcement at git layer (deterministic) not pi tool_call (advisory). Compliance — MIT license, no PII collected, no extension telemetry. Section hash: `8042d32bd4fb331852894fc11212c6d8779b94378f4c0c81fa3ab2e62e67f5b6`.
+
+## 2026-05-08T11:13:03Z [[008-build-the-sdd-on-pi-extension-package]] feature/acceptance-criteria
+Sam approved §11: 12 mechanical ACs (AC1-AC12), each with `{verify-by: T-NNN}` annotation. T200-T211 reserved for this feature. Coverage spans §1 personas (AC2/3/4/9/10), §3 stories (AC2/9), §5 approach (AC1/2/3/4/5/6), §7 flows (AC2/4/9), §8 deps (AC10/11), §10 non-functional (AC3/10/11). AC9 is the multi-model discipline regression — captures the 2026-05-08 calculator-add fixture as a cross-model atomic-step rule check. Out-of-scope for ACs (already in §9): other-CLI adapters, parallel waves, specialised subagents. No best-effort or prod-only annotations needed — every AC is mechanically verifiable via T-NNN test fixtures. Section hash: `ef3f39b377c04008c2fbf06f6c1c200497c7879f106c5f88e0ca07509a55bf70`.
+
+## 2026-05-08T12:54:59Z [[008-build-the-sdd-on-pi-extension-package]] feature/wireframe
+Sam approved §13: non-UI wireframe.html generated from v1.2 wireframe-non-ui skeleton. 3-layer architecture diagram (pi.dev host / SDD-on-pi adapter / shared SDD brain), 2 flows (Flow 1: install + first SDD task; Flow 2: multi-model task routing), 3 concrete CLI examples (install + autocomplete, /sdd-status instant zero-LLM, /sdd-next with trust markers). Out-of-scope panel explicitly lists what's NOT shown (Cursor/Aider adapters, parallel waves, subagents, §2 removal). Reviewed by Sam in Chrome before approval. Section hash: `5df2407a7995bd0b0b74ef08e939326e96fd310feba9efb77008ade295d1138c`.
+
+## 2026-05-10T16:05:26Z [[008-build-the-sdd-on-pi-extension-package]] feature/mark-shipped
+SHIPPED. PR #214 ready for merge after 3 CR review cycles (24/25 findings closed; C2-4 MD022 cosmetic deferred per append-only contract on this very file). 218/218 framework tests + 13/13 per-feature tests/task-T200..T212.sh GREEN; all 5 named CI checks GREEN on the post-T212 commits. T212 surfaced the partial-e2e gap between mechanical SHAPE checks (T200-T211) and runtime wiring: manifest declared `dist/sdd-pi.js` but no such file existed, so AC3 (state injection), AC4 (HRN-01 install + worktree-config check), and AC7 (instant zero-LLM /sdd-status) silently no-op'd at pi runtime. Closed by hand-writing a CommonJS extension at `extensions/sdd-pi-extension/dist/sdd-pi.js` (~150 lines, no TS toolchain) — three handlers: `pi.on("context")`, `pi.on("session_start")`, `pi.registerCommand("sdd-status")`. T212 mock-pi probe asserts loadability + handler registration. Mid-SHIP correction landed via test → code → green sequence on top of cycle-2-clean state. The framework's reach now extends past Claude Code: colleagues using GPT-5 (via Codex), Kimi K2 (via NVIDIA Build), or open-weight models can install one npm package (`sdd-pi-adapter`) and run SDD on whatever model pi's `/model` picks. Claude Code SDD continues to work unchanged in parallel. 3 patterns appended to .sdd/patterns.md.
+
+## 2026-05-10T19:40:36Z  [[009-feature-playbook-v2-brief-driven-spec-entry-replaces-3-question-pitch-shape]]  feature/flows-cosmetic-fix
+Cosmetic re-approval of §7 Flows: added language tag (`text`) to the fenced code block at line 177 to satisfy markdownlint MD040 (CR cycle 1 finding #2). No semantic change to flow content — same User/Agent steps, same brief-paste sequence. Re-locked via reapprove.sh.
+
+Hash: ac9f00b45b845603a9ea3661de922cdeca1e031f278d16574f5b078c6be9cec0
+
+## 2026-05-10T19:53:29Z  [[009-feature-playbook-v2-brief-driven-spec-entry-replaces-3-question-pitch-shape]]  feature/proposed-approach-cosmetic-fix
+
+Cosmetic re-approval of §5 proposed-approach: added blank line after the `#### What this approach explicitly is NOT` heading at spec.md L146 to satisfy markdownlint MD022 (CR cycle 2 finding #2). No semantic change to the proposed approach — same 4-PR sequence, same risk register, same alternatives. Re-locked via reapprove.sh.
+
+Hash: 32e423298d46643adf197ad011676d343ebeb8601c06f50cd8b26458d4413621
+
+## 2026-05-10T20:21:08Z  [[009-feature-playbook-v2-brief-driven-spec-entry-replaces-3-question-pitch-shape]]  feature/signoff-steps-cosmetic-fix
+
+Cosmetic re-approval of §12 sign-off: narrowed step 1's pre-fill claim from "§1 + §3-§12" to the actual brief-intake contract scope (§1, §3, §6, §7, §8, §10), with §11/§12/§14 explicitly called out as remaining placeholders (CR cycle 3 finding #2). Aligns sign-off expectation with AC3 and brief-intake.md's documented behaviour. No design change — the implementation contract has always been the 6-section list; the §12 step text was the over-claim.
+
+Hash: e1b1ffa3c1897a1f11e92e6b6733d877389a3b014b8d9bd947fdc4905fc5d99c
+
+## 2026-05-10T20:21:08Z  [[009-feature-playbook-v2-brief-driven-spec-entry-replaces-3-question-pitch-shape]]  feature/plan-decompose-cosmetic-fix
+
+Cosmetic re-approval of §14 plan-decompose: removed "(~2-3 days human pace; AI multiplier applies)" calendar-time estimate from the Total line per CLAUDE.md "no time estimates in hours or days" rule (CR cycle 3 finding #3). Sized in framework-native units only now: "6×S/XS + 5×M = feature-shaped". No change to task list, dependencies, or scope.
+
+Hash: 5edcff324888790bdbc8c3affd392142d30b5f639ca454162c7d3b9e223d6152
+main

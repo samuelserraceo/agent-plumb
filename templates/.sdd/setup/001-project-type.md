@@ -30,6 +30,10 @@ tools.
    one job, no UI.
 7. **Something else** — describe it.
 
+If you're building "internal tool today, SaaS later" — describe it that way.
+The framework can scaffold for the future architecture while keeping MVP scope
+tight to one customer.
+
 Reply with the number, or describe your own.
 
 ## What the agent does with your answer

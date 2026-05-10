@@ -40,6 +40,12 @@ An opt-in Lego brick. Lives at `extensions/<slug>/`. Each contains an `enable.sh
 
 Today: **3 extensions** ship — `playwright/` (production), `sdd-mcp-server/` (production), `playwright-explorer/` (scaffold; agentic logic deferred to v1.0 issue #84).
 
+### Pi extension package
+
+A pi.dev distributable form of SDD's adapter layer. Lives at `extensions/sdd-pi-extension/` in this repo, published to npm as `sdd-pi-adapter`. Has a `package.json#pi` manifest declaring `extensions:` (path to the built JavaScript extension entry) and `prompts:` (path to the slash-command template directory). The extension entry registers handlers for pi.dev's lifecycle events — `context` (pre-LLM state injection), `session_start` (one-time install of `.sdd/` brain into `.pi/sdd/`), `tool_call`/`tool_result` (advisory hooks) — plus instant LLM-free slash-commands via `pi.registerCommand`. Auto-discovered by pi when installed via `pi install npm:sdd-pi-adapter`. A specialised type of [[entity:Extension]] — every Pi extension package is an Extension, but not every Extension is a Pi package (the others are Claude-Code-specific or framework-internal).
+
+Today: **0 ships**. Adds in feature 008.
+
 ### Slash command
 
 A user-facing command body. Lives at `templates/.claude/commands/<name>.md`. Plain Markdown documenting what the command does + the prompt the agent should follow when invoked.
@@ -79,3 +85,5 @@ Same shape pattern as v1.0 `parameters.mcp.semantic_search` and Playwright-explo
 ## How this differs from a downstream user's data-model.md
 
 A downstream user's `data-model.md` lists user-facing entities (e.g. User, Subscription, Order). This file lists the framework's OWN entities — playbook, action, hook, brick, etc. Same shape, different domain.
+
+<!-- F009 (feature-playbook-v2-brief-driven-spec-entry, 2026-05-10) — no entity changes; framework-prose-only redesign. See .sdd/features/009-*/spec.md §6. -->

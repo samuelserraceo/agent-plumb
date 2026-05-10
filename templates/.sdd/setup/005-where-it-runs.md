@@ -22,19 +22,26 @@ the environment variables it asks you to set up.
 1. **Just my laptop / not shipping yet** — prototype, exploration, internal
    demo. No public URL needed. (You can answer this again later when you're
    ready to ship.)
-2. **A public website with a free / cheap option** — Vercel for the frontend,
-   Railway for everything-in-one (frontend + Postgres in one place). Easy to
-   set up; pay only when you grow.
-3. **AWS / Google Cloud / Azure** — your team uses one of these already, or you
+2. **Vercel** — best for frontend-heavy projects (Next.js, static sites).
+   Pairs well with a separate database service. Free tier; pay only when you
+   grow.
+3. **Railway** — closest thing to "deploy a server, get a URL". Native cron
+   jobs. Postgres + Redis live on the same dashboard, no extra signup.
+4. **Fly.io** — global edge with persistent volumes (storage that survives
+   restarts). Often the most cost-effective option for stateful apps that
+   need to be near users.
+5. **Render** — Heroku-shape simple deploys (push code, get a URL). Free tier
+   with auto-sleep (the app pauses when idle to save cost).
+6. **AWS / Google Cloud / Azure** — your team uses one of these already, or you
    need fine control over hosting. Higher complexity; more flexibility.
-4. **Cloudflare Workers / edge** — you want it fast worldwide, run close to
+7. **Cloudflare Workers / edge** — you want it fast worldwide, run close to
    users. Different shape (no long-running servers; everything is a
    short-lived function).
-5. **A private server (your own VPS, Docker, or self-hosted)** — you have a
+8. **A private server (your own VPS, Docker, or self-hosted)** — you have a
    server you control; the agent generates a Dockerfile + deploy notes.
-6. **Not deciding yet** — skip; come back via `/sdd-config` once you've shipped
+9. **Not deciding yet** — skip; come back via `/sdd-config` once you've shipped
    the first feature locally.
-7. **Something else** — describe it.
+10. **Something else** — describe it.
 
 Reply with the number, or describe your own.
 
@@ -43,7 +50,10 @@ Reply with the number, or describe your own.
 | You said | Agent writes to stack.md `## Running services` |
 |---|---|
 | "Laptop / not shipping yet" | `Hosting: local only`. The agent skips deploy-related actions until this question is re-answered. |
-| "Public website (Vercel / Railway)" | Picks Vercel if the project is mostly frontend, Railway if it's backend-heavy or needs Postgres in the same place. Records env-var examples. |
+| "Vercel" | Records `vercel deploy` as the deploy command; assumes serverless or static shape (depending on framework); suggests pairing with a separate Postgres provider. |
+| "Railway" | Records `railway up` as the deploy command; notes Postgres + Redis are available on the same dashboard; native cron supported. |
+| "Fly.io" | Records `fly deploy` as the deploy command; flags persistent-volume support so stateful workloads are fine. |
+| "Render" | Records the render.yaml deploy shape; notes the auto-sleep behaviour so the agent doesn't promise always-on responses on the free tier. |
 | "AWS / GCP / Azure" | Notes the cloud, asks a follow-up about which service (Lambda / EC2 / Cloud Run / ...) since they're each shaped differently. |
 | "Cloudflare Workers" | Records the edge-functions shape; suggests `wrangler` as the deploy command. Notes that Workers can't run long-lived processes — agent will avoid suggesting them. |
 | "Private server" | Adds a Dockerfile target to the project; deploy via `docker push` + ssh restart. |
