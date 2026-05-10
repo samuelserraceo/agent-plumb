@@ -13,7 +13,10 @@
 #   --project <dir>   project root that owns .pi/ (defaults to git root
 #                     or pwd)
 
-set -uo pipefail
+# `-e` is load-bearing: a Python failure inside the heredoc on Line ~49
+# (e.g. invalid JSON, write-permission error) would otherwise still let
+# the success message on Line ~76 print, falsely signalling install OK.
+set -euo pipefail
 
 HERE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SDD_MCP_SERVER="$( cd "$HERE/../../sdd-mcp-server" 2>/dev/null && pwd )/server.py"
