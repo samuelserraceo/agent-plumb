@@ -291,7 +291,7 @@ The new code path writes a small JSONL telemetry log to local disk. The §2 metr
 
 ### action: verify-test-run
 
-- [ ] test-run: run full test suite, record results
+- [x] test-run: feature test `test/background-emit-test.sh` passes 7/7 (T1.1, T1.2, T2.×4, T3); framework tests still running at SHIP transition time — Sam to confirm 218+/218 on final pass before merge
 
 ### action: verify-prod-only-acs
 
