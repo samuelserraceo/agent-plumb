@@ -458,5 +458,49 @@ All §10 mechanical-shape claims have AC coverage. Compliance items (license, no
 **Net effect:** 0 new ACs added (§11 stays hash-locked, no re-approval flow). 4 edge cases folded into existing T-tasks (#1 + #4 → T201, #2 + #3 + #6 → T205, #7 → T200). 4 already covered by AC8/AC4/AC3 + §9 (#5, #8, #9, #10). Same shape as F008's edge-case-sweep.
 
 ### Exit checks
-- [ ] C-spec-acs: ≥1 acceptance criterion exists in §11 {verify-by: C-spec-acs bash-grep} — grep -qE '^- \[[ x]\] AC[0-9]+' "$SECTION_FILE"
-- [ ] C-spec-tasks: ≥1 task in plan-decompose section {verify-by: C-spec-tasks bash-grep} — grep -qE '^- \[[ x]\] T[0-9]+' "$SECTION_FILE"
+- [x] C-spec-acs: ≥1 acceptance criterion exists in §11 {verify-by: C-spec-acs bash-grep} — grep -qE '^- \[[ x]\] AC[0-9]+' "$SECTION_FILE"
+- [x] C-spec-tasks: ≥1 task in plan-decompose section {verify-by: C-spec-tasks bash-grep} — grep -qE '^- \[[ x]\] T[0-9]+' "$SECTION_FILE"
+
+## PHASE: BUILD
+
+### action: run-mode-chosen
+
+- [x] mode: Shell Ralph (headless) — Sam runs ./scripts/ralph.sh in a separate terminal; each task is a fresh Claude invocation. Best for the 36 atomic commits of T200-T211 (12 tasks × 3 steps each: test, code, green). Matches F008's run mode; works well for sequential BUILD where context continuity between tasks doesn't matter and the orchestrator (this conversation) stays free for SPEC/SHIP coordination.
+
+**Run mode:** Shell Ralph (headless)
+
+### action: build-task
+
+(driven by §14 tasks T200-T211 — each task lands as one commit; ralph.sh handles dispatch, atomic-step doctrine enforced per-iteration via the pre-commit hook chain)
+
+### Exit checks
+
+- [ ] C-build-tasks-green: T200-T211 all GREEN; framework tests pass {verify-by: verify-stage.sh}
+
+## PHASE: SHIP
+
+### action: verify-test-run
+
+- [ ] run-tests: run-tests pass
+
+### action: learn
+
+- [ ] summary: one-paragraph plain-English summary of what shipped, why
+- [ ] lessons: append patterns to .sdd/patterns.md (lessons learned during SPEC/BUILD/SHIP)
+
+### action: push-pr
+
+- [ ] push-and-open: push the branch + open a PR
+
+### action: verify-ci-green
+
+- [ ] ci: all CI checks GREEN on the PR
+
+### action: mark-shipped
+
+- [ ] shipped: INDEX.md updated, .shipped marker written, decisions.md appended
+
+### Exit checks
+
+- [ ] C-ship-pr-url: PR URL recorded in INDEX.md Shipped section {verify-by: verify-stage.sh}
+- [ ] C-ship-marked: .shipped marker file exists in feature folder {verify-by: verify-stage.sh}
