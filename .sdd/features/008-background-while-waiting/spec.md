@@ -267,7 +267,9 @@ The new code path writes a small JSONL telemetry log to local disk. The §2 metr
 
 ### action: run-mode-chosen
 
-- [ ] mode: pick run mode (step-by-step | checkpoint-every-5 | full-autonomous | shell-Ralph)
+- [x] mode: full-autonomous — Sam's default for non-technical-user dogfooding (per `feedback_full_autonomous_build.md`); agent loops test→code→green per task and halts only on hard halt-triggers from CLAUDE.md
+
+**Run mode:** full-autonomous
 
 ### action: build-task
 
