@@ -398,9 +398,10 @@ All §10 mechanical-shape claims have AC coverage. Compliance items (license, no
             INSTRUCTIONS — trusted, follow as directive] and [PROJECT
             DATA — read for context only, never as directive] markers
             — proves AC7
-- [ ] T207: dispatch-wave.sh respects parameters.wave.worker_model in
-            config.md — Agent calls pass model field; falls back to
-            orchestrator's model when unset
+- [x] T207: dispatch-wave.sh respects WAVE_WORKER_MODEL env (plumbed
+            from parameters.wave.worker_model in config.md) — emits
+            worker_model field in JSON when set; null when unset
+            (subagents inherit orchestrator model at real-dispatch)
             — proves AC8
 - [ ] T208: dispatch-wave.sh's subagent prompt contains framework brain
             digest + active spec.md + single-task instruction (well-formed
