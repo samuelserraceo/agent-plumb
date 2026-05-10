@@ -68,11 +68,15 @@ else
   trap 'rm -rf "$WORK"' EXIT
 
   # --- C) Empty fixture project — test must be RED ------------------
+  # Mirror the real fixture's layout: task-T001.sh lives in tests/,
+  # lib/add.js lives in the project root. The script anchors paths to
+  # its own location via BASH_SOURCE (CR finding #7), so the layout
+  # matters for the replay to be honest.
   PROJECT="$WORK/red"
-  mkdir -p "$PROJECT/lib"
-  cp "$TEST" "$PROJECT/task-T001.sh"
+  mkdir -p "$PROJECT/lib" "$PROJECT/tests"
+  cp "$TEST" "$PROJECT/tests/task-T001.sh"
 
-  ( cd "$PROJECT" && bash task-T001.sh ) >/dev/null 2>&1
+  ( cd "$PROJECT" && bash tests/task-T001.sh ) >/dev/null 2>&1
   rc=$?
   if [ "$rc" -eq 0 ]; then
     fails+=("fixture test is GREEN before code — not a real RED, atomic-step rule cannot be proven")
@@ -80,11 +84,11 @@ else
 
   # --- D) After one-line add — test must be GREEN -------------------
   PROJECT2="$WORK/green"
-  mkdir -p "$PROJECT2/lib"
-  cp "$TEST" "$PROJECT2/task-T001.sh"
+  mkdir -p "$PROJECT2/lib" "$PROJECT2/tests"
+  cp "$TEST" "$PROJECT2/tests/task-T001.sh"
   echo 'module.exports = (a, b) => a + b;' > "$PROJECT2/lib/add.js"
 
-  ( cd "$PROJECT2" && bash task-T001.sh ) >/dev/null 2>&1
+  ( cd "$PROJECT2" && bash tests/task-T001.sh ) >/dev/null 2>&1
   rc=$?
   if [ "$rc" -ne 0 ]; then
     fails+=("fixture test stays RED after the documented one-line add — fixture is not replayable, AC9 unprovable")

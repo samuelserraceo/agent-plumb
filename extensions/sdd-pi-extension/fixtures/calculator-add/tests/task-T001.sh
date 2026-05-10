@@ -5,7 +5,11 @@
 
 set -uo pipefail
 
-ADD="lib/add.js"
+# Anchor paths to the script's own location so the test works regardless
+# of where the operator runs it from (CR finding #7).
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd -- "$SCRIPT_DIR/.." && pwd)"
+ADD="$ROOT_DIR/lib/add.js"
 
 if [ ! -f "$ADD" ]; then
   echo "FAIL: T001 — $ADD missing"
@@ -17,7 +21,7 @@ if ! command -v node >/dev/null 2>&1; then
   exit 1
 fi
 
-out="$(node -e 'const add = require("./lib/add.js"); console.log(add(2, 3))' 2>&1)"
+out="$(node -e 'const add = require(process.argv[1]); console.log(add(2, 3))' "$ADD" 2>&1)"
 rc=$?
 if [ "$rc" -ne 0 ]; then
   echo "FAIL: T001 — node failed loading $ADD: $out"
