@@ -67,15 +67,15 @@ fi
 
 if [ -n "$lockfile" ] && [ -e "$lockfile" ]; then
   echo "[dispatch-wave] another wave is already in flight (lockfile at $lockfile)" >&2
-  echo "[dispatch-wave] wait for it to finish, or `pause` to abandon and clear the lock" >&2
+  echo "[dispatch-wave] wait for it to finish, or pause to abandon and clear the lock" >&2
   exit 3
 fi
 
 # ── parse plan-decompose for [WAVE: N] tasks ──────────────────────────
 # Mirror the regex next-action.sh uses, scoped to the
 # `### action: plan-decompose` section.
-tasks_json="$(python3 - "$spec_path" "$wave_n" <<'PY'
-import json, re, sys
+tasks_json="$(WAVE_MOCK_RESULTS="${WAVE_MOCK_RESULTS:-}" python3 - "$spec_path" "$wave_n" <<'PY'
+import json, os, re, sys
 
 spec_path, wave_n_str = sys.argv[1], sys.argv[2]
 wave_n = int(wave_n_str)
@@ -106,20 +106,37 @@ for ln in lines:
     if w == wave_n:
         tasks.append(t_id)
 
-# Always emit on stdout — empty wave is a valid no-op result (folded EC #4).
+# Result-shape generation. T205-T208 progressively build this out:
+# - T205 (current): WAVE_MOCK_RESULTS env carries pre-baked per-task
+#   PASS/FAIL/diag entries. Real Agent dispatch lands in T206-T208
+#   via incremental additions.
+mock = os.environ.get("WAVE_MOCK_RESULTS", "").strip()
+results = []
+mode = "stub"
+if mock:
+    try:
+        results = json.loads(mock)
+    except Exception as e:
+        print(f"[dispatch-wave] invalid WAVE_MOCK_RESULTS JSON: {e}", file=sys.stderr)
+        sys.exit(2)
+    mode = "dispatched"
+
+# Empty wave → no-op shape-only result (folded EC #4).
 print(json.dumps({
     "wave": wave_n,
     "tasks": tasks,
-    "results": [],  # populated by real dispatch in T204-T208
-    "mode": "stub",  # T201 ships shape-only; flips to "dispatched" in T204
+    "results": results,
+    "mode": mode,
 }))
+
+# Exit code: non-zero if any wave-task FAILed; 0 otherwise. The
+# orchestrator inspects the report on non-zero rc and surfaces the
+# partial-wave breakdown to Sam per §7 Flow 2.
+any_fail = any((r or {}).get("status") == "FAIL" for r in results)
+sys.exit(1 if any_fail else 0)
 PY
 )"
 rc=$?
 
-if [ "$rc" -ne 0 ]; then
-  exit "$rc"
-fi
-
 printf '%s\n' "$tasks_json"
-exit 0
+exit "$rc"
