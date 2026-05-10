@@ -4,11 +4,12 @@ playbook: feature
 
 # feature playbook v2 — brief-driven SPEC entry replaces 3-question Pitch shape
 
-[PHASE: SPEC]
+[PHASE: BUILD]
 
-**Active blocker:** SPEC sections all filled — ready for phase advance to BUILD (verify-stage will assert)
+**Active blocker:** §14 (BUILD: T01 brief-intake action)
 
 ## PHASE: SPEC
+
 
 ### action: problem
 
@@ -332,3 +333,19 @@ Total: 6×S/XS + 5×M = ~feature-shaped (~2-3 days human pace; AI multiplier app
 ### Exit checks
 - [ ] C-spec-acs: ≥1 acceptance criterion exists in §11 {verify-by: C-spec-acs bash-grep} — grep -qE '^- \[[ x]\] AC[0-9]+' "$SECTION_FILE"
 - [ ] C-spec-tasks: ≥1 task in plan-decompose section {verify-by: C-spec-tasks bash-grep} — grep -qE '^- \[[ x]\] T[0-9]+' "$SECTION_FILE"
+
+## PHASE: BUILD
+
+### action: run-mode-chosen
+
+- [ ] mode: pick BUILD run mode (full-autonomous / checkpoint-every-N / shell-ralph / interactive)
+
+**Run mode:** _(to be chosen at first /next in BUILD)_
+
+### action: build-task
+
+(driven by §14 tasks T01-T11 — each task lands as one commit; test-first per CLAUDE.md)
+
+### exit_checks
+
+- [ ] C-build-tasks-green: every task is GREEN (test passing, code committed) — `grep -cE '^- \[x\] T[0-9]+' "$SECTION_FILE"` matches the count of T-rows in §14

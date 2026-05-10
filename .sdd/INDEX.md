@@ -2,13 +2,13 @@
 
 **Active:** features/009-feature-playbook-v2-brief-driven-spec-entry-replaces-3-question-pitch-shape
 **Playbook:** feature
-**Active blocker:** SPEC sections all filled — ready for phase advance to BUILD
+**Active blocker:** §14 (BUILD: T01 brief-intake action)
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
 
 ## In flight
-- features/009-feature-playbook-v2-brief-driven-spec-entry-replaces-3-question-pitch-shape — feature playbook v2 — brief-driven SPEC entry replaces 3-question Pitch shape (PHASE: SPEC)
+- features/009-feature-playbook-v2-brief-driven-spec-entry-replaces-3-question-pitch-shape — feature playbook v2 — brief-driven SPEC entry replaces 3-question Pitch shape (PHASE: BUILD)
 
 
 

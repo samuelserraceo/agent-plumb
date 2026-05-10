@@ -358,3 +358,9 @@ AUTONOMOUS DRAFT BATCH (Sam away). §12 sign-off: 3 manual smokes (brief-paste E
 §13 hash: e680716ea0613223e38ea67f6d8ac146aff37e9ed2e3c8fb09bccb2826dfd1ae
 §14 hash: 6c3bc089e9a3ff20a0255e57789ddf11d2eea73c243235fae9d24dedeb02d64d
 §15 hash: 2e71ffe58a4a5aa18311d223bad385793f650b01925b9c1ae95b26a13f7a7ec8
+
+## 2026-05-10T17:02:26Z  [[009-feature-playbook-v2-brief-driven-spec-entry-replaces-3-question-pitch-shape]]  feature/phase-advance-SPEC-to-BUILD
+
+PHASE ADVANCE: SPEC → BUILD. Sam re-approved all 5 AUTONOMOUS DRAFT sections (§5 proposed-approach, §6 data-contract, §9 out-of-scope, §11 acceptance-criteria, §14 plan-decompose) at his return. verification.json now has 10 approved_sections entries + both C-spec-acs and C-spec-tasks pass. F009 SPEC is locked.
+
+Next: BUILD T01 (brief-intake action prose drafted as the first user-facing surface change).
