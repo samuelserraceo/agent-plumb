@@ -100,7 +100,7 @@ Trade-offs:
 - ✅ Uses Claude Code's existing Agent tool natively; no new subagent infra.
 - ✅ Audit trail preserved (each wave-task is its own commit; only the order between sibling wave-tasks is non-deterministic — and that order wasn't causally meaningful in the first place).
 - ⚠️ Requires manual annotation in plan-decompose; agent could miss a parallelism opportunity (acceptable — under-parallelising is safer than over-parallelising).
-- ⚠️ Wave-tasks editing the same spec.md row → conflict; mitigated by each wave-task only touching its own task row (unchecked-state token for the wave-task's `T-NNN`; different rows, standard 3-way merge handles it cleanly).
+- ⚠️ Wave-tasks editing spec.md concurrently → would conflict because adjacent row diff context overlaps. Resolved by the architectural model T203 surfaced: wave-task subagents commit only their test+code files (disjoint sets); the orchestrator commits a single spec.md edit flipping every wave-task row at once after the wave returns. Git only sees one spec.md edit per wave — no parallel edits, no merge needed.
 
 **Approach B — Auto-detect wave membership (rejected).** Framework analyses each BUILD task's test file + likely-touched files; tasks with no overlap auto-form a wave; `/next` computes the independence graph and dispatches automatically. Zero-effort for the developer, but introspection is fragile (BUILD code can touch files the test fixture didn't predict, leading to silent races), violates Foundation 3 (`never-assume` — the framework guesses based on a heuristic), and adds more code + more failure modes.
 
@@ -136,7 +136,7 @@ Trade-offs:
 
 **Edge cases at the data layer (asked-and-answered):**
 
-1. **Two wave-tasks in the same wave edit the same line in spec.md.** Conflict. Mitigation: each subagent only touches its own task row (different lines = standard 3-way merge handles it). Documented in §7 flows.
+1. **Two wave-tasks in the same wave editing spec.md concurrently.** Would conflict at git's diff-context level. Resolved architecturally (T203): wave-task subagents commit only their test + code files (disjoint sets); the orchestrator commits a single spec.md edit after the wave returns that flips every wave-task row at once. Git sees one spec.md edit per wave instead of N concurrent ones. Documented in §7 flows.
 2. **A wave-task's commit fails pre-commit hooks** (anti-theatre, atomic-step rule, test-first). That wave-task's commit doesn't land; orchestrator detects via failed Agent return value; the wave finishes partially-done; orchestrator surfaces the gap to Sam (retry just that task / abandon the wave / ship what's there).
 3. **`[WAVE: N]` annotation on a task that has hidden dependencies on a non-wave-N task** (e.g. T201 marked WAVE 1 but secretly relies on T200's output). No automatic dependency-graph check in v1 — behaviour is "wave dispatches, task likely fails because its dependency isn't there." Mitigation: §7 flows documents that adopters verify task independence before annotating; the BUILD plan-decompose action's prose can ask "are these truly independent?" as a pre-flight check.
 4. **An adopter writes `[WAVE: 1]` on tasks in different `### action: plan-decompose` blocks** (e.g. tasks living in two separate features somehow). Not supported in v1; one wave-N namespace is scoped to one plan-decompose section. Multi-block waves deferred.
@@ -165,10 +165,13 @@ Trigger: `/next` is invoked when the active spec.md has BUILD tasks marked `[WAV
      Agent("ralph BUILD T200") + Agent("ralph BUILD T201") + Agent("ralph BUILD T202")
    Each agent gets: fresh ~0-turn context + the SDD framework brain + its single
    BUILD task prompt + the model selected by pi/Claude Code's /model.
-4. Each agent runs the existing test → code → green sequence as 3 atomic commits
-   on the same branch. Pre-commit hooks (anti-theatre, atomic-step, test-first)
-   fire on each commit independently. Each agent only edits its own task row +
-   its own task files (test, code).
+4. Each agent runs the existing test → code sequence on its OWN test + code
+   files (disjoint from sibling wave-tasks). Wave-task agents do NOT touch
+   spec.md. Pre-commit hooks (anti-theatre, atomic-step, test-first) fire on
+   each commit independently.
+5. After all wave-tasks land, the orchestrator commits ONE spec.md edit that
+   flips every wave-task row from `[ ]` to `[x]` at once (the "wave-green"
+   step). Git sees one spec.md change per wave, not N concurrent edits.
 5. dispatch-wave.sh awaits all 3 Agent calls (synchronous wait, no polling).
 6. When all return success, dispatch-wave.sh exits 0 and /next reports
    "wave 1 done: T200/T201/T202 GREEN (9 commits)".
