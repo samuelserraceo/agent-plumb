@@ -33,6 +33,11 @@
       "path": ".sdd/scripts/check-setup-answer.sh",
       "trust": "framework"
     },
+    "dispatch-wave.sh": {
+      "expected_sha256": "ca90e78bc479c2a7d613d222097627a7bad36e8206392e1565b002b7b9309231",
+      "path": ".sdd/scripts/dispatch-wave.sh",
+      "trust": "framework"
+    },
     "hash-section.sh": {
       "expected_sha256": "f042a987b7386d435b521d364a36603323edda611dc885ab9694d4ace95158ac",
       "path": ".sdd/scripts/hash-section.sh",
