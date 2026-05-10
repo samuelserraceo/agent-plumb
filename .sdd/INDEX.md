@@ -1,8 +1,8 @@
 # SDD framework — INDEX
 
-**Active:** (none — F009 brief-driven + 009-background-while-waiting both shipped 2026-05-10; pick next: v1.6 PR-B / PR-C / PR-D, or one from ## Ideas)
+**Active:** _(none)_
 **Playbook:** feature
-**Active blocker:** (no active feature)
+**Active blocker:** _(no active feature — F009 brief-driven + 009-background-while-waiting both shipped 2026-05-10; pick next: v1.6 PR-B / PR-C / PR-D, or one from ## Ideas below)_
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
