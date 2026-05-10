@@ -248,8 +248,24 @@ Postcondition: Same correctness as Flow 1, lower cost + faster wall-clock. The o
 
 ### action: out-of-scope
 
-- [ ] list: What are we explicitly NOT building this round? 1-5 bullets, each: name + reason. Empty is fine.
-- [ ] approval: user_approves
+- [x] list: 6 explicit deferrals — (1) auto-detect wave membership (Approach B from §5); (2) `always-subagent` dispatch (Approach C from §5); (3) multi-block wave namespaces; (4) auto-retry on transient wave-task failures; (5) wave-level cost dashboard/aggregation; (6) idea 003 specialised subagents (separate feature, pairs nicely with 010).
+- [x] approval: Sam approved 2026-05-10.
+
+**Out of scope — 6 explicit deferrals:**
+
+1. **Auto-detect wave membership (Approach B from §5).** Explicitly rejected as the v1 default; adopters use manual `[WAVE: N]` markers. If demand surfaces later, can ship as a separate "auto-wave-detect" feature on top of 010's foundation.
+
+2. **`Always-subagent` dispatch (Approach C from §5).** Universal subagent dispatch (every BUILD task, even sequential) deferred. Manual marker is the v1 path. The Approach C shape could ship later as an opt-in `wave_all: true` config flag if adopters want it.
+
+3. **Multi-block wave namespaces.** Current scope: one wave-N namespace per `### action: plan-decompose` section. Cross-block waves (e.g. tasks in two separate plan-decompose blocks sharing `[WAVE: 1]`) deferred — gets confusing fast and no current use case.
+
+4. **Auto-retry of failed wave-tasks.** Flow 2 (§7) surfaces partial-wave to Sam who picks retry/abandon/pause; auto-retry on transient failures (network blips, rate limits) deferred — adopters retry manually for v1.
+
+5. **Wave-level cost dashboard / aggregation.** Best-effort per-Agent cost reporting (§7 Flow 3) ships in v1; aggregation across waves, persistence to disk, "show me last week's total wave cost" deferred to a follow-up cost-observability feature.
+
+6. **Idea 003 (specialised subagents).** Separate feature — pairs nicely with 010 (specialised wave-task subagents per role: researcher / executor / verifier) but ships independently. Once 010 + idea 003 both ship, the role-specialised subagent shapes can dispatch as wave-tasks too.
+
+Two implicit out-of-scope items NOT listed above (already covered elsewhere): a `Wave` entity in `data-model.md` (§6 deferred per YAGNI) and other-harness adapters beyond Claude Code + pi.dev (F008's §9 deferral still applies framework-wide).
 
 ### action: non-functional
 
