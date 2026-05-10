@@ -107,7 +107,41 @@ Field meanings:
 
 ### action: flows
 
-- [ ] flows: draft 1-3 critical flows, each referencing the user story it implements
+- [x] flows: 3 critical flows — wait-window-enter→action-chosen (Story 1), pre-fetch-next-feature (Story 2), draft-pr-description (Story 3)
+
+**Flow 1 — Wait window enters → background action chosen** (Story 1)
+
+1. Agent runs `git push` or `gh pr create` — kicks off CR/CI
+2. Agent's existing CR-poll loop enters wait
+3. CR-poll loop calls `.sdd/scripts/background-while-waiting.sh` with `wait_type` as arg
+4. Script emits a marker line to `.sdd/.cache/background-emit.log` (`action_chosen: pending` initially), then prints safe-set candidates
+5. Agent reads candidates, picks one (or `none-skipped` if context-inappropriate)
+6. Agent does the action
+7. Marker line updated with actual `action_chosen`
+8. Wait window ends; agent resumes normal flow
+
+**Flow 2 — Pre-fetch next-feature context** (Story 2)
+
+1. During wait window (Flow 1 step 5), agent picks `pre-fetch-next-feature`
+2. Reads `.sdd/INDEX.md` `## In flight` for the next feature (if any)
+3. Reads that feature's spec.md into working context
+4. Re-reads patterns.md / decisions.md / data-model.md against the new feature's lens
+5. Marker line: `action_chosen: pre-fetch-next-feature`
+6. When current PR merges and `/start` runs the next, corpus is warm
+
+**Flow 3 — Draft PR description while CR runs** (Story 3)
+
+1. During wait window (Flow 1 step 5), agent picks `draft-pr-description`
+2. Reads current feature's spec.md + recent commit log
+3. Drafts PR title + body summarising what changed and why
+4. Saves to `.sdd/<feature>/pr-description.md` (per-feature, gitignored, rebuilt on each push)
+5. Marker line: `action_chosen: draft-pr-description`
+6. When CR clears and `/ship` runs, it reads the cached description and submits
+
+**Out of §7:**
+
+- Actual `gh pr create --body-file` integration — that is a build task, not a flow concern
+- Speculative CR-response drafting — judgement-required set, separate flow when added
 
 ### action: dependencies
 
