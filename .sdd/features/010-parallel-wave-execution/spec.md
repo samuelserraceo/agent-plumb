@@ -339,7 +339,19 @@ All §10 mechanical-shape claims have AC coverage. Compliance items (license, no
 
 ### action: signoff-steps
 
-- [ ] manual-steps: What manual smoke tests do YOU need to do before SHIP, beyond the automated tests? 1-5 bullets.
+- [x] manual-steps: 5 manual checks before SHIP — (1) fresh-install smoke (AC1+AC2 surface); (2) real-session end-to-end wave (AC12 PROD-ONLY); (3) failure-mode wave + AC9 prompt-shape eye-check (AC6+AC9); (4) multi-model wave on both harnesses (AC11 PROD-ONLY); (5) orchestrator turn-count fixture (AC10 best-effort, recorded for future regression).
+
+**Manual smoke tests Sam will run before SHIP (beyond T200-T211):**
+
+1. **Fresh-install dry-run smoke** *(covers AC1 + AC2)*. On a clean SDD project (or via `sdd-migrate.sh`): verify `.sdd/scripts/dispatch-wave.sh` is present + executable, scaffold a fixture feature with `[WAVE: 1]` markers on 3 BUILD tasks, run `/next`, confirm the framework returns a `WAVE-DISPATCH` tag with the right task list. Catches manifest/migrate issues that the per-feature mechanical tests miss.
+
+2. **End-to-end real-session wave** *(covers AC12 PROD-ONLY)*. In a real Claude Code session: scaffold a fixture feature with 3 wave-tasks, run `/next`, observe 3 parallel Agent calls dispatch, verify 9 atomic commits land in non-deterministic order on the branch, verify all 3 task rows flip to GREEN in spec.md. The whole point of the feature, in motion.
+
+3. **Failure-mode wave** *(covers AC6 + AC9 named-eye)*. Set up a fixture wave where one task's test contains a guard-shaped sentence without a `{verify-by}` annotation (intentional bait for the anti-theatre hook). Run the wave. Verify the partial-wave report: 2 PASS, 1 FAIL, with the anti-theatre lint diagnostic in the FAIL message. Eye-check the dispatched prompt for the failing task — does it contain (a) the framework brain digest, (b) the active spec.md, (c) the single-task BUILD instruction? Closes the AC9 named-eye step at the same time.
+
+4. **Multi-model wave** *(covers AC11 PROD-ONLY across both harnesses)*. Set `wave_worker_model: "haiku"` (or pi.dev equivalent) in `.sdd/config.md`. Run a 3-task wave once on Claude Code, once on pi.dev. On Claude Code, verify session-log model-field shows Haiku for the wave-tasks while the orchestrator stays on Sonnet. On pi.dev, verify the equivalent SDK exposes parallel sub-agent dispatch and the same fixture lands the same partial-wave report shape.
+
+5. **Orchestrator turn-count fixture** *(covers AC10 best-effort)*. Set up a fixture feature with 5 BUILD-phase waves of 6 tasks each (30 tasks total). Run the whole BUILD phase in one recorded Claude Code session. After completion, count orchestrator transcript turns: confirm growth is ~10 (5 dispatch + 5 report-back), not ~30 (linear baseline). Save the recording as the AC10 reference fixture for future regression checks.
 
 ### action: wireframe
 
