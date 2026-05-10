@@ -4,9 +4,9 @@ playbook: feature
 
 # parallel wave execution
 
-[PHASE: SPEC]
+[PHASE: BUILD]
 
-**Active blocker:** §1 (first action: problem)
+**Active blocker:** §14 (BUILD action: run-mode-chosen)
 
 ## PHASE: SPEC
 

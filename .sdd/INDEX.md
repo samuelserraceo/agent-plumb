@@ -2,7 +2,7 @@
 
 **Active:** features/010-parallel-wave-execution
 **Playbook:** feature
-**Active blocker:** §1 (first action: problem)
+**Active blocker:** §14 (BUILD action: run-mode-chosen)
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
