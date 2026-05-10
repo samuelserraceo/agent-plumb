@@ -385,9 +385,10 @@ All §10 mechanical-shape claims have AC coverage. Compliance items (license, no
             incorrect (adjacent rows have overlapping diff context).
             — proves AC4 (with revised architectural contract; §6 EC#9
             + §7 Flow 1 wording to be updated at SHIP)
-- [ ] T204: dispatch-wave.sh subagent commits trigger the same git
-            pre-commit chain (anti-theatre, atomic-step, test-first,
-            append-only) — captured pre-commit output during fixture dispatch
+- [x] T204: dispatch-wave.sh has no hook-bypass tokens (--no-verify,
+            core.hooksPath=, GIT_HOOKS_PATH=); standard git commit
+            fires pre-commit on a sentinel fixture; real subagent
+            chain-firing verified at SHIP via AC12 PROD-ONLY walk
             — proves AC5
 - [ ] T205: dispatch-wave.sh emits partial-wave report on a failed
             wave-task (mocked Agent return) — exits non-zero, structured
