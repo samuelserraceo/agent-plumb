@@ -43,6 +43,11 @@
       "path": ".sdd/scripts/install-ci-workflow.sh",
       "trust": "framework"
     },
+    "install-mcp-server.sh": {
+      "expected_sha256": "76815e3c64299386ddff0bf1e341c01579cf6f538fe6aa8b989a1a70ece3f62e",
+      "path": ".sdd/scripts/install-mcp-server.sh",
+      "trust": "framework"
+    },
     "load-playbook.sh": {
       "expected_sha256": "a8b266865085ebb6c4e8ee019f19f0419f8dc544ec2a1c636a52a7d0a7db15cf",
       "path": ".sdd/scripts/load-playbook.sh",
