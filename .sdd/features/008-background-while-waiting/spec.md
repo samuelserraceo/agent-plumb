@@ -79,7 +79,31 @@ Why this answers the brief:
 
 ### action: data-contract
 
-- [ ] approval: draft the data contract, iterate with the user, sync data-model.md, get approval
+- [x] approval: no new data-model.md entries — single new internal telemetry log (.sdd/.cache/background-emit.log, JSONL, gitignored)
+
+**Recommended: no new data-model.md entries.**
+
+One new data structure: `.sdd/.cache/background-emit.log` — append-only JSONL telemetry, gitignored, per-session, consumed by the §2 metric counter tooling. Internal telemetry (similar shape to existing hook logs and lock files in `.sdd/.cache/`). data-model.md tracks user-visible and cross-feature shared entities; an internal telemetry log doesn't belong there.
+
+**Log schema (one JSON object per line):**
+
+```
+{"ts": "<ISO-8601>", "session_id": "<8-char-hex>", "wait_type": "cr-poll|ci-poll|other", "action_chosen": "re-read-corpus|pre-fetch-next-feature|draft-pr-description|draft-commit-msgs|speculative-cr-response|none-skipped"}
+```
+
+Field meanings:
+
+- `ts` — timestamp at emit, ISO-8601 UTC, chronologically sortable
+- `session_id` — 8 hex chars, generated per session — lets per-session counts compute
+- `wait_type` — the trigger that fired (initial set: cr-poll, ci-poll, other)
+- `action_chosen` — what the agent did during that wait window. The §2 metric counts rows where `action_chosen != "none-skipped"`
+
+**Out of §6 scope:**
+
+- New user-facing entities
+- Changes to existing entities
+- Data migration
+- Multi-row queries (the metric is grep-and-count over the log file)
 
 ### action: flows
 

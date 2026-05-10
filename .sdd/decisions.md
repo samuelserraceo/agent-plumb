@@ -313,3 +313,6 @@ SHIPPED. Channel B (project-template tree) update flow now mechanical via `bash 
 
 ## 2026-05-10T17:30:00Z [[008-background-while-waiting]] feature/proposed-approach
 Sam approved §5: Approach B — doctrine + instrumentation. CLAUDE.md doctrine (low-risk / judgement-required / out-of-scope sets) shipped to both `templates/CLAUDE.md` and `.sdd/CLAUDE.md`. New `.sdd/scripts/background-while-waiting.sh` triggers on CR-poll loop wait-window entry, emits a marker line to `.sdd/.cache/background-emit.log` for the §2 metric counter, and prints safe-set candidates for the agent to consider. Alternatives A (doctrine-only — can't verify §2 metric) and C (A+B+parallel-feature integration — premature on undefined #42 behaviour) deferred.
+
+## 2026-05-10T17:45:00Z [[008-background-while-waiting]] feature/data-contract
+Sam approved §6: no new data-model.md entries. Single new internal telemetry log at `.sdd/.cache/background-emit.log` — append-only JSONL, gitignored, per-session, consumed by the §2 metric counter. Schema: `{ts, session_id, wait_type, action_chosen}`. Internal telemetry (same shape as existing hook logs in `.sdd/.cache/`); not a user-visible entity, so doesn't belong in data-model.md.
