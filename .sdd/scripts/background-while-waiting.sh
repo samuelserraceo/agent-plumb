@@ -147,7 +147,15 @@ fi
 
 # Build the marker line.
 ts=$(iso_ts)
+if [ -z "$ts" ]; then
+  echo "background-while-waiting: failed to generate timestamp (date and python3 both unavailable)" >&2
+  exit 3
+fi
 line=$(python3 -c "import json,sys; print(json.dumps({'ts': sys.argv[1], 'session_id': sys.argv[2], 'wait_type': sys.argv[3], 'action_chosen': 'pending'}))" "$ts" "$SDD_SESSION_ID" "$wait_type")
+if [ -z "$line" ]; then
+  echo "background-while-waiting: failed to generate marker line (python3 json.dumps failure)" >&2
+  exit 3
+fi
 
 # Append to log.
 if ! printf '%s\n' "$line" >> "$LOG" 2>/dev/null; then
