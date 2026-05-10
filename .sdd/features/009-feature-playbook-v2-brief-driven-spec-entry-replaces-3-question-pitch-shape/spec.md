@@ -276,7 +276,7 @@ Explicitly NOT in this redesign (filed separately or deferred):
 
 3 manual smoke tests Sam runs before merging the v1.6 anchor PRs:
 
-1. **Brief-paste end-to-end on a fresh feature** — start F010 (or any new framework feature) post-PR-A merge, paste a real brief from `.sdd/ideas/2026-05-08-brief-template-v2.md`, walk through to BUILD entry. Verify §1 + §3-§12 are pre-filled with brief-derived content; only 3-5 follow-up questions asked.
+1. **Brief-paste end-to-end on a fresh feature** — start F010 (or any new framework feature) post-PR-A merge, paste a real brief from `.sdd/ideas/2026-05-08-brief-template-v2.md`, walk through to BUILD entry. Verify the 6 brief-intake-pre-filled sections (§1, §3, §6, §7, §8, §10) all show brief-derived content; verify §11 ACs, §12 sign-off, §14 plan-decompose stay as placeholders pending the standard ceremony; only 3-5 follow-up questions asked.
 2. **Backward-compat on F009 itself** — re-run /next on F009's branch (post-PR-A); verify it still walks the OLD `problem` action (not brief-intake) since F009 was started pre-PR-A.
 3. **Lint check** — `bash .sdd/scripts/lint-action-prose.sh` and `bash test/run-framework-test.sh` pass on the post-PR-D state.
 
@@ -322,7 +322,7 @@ Tasks 1:1 with ACs from §11, plus 1 final integration task:
 - T10: XS (prose addition)
 - T11: M (integration smoke harness)
 
-Total: 6×S/XS + 5×M = ~feature-shaped (~2-3 days human pace; AI multiplier applies).
+Total: 6×S/XS + 5×M = feature-shaped.
 
 **Status:** AUTONOMOUS DRAFT. Sam re-approves on return.
 

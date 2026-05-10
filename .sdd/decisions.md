@@ -402,3 +402,15 @@ Hash: ac9f00b45b845603a9ea3661de922cdeca1e031f278d16574f5b078c6be9cec0
 Cosmetic re-approval of §5 proposed-approach: added blank line after the `#### What this approach explicitly is NOT` heading at spec.md L146 to satisfy markdownlint MD022 (CR cycle 2 finding #2). No semantic change to the proposed approach — same 4-PR sequence, same risk register, same alternatives. Re-locked via reapprove.sh.
 
 Hash: 32e423298d46643adf197ad011676d343ebeb8601c06f50cd8b26458d4413621
+
+## 2026-05-10T20:21:08Z  [[009-feature-playbook-v2-brief-driven-spec-entry-replaces-3-question-pitch-shape]]  feature/signoff-steps-cosmetic-fix
+
+Cosmetic re-approval of §12 sign-off: narrowed step 1's pre-fill claim from "§1 + §3-§12" to the actual brief-intake contract scope (§1, §3, §6, §7, §8, §10), with §11/§12/§14 explicitly called out as remaining placeholders (CR cycle 3 finding #2). Aligns sign-off expectation with AC3 and brief-intake.md's documented behaviour. No design change — the implementation contract has always been the 6-section list; the §12 step text was the over-claim.
+
+Hash: e1b1ffa3c1897a1f11e92e6b6733d877389a3b014b8d9bd947fdc4905fc5d99c
+
+## 2026-05-10T20:21:08Z  [[009-feature-playbook-v2-brief-driven-spec-entry-replaces-3-question-pitch-shape]]  feature/plan-decompose-cosmetic-fix
+
+Cosmetic re-approval of §14 plan-decompose: removed "(~2-3 days human pace; AI multiplier applies)" calendar-time estimate from the Total line per CLAUDE.md "no time estimates in hours or days" rule (CR cycle 3 finding #3). Sized in framework-native units only now: "6×S/XS + 5×M = feature-shaped". No change to task list, dependencies, or scope.
+
+Hash: 5edcff324888790bdbc8c3affd392142d30b5f639ca454162c7d3b9e223d6152
