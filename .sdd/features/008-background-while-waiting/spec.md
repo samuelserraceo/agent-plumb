@@ -275,6 +275,15 @@ The new code path writes a small JSONL telemetry log to local disk. The §2 metr
 
 (driven by §14 tasks T1-T8 — each task lands as one commit per the test → code → green inner loop)
 
+**Build status (autonomous run 2026-05-10):**
+
+- ✅ T1, T2, T3 — emit script + --list-candidates + --update-last-action shipped in `.sdd/scripts/background-while-waiting.sh`. Test `test/background-emit-test.sh` passes 7/7.
+- ⚠️ T4 — **BLOCKED** — no CR-poll loop currently exists in the framework. The §5 approach assumed one. Sam decision needed: build the CR-poll loop as part of this feature (scope expansion), wrap an existing `gh` command, or split T4 into a follow-up feature.
+- ✅ T5 — doctrine added to `templates/CLAUDE.md` "Background while waiting" section.
+- ⏭ T6 — **NOT NEEDED** — `.sdd/CLAUDE.md` does not exist. Framework dogfoods via `templates/CLAUDE.md` directly. T5 alone covers the doctrine surface.
+- ✅ T7 — `.sdd/scripts/background-metric.sh` helper shipped. Reports `<real-actions>/<total>`.
+- ⏭ T8 — **FOLDED INTO T1** — schema validation is part of `test/background-emit-test.sh` (T1.2 asserts the exact key set).
+
 ### Exit checks
 - [ ] C-build-tasks-green: every task is GREEN (test passing, code committed)
 
