@@ -1,8 +1,8 @@
 # build the SDD-on-pi extension package
 
-[PHASE: SPEC]
+[PHASE: BUILD]
 
-**Active blocker:** §1 (first action: problem)
+**Active blocker:** BUILD (first action: run-mode-chosen)
 
 ## PHASE: SPEC
 
@@ -452,5 +452,45 @@ Sam approved 2026-05-08 after preview in Chrome.
 **Net effect:** 0 new ACs added (§11 stays hash-locked, no re-approval flow). 3 ACs scope-expanded in spirit (T201/T203/T206 absorb sub-assertions). 6 documented at SHIP. AC9 already handles #9.
 
 ### Exit checks
-- [ ] C-spec-acs: ≥1 acceptance criterion exists in §11 — grep -qE '^- \[[ x]\] AC[0-9]+' "$SECTION_FILE" {verify-by: verify-stage.sh}
-- [ ] C-spec-tasks: ≥1 task in plan-decompose section — grep -qE '^- \[[ x]\] T[0-9]+' "$SECTION_FILE" {verify-by: verify-stage.sh}
+- [x] C-spec-acs: ≥1 acceptance criterion exists in §11 — grep -qE '^- \[[ x]\] AC[0-9]+' "$SECTION_FILE" {verify-by: verify-stage.sh}
+- [x] C-spec-tasks: ≥1 task in plan-decompose section — grep -qE '^- \[[ x]\] T[0-9]+' "$SECTION_FILE" {verify-by: verify-stage.sh}
+
+## PHASE: BUILD
+
+### action: run-mode-chosen
+
+- [ ] mode: pick run mode (step-by-step / checkpoint / full-autonomous) per CLAUDE.md
+
+### action: build-task
+
+(driven by §14 tasks T200-T211 — each task lands as one commit)
+
+### Exit checks
+- [ ] C-build-tasks-green: T200-T211 all GREEN; framework tests pass {verify-by: verify-stage.sh}
+
+## PHASE: SHIP
+
+### action: verify-test-run
+
+- [ ] run-tests: bash test/run-framework-test.sh + per-feature tests/task-T2*.sh PASS
+
+### action: learn
+
+- [ ] summary: 1-paragraph plain-English summary of what shipped + why
+- [ ] lessons: append 0-3 lessons to .sdd/patterns.md if any new patterns emerged
+
+### action: push-pr
+
+- [ ] push-and-open: branch pushed; PR opened or updated
+
+### action: verify-ci-green
+
+- [ ] ci: all CI checks GREEN on PR; CR cycle addressed if any findings
+
+### action: mark-shipped
+
+- [ ] shipped: INDEX.md updated, .shipped marker written, decisions.md appended
+
+### Exit checks
+- [ ] C-ship-pr-url: PR URL recorded in INDEX.md Shipped section {verify-by: verify-stage.sh}
+- [ ] C-ship-marked: .shipped marker file exists in feature folder {verify-by: verify-stage.sh}
