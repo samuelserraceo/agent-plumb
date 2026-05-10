@@ -413,9 +413,10 @@ All §10 mechanical-shape claims have AC coverage. Compliance items (license, no
             count = best-effort eye-check at SHIP, structural floor
             locked here)
             — proves AC10 (best-effort, declared fixture count)
-- [ ] T210: multi-harness parity — same dispatch-wave.sh produces
-            equivalent partial-wave reports on Claude Code AND pi.dev
-            against the same fixture spec.md
+- [x] T210: multi-harness parity — structural floor locked: dispatch-
+            wave.sh is harness-agnostic (no claude_code/pi_dev branches);
+            §12 signoff references both harnesses. Live walk (the actual
+            equivalent-output check) is PROD-ONLY at SHIP first walk.
             — proves AC11 (PROD-ONLY at SHIP first walk)
 - [ ] T211: end-to-end real-session wave dispatch — real Claude Code
             session walks fixture spec.md with 3 wave-tasks, verifies 3
