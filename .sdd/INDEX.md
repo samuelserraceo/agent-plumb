@@ -1,6 +1,6 @@
 # SDD framework — INDEX
 
-**Active:** features/008-background-while-waiting
+**Active:** features/009-background-while-waiting
 **Playbook:** feature
 **Active blocker:** SHIP (first action: verify-test-run)
 
@@ -8,7 +8,7 @@
 
 
 ## In flight
-- features/008-background-while-waiting — background while waiting (PHASE: SHIP)
+- features/009-background-while-waiting — background while waiting (PHASE: SHIP)
 
 
 

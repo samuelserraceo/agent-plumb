@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# background-metric.sh — Compute the §2 metric for feature 008.
+# background-metric.sh — Compute the §2 metric for feature 009.
 #
 # Reads .sdd/.cache/background-emit.log (or $SDD_CACHE_DIR/background-emit.log)
 # and prints the count of "did real work" emits — total emit lines minus

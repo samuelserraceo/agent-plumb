@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # background-while-waiting.sh — Emit a marker line per wait window
 # (CR-poll / CI-poll), and let the agent declare which safe-set action
-# was taken. Trigger + measurement for the §2 metric of feature 008.
+# was taken. Trigger + measurement for the §2 metric of feature 009.
 #
 # Usage:
 #   background-while-waiting.sh <wait_type>
