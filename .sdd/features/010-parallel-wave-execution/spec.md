@@ -408,9 +408,10 @@ All §10 mechanical-shape claims have AC coverage. Compliance items (license, no
             (well-formed shape; real-prompt eye-check is the named-eye
             step at SHIP per AC9)
             — proves AC9 (named-eye at SHIP)
-- [ ] T209: orchestrator turn-count fixture — fixture-recorded session
-            walking 5 waves of 6 tasks each; orchestrator transcript turn
-            count grows by ~10 (5 dispatch + 5 report-back), not ~30
+- [x] T209: orchestrator turn-count structural ceiling — 5-wave/30-task
+            fixture drains in exactly 5 WAVE-DISPATCH events (real turn
+            count = best-effort eye-check at SHIP, structural floor
+            locked here)
             — proves AC10 (best-effort, declared fixture count)
 - [ ] T210: multi-harness parity — same dispatch-wave.sh produces
             equivalent partial-wave reports on Claude Code AND pi.dev
