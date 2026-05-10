@@ -21,7 +21,37 @@
 #   PI_VERSION  the host pi.dev's reported version (set by pi at
 #               session_start; the test harness sets it directly).
 
-set -uo pipefail
+set -euo pipefail
+
+# Portable semver comparator (CR finding #13). `sort -V` is GNU-only;
+# macOS ships BSD sort by default. version_ge LEFT RIGHT — returns 0
+# (true) if LEFT >= RIGHT, otherwise non-zero. Splits each version on
+# '.', pads the shorter side with zeros, compares numerically.
+version_ge() {
+  local left="${1#v}" right="${2#v}"
+  local IFS=.
+  local -a left_parts right_parts
+  read -r -a left_parts <<<"$left"
+  read -r -a right_parts <<<"$right"
+
+  local max_len=${#left_parts[@]}
+  if [ "${#right_parts[@]}" -gt "$max_len" ]; then
+    max_len=${#right_parts[@]}
+  fi
+
+  local i l r
+  for ((i = 0; i < max_len; i++)); do
+    l="${left_parts[i]:-0}"
+    r="${right_parts[i]:-0}"
+    # 10# forces decimal interpretation, dodging octal pitfalls on 0-prefixed
+    if ((10#$l > 10#$r)); then
+      return 0
+    elif ((10#$l < 10#$r)); then
+      return 1
+    fi
+  done
+  return 0  # equal
+}
 
 project=""
 from=""
@@ -55,10 +85,9 @@ if [ -z "$current_pi_version" ]; then
   exit 1
 fi
 
-# Accept current >= min via `sort -V`. The smallest of the two should
-# be the minimum; if the current value sorts below the minimum, refuse.
-lowest="$(printf '%s\n%s\n' "$current_pi_version" "$min_pi_version" | sort -V | head -n1)"
-if [ "$lowest" != "$min_pi_version" ] && [ "$current_pi_version" != "$min_pi_version" ]; then
+# Accept current >= min via the portable version_ge helper above.
+# Avoids GNU `sort -V` which isn't on default macOS.
+if ! version_ge "$current_pi_version" "$min_pi_version"; then
   cat >&2 <<MSG
 [sdd-pi] Host pi.dev version $current_pi_version is older than the
         SDD extension's minimum supported version ($min_pi_version).
@@ -74,14 +103,17 @@ mkdir -p "$dest"
 
 # Walk every regular file under --from and copy it to the matching
 # path under .pi/sdd/ ONLY when the destination is missing.
-( cd "$from" && find . -type f -print0 ) | while IFS= read -r -d '' rel; do
+# Use process substitution (not pipe) so the loop runs in the parent
+# shell — set -e then propagates a mkdir/cp failure out of the loop
+# instead of getting swallowed by the subshell pipe.
+while IFS= read -r -d '' rel; do
   rel="${rel#./}"
   out="$dest/$rel"
   if [ ! -e "$out" ]; then
     mkdir -p "$(dirname "$out")"
     cp "$from/$rel" "$out"
   fi
-done
+done < <(cd "$from" && find . -type f -print0)
 
 # --- EC#4 worktree-hookpath check (T210/AC11) ----------------------
 # Pre-commit enforcement at git layer relies on core.hooksPath pointing
