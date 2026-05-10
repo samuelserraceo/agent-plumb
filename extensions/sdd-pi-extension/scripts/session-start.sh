@@ -59,9 +59,21 @@ min_pi_version=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    --project)         project="$2"; shift 2 ;;
-    --from)            from="$2"; shift 2 ;;
-    --min-pi-version)  min_pi_version="$2"; shift 2 ;;
+    --project|--from|--min-pi-version)
+      # Guard the $2 dereference — under set -u a trailing flag like
+      # `--project` with no value would otherwise abort with an
+      # opaque "unbound variable" error instead of a clear CLI error.
+      if [ $# -lt 2 ] || [ -z "${2:-}" ]; then
+        echo "[sdd-pi] missing value for $1" >&2
+        exit 2
+      fi
+      case "$1" in
+        --project)         project="$2" ;;
+        --from)            from="$2" ;;
+        --min-pi-version)  min_pi_version="$2" ;;
+      esac
+      shift 2
+      ;;
     *) echo "[sdd-pi] unknown flag: $1" >&2; exit 2 ;;
   esac
 done
