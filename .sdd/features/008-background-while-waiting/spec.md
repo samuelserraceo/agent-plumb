@@ -31,9 +31,9 @@ playbook: feature
 3. **As** Sam dogfooding SDD on the framework, **I want** the agent to draft the PR description while waiting on CodeRabbit, **so that** /ship is a one-button move the moment CR clears.
 4. **As** an SDD user (post-ship), **I want** the same background behaviour applied to my own framework loops, **so that** my dev velocity inherits the same idle-time savings.
 
-### action: ux-brief
+### action: ux-brief [SKIPPED]
 
-- [ ] brief: infer the UX direction from problem, success, and user stories
+- ⏭ brief: skipped — non-UI feature (agent behaviour change, no user-facing surface)
 
 ### action: proposed-approach
 
