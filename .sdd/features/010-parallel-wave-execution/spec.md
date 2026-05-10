@@ -422,8 +422,23 @@ All §10 mechanical-shape claims have AC coverage. Compliance items (license, no
 
 ### action: edge-case-sweep
 
-- [ ] ec-sweep: draft
+- [x] ec-sweep: 10 candidate edge cases drafted (concurrent wave dispatch #1, context-too-long #2, network blip #3, empty wave #4, unsupported worker model #5, disk-full #6, malformed marker #7, mixed-block waves #8, spec.md row race #9, no plan-decompose section #10).
 - [ ] ec-pick: ask
+
+**Edge-case sweep — 10 candidates:**
+
+| # | Edge case | Risk | Plausible mitigation |
+|---|---|---|---|
+| 1 | `dispatch-wave.sh` invoked while another wave is still in-flight (Sam runs `/next` twice rapidly) | Low | dispatch-wave.sh detects in-flight via lockfile; second call errors out cleanly with "wave N already running, wait or pause first" |
+| 2 | Agent tool returns "context too long" mid-wave (subagent's prompt + framework brain exceeded model's window) | Medium | Subagent fails, partial-wave report (Flow 2). Adopter response: drop to a model with a larger window OR shrink the framework brain digest |
+| 3 | Network blip during Agent dispatch — one subagent's connection drops | Medium | Subagent fails (Agent tool surfaces network error), partial-wave report; Sam picks retry on the failed task |
+| 4 | Wave with 0 tasks (e.g. all wave-N tasks already GREEN — re-running `/next` after a previous wave landed) | Low | dispatch-wave.sh detects empty wave, exits 0 with "wave N already done, advancing" |
+| 5 | `wave_worker_model` unsupported by current harness (e.g. pi.dev doesn't expose a Haiku-equivalent name) | Medium | Falls back to orchestrator's model when worker model resolves to nothing (per AC8); warning emitted |
+| 6 | Wave-task subagent runs out of disk while writing files | Low | Pre-commit fails (file-system error); partial-wave report; Sam picks retry/abandon |
+| 7 | `[WAVE: 0]` or `[WAVE: foo]` (non-positive-integer marker) | Low | next-action.sh parser rejects with clear error: "WAVE: must be a positive integer" |
+| 8 | Mixed-block waves — `[WAVE: 1]` markers in two different `### action: plan-decompose` blocks | Low | Already out-of-scope per §9; parser scopes wave-N to the first plan-decompose block only |
+| 9 | Subagent's commit modifies a file the orchestrator was also editing (race on spec.md or other shared state) | Medium | Row-isolation discipline (AC4) keeps wave-tasks editing only their own task row; standard 3-way merge handles different rows; orchestrator does no editing during a wave by design |
+| 10 | Wave dispatched on a feature WITHOUT a plan-decompose section (e.g. malformed spec.md) | Low | next-action.sh parser falls through to existing no-WAVE behaviour (per AC3 linear regression); dispatch-wave.sh is never invoked |
 
 ### Exit checks
 - [ ] C-spec-acs: ≥1 acceptance criterion exists in §11 {verify-by: C-spec-acs bash-grep} — grep -qE '^- \[[ x]\] AC[0-9]+' "$SECTION_FILE"
