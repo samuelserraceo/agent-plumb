@@ -391,7 +391,7 @@ Sam approved 2026-05-08 after preview in Chrome.
   INDEX.md — proves AC5
 - [x] T205 (GREEN): /sdd-next resolves the active blocker via
   next-action.sh and asks/proposes per the action tag — proves AC6
-- [ ] T206 (RED): /sdd-status renders phase + blocker + suggested next
+- [x] T206 (GREEN): /sdd-status renders phase + blocker + suggested next
   action without invoking any LLM (verified via tool-call audit)
   — proves AC7
 - [ ] T207 (RED): /sdd-ship pushes the branch, opens or updates the PR,
