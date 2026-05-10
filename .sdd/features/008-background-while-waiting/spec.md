@@ -166,8 +166,16 @@ The new code path writes a small JSONL telemetry log to local disk. The §2 metr
 
 ### action: out-of-scope
 
-- [ ] list: What are we explicitly NOT building this round? 1-5 bullets, each: name + reason. Empty is fine.
+- [x] list: 5 items — speculative CR-response drafting, cross-worktree advance-N+1, auto-execution without agent declaration, remote metric dashboards, pre-fetch beyond next feature
 - [ ] approval: user_approves
+
+**Out of scope for v1**
+
+1. **Speculative CR-response drafting** — listed in §5 as the judgement-required set. "What would CR likely say" is speculation that could waste cycles or surface wrong concerns. Deferred until the safe-set behaviour is proven in real CR cycles.
+2. **Cross-worktree advance-N+1 parallel work** — Approach C territory from §5. Reaches into #42's just-shipped parallel-feature infrastructure. Ship the safe-set first, learn how the loop behaves, then add C as a follow-up if savings warrant.
+3. **Auto-execution of background actions without agent declaration** — the script LISTS candidates; the agent picks and declares (visible in commit log + chat). Auto-execution is deferred to keep user awareness in the loop.
+4. **Remote metric dashboards / cross-machine aggregation** — local JSONL log only. Telemetry stays on the user's machine; remote writes, team-level aggregation, and visualisation tooling are deferred.
+5. **Pre-fetching beyond the immediate next feature** — Flow 2 pre-fetches feature N+1. Pre-fetching N+2, N+3, etc. would balloon context for limited gain — deferred.
 
 ### action: non-functional
 
