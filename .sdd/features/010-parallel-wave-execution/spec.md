@@ -423,7 +423,7 @@ All §10 mechanical-shape claims have AC coverage. Compliance items (license, no
 ### action: edge-case-sweep
 
 - [x] ec-sweep: 10 candidate edge cases drafted (concurrent wave dispatch #1, context-too-long #2, network blip #3, empty wave #4, unsupported worker model #5, disk-full #6, malformed marker #7, mixed-block waves #8, spec.md row race #9, no plan-decompose section #10).
-- [ ] ec-pick: ask
+- [x] ec-pick: 0 new ACs added (§11 stays hash-locked). 4 edge cases folded into existing T-tasks (#1+#4 → T201, #2+#3+#6 → T205, #7 → T200). 4 already covered by AC8/AC4/AC3 + §9 (#5, #8, #9, #10). Sam approved 2026-05-10.
 
 **Edge-case sweep — 10 candidates:**
 
@@ -438,7 +438,24 @@ All §10 mechanical-shape claims have AC coverage. Compliance items (license, no
 | 7 | `[WAVE: 0]` or `[WAVE: foo]` (non-positive-integer marker) | Low | next-action.sh parser rejects with clear error: "WAVE: must be a positive integer" |
 | 8 | Mixed-block waves — `[WAVE: 1]` markers in two different `### action: plan-decompose` blocks | Low | Already out-of-scope per §9; parser scopes wave-N to the first plan-decompose block only |
 | 9 | Subagent's commit modifies a file the orchestrator was also editing (race on spec.md or other shared state) | Medium | Row-isolation discipline (AC4) keeps wave-tasks editing only their own task row; standard 3-way merge handles different rows; orchestrator does no editing during a wave by design |
-| 10 | Wave dispatched on a feature WITHOUT a plan-decompose section (e.g. malformed spec.md) | Low | next-action.sh parser falls through to existing no-WAVE behaviour (per AC3 linear regression); dispatch-wave.sh is never invoked |
+| 10 | Wave dispatched on a feature WITHOUT a plan-decompose section (e.g. malformed spec.md) | Low | next-action.sh parser falls through to existing no-WAVE behaviour (per AC3 linear regression); dispatch-wave.sh isn't invoked |
+
+**ec-pick disposition (Sam approved 2026-05-10):**
+
+| # | Edge case | Disposition |
+|---|---|---|
+| 1 | Concurrent wave dispatch | Folded into T201 — dispatch-wave.sh adds a lockfile check (small addition, no new AC needed) |
+| 2 | Context-too-long mid-wave | Folded into T205 — partial-wave report covers any commit-failure mode including this one |
+| 3 | Network blip | Folded into T205 — same |
+| 4 | Empty wave | Folded into T201 — dispatch-wave.sh emits the empty-wave message |
+| 5 | Unsupported worker model | Already covered by AC8 + T207 — fallback to orchestrator's model is the AC8 contract |
+| 6 | Disk full | Folded into T205 — partial-wave report covers any commit-failure mode |
+| 7 | Malformed `[WAVE: foo]` | Folded into T200 — parser test asserts rejection of non-positive-integer markers |
+| 8 | Mixed-block waves | Already out-of-scope per §9 — no change needed |
+| 9 | Spec.md row race | Already covered by AC4 + T203 — row isolation is the contract |
+| 10 | No plan-decompose section | Already covered by AC3 + T202 — linear regression fallback |
+
+**Net effect:** 0 new ACs added (§11 stays hash-locked, no re-approval flow). 4 edge cases folded into existing T-tasks (#1 + #4 → T201, #2 + #3 + #6 → T205, #7 → T200). 4 already covered by AC8/AC4/AC3 + §9 (#5, #8, #9, #10). Same shape as F008's edge-case-sweep.
 
 ### Exit checks
 - [ ] C-spec-acs: ≥1 acceptance criterion exists in §11 {verify-by: C-spec-acs bash-grep} — grep -qE '^- \[[ x]\] AC[0-9]+' "$SECTION_FILE"
