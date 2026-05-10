@@ -1,8 +1,8 @@
 # build the SDD-on-pi extension package
 
-[PHASE: BUILD]
+[PHASE: SHIP]
 
-**Active blocker:** BUILD (first action: run-mode-chosen)
+**Active blocker:** § (SHIP action: verify-test-run)
 
 ## PHASE: SPEC
 
@@ -468,7 +468,7 @@ Sam approved 2026-05-08 after preview in Chrome.
 (driven by §14 tasks T200-T211 — each task lands as one commit)
 
 ### Exit checks
-- [ ] C-build-tasks-green: T200-T211 all GREEN; framework tests pass {verify-by: verify-stage.sh}
+- [x] C-build-tasks-green: T200-T211 all GREEN; framework tests pass {verify-by: verify-stage.sh}
 
 ## PHASE: SHIP
 
