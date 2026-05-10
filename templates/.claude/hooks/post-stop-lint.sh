@@ -944,7 +944,13 @@ EOM
       # Clear the warning cache so we don't re-fire if the symlink
       # didn't help for some reason — let next turn re-detect.
       printf '' > "$LAST_WARN_FILE" 2>/dev/null || true
-      exit 0
+      # Clear $warnings so the warnings block below doesn't re-print
+      # the just-auto-fixed warning. We fall through (NOT `exit 0`)
+      # so any UNRELATED hard $violations still surface on this turn —
+      # CR cycle 2 (PR #208) caught that the prior `exit 0` here
+      # short-circuited the violations check at line ~978, hiding
+      # real drift behind a successful auto-fix.
+      warnings=""
     fi
   fi
 fi

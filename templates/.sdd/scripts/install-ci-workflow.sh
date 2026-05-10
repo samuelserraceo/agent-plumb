@@ -103,10 +103,18 @@ fi
 
 # Map runner → template. Keep the matcher simple and case-tolerant; the
 # wizard records "Playwright" / "Vitest" / "pytest" verbatim today.
+#
+# CR cycle 2 (PR #208): `unittest` and `ruff` were originally bucketed
+# into the python template, but that template runs `pytest -v` — so a
+# project that picked unittest would get a CI run that crashes on
+# missing pytest, and ruff is a linter (not a test runner) that has
+# no business mapping to a runner template at all. Both removed; if
+# someone picks them they fall through to the "no template yet" path
+# which prints a plain-English add-a-template instruction.
 shopt -s nocasematch || true
 case "$runner" in
   *playwright*|*vitest*|*jest*|*mocha*|*node*|*tsc*|*typescript*) tmpl="sdd-ci-node.yml.tmpl" ;;
-  *pytest*|*python*|*unittest*|*ruff*) tmpl="sdd-ci-python.yml.tmpl" ;;
+  *pytest*|*python*) tmpl="sdd-ci-python.yml.tmpl" ;;
   *)
     echo "[install-ci-workflow] no CI template yet for test runner '$runner'." >&2
     echo "[install-ci-workflow] templates ship for: Playwright/Vitest/Jest (Node) and pytest (Python)." >&2

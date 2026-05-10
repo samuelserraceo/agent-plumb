@@ -39,7 +39,7 @@
       "trust": "framework"
     },
     "install-ci-workflow.sh": {
-      "expected_sha256": "06b58832808c3d75c8112cee14484cdde0dd21c207a81cb65bdf838d1c21e437",
+      "expected_sha256": "e3b4e2454e4202d0daa1f15378793860775f9d6a6973832ba426b7d480d6b583",
       "path": ".sdd/scripts/install-ci-workflow.sh",
       "trust": "framework"
     },
@@ -54,7 +54,7 @@
       "trust": "framework"
     },
     "post-stop-lint.sh": {
-      "expected_sha256": "48946ee326d2be0b7f9dba4bdf7ebd729e3b3e425ac6b13b70d9b11b3320e51f",
+      "expected_sha256": "a2c51375714d1e38453566f2d2da66b5beb4c0a79b346fd6c3262e0131d4ab00",
       "path": ".claude/hooks/post-stop-lint.sh",
       "trust": "framework"
     },
