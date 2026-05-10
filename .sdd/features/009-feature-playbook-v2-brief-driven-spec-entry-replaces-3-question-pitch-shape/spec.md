@@ -338,9 +338,9 @@ Total: 6×S/XS + 5×M = ~feature-shaped (~2-3 days human pace; AI multiplier app
 
 ### action: run-mode-chosen
 
-- [ ] mode: pick BUILD run mode (full-autonomous / checkpoint-every-N / shell-ralph / interactive)
+- [x] mode: full-autonomous — Sam pre-approved this run mode at BUILD entry
 
-**Run mode:** _(to be chosen at first /next in BUILD)_
+**Run mode:** full-autonomous
 
 ### action: build-task
 
