@@ -6,7 +6,7 @@ playbook: feature
 
 [PHASE: SPEC]
 
-**Active blocker:** §1 (first action: problem)
+**Active blocker:** §2 (first action: success)
 
 ## PHASE: SPEC
 
@@ -14,7 +14,7 @@ playbook: feature
 
 - [x] who: non-technical founders walking SPEC ceremonies on real projects
 - [x] why-now: F01 audit (2026-05-08) produced 4 concrete failure modes; doctrine alone insufficient
-- [ ] what-breaks: What breaks (concretely) if it isn't solved?
+- [x] what-breaks: 4 concrete failure modes — startup-pitch §1, redundant §2, lazy first-pass record, bundled-question turns
 
 ### §1 Problem
 
@@ -25,6 +25,15 @@ Non-technical founders (Sam et al.) walking through SPEC ceremonies on real proj
 #### why-now
 
 The F01/pipelogic_v2 audit on 2026-05-08 produced concrete evidence — four specific failure modes captured live in the transcript (line numbers cited in #207). Sam invented the grill protocol himself mid-§2 because the framework wasn't pushing back; that's clear signal doctrine alone isn't enough and structural redesign is needed. Earlier point fixes (#173/#174 grill protocol, #110 plain-English lint, #171 refresher block) closed individual leaks but didn't address the entry shape itself. The cumulative friction is now well-evidenced enough to warrant a v1.6 anchor change.
+
+#### what-breaks
+
+Four things break, drawn directly from #207's *"What's wrong with the current SPEC"* section:
+
+1. **§1 Problem is startup-pitch BS for non-startup work.** Three questions ("who / why-now / what-breaks") don't fit foundation features, internal tools, or framework dogfooding — anywhere the user already knows what they want and just needs to describe it.
+2. **§2 Success metrics adds zero signal beyond §11 ACs** for foundation features. Every F01 metric ended up tagged `{best-effort: clickthrough QA}`; the same checks landed in §11 anyway. Pure ceremony noise.
+3. **The agent records first-pass answers without challenge.** Even after #173/#174 shipped grill protocol, the doctrine-default still leans toward "record" over "interrogate." Sam invented the grill protocol himself mid-§2 because the framework wasn't pushing back.
+4. **Bundled multi-question turns + technical-prose-first drafts** violate doctrine but fire anyway. Sam had to ASK for plain English at §5 (line 4518) and again at §11 (line 26474) of the F01 transcript.
 
 ### action: success
 
