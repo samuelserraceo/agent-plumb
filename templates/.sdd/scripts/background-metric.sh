@@ -38,21 +38,25 @@ fi
 total=$(wc -l < "$LOG" | tr -d ' ')
 # Count lines that claim a real action — anything that isn't pending or
 # none-skipped.
-real=$(python3 -c "
+real=$(python3 - "$LOG" <<'PYEOF'
 import json, sys
+log_path = sys.argv[1]
 real = 0
-for line in open('$LOG'):
-    line = line.strip()
-    if not line: continue
-    try:
-        d = json.loads(line)
-    except Exception:
-        continue
-    ac = d.get('action_chosen', '')
-    if ac and ac not in ('pending', 'none-skipped'):
-        real += 1
+with open(log_path) as f:
+    for line in f:
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            d = json.loads(line)
+        except Exception:
+            continue
+        ac = d.get('action_chosen', '')
+        if ac and ac not in ('pending', 'none-skipped'):
+            real += 1
 print(real)
-")
+PYEOF
+)
 
 case "${1:-}" in
   --raw) echo "$real" ;;

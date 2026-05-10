@@ -29,3 +29,4 @@ pretty sure — well-understood lever. Main risk is misclassifying steps (some "
 - pi.dev port (separate session)
 - Touches nearly every action file (highest collision risk among the speed levers)
 - GSD plugin's `/gsd:set-profile` is prior art
+
