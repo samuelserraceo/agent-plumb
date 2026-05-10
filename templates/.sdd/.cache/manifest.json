@@ -221,7 +221,7 @@
       "trust": "framework"
     },
     "problem": {
-      "expected_sha256": "ba9f182cec5e9fdb2b8878a10db4078e677e7025af6e3252458ed3bf96de9b76",
+      "expected_sha256": "2370dc8d9c6e3c42e9aeff19f419c17da2f702b72201b7e539d04601b439fc43",
       "path": ".sdd/actions/problem.md",
       "trust": "framework"
     },

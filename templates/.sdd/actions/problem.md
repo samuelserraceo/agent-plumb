@@ -39,4 +39,4 @@ Three quick questions for you:
 2. **Why are we solving it now and not next year?** What changed?
 3. **If we don't fix it, what goes wrong concretely?** People give up halfway through signup? Support emails pile up unanswered? Pick a real story.
 
-**End the turn with:** *"Run `/next` when you're ready to continue to §2 Success."*
+**End the turn with:** *"Run `/next` when you're ready to continue to §3 User stories."* (Was "§2 Success" pre-v1.6; `success` action removed from the feature playbook in PR-A of #207; the next SPEC action after `problem` is now `user-stories`. `problem` itself remains in the playbook as the backward-compat path for in-flight features that scaffolded before `brief-intake` shipped — new features start with `brief-intake` instead and skip `problem` entirely.)

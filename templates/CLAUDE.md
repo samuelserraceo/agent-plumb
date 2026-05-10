@@ -356,7 +356,6 @@ Non-technical users are paralyzed by blank-page questions. Whenever a USER-LED q
 
 Apply this everywhere it fits:
 
-- **§2 Success metrics** → "Common patterns: volume (signups, orders), speed (time to first action, response time), quality (NPS, error rate, support tickets), engagement (DAU, retention). Pick one or two — or describe your own."
 - **§3 User stories — persona** → "Common personas: new visitor, signed-up user, returning user, admin, billing manager, customer support. Which apply here? Or describe your own."
 - **§4 UX brief — tone** → already does this ("minimal, professional, playful, bold, elegant…"). Match this pattern elsewhere.
 - **§11 Acceptance criteria — test type** → "Common types: form submission produces…, invalid input returns…, user session persists…, mobile viewport renders…, link redirects to…. Pick which apply here, or describe what to assert."
@@ -495,7 +494,7 @@ Skip is handled inline by `/next` (not a separate `/skip` command). The user rep
 2. **Proactively offer to skip** before asking any question:
    > "§4 UX & Design brief is marked skippable for non-UI features. This feature is a backend cron job, so I think we should skip it. Reply `skip no UI surface — backend cron only` to skip, or tell me what UI considerations do apply."
 3. **Respect the user's skip.** When `skip <reason>` is invoked (as a reply during `/next`): replace every `[ ]` with `⏭ skipped — <reason>`, append `[SKIPPED]` to the heading, commit `[SDD:<id>] spec: skip §<N> — <reason>`, advance.
-4. **Never skip a non-skippable section.** §1, §2, §3, §5, §6, §7, §11, §12 are required always.
+4. **Never skip a non-skippable section.** §1, §3, §5, §6, §7, §11, §12 are required always. (§2 Success was removed from the feature playbook in v1.6 / PR-A of #207 — success metrics fold into §11 ACs by default; `success.md` retained with `deprecated: true` for backward-compat with in-flight features whose spec.md scaffolded pre-PR-A.)
 5. **Don't offer skip just because a question is hard** — the whole point of the rubric is to surface the hard questions.
 
 ---
