@@ -32,8 +32,6 @@ set -uo pipefail
 FRAMEWORK_ROOT="${FRAMEWORK_ROOT:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
 WF="$FRAMEWORK_ROOT/.github/workflows/publish-pi-adapter.yml"
 
-fails=()
-
 # --- A) File exists --------------------------------------------------
 if [ ! -f "$WF" ]; then
   echo "FAIL: T211 — publish workflow missing at $WF"
