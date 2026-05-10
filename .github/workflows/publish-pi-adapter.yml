@@ -20,7 +20,12 @@ jobs:
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
         with:
-          node-version: '20'
+          # Node 22 — Active LTS until October 2026 (Node 20 dropped to
+          # Maintenance in October 2025 and EOL'd April 2026). Other
+          # workflows in this repo still use 20; bumping the publish
+          # path first because that's where CR cycle 1+2 flagged it
+          # and where the npm-publish runtime matters most.
+          node-version: '22'
           registry-url: 'https://registry.npmjs.org'
 
       - name: Skip if version already published (idempotence on tag re-run)
