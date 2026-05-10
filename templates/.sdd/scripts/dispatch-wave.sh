@@ -104,7 +104,7 @@ fi
 # ── parse plan-decompose for [WAVE: N] tasks ──────────────────────────
 # Mirror the regex next-action.sh uses, scoped to the
 # `### action: plan-decompose` section.
-tasks_json="$(WAVE_MOCK_RESULTS="${WAVE_MOCK_RESULTS:-}" python3 - "$spec_path" "$wave_n" <<'PY'
+tasks_json="$(WAVE_MOCK_RESULTS="${WAVE_MOCK_RESULTS:-}" WAVE_WORKER_MODEL="${WAVE_WORKER_MODEL:-}" python3 - "$spec_path" "$wave_n" <<'PY'
 import json, os, re, sys
 
 spec_path, wave_n_str = sys.argv[1], sys.argv[2]
@@ -151,12 +151,19 @@ if mock:
         sys.exit(2)
     mode = "dispatched"
 
+# Multi-model wave config (T207 AC8). WAVE_WORKER_MODEL env (or
+# parameters.wave.worker_model from config.md, plumbed by the
+# orchestrator) names the model wave-task subagents run on. Unset
+# / empty → null → subagents inherit the orchestrator model.
+worker_model = os.environ.get("WAVE_WORKER_MODEL", "").strip() or None
+
 # Empty wave → no-op shape-only result (folded EC #4).
 print(json.dumps({
     "wave": wave_n,
     "tasks": tasks,
     "results": results,
     "mode": mode,
+    "worker_model": worker_model,
 }))
 
 # Exit code: non-zero if any wave-task FAILed; 0 otherwise. The
