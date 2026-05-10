@@ -355,7 +355,7 @@ All §10 mechanical-shape claims have AC coverage. Compliance items (license, no
 
 ### action: wireframe
 
-- [ ] wireframe: draft wireframe.html — UI screens for UI features OR flow + architecture for non-UI features
+- [x] wireframe: non-UI wireframe.html shipped — 3-layer architecture diagram (orchestrator session / dispatch-wave.sh / parallel subagents with fresh contexts on Haiku); 3 flows (happy path, partial-wave failure, multi-model killer combo); 3 concrete examples (spec.md plan-decompose with `[WAVE: N]` markers, partial-wave report stdout, multi-model config.md). Out-of-scope panel mirrors §9. Sam approved 2026-05-10.
 
 ### action: plan-decompose
 
