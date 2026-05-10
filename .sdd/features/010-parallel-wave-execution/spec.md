@@ -121,7 +121,29 @@ Trade-offs:
 
 ### action: data-contract
 
-- [ ] approval: draft the data contract, iterate with the user, sync data-model.md, get approval
+- [x] approval: No new project-state entities; `[WAVE: N]` is a parser-recognized token on existing BUILD task step rows (not a new entity). No new framework-level entities; `Wave` is a parsed concept, not stored (YAGNI). Existing entities (Action, Playbook, Hook, Setup brick, Pi extension package) gain no new fields. 4 edge cases at the data layer asked-and-answered. Sam approved 2026-05-10.
+
+**Data contract:** No new entities anywhere — the `[WAVE: N]` token attaches to existing BUILD task step rows; the framework reads it but doesn't store it.
+
+| Layer | Change | Why |
+|---|---|---|
+| **Project state** (spec.md, INDEX.md, decisions.md, patterns.md, principles.md, data-model.md, stack.md, .sdd/features/**) | No changes | The `[WAVE: N]` token attaches to existing BUILD task step rows; no new files, no new fields |
+| **Framework data-model.md** | No new entities | `Wave` is a parsed concept (set of tasks sharing a `[WAVE: N]` annotation in the same plan-decompose block), not a stored entity |
+| **Existing entities** (Action, Playbook, Hook, Setup brick, Pi extension package) | No new fields | None of them care about waves directly — `next-action.sh` and `dispatch-wave.sh` are the only readers of the annotation |
+| **Relations** | None added/removed | |
+
+**Edge cases at the data layer (asked-and-answered):**
+
+1. **Two wave-tasks in the same wave edit the same line in spec.md.** Conflict. Mitigation: each subagent only touches its own task row (different lines = standard 3-way merge handles it). Documented in §7 flows.
+2. **A wave-task's commit fails pre-commit hooks** (anti-theatre, atomic-step rule, test-first). That wave-task's commit doesn't land; orchestrator detects via failed Agent return value; the wave finishes partially-done; orchestrator surfaces the gap to Sam (retry just that task / abandon the wave / ship what's there).
+3. **`[WAVE: N]` annotation on a task that has hidden dependencies on a non-wave-N task** (e.g. T201 marked WAVE 1 but secretly relies on T200's output). No automatic dependency-graph check in v1 — behaviour is "wave dispatches, task likely fails because its dependency isn't there." Mitigation: §7 flows documents that adopters verify task independence before annotating; the BUILD plan-decompose action's prose can ask "are these truly independent?" as a pre-flight check.
+4. **An adopter writes `[WAVE: 1]` on tasks in different `### action: plan-decompose` blocks** (e.g. tasks living in two separate features somehow). Not supported in v1; one wave-N namespace is scoped to one plan-decompose section. Multi-block waves deferred.
+
+**Why no `Wave` entity?**
+
+Two reasons. (1) YAGNI — there's no query like "show me all waves shipped this week" planned, so building a queryable Wave entity is premature. (2) Pillar 1 (Simplicity) — the wave is reconstructible from the spec.md text any time the framework needs to know about it. Storing it separately would create a sync-or-drift surface for no extra capability.
+
+Future-proofing note: if waves later need to carry per-wave metadata (e.g. the model used, run-finish timestamp, commit-set), that can be added as a `Wave` entity in a follow-up — at that point YAGNI flips and the storage cost pays off. Today it doesn't.
 
 ### action: flows
 
