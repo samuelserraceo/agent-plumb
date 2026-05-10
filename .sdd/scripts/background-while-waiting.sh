@@ -123,7 +123,11 @@ PYEOF
     echo "background-while-waiting: failed to update last action" >&2
     exit 3
   fi
-  mv "$tmp" "$LOG"
+  if ! mv "$tmp" "$LOG"; then
+    rm -f "$tmp"
+    echo "background-while-waiting: failed to write updated log to $LOG" >&2
+    exit 3
+  fi
   exit 0
 fi
 
