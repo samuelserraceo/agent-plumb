@@ -6,7 +6,7 @@ prelude_refresh: true
 title: "§2 Success"
 short_label: "Success"
 deprecated: true
-deprecation_note: "Removed from feature.md playbook in v1.6 (PR-B of #207). Success metrics fold into §11 ACs by default for foundation/internal features. The Clickthrough QA pattern (#172, v1.5.1) is the canonical §11 AC shape for foundation work; for features with real numerical targets (signup conversion, latency budgets), §11 ACs handle that too — same section, two patterns. File kept for backward-compat with in-flight features whose spec.md was scaffolded before v1.6 landed."
+deprecation_note: "Removed from feature.md playbook in v1.6 (PR-A of #207). Success metrics fold into §11 ACs by default for foundation/internal features. The Clickthrough QA pattern (#172, v1.5.1) is the canonical §11 AC shape for foundation work; for features with real numerical targets (signup conversion, latency budgets), §11 ACs handle that too — same section, two patterns. File kept for backward-compat with in-flight features whose spec.md was scaffolded before v1.6 landed."
 steps:
   - { id: metric, prompt: "Pick a metric pattern (volume / speed / quality / engagement) or describe your own. Give a target number AND the current baseline if known.", field: "§2.verifiable-outcomes" }
 used_by: [feature]

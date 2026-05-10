@@ -8,13 +8,9 @@ The agent prints a 3-bullet recap covering: who's affected, what changes, what s
 
 ```text
 Here's what I just heard from your brief, across §1 + §3:
-
   • Who: <verbatim quote or 1-line paraphrase from brief #3 (audience)>
   • What changes: <verbatim quote or 1-line paraphrase from brief #1 (one-line summary)>
   • Success looks like: <verbatim quote from brief #4 (M1/M2/M3 done shape)>
-
-I'll pre-fill §1, §3, §6, §7, §8, §10 from this. §11 ACs and §14 tasks come next via the standard ceremony.
-
 Confirm or tell me what to fix.
 ```
 
@@ -31,11 +27,9 @@ This skeleton ALSO fires at end-of-action for any multi-step USER-LED action (e.
 
 ```text
 Here's what I just heard from you across §<N>:
-
   • <restate point 1>
   • <restate point 2>
   • <restate point 3>
-
 Confirm or tell me what to fix.
 ```
 

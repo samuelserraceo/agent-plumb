@@ -11,5 +11,5 @@ for section in "§1 problem" "§3 user-stories" "§6 data-contract" "§7 flows" 
 done
 # Standard-ceremony exclusions
 grep -q "§11 ACs" "$ACTION" || { echo "FAIL: §11 placeholder note missing"; exit 1; }
-grep -q "§14" "$ACTION" || { echo "FAIL: §14 placeholder note missing"; exit 1; }
+grep -qE '§14.*placeholder' "$ACTION" || { echo "FAIL: §14 placeholder note missing (need the full 'placeholder' phrase, not just the §14 token)"; exit 1; }
 echo "PASS: T03 — brief-intake names all 6 pre-fill targets + 2 standard-ceremony exclusions"

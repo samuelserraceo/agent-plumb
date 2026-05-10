@@ -296,7 +296,7 @@
       "trust": "framework"
     },
     "success": {
-      "expected_sha256": "1ab1ee0facc3f05eee4c16a4f7425076de406e91672b4996e9d8d118d5a2a195",
+      "expected_sha256": "24a22d8246e4b1230c1063eb9a50c5078c605b03f9bf9737e5792f1a93c231ad",
       "path": ".sdd/actions/success.md",
       "trust": "framework"
     },

@@ -26,7 +26,7 @@ INDEXEOF
 cd "$SCRATCH"
 bash "$ROOT/.sdd/scripts/start.sh" "T06 scaffold smoke test" >/dev/null 2>&1 || { echo "FAIL: start.sh failed"; rm -rf "$SCRATCH"; exit 1; }
 
-SCAFFOLD_SPEC=$(ls "$SCRATCH/.sdd/features/"*/spec.md | head -1)
+SCAFFOLD_SPEC=$(find "$SCRATCH/.sdd/features/" -name "spec.md" -type f | head -1)
 [ -f "$SCAFFOLD_SPEC" ] || { echo "FAIL: scaffolded spec.md not found"; rm -rf "$SCRATCH"; exit 1; }
 
 if grep -q "^### action: success" "$SCAFFOLD_SPEC"; then

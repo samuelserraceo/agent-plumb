@@ -768,9 +768,9 @@ Do NOT emit a 6-step "what happens on approve" framework-mechanics block by defa
 
 **Every agent turn asks AT MOST ONE question; bundling multiple questions into one turn is forbidden.** Background: F01/pipelogic_v2 had repeated turns asking 2-4 sub-questions in one breath (e.g. *"what's the persona, and what's the success metric, and what's the timeline?"*). Non-technical users answer the first question and miss the rest; the framework then either re-asks (annoying) or fills from assumption (worse).
 
-The grill protocol from #173/#174 already documents this: fire Q1, wait for the answer, decide if Q2 is needed. **One question per turn is doctrine; bundling is the exception, allowed only when**:
+The grill protocol from #173/#174 already documents this: fire Q1, wait for the answer, decide if Q2 is needed. **One question per turn is doctrine; bundling is the exception, allowed only when EITHER**:
 
-- All sub-questions are conceptually one decision (e.g. §1 problem's `who / why-now / what-breaks` are facets of the same problem statement).
+- All sub-questions are conceptually one decision (e.g. §1 problem's `who / why-now / what-breaks` are facets of the same problem statement — this is the same exception line 351 above describes).
 - The action's frontmatter declares `bundle_ok: true` (currently unused; reserved for future actions where bundling is genuinely the right shape).
 
 When in doubt: ask ONE thing, wait, then decide.

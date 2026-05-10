@@ -73,7 +73,7 @@ Inspiration, screenshots, similar tools, brand vibe.
 
 > *Example: "Like Excel meets Figma — dense info but clickable. Mobile not a target — desktop only. Reference: figma.com/<file> + screenshot at notes/inspiration.png"*
 
-### 7. Documents attached
+### (optional) Documents attached for Pass 1
 
 Paths or URLs to anything that should be read alongside this brief. Especially load-bearing when there's a Google Sheets formula or V1 schema dump the implementation must match — agent mines these for §6 data-contract pre-fill.
 
