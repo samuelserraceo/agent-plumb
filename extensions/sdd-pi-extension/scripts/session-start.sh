@@ -83,4 +83,17 @@ mkdir -p "$dest"
   fi
 done
 
+# --- EC#4 worktree-hookpath check (T210/AC11) ----------------------
+# Pre-commit enforcement at git layer relies on core.hooksPath pointing
+# at .claude/hooks. When extensions.worktreeConfig=true the worktree-
+# level config can override it silently — every commit then bypasses
+# anti-theatre / atomic-step / test-first. Surface the conflict at
+# session_start time so the user sees the actionable command before
+# committing anything.
+script_dir="$(cd "$(dirname "$0")" && pwd)"
+worktree_check="$script_dir/check-worktree-hookpath.sh"
+if [ -f "$worktree_check" ]; then
+  ( cd "$project" && bash "$worktree_check" ) || exit 1
+fi
+
 exit 0
