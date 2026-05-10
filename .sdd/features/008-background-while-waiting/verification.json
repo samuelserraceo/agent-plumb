@@ -11,7 +11,7 @@
     "plan-decompose": "85e0ff457a70eb68cda0a923eb2e925721c8ab7cea01dbdc3bf998eb84e0ca42",
     "edge-case-sweep": "b447938dc72a76f69dc9c9be20326589682c190bc3efec8fb15f871dfd46b26f",
     "adversarial-review": "d65453036ad38d0d083aa1b6b4e88c49aa94db20827952bcaf1968e7fa9d89c5",
-    "learn": "ffb69eed1eb4c5510e790e1b97d90115ec2527175e0ef778049141d90302afc8",
+    "learn": "876579a52f54f90b751fa43fc33a767edc087b7fa7aa13a06a1ca396e503a7a2",
     "playwright-explore": "b7969f0860b97806f88ca9184ae7ad8c23c1619c96b28dc9c58c00fe56910b31"
   },
   "checks": []

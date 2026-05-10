@@ -315,7 +315,7 @@ The new code path writes a small JSONL telemetry log to local disk. The §2 metr
 
 ### action: learn
 
-- [ ] lesson: append learning to patterns.md if applicable
+- [x] lesson: 1 lesson appended — "Behavioural triggers belong in CLAUDE.md doctrine, not in discrete loops" (from T4 re-scope during BUILD)
 
 ### action: push-pr
 
