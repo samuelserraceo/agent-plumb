@@ -375,7 +375,7 @@ Sam approved 2026-05-08 after preview in Chrome.
 - [x] T200 (GREEN): assert extensions/sdd-pi-extension/package.json
   contains a "pi" field with both "extensions:" (path to compiled JS)
   and "prompts:" (path to prompts dir) — proves AC1
-- [ ] T201 (RED): in a fixture project, `pi install npm:sdd-pi-adapter`
+- [x] T201 (GREEN): in a fixture project, `pi install npm:sdd-pi-adapter`
   completes successfully and pi recognises 9 sdd-* slash commands
   — proves AC2
 - [ ] T203 (RED): on a fresh project, first session_start of the
