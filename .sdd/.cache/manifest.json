@@ -2,7 +2,7 @@
   "extensions": {},
   "playbooks": {
     "feature": {
-      "expected_sha256": "992a69c1986cbeba761320caa578fbbdbd65323f4bbd53f7f7ffe5790b437b5c",
+      "expected_sha256": "d62565a1931590e7cfb90ea54af5d27e78f08d959ab2f111e26161008c7cf5d0",
       "path": ".sdd/playbooks/feature.md",
       "trust": "framework"
     },
