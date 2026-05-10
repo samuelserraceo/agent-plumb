@@ -410,6 +410,15 @@ Sam approved 2026-05-08 after preview in Chrome.
   .github/workflows/publish-pi-adapter.yml; tag is published to
   npm as sdd-pi-adapter; re-running on the same tag is a no-op
   — proves AC12
+- [x] T212 (GREEN): the JS extension entry exists at the manifest-
+  declared `extensions:` path (dist/sdd-pi.js); it is loadable as a
+  CommonJS module exporting a default function; the function
+  registers handlers via pi.on("context"), pi.on("session_start"),
+  and pi.registerCommand for "sdd-status". Closes the gap surfaced
+  by partial e2e: T200-T211 verified mechanical SHAPE but never
+  verified runtime WIRING. Strengthens AC1 (manifest path resolves),
+  AC3 (context hook actually fires), AC4 (session_start hook fires),
+  AC7 (instant zero-LLM /sdd-status registered).
 ```
 
 **Order rationale:** foundation (manifest → install → HRN-01 → context-injection) before features (slash commands), then orthogonal git-pre-commit enforcement, then optional MCP integration, multi-model regression near the end, NPM publish last. Each AC has exactly one T-task; clean 1-to-1 coverage.
