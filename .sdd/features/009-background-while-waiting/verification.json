@@ -1,0 +1,18 @@
+{
+  "phase": "SHIP",
+  "approved_sections": {
+    "proposed-approach": "bd8864317134bd659e514c5d408a84ef18d3d1315904965414f053b59cafc6ee",
+    "data-contract": "8eaf53e7cce8bc92c7f3512da3ce093b0342ccfdc14f04ec94cdb65633e4b3ec",
+    "flows": "66844618419017843a0d315a0506f260417a9025e13a604c1042bcacbd5d99fb",
+    "dependencies": "853da94ef21ec525d66af4afe6e260859ce9b4a17b92912fcaf6964c51528cbb",
+    "out-of-scope": "90c91803438fd2496cecf33b98b731f042b543935ed85abb18ed7243c2919988",
+    "non-functional": "4bcb9a25be0d317c1a140af7e236ab8cb1ee82d245ed9765217fa94442ce0d48",
+    "acceptance-criteria": "3679387e22ce4ee9a4eb2ae8bacb97caac1a7511b98924c4dd3f0d29fcf95a78",
+    "plan-decompose": "85e0ff457a70eb68cda0a923eb2e925721c8ab7cea01dbdc3bf998eb84e0ca42",
+    "edge-case-sweep": "b447938dc72a76f69dc9c9be20326589682c190bc3efec8fb15f871dfd46b26f",
+    "adversarial-review": "d65453036ad38d0d083aa1b6b4e88c49aa94db20827952bcaf1968e7fa9d89c5",
+    "learn": "876579a52f54f90b751fa43fc33a767edc087b7fa7aa13a06a1ca396e503a7a2",
+    "playwright-explore": "b7969f0860b97806f88ca9184ae7ad8c23c1619c96b28dc9c58c00fe56910b31"
+  },
+  "checks": []
+}

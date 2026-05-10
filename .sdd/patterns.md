@@ -78,6 +78,13 @@ A SDD-style framework that ships both as a Claude Code plugin (slash commands, h
 
 Source: [[007-sdd-migrate-refresh-project-s-sdd-tree-from-upstream-framework]] feature ship.
 
+claude/clever-herschel-af8c27
+### Behavioural triggers belong in CLAUDE.md doctrine, not in discrete loops
+
+When SDD ships a behavioural rule the agent should apply at certain moments (e.g. "after pushing, run background work"), the load-bearing trigger is the agent reading CLAUDE.md at session start and applying the doctrine — NOT a separate poll loop, hook, or daemon. Caught dogfooding feature 008 §5: I specified "the CR-poll loop calls background-while-waiting.sh" — but the framework has no CR-poll loop, because the agent itself is the poller (it's session-based, not long-running). The fix was to scope the behaviour to the agent's existing post-push pattern via CLAUDE.md doctrine + an idempotent emit script the agent calls — no new infrastructure. The lesson: when SPEC §5 names a "loop" or "service" inside the framework, ASK whether that primitive actually exists before designing on top of it. The brief-builder's terminology drill (e.g. "what does CR-poll loop mean concretely?") catches this earlier.
+
+Source: [[008-background-while-waiting]] §5 / §14 T4 re-scope during BUILD.
+=======
 ### Wizard-records-but-install-side-effect-fires anti-pattern
 
 A common framework anti-pattern: the wizard records the user's intent in some config file (e.g. `mcp.enabled: true`), but the install action that actually wires the feature into the project (`enable.sh`, dropping `.mcp.json`, registering with the host CLI) never fires. The user is convinced the feature is on; the agent never gets the tool calls; nobody notices until someone audits the transcript and sees zero `mcp__*` invocations. Discovered concurrently in two parallel flows: Claude Code's `/sdd-setup` brick 007 (#209 — `mcp.enabled:true` recorded but `enable.sh` never run) and pi.dev's MCP integration (F008 AC10 — manifest expects MCP but `.pi/mcp.json` not written). Same shape, both harnesses. Lesson: every wizard answer that triggers an install side-effect should verify the side-effect fired, ideally by writing a sentinel file the agent or audit can later check. Don't trust "config says yes" as proof — make the install act, then assert.
@@ -95,3 +102,4 @@ Source: [[008-build-the-sdd-on-pi-extension-package]] §15 ec-pick + T210.
 The framework's own `/start` scaffold emitted exit-checks lines (`C-spec-acs: ≥1 acceptance criterion exists in §11`) that lacked the `{verify-by: verify-stage.sh}` annotation the anti-theatre lint expects. Result: every freshly-scaffolded feature traps on its first commit, until the user (or agent) hand-patches the missing annotation. The scaffold and the validators drift in lockstep — additions to one don't update the other. Lesson: the scaffold itself is a feature with its own AC, and its AC is "every line emitted passes every shipping lint and moat check." When you tighten a lint, run it against the scaffold's output. When you change the scaffold, re-run shipping lints against a freshly-scaffolded feature. Caught + filed as a separate fix-task during F008 SPEC.
 
 Source: [[008-build-the-sdd-on-pi-extension-package]] /start scaffold trip + spawn_task fix.
+main

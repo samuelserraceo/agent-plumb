@@ -700,6 +700,27 @@ Reading cold features bloats context for no reason. They are reference material,
 
 If a feature folder has no `.shipped` marker, treat it as in-flight and read normally.
 
+## Background while waiting
+
+When the agent is waiting on an external process (CodeRabbit review, CI run, deploy preview), don't sit idle — do the next safe thing. The framework's `.sdd/scripts/background-while-waiting.sh` script emits a marker line per wait window and prints safe-set candidates; the agent picks one, declares it via `--update-last-action`, then does the work.
+
+**Low-risk set** — the agent may pick any of these unattended:
+
+- Re-read `patterns.md`, `decisions.md`, `data-model.md` to refresh internal model
+- Pre-fetch the next in-flight feature's spec.md context
+- Draft the current feature's PR description (save to `.sdd/<feature>/pr-description.md`, gitignored)
+- Draft commit messages
+
+**Judgement-required set** — agent surfaces and asks before doing:
+
+- Speculative response drafts to likely CR concerns
+
+**Out-of-scope set** — these are not automated background work. Surface to the user when the situation arises; the user does them, not the agent:
+
+- Edits to files outside the current feature's scope
+- Force-push or any other destructive git operation (these stay manual even with user approval — surface and let the user run them)
+- Changes to shared corpus files (patterns.md, decisions.md, data-model.md, stack.md) — those go through normal SPEC walks, not background-mode
+
 ## Forbidden
 
 - ❌ Filling a `[ ]` from assumption in USER-LED sections

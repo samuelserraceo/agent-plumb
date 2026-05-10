@@ -1,17 +1,38 @@
 # SDD framework — INDEX
 
+claude/clever-herschel-af8c27
+**Active:** features/009-background-while-waiting
+**Playbook:** feature
+**Active blocker:** SHIP (first action: verify-test-run)
+=======
 **Active:** features/009-feature-playbook-v2-brief-driven-spec-entry-replaces-3-question-pitch-shape
 **Playbook:** feature
 **Active blocker:** BUILD T01 (brief-intake action)
+main
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
 
 ## In flight
+- features/009-background-while-waiting — background while waiting (PHASE: SHIP)
 
+claude/clever-herschel-af8c27
+
+
+## Ideas
+
+- ideas/001-brief-builder-prefills-spec — brief from `/write-brief` plugin pre-fills SPEC §0; SDD grills only the gaps + audits against project corpus — captured 2026-05-10
+- ideas/002-lego-style-model-right-sizing — each step declares thinking/routine/mechanical tier; framework picks model per tier; works for Claude-only + pi.dev — captured 2026-05-10
+- ideas/003-prompt-caching-across-turns — order prompt so stable corpus comes first, variable turn comes last; provider cache picks up the prefix — captured 2026-05-10
+- ideas/004-background-while-waiting — fill CR/CI deadtime with next-safe-thing (most isolated speed lever, lowest collision risk) — captured 2026-05-10
+- ideas/005-auto-advance-agent-led-steps — default `requires_user_approval` false; setup-time automation-level toggle; extends BUILD-autonomy across SPEC/SHIP — captured 2026-05-10
+- ideas/006-plain-english-sweep-sdd-prose — survey + rewrite SDD's user-facing prose to match brief-builder v0.4's plain-English bar (jargon → notes-from-a-colleague tone) — captured 2026-05-10
+- ideas/007-cross-branch-feature-id-collision — three SDD rules (append-only / cofile-block / wiki-link resolution) collide on git merges when two branches both scaffold the same feature ID — captured 2026-05-10
+=======
 - features/009-feature-playbook-v2-brief-driven-spec-entry-replaces-3-question-pitch-shape — feature playbook v2 — brief-driven SPEC entry replaces 3-question Pitch shape (PHASE: BUILD)
 
 
+main
 
 
 ## Shipped
