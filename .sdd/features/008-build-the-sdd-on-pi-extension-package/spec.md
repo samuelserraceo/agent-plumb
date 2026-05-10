@@ -291,7 +291,7 @@ Plus one already-handled-elsewhere (not in §9 list because it has its own home)
 
 ### action: acceptance-criteria
 
-- [x] approval: 12 ACs drafted (AC1-AC12), each with {verify-by: T-NNN} annotation. T200-T211 reserved. Sam approved 2026-05-08.
+- [x] approval: 12 ACs drafted (AC1-AC12), each with {verify-by: T-NNN} annotation. T200-T211 reserved one-per-AC (T212 added post-cycle-2 during SHIP as a runtime-wiring strengthener — strengthens AC1/3/4/7's underlying load+register check, doesn't add a new AC). Sam approved 2026-05-08.
 
 **Acceptance criteria (12 ACs — every claim has a {verify-by: T-NNN} annotation):**
 
@@ -341,7 +341,7 @@ Plus one already-handled-elsewhere (not in §9 list because it has its own home)
 
 - [x] manual-steps: 5 manual checks before SHIP — fresh-machine install dry-run; one full atomic step in pi.dev (real session); model-switching mid-session test; /sdd-status visual check; (optional) MCP integration smoke
 
-**Manual smoke tests Sam will run before SHIP (beyond T200-T211):**
+**Manual smoke tests Sam will run before SHIP (beyond T200-T212):**
 
 1. **Fresh-machine install dry-run.** On a clean machine: install pi.dev → `pi install npm:sdd-pi-adapter` → open pi → verify all 9 slash commands appear in `/` autocomplete. Catches install/manifest issues automated tests miss.
 2. **One full atomic step in pi.dev.** Fresh test project: `/sdd-start build a fake feature` → `/sdd-next` → answer §1.who → verify the commit lands cleanly through git pre-commit hooks. Catches state-injection or commit-flow regressions in real use.
@@ -469,7 +469,7 @@ Sam approved 2026-05-08 after preview in Chrome.
 
 ### action: run-mode-chosen
 
-- [x] mode: Shell Ralph (headless) — Sam runs ./scripts/ralph.sh in a separate terminal; each task is a fresh Claude invocation. Best for the 36 atomic commits of T200-T211.
+- [x] mode: Shell Ralph (headless) — Sam runs ./scripts/ralph.sh in a separate terminal; each task is a fresh Claude invocation. Best for the 36 atomic commits of T200-T211 (T212 added post-cycle-2 during SHIP via test → code → green = 3 more commits).
 
 **Run mode:** Shell Ralph (headless)
 
@@ -489,10 +489,10 @@ Sam approved 2026-05-08 after preview in Chrome.
 
 ### action: learn
 
-- [x] summary: Shipped sdd-pi-adapter — pi.dev extension bringing SDD's spec-driven workflow to any model behind pi's harness (15+ providers). Same /sdd-* slash commands, same atomic-step discipline, same anti-theatre lint, running on whatever model pi's /model picks. Removes the "Claude Code only" lock for SDD adoption. Validated by 2/2 single-turn discipline test pre-BUILD + 12/12 mechanical ACs at SHIP.
+- [x] summary: Shipped sdd-pi-adapter — pi.dev extension bringing SDD's spec-driven workflow to any model behind pi's harness (15+ providers). Same /sdd-* slash commands, same atomic-step discipline, same anti-theatre lint, running on whatever model pi's /model picks. Removes the "Claude Code only" lock for SDD adoption. Validated by 2/2 single-turn discipline test pre-BUILD + 13/13 mechanical task-tests T200-T212 at SHIP (T200-T211 one-per-AC + T212 runtime-wiring strengthener added post-cycle-2 to close the partial-e2e gap).
 - [x] lessons: 3 lessons appended to .sdd/patterns.md — (1) wizard-records-but-install-side-effect-fires anti-pattern (parallel with #209); (2) worktree-scoped git config can override local config silently (EC#4 from §15); (3) scaffold templates need to satisfy their own ship-time validators (the /start scaffold trip we filed as a separate fix-task).
 
-**Summary:** Shipped `sdd-pi-adapter` — a pi.dev extension that brings SDD's spec-driven workflow to any model behind pi's harness (15+ providers: Anthropic, OpenAI, Google, Ollama, Bedrock, Groq, xAI, OpenRouter, etc.). Same `/sdd-start /sdd-next /sdd-ship` loop, same atomic-step-per-commit discipline, same anti-theatre lint, same trust-boundary state injection — running on whatever model the user picks via pi's `/model` command. **Why:** SDD's reach was capped at "people who happen to use Claude Code." Colleagues wanting SDD's discipline on GPT-5 (via Codex), Kimi K2 (via NVIDIA Build), or open-weight models had to switch CLIs to get it. SDD-on-pi removes the lock — colleagues install one npm package and run SDD on whatever model they were already using. Validated by a 2/2 single-turn discipline test (GPT-5.5 + Kimi K2) before BUILD, and by 12/12 mechanical AC tests (T200-T211) at SHIP. Claude Code SDD continues to work unchanged in parallel.
+**Summary:** Shipped `sdd-pi-adapter` — a pi.dev extension that brings SDD's spec-driven workflow to any model behind pi's harness (15+ providers: Anthropic, OpenAI, Google, Ollama, Bedrock, Groq, xAI, OpenRouter, etc.). Same `/sdd-start /sdd-next /sdd-ship` loop, same atomic-step-per-commit discipline, same anti-theatre lint, same trust-boundary state injection — running on whatever model the user picks via pi's `/model` command. **Why:** SDD's reach was capped at "people who happen to use Claude Code." Colleagues wanting SDD's discipline on GPT-5 (via Codex), Kimi K2 (via NVIDIA Build), or open-weight models had to switch CLIs to get it. SDD-on-pi removes the lock — colleagues install one npm package and run SDD on whatever model they were already using. Validated by a 2/2 single-turn discipline test (GPT-5.5 + Kimi K2) before BUILD, and by 13/13 mechanical task-tests (T200-T212) at SHIP — T200-T211 are one-per-AC (12 ACs); T212 was added post-cycle-2 as a runtime-wiring strengthener after partial e2e surfaced that the manifest declared `dist/sdd-pi.js` but the file didn't exist (so AC3/4/7 hooks silently no-op'd). Claude Code SDD continues to work unchanged in parallel.
 
 ### action: push-pr
 
