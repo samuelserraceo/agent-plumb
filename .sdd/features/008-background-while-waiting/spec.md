@@ -4,9 +4,9 @@ playbook: feature
 
 # background while waiting
 
-[PHASE: BUILD]
+[PHASE: SHIP]
 
-**Active blocker:** BUILD (first action: run-mode-chosen)
+**Active blocker:** SHIP (first action: verify-test-run)
 
 ## PHASE: SPEC
 

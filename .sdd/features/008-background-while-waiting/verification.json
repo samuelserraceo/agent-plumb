@@ -1,5 +1,5 @@
 {
-  "phase": "BUILD",
+  "phase": "SHIP",
   "approved_sections": {
     "proposed-approach": "bd8864317134bd659e514c5d408a84ef18d3d1315904965414f053b59cafc6ee",
     "data-contract": "d88317334246cce918fb92bc61069c79e23e44afe4b3cded97751b8c3fc0e10f",
@@ -9,7 +9,10 @@
     "non-functional": "4bcb9a25be0d317c1a140af7e236ab8cb1ee82d245ed9765217fa94442ce0d48",
     "acceptance-criteria": "43ac3c0ec3d0d7b69d5ef74031211e51a906624c4fcd0e17758afb0e2fac2b3e",
     "plan-decompose": "85e0ff457a70eb68cda0a923eb2e925721c8ab7cea01dbdc3bf998eb84e0ca42",
-    "edge-case-sweep": "b447938dc72a76f69dc9c9be20326589682c190bc3efec8fb15f871dfd46b26f"
+    "edge-case-sweep": "b447938dc72a76f69dc9c9be20326589682c190bc3efec8fb15f871dfd46b26f",
+    "adversarial-review": "cd54e76a55d78be4ab95c5204723a947011d6841aa3631da3b9b1c30f40aa781",
+    "learn": "ffb69eed1eb4c5510e790e1b97d90115ec2527175e0ef778049141d90302afc8",
+    "playwright-explore": "2adf20cf226b6002fc9908b9f07ee39c118c39477417f7e7086501f4b9c93bcb"
   },
   "checks": []
 }
