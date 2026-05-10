@@ -319,3 +319,6 @@ Sam approved §6: no new data-model.md entries. Single new internal telemetry lo
 
 ## 2026-05-10T18:00:00Z [[008-background-while-waiting]] feature/out-of-scope
 Sam approved §9: 5 deferrals locked. (1) Speculative CR-response drafting — judgement-required, defer until safe-set proven. (2) Cross-worktree advance-N+1 — Approach C from §5, deferred until §2 metric data justifies. (3) Auto-execution without agent declaration — keep agent visibility in commit log + chat. (4) Remote metric dashboards / cross-machine aggregation — local JSONL only. (5) Pre-fetch beyond N+1 — Flow 2 only covers next feature.
+
+## 2026-05-10T18:15:00Z [[008-background-while-waiting]] feature/acceptance-criteria
+Sam approved §11: 7 ACs. AC1 script emits marker on manual trigger; AC2 stderr lists safe-set candidates; AC3 action_chosen update via flag; AC4 CR-poll loop integration adds entry per wait window; AC5 doctrine ships in both `templates/CLAUDE.md` and `.sdd/CLAUDE.md`; AC6 §2 metric is wc + grep computable; AC7 marker log schema is exactly `{ts, session_id, wait_type, action_chosen}` with no extra fields. Each AC manually triggerable inside the framework's 60-second verification budget.

@@ -198,7 +198,23 @@ The new code path writes a small JSONL telemetry log to local disk. The §2 metr
 
 ### action: acceptance-criteria
 
-- [ ] approval: draft the acceptance criteria, run a constraint-coverage check vs §4, iterate, get approval
+- [x] approval: 7 ACs drafted — script-emit (AC1), candidates-listed (AC2), action-chosen-update (AC3), CR-poll-integration (AC4), doctrine-in-both-CLAUDE-md (AC5), metric-grep-able (AC6), telemetry-schema-clean (AC7)
+
+**Acceptance criteria — 7 ACs, each manually triggerable, each verifiable inside the framework's 60-second budget**
+
+- [ ] AC1 — script emits on manual trigger: Run `bash .sdd/scripts/background-while-waiting.sh cr-poll`. Last line of `.sdd/.cache/background-emit.log` parses as JSON with schema `{ts, session_id, wait_type, action_chosen}`, where wait_type=`cr-poll` and action_chosen=`pending`.
+
+- [ ] AC2 — candidates listed: Run script with `--list-candidates` flag. Stderr lists the 4 safe-set candidates (re-read-corpus, pre-fetch-next-feature, draft-pr-description, draft-commit-msgs).
+
+- [ ] AC3 — action_chosen updates: After AC1, run script with `--update-last-action draft-pr-description`. Re-read the last line of the log; action_chosen field is now `draft-pr-description`.
+
+- [ ] AC4 — CR-poll loop integration: After a `git push` that triggers the existing CR-poll loop, a new entry appears in the marker log within the first wait cycle. (Manual: push a branch with a deliberate small commit, watch for log entry.)
+
+- [ ] AC5 — doctrine in both CLAUDE.md files: `awk '/^## Background while waiting/,/^## /' templates/CLAUDE.md` and the same against `.sdd/CLAUDE.md` produce equivalent doctrine sections (both list low-risk, judgement-required, and out-of-scope sets).
+
+- [ ] AC6 — §2 metric is grep-able: After a session with at least one wait window, `wc -l .sdd/.cache/background-emit.log` returns a positive count and `grep -c '"action_chosen": "none-skipped"' .sdd/.cache/background-emit.log` returns a count not greater than the total. The §2 metric = total minus none-skipped lines.
+
+- [ ] AC7 — telemetry schema clean: `python3 -c "import sys,json;print(set(json.loads(l).keys()) for l in open('.sdd/.cache/background-emit.log'))"` outputs the set `{'ts', 'session_id', 'wait_type', 'action_chosen'}` for every parsed line. Has no extra keys, no PII fields.
 
 ### action: signoff-steps
 
