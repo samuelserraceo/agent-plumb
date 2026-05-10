@@ -18,7 +18,7 @@ playbook: feature
 
 ### action: success
 
-- [ ] metric: Pick a metric pattern (volume / speed / quality / engagement) or describe your own. Give a target number AND the current baseline if known.
+- [x] metric: engagement — 100% of CR/CI waits ≥3 min trigger ≥1 always-safe background action {verify-by: marker emit count in CR-poll loop == wait-event count, measured across next 5 framework features after 008 ships}; baseline 0% today (current poll loop is idle) {verify-by: grep .sdd/scripts/ for background-emit calls — expect zero matches at HEAD~0}
 
 ### action: user-stories
 
