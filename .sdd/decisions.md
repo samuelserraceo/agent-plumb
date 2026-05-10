@@ -396,3 +396,9 @@ SHIPPED. PR #214 ready for merge after 3 CR review cycles (24/25 findings closed
 Cosmetic re-approval of §7 Flows: added language tag (`text`) to the fenced code block at line 177 to satisfy markdownlint MD040 (CR cycle 1 finding #2). No semantic change to flow content — same User/Agent steps, same brief-paste sequence. Re-locked via reapprove.sh.
 
 Hash: ac9f00b45b845603a9ea3661de922cdeca1e031f278d16574f5b078c6be9cec0
+
+## 2026-05-10T19:53:29Z  [[009-feature-playbook-v2-brief-driven-spec-entry-replaces-3-question-pitch-shape]]  feature/proposed-approach-cosmetic-fix
+
+Cosmetic re-approval of §5 proposed-approach: added blank line after the `#### What this approach explicitly is NOT` heading at spec.md L146 to satisfy markdownlint MD022 (CR cycle 2 finding #2). No semantic change to the proposed approach — same 4-PR sequence, same risk register, same alternatives. Re-locked via reapprove.sh.
+
+Hash: 32e423298d46643adf197ad011676d343ebeb8601c06f50cd8b26458d4413621

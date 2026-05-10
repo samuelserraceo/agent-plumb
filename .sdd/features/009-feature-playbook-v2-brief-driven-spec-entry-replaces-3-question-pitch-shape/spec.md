@@ -144,6 +144,7 @@ Per issue #207, ship the redesign as 4 independently-mergeable sub-PRs. Apply th
 - **Documentation drift** — CLAUDE.md doctrine has many cross-references; PRs A/C/D all touch CLAUDE.md. Mitigation: PR-A lands the structural change; PR-C and PR-D append to CLAUDE.md without overwriting PR-A's edits.
 
 #### What this approach explicitly is NOT
+
 - Not a rewrite of the entire feature playbook — only the entry actions (problem -> brief-intake) and a few mid-spec voice doctrines change.
 - Not a deprecation of the 3-question Pitch shape — Story 2 (engineer opt-out) keeps it accessible via a flag.
 - Not a deferred-question system — the brief-paste pre-fills sections, but USER-LED steps still ask for confirmation per CLAUDE.md no-assume doctrine — best-effort agent self-check at every USER-LED entry.
