@@ -20,6 +20,7 @@
 - ideas/004-background-while-waiting — fill CR/CI deadtime with next-safe-thing (most isolated speed lever, lowest collision risk) — captured 2026-05-10
 - ideas/005-auto-advance-agent-led-steps — default `requires_user_approval` false; setup-time automation-level toggle; extends BUILD-autonomy across SPEC/SHIP — captured 2026-05-10
 - ideas/006-plain-english-sweep-sdd-prose — survey + rewrite SDD's user-facing prose to match brief-builder v0.4's plain-English bar (jargon → notes-from-a-colleague tone) — captured 2026-05-10
+- ideas/007-cross-branch-feature-id-collision — three SDD rules (append-only / cofile-block / wiki-link resolution) collide on git merges when two branches both scaffold the same feature ID — captured 2026-05-10
 
 
 ## Shipped
