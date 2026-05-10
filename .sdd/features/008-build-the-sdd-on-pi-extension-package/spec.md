@@ -406,7 +406,7 @@ Sam approved 2026-05-08 after preview in Chrome.
   2026-05-08 discipline test passes through pi.dev under both
   claude-sonnet-4-6 AND one non-Claude model (GPT-5 OR Kimi K2 OR
   Llama) — proves AC9 (multi-model regression)
-- [ ] T211 (RED): pushing a release tag matching `pi-v*` triggers
+- [x] T211 (GREEN): pushing a release tag matching `pi-v*` triggers
   .github/workflows/publish-pi-adapter.yml; tag is published to
   npm as sdd-pi-adapter; re-running on the same tag is a no-op
   — proves AC12
