@@ -402,7 +402,7 @@ Sam approved 2026-05-08 after preview in Chrome.
 - [x] T209 (GREEN): with pi-mcp-adapter installed and a fixture
   .pi/mcp.json that references the SDD MCP server, querying via pi's
   mcp proxy returns SDD tool results — proves AC10
-- [ ] T208 (RED): the BUILD-TASK calculator-add fixture from the
+- [x] T208 (GREEN): the BUILD-TASK calculator-add fixture from the
   2026-05-08 discipline test passes through pi.dev under both
   claude-sonnet-4-6 AND one non-Claude model (GPT-5 OR Kimi K2 OR
   Llama) — proves AC9 (multi-model regression)
