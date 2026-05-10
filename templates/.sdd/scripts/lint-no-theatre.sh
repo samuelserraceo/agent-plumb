@@ -96,6 +96,15 @@ ANNOT_RE='\{[[:space:]]*(verify-by|best-effort|prod-only)[[:space:]]*:[[:space:]
 # Flag lines OUTSIDE triple-backtick fences. For inline `code` spans
 # on a flagged line, replace inline-code substrings with empty before
 # matching theatre tokens (so a token inside `…` doesn't fire).
+#
+# Ignore-block escape hatch (closes #204): framework-shipped template
+# starter prose can wrap itself in HTML-comment markers to opt out of
+# theatre scanning without polluting the prose with annotations:
+#   <!-- lint-no-theatre:ignore-block-start -->
+#   ...starter prose with "Never duplicate", "always", etc...
+#   <!-- lint-no-theatre:ignore-block-end -->
+# Lines between the markers (inclusive) are exempt. An unclosed block
+# at EOF emits a stderr warning but does not crash the lint.
 
 # ─── Main scan ───────────────────────────────────────────────────────
 violations=0
@@ -113,10 +122,25 @@ for spec in "${TARGETS[@]}"; do
     LINES+=("$line")
   done < "$spec"
   in_fence=0
+  in_ignore_block=0
   total=${#LINES[@]}
 
   for i in "${!LINES[@]}"; do
     line="${LINES[$i]}"
+
+    # Ignore-block markers (HTML comments, exact match). Toggle BEFORE
+    # the fence/scan logic so a marker inside a fence still wouldn't
+    # fire (markers in fenced examples are inert anyway, but the toggle
+    # keeps them inert without depending on fence state).
+    if [[ "$line" == *"<!-- lint-no-theatre:ignore-block-start -->"* ]]; then
+      in_ignore_block=1
+      continue
+    fi
+    if [[ "$line" == *"<!-- lint-no-theatre:ignore-block-end -->"* ]]; then
+      in_ignore_block=0
+      continue
+    fi
+    if [ "$in_ignore_block" -eq 1 ]; then continue; fi
 
     # Toggle fence state on any line that contains ``` at start (after
     # optional whitespace). Don't scan tokens INSIDE fenced blocks.
@@ -205,6 +229,13 @@ for spec in "${TARGETS[@]}"; do
       violations=$((violations + 1))
     fi
   done
+
+  # Warn (don't crash) on unclosed ignore-block at EOF — likely a typo
+  # in the closing marker. The lint stays exit-0 from this path; if the
+  # author left a real theatre claim outside the block it still fired.
+  if [ "$in_ignore_block" -eq 1 ]; then
+    echo "[lint-no-theatre] $spec: unclosed <!-- lint-no-theatre:ignore-block-start --> — missing matching ignore-block-end marker" >&2
+  fi
 done
 
 if [ "$violations" -gt 0 ]; then
