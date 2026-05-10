@@ -225,7 +225,26 @@ Postcondition: Same correctness as Flow 1, lower cost + faster wall-clock. The o
 
 ### action: dependencies
 
-- [ ] deps: draft external services + pricing math scaled to success-volume targets
+- [x] deps: Hard — Claude Code's Agent tool (primary dispatch primitive) + existing SDD framework brain (hooks, next-action.sh, ralph prompt, all reused) + git's concurrent-commit semantics (already a hard dep). Soft — pi.dev's equivalent subagent-spawn API for SDD-on-pi adopters (verified at SHIP). Explicitly NOT depending on new MCP servers, new npm packages, new entities, or per-harness forks. Sam approved 2026-05-10.
+
+**Dependencies — three buckets:**
+
+**1. Hard deps (must work for 010 to ship at all):**
+
+- **Claude Code's Agent tool.** The primary dispatch primitive. Without it, no parallel wave execution.
+- **Existing SDD framework brain.** Reused as-is — pre-commit hooks, `next-action.sh`, ralph-style BUILD-task prompt. No re-architecture.
+- **Git's concurrent-commit semantics.** Wave-tasks commit independently to the same branch in non-deterministic order. Already a hard dep of SDD today; nothing new.
+
+**2. Soft deps (need adopter-side verification at SHIP):**
+
+- **pi.dev's equivalent subagent-spawn API.** For colleagues running SDD-on-pi (post-F008), parallel wave needs pi to expose a parallel-Agent-call primitive. Likely yes — pi-gsd uses something similar — but verified mechanically at SHIP time {best-effort: pi.dev SDK behaviour at SHIP, dependent on harness API stability}.
+
+**3. What we explicitly don't depend on:**
+
+- **No new MCP servers.** Wave dispatch is a local-shell-script + Agent-tool affair.
+- **No new npm packages.** `dispatch-wave.sh` is bash; parallel agents come from existing SDKs.
+- **No changes to existing entities** (Action, Playbook, Hook, Setup brick, Pi extension package). §6 confirmed.
+- **No per-harness fork.** The framework brain handles waves identically on Claude Code and pi.dev (same hooks fire on the same git invocation regardless of harness).
 
 ### action: out-of-scope
 
