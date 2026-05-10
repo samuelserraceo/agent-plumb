@@ -101,10 +101,11 @@ EOF
 ra_out="$(cd "$PROJECT" && bash .sdd/scripts/resolve-active.sh 2>&1)"
 ra_rc=$?
 [ "$ra_rc" -eq 0 ] || fails+=("resolve-active.sh failed (exit $ra_rc): $ra_out")
-case "$ra_out" in
-  *'"active": "features/001-test-thing"'*) : ;;
-  *) fails+=("resolve-active.sh did not return active=features/001-test-thing (got: $ra_out)") ;;
-esac
+# Whitespace-tolerant JSON match — equivalent valid JSON (different
+# spacing, indentation) should still pass. CR cycle 2 #8.
+if ! printf '%s' "$ra_out" | grep -Eq '"active"[[:space:]]*:[[:space:]]*"features/001-test-thing"'; then
+  fails+=("resolve-active.sh did not return active=features/001-test-thing (got: $ra_out)")
+fi
 
 # 2. next-action.sh — should return the first open step's action/step/
 #    tag/prompt so the agent can ask the user the right question.
@@ -113,15 +114,14 @@ na_rc=$?
 [ "$na_rc" -eq 0 ] || fails+=("next-action.sh failed (exit $na_rc): $na_out")
 
 for needle in \
-  '"phase": "SPEC"' \
-  '"action": "problem"' \
-  '"step": "who"' \
-  '"tag": "USER-LED"'
+  '"phase"[[:space:]]*:[[:space:]]*"SPEC"' \
+  '"action"[[:space:]]*:[[:space:]]*"problem"' \
+  '"step"[[:space:]]*:[[:space:]]*"who"' \
+  '"tag"[[:space:]]*:[[:space:]]*"USER-LED"'
 do
-  case "$na_out" in
-    *"$needle"*) : ;;
-    *) fails+=("next-action.sh JSON missing field: $needle (got: $na_out)") ;;
-  esac
+  if ! printf '%s' "$na_out" | grep -Eq "$needle"; then
+    fails+=("next-action.sh JSON missing field pattern: $needle (got: $na_out)")
+  fi
 done
 
 # AC6 names the tag triplet — confirm the prompt field carries the
