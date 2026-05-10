@@ -122,7 +122,7 @@
   "sdd_version": "1.0.0",
   "actions": {
     "acceptance-criteria": {
-      "expected_sha256": "a8279197017743f2b6185bfc0ed41df8c00c10df0d0f1d409b257f536316c2a6",
+      "expected_sha256": "fe3d05fa846115b7cd50b038141b5a9e67fd7df1b5a9de5e9d40e7014f7d4dd0",
       "path": ".sdd/actions/acceptance-criteria.md",
       "trust": "framework"
     },

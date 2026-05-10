@@ -28,6 +28,13 @@ Each AC is a **concrete, testable assertion**. Each AC maps to **one task** in `
 
 **Anchor to context.** Base ACs on `flows`, `user-stories`, and (if not skipped) `ux-brief` constraints. Every UX constraint (mobile-first, accessibility floor, locale) needs ≥1 AC backing it.
 
+**Folding §2 success metrics into ACs (in-flight features only).** If this feature has a §2 Success section (i.e. it scaffolded BEFORE the v1.6 PR-A merge that removed `success` from the feature playbook — see CLAUDE.md "Never skip a non-skippable section" note), translate each §2 metric into a measurable AC here. Make the measurement method, threshold, and environment explicit so the test is concrete.
+
+- *§2 says:* "page load time under 2s" → *AC:* "page loads in ≤2s on mobile-first iPhone-13 viewport with 5G throttling, measured by Playwright's `page.waitForLoadState('networkidle')`"
+- *§2 says:* "100 signups/month" → AC isn't the right home (that's a longitudinal business metric, not a test); record as a `[BEST-EFFORT]` annotation on the relevant flow AC instead, or move to `decisions.md` as a target-not-an-AC.
+
+For new (post-PR-A) features, §2 doesn't exist by design — success metrics are written directly as ACs here from the brief, and no folding is needed.
+
 **Multi-choice scaffold for test types** (and a free-form escape):
 
 - **Form / input** → submission produces X; invalid input returns Y
