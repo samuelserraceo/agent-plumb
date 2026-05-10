@@ -9,11 +9,18 @@
 
 ## In flight
 
-- features/008-build-the-sdd-on-pi-extension-package — build the SDD-on-pi extension package (PHASE: SHIP)
+(none)
 
 
 
 ## Shipped
+
+- **[[008-build-the-sdd-on-pi-extension-package]]** — closes SDD's "Claude Code only" lock by shipping `sdd-pi-adapter`, a pi.dev extension that brings SDD's spec-driven workflow to any model behind pi's harness (15+ providers: Anthropic, OpenAI, Google, Ollama, Bedrock, Groq, xAI, OpenRouter, etc.). Same `/sdd-start /sdd-next /sdd-ship` loop, same atomic-step-per-commit discipline, same anti-theatre lint, same trust-boundary state injection — running on whatever model the user picks via pi's `/model` command. Hand-written CommonJS extension at `extensions/sdd-pi-extension/dist/sdd-pi.js` registers three pi lifecycle handlers: `pi.on("context")` for state injection (AC3), `pi.on("session_start")` for HRN-01 install + worktree-config check (AC4), `pi.registerCommand("sdd-status")` for instant zero-LLM status (AC7). Validated by 2/2 single-turn discipline test (GPT-5.5 + Kimi K2) before BUILD, then by 13/13 mechanical AC tests (T200-T212) at SHIP. T212 added mid-SHIP after partial e2e surfaced that manifest declared `dist/sdd-pi.js` but no such file existed — closed via test → code → green. 3 CR review cycles (24/25 findings closed; C2-4 MD022 deferred — append-only contract on decisions.md blocks blank-line edits to historical entries). 218/218 framework + 13/13 per-feature GREEN.
+  - Shipped: 2026-05-10 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/214
+  - Data-model: [[entity:pi-extension-package]] (added — new framework-level distributable unit)
+  - Extends: (root)
+  - Patterns: 3 lessons appended (wizard-records-but-install-side-effect-fires anti-pattern — parallel with #209; worktree-scoped git config can override local config silently — EC#4; scaffold templates need to satisfy their own ship-time validators).
+  - Deferred: scaffold-fix follow-up filed as separate task (the `/start` template emits `≥1 AC exists`-style exit checks without `{verify-by:}` annotation, tripping anti-theatre lint on every freshly-scaffolded feature); MD022 blank-line cosmetic on F008 decisions.md entries (append-only contract blocks the fix; cosmetic only).
 
 - **[[007-sdd-migrate-refresh-project-s-sdd-tree-from-upstream-framework]]** — closes the load-bearing gap that prevented SDD from being a real updatable internal package. Ships `bash .sdd/scripts/sdd-migrate.sh --upstream=<path>` (dry-run by default) + `--apply` mode with per-file confirmation on conflicts. Categorises every framework-tracked file as ADD / UPDATE-CLEAN / UPDATE-CONFLICT / REMOVED via the framework's normalised SHA-256 hash. User-data files (spec.md, INDEX.md, decisions.md, patterns.md, data-model.md, stack.md, principles.md, .sdd/features/**, .sdd/bugs/**, .sdd/refactors/**, .sdd/ideas/**) are invisible to the tool by walk-list design. After --apply the manifest is re-pinned to upstream so commits stop tripping drift errors. Bash 3.2 compat (tempfile-backed prior-hash lookup; declare -A would crash on macOS). 1 CR review cycle (5 Major + 4 Minor closed: bit-for-bit hash check on AC7, apply error handling pre-manifest-repin, T161 UPDATE-CLEAN + post-apply idempotence, REMOVED-only message, MD022, decisions.md correction).
   - Shipped: 2026-05-04 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/157

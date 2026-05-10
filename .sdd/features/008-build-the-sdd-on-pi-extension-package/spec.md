@@ -1,8 +1,8 @@
 # build the SDD-on-pi extension package
 
-[PHASE: SHIP]
+[PHASE: SHIPPED]
 
-**Active blocker:** § (SHIP action: verify-test-run)
+**Active blocker:** — (shipped)
 
 ## PHASE: SPEC
 
@@ -504,9 +504,9 @@ Sam approved 2026-05-08 after preview in Chrome.
 
 ### action: mark-shipped
 
-- [ ] shipped: INDEX.md updated, .shipped marker written, decisions.md appended
+- [x] shipped: INDEX.md updated, .shipped marker written, decisions.md appended
 
 ### Exit checks
 
-- [ ] C-ship-pr-url: PR URL recorded in INDEX.md Shipped section {verify-by: verify-stage.sh}
-- [ ] C-ship-marked: .shipped marker file exists in feature folder {verify-by: verify-stage.sh}
+- [x] C-ship-pr-url: PR URL recorded in INDEX.md Shipped section {verify-by: verify-stage.sh}
+- [x] C-ship-marked: .shipped marker file exists in feature folder {verify-by: verify-stage.sh}
