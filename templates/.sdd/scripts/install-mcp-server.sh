@@ -67,14 +67,21 @@ fi
 
 # Read parameters.mcp.enabled from config.md frontmatter.
 # Tolerates: `enabled: true`, `enabled:true`, `enabled : true`, plus comment trail.
+# CR cycle 1 (PR #212): also tolerates UTF-8 BOM at file start and CRLF
+# line endings — without these, a config.md saved by a Windows editor
+# or a tool that prepends a BOM would fail the frontmatter regex
+# silently and the script would treat enabled:true as UNKNOWN.
 mcp_enabled=$(python3 - "$CONFIG_MD" <<'PYEOF'
 import sys, re
 try:
     import yaml
 except ImportError:
     print("MISSING_YAML"); sys.exit(0)
-text = open(sys.argv[1], encoding="utf-8").read()
-m = re.match(r'^---\n(.*?)\n---', text, re.DOTALL)
+# `utf-8-sig` strips a leading BOM if present; otherwise behaves like utf-8.
+text = open(sys.argv[1], encoding="utf-8-sig").read()
+# Tolerate CRLF: r'\r?\n' matches both LF and CRLF. Optional leading whitespace
+# allows files that start with a stray newline before the frontmatter fence.
+m = re.match(r'^\s*---\r?\n(.*?)\r?\n---', text, re.DOTALL)
 if not m:
     print("UNKNOWN"); sys.exit(0)
 try:
@@ -138,11 +145,21 @@ if [ ! -f "$ENABLE_SH" ]; then
 fi
 
 # Run enable.sh. It handles writing .mcp.json + chmod-ing server.py.
-if ! ( cd "$PROJECT_DIR" && CLAUDE_PROJECT_DIR="$PROJECT_DIR" bash "$ENABLE_SH" ) >/dev/null 2>&1; then
-  echo "[install-mcp-server] enable.sh failed — re-running with output:" >&2
-  ( cd "$PROJECT_DIR" && CLAUDE_PROJECT_DIR="$PROJECT_DIR" bash "$ENABLE_SH" ) >&2 || true
+# CR cycle 1 (PR #212): capture stderr the FIRST time so we can replay
+# it on failure — the prior version re-ran enable.sh which doubles any
+# non-idempotent side effects. The `|| enable_ec=$?` short-circuit
+# captures the real exit code WITHOUT triggering `set -e` (which would
+# kill the script before the error handler ran).
+enable_stderr=$(mktemp -t sdd-enable.XXXXXX)
+enable_ec=0
+( cd "$PROJECT_DIR" && CLAUDE_PROJECT_DIR="$PROJECT_DIR" bash "$ENABLE_SH" ) >/dev/null 2>"$enable_stderr" || enable_ec=$?
+if [ "$enable_ec" -ne 0 ]; then
+  echo "[install-mcp-server] enable.sh failed (exit=$enable_ec). stderr:" >&2
+  cat "$enable_stderr" >&2 || true
+  rm -f "$enable_stderr"
   exit 1
 fi
+rm -f "$enable_stderr"
 
 # Verify .mcp.json now has the sdd mcpServer entry.
 if [ ! -f "$MCP_JSON" ]; then

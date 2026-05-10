@@ -44,7 +44,7 @@
       "trust": "framework"
     },
     "install-mcp-server.sh": {
-      "expected_sha256": "669d996005e8c7fe53d09c2f577094064ae819d73c0cc3d29f51b1b5f818e09c",
+      "expected_sha256": "76815e3c64299386ddff0bf1e341c01579cf6f538fe6aa8b989a1a70ece3f62e",
       "path": ".sdd/scripts/install-mcp-server.sh",
       "trust": "framework"
     },
