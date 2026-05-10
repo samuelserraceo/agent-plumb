@@ -49,7 +49,19 @@ For 010 specifically: when SPEC → BUILD → SHIP completes and §11 has all-gr
 
 ### action: user-stories
 
-- [ ] stories: Which personas matter? For each: 'As <persona>, I want <action>, so that <outcome>.' 1-5 stories total.
+- [x] stories: 4 stories — Sam (wall-clock win on big features), Sam (orchestrator quality past turn ~50), Marco-style adopter (multi-component scaffolding), Lucia-style adopter (multi-model × waves combo).
+
+**User stories (4 total):**
+
+1. **Sam — wall-clock win on big features.** As Sam, I want SDD to dispatch independent BUILD tasks in parallel waves, so that F008-shape features (10+ ACs, 30+ tasks) finish in a noticeable fraction of the linear-walk wall-clock time without losing the atomic-step audit trail.
+
+2. **Sam — orchestrator quality past turn ~50.** As Sam, I want each wave-task to run in a clean fresh context, so that my orchestrator's context doesn't fill up past turn ~50 and small drift stops landing in spec edits / commit messages / cross-section consistency (the kind of drift CR cycle 3 caught on F008).
+
+3. **Multi-component adopter (Marco-style from F008's stories).** As a future SDD adopter scaffolding a multi-component feature (5 endpoints + tests + docs + types per item), I want the framework to identify which tasks are independent and dispatch them as one wave, so that my feature ships faster without me having to manually orchestrate parallelism.
+
+4. **Cost-conscious adopter (Lucia-style from F008's stories).** As a colleague running SDD on pi.dev with cheaper models, I want wave-tasks to dispatch to Haiku/Kimi K2 in parallel while my Sonnet orchestrator coordinates, so that I get the killer combo of "smart orchestrator + cheap parallel workers" — cutting both token-spend and wall-clock time without losing SDD's discipline.
+
+(Names "Marco" / "Lucia" are F008-inherited placeholders — Sam to swap with real colleagues' names if useful before SHIP.)
 
 ### action: ux-brief
 
