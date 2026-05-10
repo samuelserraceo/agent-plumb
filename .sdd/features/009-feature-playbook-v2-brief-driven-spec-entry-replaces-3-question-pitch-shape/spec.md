@@ -6,7 +6,7 @@ playbook: feature
 
 [PHASE: SPEC]
 
-**Active blocker:** §3 (action: user-stories)
+**Active blocker:** §4 (action: ux-brief)
 
 ## PHASE: SPEC
 
@@ -49,7 +49,31 @@ Honest discipline: skip with documented reason. Verification of this redesign's 
 
 ### action: user-stories
 
-- [ ] stories: Which personas matter? For each: 'As <persona>, I want <action>, so that <outcome>.' 1-5 stories total.
+- [x] stories: 3 personas — fresh-project founder, engineer-opt-out, framework-dogfood meta-case
+
+### §3 User Stories
+
+**3 personas, drawn from #207 + the F01 audit + this F009 ceremony itself:**
+
+#### Story 1 — Non-technical founder starting a fresh project (Sam-shape)
+
+> *As a non-technical founder pasting a brief into a fresh SDD project, I want the framework to read my brief and pre-fill the spec sections it can infer (§1 + §3-§12), so that I only answer 3-5 follow-up questions instead of ~20.*
+
+This is the **primary persona**. Brief intake is the load-bearing UX change. If this story doesn't ship working, the v1.6 redesign hasn't shipped.
+
+#### Story 2 — Engineer-shape user opting out of brief intake
+
+> *As a developer who knows exactly what they want, I want to opt OUT of the brief-paste flow and use the existing 3-question Pitch shape, so that I don't have to write a full brief just to spec a small change.*
+
+This story keeps the existing flow accessible as a fallback. Important for engineer-shape users who'd find the brief-paste step heavier than just answering "who / why-now / what-breaks." The redesign should additive, not breaking.
+
+#### Story 3 — Framework dogfooding meta-case (proven by this very SPEC ceremony)
+
+> *As an agent walking a framework feature where §2 doesn't apply (e.g., F009 itself), I want the framework's own SPEC to handle skip-with-reason without bypassing discipline, so that the framework eats its own dog food on the redesign it's proposing.*
+
+Already proven in this SPEC ceremony — §2 was skipped honestly with a documented reason. This story exists in §3 because the redesign explicitly preserves the skip-with-reason discipline; it's not a new behaviour but a doctrine the redesign must not break.
+
+**Out of scope (deliberate):** evolve-flow (`/start --extends=<id>`) — real story but #207 doesn't address it; adding here bloats v1.6 scope. File as a follow-up if the evolve case becomes friction in practice.
 
 ### action: ux-brief
 
