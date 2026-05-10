@@ -179,7 +179,22 @@ The new code path writes a small JSONL telemetry log to local disk. The §2 metr
 
 ### action: non-functional
 
-- [ ] constraints: draft performance, security, and compliance constraints
+- [x] constraints: marker-emit latency budget {verify-by: regression test in plan-decompose}; no-shell-escape on user-provided strings {verify-by: shellcheck in CI}; gitignored telemetry, no PII
+
+**Performance**
+
+- The marker-emit script call adds latency to the existing CR-poll loop. Budget: emit should complete inside the existing poll interval (the CR-poll loop already waits seconds between polls; an emit that takes more than ~50ms would be a regression) {verify-by: regression test added in plan-decompose times the script's duration in a synthetic invocation and asserts under budget}.
+- Marker log file size grows append-only; the JSONL log is rotated per session (cleared on session start), so the file stays small enough for grep-and-count of the §2 metric.
+
+**Security**
+
+- The script reads and writes only inside `.sdd/.cache/` plus reads `.sdd/INDEX.md` / spec.md / patterns.md / decisions.md. No remote calls. No shell escape on user-provided strings (action_chosen / wait_type are picked from a closed-enum) {verify-by: shellcheck on the script in CI}.
+- The agent's safe-set actions (re-read corpus, draft PR description, draft commit messages) operate on local files inside the working tree. Forbidden actions (force-push, shared-corpus edits) are surfaced in §5 doctrine and excluded from the safe-set candidate list the script prints.
+
+**Compliance**
+
+- Telemetry log contains: timestamp, session_id (random hex), wait_type (closed enum), action_chosen (closed enum). Has no user-identifying fields, no source code, no commit content. Gitignored — the log stays on the user's machine.
+- Open-source license: matches the rest of the SDD framework (existing repo license — bash script is added under the same terms).
 
 ### action: acceptance-criteria
 
