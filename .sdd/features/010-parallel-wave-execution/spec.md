@@ -71,7 +71,53 @@ For 010 specifically: when SPEC → BUILD → SHIP completes and §11 has all-gr
 
 ### action: proposed-approach
 
-- [ ] approval: draft the approach with 2 alternatives and tradeoffs, iterate with the user, get approval
+- [x] approval: Approach A — manual `[WAVE: N]` markers per BUILD task; framework dispatches wave-N tasks in parallel via Claude Code's Agent tool with fresh per-subagent contexts; sequential remains the default for unmarked tasks. Smallest delta to existing doctrine, explicit-over-implicit, opt-in per task. Killer combo with F008's multi-model unlock (wave-tasks → cheaper models in parallel; orchestrator → Sonnet coordination). Sam approved 2026-05-10.
+
+**Three approaches considered.**
+
+**Approach A — Manual `[WAVE: N]` markers (recommended).** In `### action: plan-decompose`, each BUILD task gets an optional `[WAVE: 1]` / `[WAVE: 2]` annotation. Tasks sharing the same wave-N marker are declared independent. When `/next` reaches a wave, it dispatches all wave-N tasks in parallel via Claude Code's Agent tool (each subagent gets a fresh ~0-turn context), waits for all to land their commits, then advances. Tasks with no marker run sequentially the way they do today.
+
+Concretely, a BUILD plan might look like:
+
+```text
+- [ ] T200 [WAVE: 1]: scaffold endpoint A
+- [ ] T201 [WAVE: 1]: scaffold endpoint B
+- [ ] T202 [WAVE: 1]: scaffold endpoint C
+- [ ] T203: integration test (depends on T200-T202, runs sequentially)
+- [ ] T204 [WAVE: 2]: docs sweep
+- [ ] T205 [WAVE: 2]: type-check sweep
+```
+
+Wave 1 dispatches T200/T201/T202 in parallel; orchestrator waits; then T203 runs sequentially; then Wave 2 dispatches T204/T205 in parallel.
+
+Trade-offs:
+
+- ✅ Smallest change to SDD doctrine — atomic-step rule still holds within each wave-task.
+- ✅ Explicit over implicit (Foundation 3: `never-assume` — Sam marks the parallelism, framework doesn't guess).
+- ✅ Opt-in per task — features that don't need waves stay linear.
+- ✅ Uses Claude Code's existing Agent tool natively; no new subagent infra.
+- ✅ Audit trail preserved (each wave-task is its own commit; only the order between sibling wave-tasks is non-deterministic — and that order wasn't causally meaningful in the first place).
+- ⚠️ Requires manual annotation in plan-decompose; agent could miss a parallelism opportunity (acceptable — under-parallelising is safer than over-parallelising).
+- ⚠️ Wave-tasks editing the same spec.md row → conflict; mitigated by each wave-task only touching its own `[ ] T-NNN` line (different rows, standard 3-way merge handles it cleanly).
+
+**Approach B — Auto-detect wave membership (rejected).** Framework analyses each BUILD task's test file + likely-touched files; tasks with no overlap auto-form a wave; `/next` computes the independence graph and dispatches automatically. Zero-effort for the developer, but introspection is fragile (BUILD code can touch files the test fixture didn't predict, leading to silent races), violates Foundation 3 (`never-assume` — the framework guesses based on a heuristic), and adds more code + more failure modes.
+
+**Approach C — Per-task subagent (rejected as universal default).** Every BUILD task — even sequential ones — dispatched to a subagent via Agent tool. Orchestrator becomes pure coordinator and doesn't execute BUILD code itself (inspired by GSD's `gsd-executor` pattern). Cleanest separation of concerns, but most disruptive — every BUILD task changes shape, even single-task features pay the subagent overhead, loses the "I can read the BUILD work scrolling past in one terminal" property Sam values today, and subagent spawn-overhead × N tasks can be slower than linear for small features.
+
+**Why Approach A wins:**
+
+1. **Pillar 1 (Simplicity).** Smallest delta to today's framework. The atomic-step rule, commit shape, pre-commit hooks, anti-theatre lint — none of them change. We add one new annotation (`[WAVE: N]`) and one new dispatch helper.
+2. **Pillar 3 (`never-assume`).** Explicit marker means Sam (or any adopter) decides which tasks are independent. The framework doesn't guess.
+3. **Pillar 2 (Lego).** Opt-in per task. A feature with 5 tasks and no waves still runs linearly the way it does today. A feature with 30 tasks gets the speed-up where it makes sense.
+4. **Killer combo with F008's multi-model unlock.** Wave-tasks can dispatch to cheaper models (Haiku/Kimi K2 via pi.dev) while the orchestrator stays on Sonnet for coordination — the multi-model unlock pays its full dividend only with parallelism.
+5. **Reversible.** If wave execution proves problematic, removing the `[WAVE: N]` markers reverts to linear with no other changes needed.
+
+**Implementation surface (preview, fleshed out in §7 flows + §14 plan-decompose):**
+
+- New script: `.sdd/scripts/dispatch-wave.sh <wave-N> <spec-path>` — reads spec.md, finds tasks marked `[WAVE: N]`, dispatches each via Agent tool in parallel, waits for completion.
+- `next-action.sh` extension: if the next pending tasks share `[WAVE: N]`, return `tag: WAVE-DISPATCH` with the list; `/next` then invokes `dispatch-wave.sh`.
+- Each wave-task subagent is a fresh Claude Code session running the existing ralph-style "do one BUILD task" prompt — same atomic-step doctrine inside, just running in a clean context.
+- Orchestrator doesn't touch the wave-task's files directly; it only reads the resulting commits when the wave finishes.
 
 ### action: data-contract
 
