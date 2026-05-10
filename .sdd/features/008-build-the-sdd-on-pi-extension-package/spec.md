@@ -386,7 +386,7 @@ Sam approved 2026-05-08 after preview in Chrome.
   and [PROJECT DATA] markers around the same content the Claude Code
   UserPromptSubmit hook injects today (INDEX.md, active spec.md,
   principles.md, stack.md, data-model.md, patterns.md) — proves AC3
-- [ ] T204 (RED): /sdd-start "<title>" invokes bash .sdd/scripts/start.sh
+- [x] T204 (GREEN): /sdd-start "<title>" invokes bash .sdd/scripts/start.sh
   with $ARGUMENTS, scaffolds features/NNN-<slug>/spec.md, updates
   INDEX.md — proves AC5
 - [ ] T205 (RED): /sdd-next resolves the active blocker via
