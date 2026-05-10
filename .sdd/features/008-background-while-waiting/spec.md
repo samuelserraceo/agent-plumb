@@ -299,7 +299,15 @@ The new code path writes a small JSONL telemetry log to local disk. The §2 metr
 
 ### action: adversarial-review
 
-- [ ] review: hostile review pass
+- [x] review: 5 adversarial scenarios checked — race-on-parallel-emits (POSIX-atomic for short writes, OK), session_id collision (1/65k after 32-bit birthday, OK for telemetry scale), disk-fill-DoS (NO rotation today — documented limitation, Sam can truncate if grows), TOCTOU on --update-last-action (last-writer-wins, acceptable for telemetry), behavioural-only trigger (doctrine-in-CLAUDE.md is the enforcement — relies on session-start reads). No blockers.
+
+**Adversarial review notes**
+
+- **Race on parallel emits:** `printf >> $LOG` is POSIX-atomic for writes under PIPE_BUF (typically 4KB). My emit lines are ~120 bytes each, well under that. Verdict: safe.
+- **session_id collision:** `openssl rand -hex 4` = 32 bits. Birthday paradox at √4B ≈ 65k sessions before pair-collision is likely. For internal telemetry with dozens of sessions/day, plenty of headroom. Verdict: safe.
+- **Disk fill DoS:** the log is append-only with no TTL or rotation. A long-lived dev would accumulate one line per CR/CI wait. At ~120 bytes per emit and ~10 emits/feature, ~5 features/month, that is a few KB/month — small. Documented limitation: user can `: > .sdd/.cache/background-emit.log` to truncate if it grows surprisingly. Verdict: acceptable for v1.
+- **TOCTOU on --update-last-action:** read + write pattern. Two concurrent updates could collide; last writer wins. For telemetry (best-effort signal, not a guard) this is acceptable. Verdict: known, documented.
+- **Behavioural-only trigger:** without a discrete CR-poll loop, the doctrine in CLAUDE.md is the enforcement — the agent must read CLAUDE.md at session start and apply post-push. This is the SAME mechanism every other piece of CLAUDE.md doctrine uses (e.g., Test-first, Forbidden, Permitted). Verdict: standard SDD enforcement model.
 
 ### action: playwright-explore
 

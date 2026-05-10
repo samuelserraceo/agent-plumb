@@ -10,7 +10,7 @@
     "acceptance-criteria": "43ac3c0ec3d0d7b69d5ef74031211e51a906624c4fcd0e17758afb0e2fac2b3e",
     "plan-decompose": "85e0ff457a70eb68cda0a923eb2e925721c8ab7cea01dbdc3bf998eb84e0ca42",
     "edge-case-sweep": "b447938dc72a76f69dc9c9be20326589682c190bc3efec8fb15f871dfd46b26f",
-    "adversarial-review": "cd54e76a55d78be4ab95c5204723a947011d6841aa3631da3b9b1c30f40aa781",
+    "adversarial-review": "d65453036ad38d0d083aa1b6b4e88c49aa94db20827952bcaf1968e7fa9d89c5",
     "learn": "ffb69eed1eb4c5510e790e1b97d90115ec2527175e0ef778049141d90302afc8",
     "playwright-explore": "2adf20cf226b6002fc9908b9f07ee39c118c39477417f7e7086501f4b9c93bcb"
   },
