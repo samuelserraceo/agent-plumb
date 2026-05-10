@@ -182,7 +182,7 @@
       "trust": "framework"
     },
     "proposed-approach": {
-      "expected_sha256": "a4eef144a68a071350d5274b0d27ebebe24e7deaae6bc25e7b83cd0e69f316bd",
+      "expected_sha256": "a3a78ffe00737da9dce7a0e2b23f7359a3e184daaf3e0653622c26cb8be71ee7",
       "path": ".sdd/actions/proposed-approach.md",
       "trust": "framework"
     },
