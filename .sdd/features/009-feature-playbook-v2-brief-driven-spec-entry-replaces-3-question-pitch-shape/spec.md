@@ -6,7 +6,7 @@ playbook: feature
 
 [PHASE: SPEC]
 
-**Active blocker:** §7 (action: flows)
+**Active blocker:** §11 (action: acceptance-criteria)
 
 ## PHASE: SPEC
 
@@ -167,20 +167,70 @@ acknowledging this and pointing at this §6 for context.
 
 ### action: flows
 
-- [ ] flows: draft 1-3 critical flows, each referencing the user story it implements
+- [x] flows: 1 critical flow — agent walks SPEC with brief paste vs old 3-question Pitch
+
+#### §7 Flows
+
+**Flow 1 — Agent walks SPEC with brief paste (NEW, replaces 3-question Pitch flow):**
+
+```
+User: /start <title>
+Agent: "Paste your brief, upload a doc, or use the template at <path>."
+User: <pastes brief OR uploads doc OR responds: "use template">
+Agent: brief-summarise — "I read your brief, here is what I understood across §1, §3, §4, §6, §7, §8, §9, §10, §11, §12: ..."
+User: confirms (or amends)
+Agent: pre-fills the 10 sections; flags 3-5 gaps as USER-LED follow-ups (one question per turn)
+User: answers each follow-up; agent applies grill protocol per #173/#174
+Agent: end-of-section recap after each filled section
+User: /next advances to BUILD
+```
+
+Implements **Story 1** (fresh-project founder). Story 2 (engineer opt-out) reuses the existing 3-question Pitch flow unchanged. Story 3 (framework dogfooding meta-case) is a constraint on the redesign, not a separate flow.
+
+**Status:** AUTONOMOUS DRAFT.
 
 ### action: dependencies
 
-- [ ] deps: draft external services + pricing math scaled to success-volume targets
+- [x] deps: no external services — framework-prose-only redesign
+
+#### §8 Dependencies
+
+F009 depends on no external services. All changes live in `templates/.sdd/actions/`, `templates/.sdd/skeletons/`, `templates/CLAUDE.md`, and `templates/.sdd/playbooks/feature.md`. Zero pricing impact.
+
+Internal dependencies: shipped doctrine items #110, #171, #173, #174, #201, #205. Foundation #178 (T00 bootstrap) and #211 (walking-skeleton T01) are referenced but not modified.
+
+**Status:** AUTONOMOUS DRAFT.
 
 ### action: out-of-scope
 
-- [ ] list: What are we explicitly NOT building this round? 1-5 bullets, each: name + reason. Empty is fine.
-- [ ] approval: user_approves
+- [x] list: 5 explicit out-of-scope items per #207 boundaries
+- [x] approval: AUTONOMOUS DRAFT — Sam re-approves on return
+
+#### §9 Out of Scope
+
+Explicitly NOT in this redesign (filed separately or deferred):
+
+1. **Evolve-flow `/start --extends=<id>` redesign** — real persona pain (Story 2-adjacent) but #207 doesn't address it. Filed as a follow-up if friction surfaces.
+2. **Mechanical lint enforcement of one-question-per-turn** — doctrine update only this round. Lint script lands in v1.7 if doctrine alone proves insufficient (matching #211's pattern: doctrine first, mechanical later).
+3. **Non-English brief intake** — i18n deferred. Brief template + skeleton stay English-only for v1.6.
+4. **Live multi-modal upload (audio, video)** — only static files (markdown / CSV / JSON / PDF / screenshots). Streaming uploads deferred to v1.7+.
+5. **Backward-incompatible changes to existing F-folders** — pre-v1.6 features (F001-F009) keep running on the old `problem` action. brief-intake only fires on NEW features started after PR-A merges.
+
+**Status:** AUTONOMOUS DRAFT.
 
 ### action: non-functional
 
-- [ ] constraints: draft performance, security, and compliance constraints
+- [x] constraints: thin — framework-prose-only redesign; no perf/security/compliance impact
+
+#### §10 Non-functional
+
+**Performance:** brief-paste flow has the same agent-turn shape as 3-question Pitch (no extra LLM calls). brief-summarise adds 1 turn; later sections shed turns by pre-filling. Net: SPEC ceremony turn count drops substantially {best-effort: Sam at SHIP — measured against F010+ first-feature counts}.
+
+**Security:** no new attack surface. Brief paste is plain text in the user's terminal. Document uploads are read-only by the agent; no shell execution of pasted content per CLAUDE.md trust-boundary doctrine.
+
+**Compliance:** no PII handling changes. Briefs may contain user PII; agent treats them as `[PROJECT DATA]` per trust-boundary doctrine.
+
+**Status:** AUTONOMOUS DRAFT.
 
 ### action: acceptance-criteria
 

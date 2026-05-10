@@ -334,3 +334,12 @@ Hash: 4648c8f0404053e4ef9f254e93baa2140769e374031602b297fc40b004abc5c2
 AUTONOMOUS DRAFT (Sam away). §6 marked complete: F009 introduces no entity changes — framework-prose-only redesign. data-model.md marker added in §5 commit. Sam re-approves on return.
 
 Hash: 8125a98d7c9b15828ec4066f6af3f3f0fb9e00cdddc6675fafd7c73b0ed6ba4f
+
+## 2026-05-10T16:21:01Z  [[009-feature-playbook-v2-brief-driven-spec-entry-replaces-3-question-pitch-shape]]  feature/flows-deps-oos-nfs-batch
+
+AUTONOMOUS DRAFT BATCH (Sam away). §7 flows: 1 critical flow (agent walks SPEC with brief paste, replaces 3-question Pitch). §8 dependencies: no external services; framework-prose-only. §9 out-of-scope: 5 items (evolve-flow, lint enforcement, i18n, multi-modal upload, backward-incompat). §10 non-functional: thin — no perf/security/compliance impact; turn-count drop measured at SHIP. Sam re-approves on return.
+
+§7 hash: 91c2b5e15526ad13aee2244fcc91ec685d7fdce4b0359e5e56282934e9e8aaa9
+§8 hash: 189851bf44f05855b8748f0010d8fcd43486980486c4846ead47994067661df3
+§9 hash: 3301f0df4a4bd1b44cbc91bc7b1611c73190bbe9d905df3a3e6c871084430b55
+§10 hash: 1a02d084a9680e723cf7b0e7a619c30d838dfa9f97fdbae32fd5c19707308226
