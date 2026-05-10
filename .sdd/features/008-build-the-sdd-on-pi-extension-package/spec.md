@@ -474,7 +474,7 @@ Sam approved 2026-05-08 after preview in Chrome.
 
 ### action: verify-test-run
 
-- [ ] run-tests: bash test/run-framework-test.sh + per-feature tests/task-T2*.sh PASS
+- [x] run-tests: 218/218 framework tests + 12/12 per-feature tests/task-T200..T211.sh PASS. T120 self-host drift on .sdd/scripts/status.sh resolved by one-shot sync from templates (commit 58b945f) — drift was pre-existing on this branch (15 behind main from v1.5.x), not introduced by F008.
 
 ### action: learn
 
