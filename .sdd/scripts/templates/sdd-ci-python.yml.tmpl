@@ -1,0 +1,57 @@
+name: sdd-ci
+
+# CI workflow shipped by /sdd-setup (closes #199). Runs on every PR + push
+# to main. Mark as REQUIRED in GitHub branch protection if you want PRs
+# blocked until this passes.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Least-privilege GITHUB_TOKEN — repo defaults grant write to a lot we don't
+# need here. This workflow only reads source + reports check status; nothing
+# pushes tags, comments on PRs, or modifies releases. If your project ADDS
+# steps that need more (e.g. uploading release assets), add the specific
+# permission here rather than relying on repo-default writes.
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f pyproject.toml ]; then pip install -e ".[dev]" || pip install -e .; fi
+
+      - name: Lint (ruff)
+        run: |
+          if command -v ruff >/dev/null 2>&1; then ruff check .; else echo "ruff not installed; skipping"; fi
+
+      - name: Type check (mypy)
+        run: |
+          # Mypy runs only when present (projects opt in by adding mypy to
+          # their dev deps). When it IS present, real type errors fail the
+          # job — no `|| true` suppression. If you'd rather treat mypy as
+          # advisory until your codebase is annotated, drop this step
+          # entirely or add `continue-on-error: true` at the step level.
+          if command -v mypy >/dev/null 2>&1; then
+            mypy .
+          else
+            echo "mypy not installed; skipping"
+          fi
+
+      - name: Unit tests (pytest)
+        run: pytest -v

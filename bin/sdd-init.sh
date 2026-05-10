@@ -256,6 +256,12 @@ if [ -f "$GITIGNORE" ]; then
   if ! grep -qF "/extensions/" "$GITIGNORE" 2>/dev/null; then
     gitignore_block="${gitignore_block}# Per-machine symlink to the SDD plugin's MCP server (don't commit; sdd-init.sh manages it)"$'\n'"/extensions/"$'\n'
   fi
+  # Closes #198 — last-warnings.txt is the post-stop-lint loop-detection
+  # cache (one turn's warnings, written every turn so the next turn can
+  # compare). Per-machine runtime state, never committable.
+  if ! grep -qF ".sdd/.cache/last-warnings.txt" "$GITIGNORE" 2>/dev/null; then
+    gitignore_block="${gitignore_block}# Stop-hook loop-detection runtime cache (don't commit; managed by post-stop-lint.sh)"$'\n'".sdd/.cache/last-warnings.txt"$'\n'
+  fi
   if [ -n "$gitignore_block" ]; then
     printf '\n%s' "$gitignore_block" >> "$GITIGNORE"
   fi
@@ -269,6 +275,9 @@ else
 
 # Per-machine symlink to the SDD plugin's MCP server (don't commit; sdd-init.sh manages it)
 /extensions/
+
+# Stop-hook loop-detection runtime cache (don't commit; managed by post-stop-lint.sh)
+.sdd/.cache/last-warnings.txt
 EOF
 fi
 

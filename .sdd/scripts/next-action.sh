@@ -192,9 +192,26 @@ for line in spec_lines:
     if am:
         active_action = am.group(1)
         continue
-    # Skip `[ ]` lines that are work-item placeholders (AC<N>, T<N>, C-<N>) —
+    # Skip `[ ]` lines that are work-item placeholders (AC<N>, T<N>, C-<slug>) —
     # those are filled by other mechanisms (BUILD task lifecycle / verify-stage).
-    if re.match(r'^\s*-\s*\[ \]\s+(AC|T|C-)[A-Za-z0-9_-]', line):
+    #
+    # Closes #197. The regex accepts BOLD or non-bold labels:
+    # `- [ ] AC1: ...` (canonical) AND `- [ ] **AC1:** ...` (bolded by
+    # agents for emphasis). Without this, bolded labels fall through to
+    # the generic step-row branch and stall /next at §11→§13 forever
+    # — bricking SPEC for non-technical users.
+    #
+    # Tightened on PR #208 (CR cycle 1+3): the prior pattern accepted any
+    # T-prefixed token (e.g. `- [ ] TODO: foo`) as a placeholder because
+    # `[A-Za-z0-9_-]` greedily matched the trailing letters. The fix
+    # requires `AC` and `T` to be followed by digits (`AC\d+` / `T\d+`)
+    # and `C-` to be followed by an alphanumeric slug (`C-[a-z0-9_-]+`).
+    # CR cycle 3 added the trailing `\s*:` delimiter so prefix matches
+    # like `- [ ] AC1foo: …` no longer pass; the canonical shape is
+    # `<token>:` (with optional bold wrapping), and the colon is now
+    # required. `TODO:` and `AC1foo:` both correctly fall through to
+    # the generic step-row branch.
+    if re.match(r'^\s*-\s*\[ \]\s+(?:\*\*)?(?:AC\d+|T\d+|C-[a-z0-9_-]+)(?:\*\*)?\s*:', line):
         continue
     if "[ ]" in line:
         first_open_line = line

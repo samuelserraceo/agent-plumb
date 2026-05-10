@@ -101,6 +101,13 @@ mkproj_v08() {
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/revert-phase.sh"         "$d/.sdd/scripts/revert-phase.sh" 2>/dev/null || true
   chmod +x "$d/.sdd/scripts/revert-phase.sh" 2>/dev/null || true
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/check-setup-answer.sh"   "$d/.sdd/scripts/check-setup-answer.sh" 2>/dev/null || true
+  # install-ci-workflow.sh is manifest-tracked in v1.5.3+ (closes #199).
+  # Same fail-fast pattern as promote-to-active.sh: silently skipping the
+  # copy would leave the mock project missing a tracked file, breaking
+  # T145 + every other test that relies on a clean moat.
+  cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/install-ci-workflow.sh"  "$d/.sdd/scripts/install-ci-workflow.sh" \
+    || { echo "[mkproj_v08] failed to copy install-ci-workflow.sh from \$FRAMEWORK_ROOT — broken framework checkout?" >&2; return 1; }
+  chmod +x "$d/.sdd/scripts/install-ci-workflow.sh"
   # CR cycle 1 finding (#195): promote-to-active.sh is manifest-tracked
   # in v1.5.2+. Silently skipping the copy with `|| true` would leave the
   # mock project missing a tracked file, causing the moat hash-pin check
