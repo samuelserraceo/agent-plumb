@@ -1,15 +1,16 @@
 # SDD framework — INDEX
 
-**Active:** features/008-build-the-sdd-on-pi-extension-package
+**Active:** features/009-feature-playbook-v2-brief-driven-spec-entry-replaces-3-question-pitch-shape
 **Playbook:** feature
-**Active blocker:** § (SHIP action: verify-test-run)
+**Active blocker:** BUILD T01 (brief-intake action)
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
 
 ## In flight
 
-(none)
+- features/009-feature-playbook-v2-brief-driven-spec-entry-replaces-3-question-pitch-shape — feature playbook v2 — brief-driven SPEC entry replaces 3-question Pitch shape (PHASE: BUILD)
+
 
 
 

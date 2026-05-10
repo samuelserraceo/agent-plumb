@@ -1,0 +1,26 @@
+{
+  "approved_sections": {
+    "acceptance-criteria": "d19a4fdbe268b3f2c65b2dbdda27608410d7e6a560bfbde248f7bab332134221",
+    "data-contract": "8125a98d7c9b15828ec4066f6af3f3f0fb9e00cdddc6675fafd7c73b0ed6ba4f",
+    "dependencies": "189851bf44f05855b8748f0010d8fcd43486980486c4846ead47994067661df3",
+    "edge-case-sweep": "2e71ffe58a4a5aa18311d223bad385793f650b01925b9c1ae95b26a13f7a7ec8",
+    "flows": "ac9f00b45b845603a9ea3661de922cdeca1e031f278d16574f5b078c6be9cec0",
+    "non-functional": "1a02d084a9680e723cf7b0e7a619c30d838dfa9f97fdbae32fd5c19707308226",
+    "out-of-scope": "3301f0df4a4bd1b44cbc91bc7b1611c73190bbe9d905df3a3e6c871084430b55",
+    "plan-decompose": "5edcff324888790bdbc8c3affd392142d30b5f639ca454162c7d3b9e223d6152",
+    "proposed-approach": "32e423298d46643adf197ad011676d343ebeb8601c06f50cd8b26458d4413621",
+    "signoff-steps": "e1b1ffa3c1897a1f11e92e6b6733d877389a3b014b8d9bd947fdc4905fc5d99c",
+    "ux-brief": "9c59249d3c7ba49e2cffa908fe2e6ceeb24065fa2f1e3f353bbe19d488968274"
+  },
+  "checks": [
+    {
+      "id": "C-spec-acs",
+      "result": "pass"
+    },
+    {
+      "id": "C-spec-tasks",
+      "result": "pass"
+    }
+  ],
+  "phase": "SPEC"
+}

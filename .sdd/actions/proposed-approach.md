@@ -44,6 +44,24 @@ I'll show you **2 or 3 different ways** we could do it (e.g. "use the email tool
 
 Then I'll recommend one and you say `looks good` or tell me what to change.
 
+<details>
+<summary>Show technical detail (architecture diagram, libraries, version pins)</summary>
+
+Plain-English-first is the v1.6 default (closes #207 Part 4). When you DO want the engineer-shape draft — actual library names, version pins, architecture diagrams, code-shape sketches — that lives behind this foldable. The agent emits the foldable by default; you click to expand.
+
+Example expansion (the agent fills this in for your specific feature):
+
+```text
+Stack: Next.js 15 (App Router) + Postgres 16 + Resend 4.x.
+Recommended approach: server-action POST → email-validate → Resend send.
+Alternatives: SendGrid (more expensive), AWS SES (more setup).
+Risks: rate-limit at Resend's 3000/mo Free tier; mitigation: queue + retry.
+```
+
+Plain-English-first for non-technical readers; technical detail one click away for when you want it.
+
+</details>
+
 **End the turn with:** *"Reply `approve` if this works, or tell me what to change (e.g. 'simpler', 'use Postgres instead of SQLite', 'explain the rate-limit risk in plain English')."*
 
 ---
