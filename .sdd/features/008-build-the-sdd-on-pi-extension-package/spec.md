@@ -491,7 +491,7 @@ Sam approved 2026-05-08 after preview in Chrome.
 
 ### action: verify-ci-green
 
-- [ ] ci: all CI checks GREEN on PR; CR cycle addressed if any findings
+- [x] ci: All 6 CI checks GREEN on PR #214 (Browser, Claims audit, Framework tests 218/218, Graph integrity, Scope guard, CodeRabbit). 2 CR cycles addressed: cycle 1 closed 13 findings in 11 commits; cycle 2 closed 11 of 12 in 9 commits (C2-4 decisions.md MD022 deferred — append-only contract blocks blank-line edits to historical entries, documented). Cycle 3 returned 0 new findings.
 
 ### action: mark-shipped
 
