@@ -26,3 +26,17 @@ node_modules/
 # 'Warning: 1 uncommitted change' on PR creation.
 /CLAUDE.md
 .sdd/.cache/last-warnings.txt
+
+# Per-session SDD state (surfaced during F008 SHIP):
+# - .advance.last-head: per-session phase-advance pointer written by
+#   .sdd/scripts/advance.sh; reflects the last seen HEAD, not project state.
+# - metrics.md: per-developer action-run TSV log written by /next; not a
+#   shared artefact (each contributor accumulates their own).
+.sdd/.advance.last-head
+.sdd/metrics.md
+
+# Local npm-pack output for the pi.dev extension (F008). The tarball is
+# generated for manual install testing (`pi install file:./*.tgz`); the
+# release path is tag-driven via .github/workflows/publish-pi-adapter.yml,
+# so the .tgz never needs to live in git.
+extensions/sdd-pi-extension/*.tgz

@@ -1,0 +1,63 @@
+name: Publish sdd-pi-adapter
+
+on:
+  push:
+    tags:
+      - 'pi-v*'
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Publish sdd-pi-adapter to npm
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: extensions/sdd-pi-extension
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
+        with:
+          # Node 22 — Active LTS until October 2026 (Node 20 dropped to
+          # Maintenance in October 2025 and EOL'd April 2026). Other
+          # workflows in this repo still use 20; bumping the publish
+          # path first because that's where CR cycle 1+2 flagged it
+          # and where the npm-publish runtime matters most.
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Skip if version already published (idempotence on tag re-run)
+        id: check
+        run: |
+          set -euo pipefail
+          name=$(npm pkg get name | tr -d '"')
+          version=$(npm pkg get version | tr -d '"')
+
+          # Tag/version parity: refuse to publish on a tag that doesn't
+          # match package.json (CR cycle 2 #1).
+          tag_version="${GITHUB_REF_NAME#pi-v}"
+          if [ "$tag_version" != "$version" ]; then
+            echo "Tag/version mismatch: tag=$tag_version package=$version" >&2
+            exit 1
+          fi
+
+          # npm view: distinguish "version not found" (publish proceeds)
+          # from transient registry/auth errors (fail fast). CR cycle 2 #2.
+          if out="$(npm view "$name@$version" version 2>&1)"; then
+            echo "already=true" >> "$GITHUB_OUTPUT"
+            echo "$name@$version already on npm — re-run is a no-op"
+          elif printf '%s' "$out" | grep -qE 'E404|404 Not Found|is not in the npm registry'; then
+            echo "already=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "npm view returned a non-404 error — refusing to assume not-published:" >&2
+            echo "$out" >&2
+            exit 1
+          fi
+
+      - name: npm publish
+        if: steps.check.outputs.already != 'true'
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
