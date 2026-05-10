@@ -36,11 +36,12 @@ WORK="$(mktemp -d -t sdd-t204.XXXXXX)"
 trap 'rm -rf "$WORK"' EXIT
 
 PROJECT="$WORK/project"
-mkdir -p "$PROJECT/.sdd/scripts" "$PROJECT/.sdd/playbooks" "$PROJECT/.sdd/actions"
-cp "$TPL/config.md"          "$PROJECT/.sdd/config.md"
-cp "$TPL/playbooks/feature.md" "$PROJECT/.sdd/playbooks/feature.md"
-cp "$TPL/actions/"*.md       "$PROJECT/.sdd/actions/"
-cp "$TPL/scripts/start.sh"   "$PROJECT/.sdd/scripts/start.sh"
+mkdir -p "$PROJECT/.sdd/scripts" "$PROJECT/.sdd/playbooks" "$PROJECT/.sdd/actions" \
+  || fails+=("setup: mkdir for fixture failed (rc=$?)")
+cp "$TPL/config.md"          "$PROJECT/.sdd/config.md"          || fails+=("setup: cp config.md failed (rc=$?)")
+cp "$TPL/playbooks/feature.md" "$PROJECT/.sdd/playbooks/feature.md" || fails+=("setup: cp playbooks/feature.md failed (rc=$?)")
+cp "$TPL/actions/"*.md       "$PROJECT/.sdd/actions/"           || fails+=("setup: cp actions/*.md failed (rc=$?)")
+cp "$TPL/scripts/start.sh"   "$PROJECT/.sdd/scripts/start.sh"   || fails+=("setup: cp scripts/start.sh failed (rc=$?)")
 
 # Run the command exactly as pi.dev would after substituting $ARGUMENTS.
 TITLE='build a test thing'
