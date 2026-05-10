@@ -378,7 +378,7 @@ Sam approved 2026-05-08 after preview in Chrome.
 - [x] T201 (GREEN): in a fixture project, `pi install npm:sdd-pi-adapter`
   completes successfully and pi recognises 9 sdd-* slash commands
   — proves AC2
-- [ ] T203 (RED): on a fresh project, first session_start of the
+- [x] T203 (GREEN): on a fresh project, first session_start of the
   extension copies framework files from package gsd/ into .pi/sdd/
   via HRN-01; second invocation is no-op for user-edited files
   — proves AC4
