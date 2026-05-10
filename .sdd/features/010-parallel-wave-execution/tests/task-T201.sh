@@ -95,11 +95,13 @@ if "wave" not in obj:
 if "tasks" not in obj:
     print("missing key: tasks", file=sys.stderr); sys.exit(4)
 # Wave should echo the requested number.
-if obj.get("wave") != 1:
-    print(f"wave != 1 (got {obj.get(\"wave\")!r})", file=sys.stderr); sys.exit(5)
+w = obj.get("wave")
+if w != 1:
+    print("wave != 1 (got " + repr(w) + ")", file=sys.stderr); sys.exit(5)
 # Tasks should be a list (may be empty if shape-only stub).
-if not isinstance(obj.get("tasks"), list):
-    print(f"tasks not a list (got {type(obj.get(\"tasks\")).__name__})", file=sys.stderr); sys.exit(6)
+t = obj.get("tasks")
+if not isinstance(t, list):
+    print("tasks not a list (got " + type(t).__name__ + ")", file=sys.stderr); sys.exit(6)
 ' >/dev/null 2>&1
   then
     fails+=("dispatch-wave.sh stdout not valid JSON or missing required keys (out: $out)")
