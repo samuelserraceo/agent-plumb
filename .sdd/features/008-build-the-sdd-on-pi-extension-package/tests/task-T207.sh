@@ -112,21 +112,41 @@ cat > "$FEATURE/spec.md" <<'EOF'
 - [ ] push: push the branch and open a PR with spec.md as the body
 EOF
 
-na_out="$(cd "$PROJECT" && bash .sdd/scripts/next-action.sh "$FEATURE/spec.md" 2>&1)"
+# Capture stdout (the JSON) separately from stderr so log/warning
+# tokens on stderr can't false-pass the field check. CR cycle 1+2 #11.
+na_err="$WORK/na.err"
+na_out="$(cd "$PROJECT" && bash .sdd/scripts/next-action.sh "$FEATURE/spec.md" 2>"$na_err")"
 na_rc=$?
-[ "$na_rc" -eq 0 ] || fails+=("next-action.sh failed (exit $na_rc): $na_out")
+[ "$na_rc" -eq 0 ] || fails+=("next-action.sh failed (exit $na_rc): stdout=$na_out stderr=$(cat "$na_err")")
 
-# Whitespace-tolerant JSON match — equivalent valid JSON (different
-# spacing, indentation, minified) should still pass. CR cycle 2 #11.
-for needle in \
-  '"phase"[[:space:]]*:[[:space:]]*"SHIP"' \
-  '"action"[[:space:]]*:[[:space:]]*"push-pr"' \
-  '"step"[[:space:]]*:[[:space:]]*"push"'
-do
-  if ! printf '%s' "$na_out" | grep -Eq "$needle"; then
-    fails+=("next-action.sh JSON missing field pattern: $needle (got: $na_out)")
+# Validate na_out as JSON and assert exact key/values rather than
+# regex-grepping substrings. Substring matching can false-pass if
+# matching tokens appear in stderr or in unrelated string fields;
+# strict JSON parse rules that out and gives clean diagnostics.
+if [ -n "$na_out" ]; then
+  if ! python3 - <<PY
+import json, sys
+raw = """$na_out"""
+try:
+    obj = json.loads(raw)
+except Exception as e:
+    print(f"INVALID_JSON: {e}", file=sys.stderr)
+    sys.exit(2)
+fails = []
+if obj.get("phase") != "SHIP":
+    fails.append(f'phase != "SHIP" (got {obj.get("phase")!r})')
+if obj.get("action") != "push-pr":
+    fails.append(f'action != "push-pr" (got {obj.get("action")!r})')
+if obj.get("step") != "push":
+    fails.append(f'step != "push" (got {obj.get("step")!r})')
+if fails:
+    for f in fails: print(f, file=sys.stderr)
+    sys.exit(1)
+PY
+  then
+    fails+=("next-action.sh JSON failed strict-key check (out: $na_out)")
   fi
-done
+fi
 
 if [ ${#fails[@]} -gt 0 ]; then
   echo "FAIL: T207 — AC8 violations:"
