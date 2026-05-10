@@ -47,12 +47,19 @@ What pieces of information do we need to store, and what does each look like?
 
 Example: a signup form might need a **person's email** (text, has to be a valid email), **the day they signed up** (date), **whether they confirmed via the link in the email** (true/false). I'll list each one in plain English first, then show you the technical version. You confirm or correct.
 
-**Got an existing schema? Drop it here.** If your brief listed documents in §1.7 (attached docs), or if you have a Google Sheets export, a schema dump (SQL `CREATE TABLE`), a JSON sample, a CSV header row, or a screenshot of an existing table — paste or upload it. The framework reads:
+**Got an existing schema? Drop it here.** Paste it / upload it / give me a path to it (Google Sheets export, schema dump, JSON sample, CSV header row, screenshot of a table — any shape works).
+
+<details>
+<summary>Show technical detail (supported formats, reliability, failure path)</summary>
+
+The framework reads:
 
 - **markdown / CSV / JSON / plain text** — clean (most reliable)
 - **PDF** — spotty (text extraction varies; works for tables, less reliable for diagrams)
 - **screenshots** — depend on vision-capable models (works on Claude Sonnet 4+; degrades on text-only models)
 
 **Failure path.** If the format is unsupported or the agent can't read it, you get a plain-English error like *"I couldn't parse the PDF you uploaded — try copy-pasting the table as markdown, or describe the columns and I'll match them."* Don't let a parse failure block §6; describe instead.
+
+</details>
 
 **End the turn with:** *"Reply `approve` to lock the data contract, or tell me what to change ('split table X', 'cascade delete here', 'edge case Y missing')."*
