@@ -247,8 +247,19 @@ The new code path writes a small JSONL telemetry log to local disk. The §2 metr
 
 ### action: edge-case-sweep
 
-- [ ] ec-sweep: draft
-- [ ] ec-pick: ask
+- [x] ec-sweep: 6 edge cases drafted — short-wait (EC1), corrupt-log (EC2), parallel-sessions (EC3), crash-mid-wait (EC4), disk-full (EC5), long-wait-multi-action (EC6)
+- [x] ec-pick: defending against EC2 (corrupt log), EC3 (parallel sessions), EC5 (disk-full); EC1/EC4/EC6 accepted-as-is with documented behaviour
+
+**Edge cases swept**
+
+- **EC1 — Wait window shorter than minimum threshold** (CR/CI returns very quickly, below the typical poll interval): emit happens but `action_chosen` stays `none-skipped`; metric counts it as a wait, not as a background-action. **Decision: accept as-is** — special handling not added; documented behaviour.
+- **EC2 — Marker log file corruption / malformed lines**: append-only writer uses append-mode and does not parse prior lines. Corrupted lines stay corrupted but don't break new emits. **Decision: defend** — schema validator (T8) detects at metric-time; metric helper (T7) skips unparseable lines and reports the count separately.
+- **EC3 — Parallel SDD sessions writing to same log**: each session has its own session_id; line writes use append-mode (POSIX atomic for short writes). **Decision: defend** — explicit AC test (extending T1) verifies two concurrent emits both land cleanly.
+- **EC4 — CR-poll loop crash mid-wait**: leaves a `pending` line; next session adds new emits, the pending line stays. Counted as `none-skipped` for metric purposes. **Decision: accept as-is** — pending lines are real signal that a wait happened without a chosen action.
+- **EC5 — Disk full / permission denied on `.sdd/.cache/`**: script logs to stderr and exits non-zero. **Decision: defend** — CR-poll loop catches the error and continues without background work that round; failure is logged but doesn't block CR-poll itself. Test: simulate write-failure with read-only directory.
+- **EC6 — Long-running wait with multiple actions**: script supports multiple `--update-last-action` invocations; `action_chosen` reflects the LAST action taken. **Decision: accept as-is** — documented; metric still counts the wait once.
+
+### Exit checks
 
 ### Exit checks
 - [ ] C-spec-acs: ≥1 acceptance criterion exists in §11 {verify-by: C-spec-acs bash-grep} — grep -qE '^- \[[ x]\] AC[0-9]+' "$SECTION_FILE"

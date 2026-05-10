@@ -9,7 +9,7 @@
     "non-functional": "4bcb9a25be0d317c1a140af7e236ab8cb1ee82d245ed9765217fa94442ce0d48",
     "acceptance-criteria": "43ac3c0ec3d0d7b69d5ef74031211e51a906624c4fcd0e17758afb0e2fac2b3e",
     "plan-decompose": "85e0ff457a70eb68cda0a923eb2e925721c8ab7cea01dbdc3bf998eb84e0ca42",
-    "edge-case-sweep": "802cef1cb279c31bda4a968212bcae62ee2c88d467531c0b627e7c7c4bd4161e"
+    "edge-case-sweep": "b447938dc72a76f69dc9c9be20326589682c190bc3efec8fb15f871dfd46b26f"
   },
   "checks": [
     {"id": "C-spec-acs", "result": "pass"},
