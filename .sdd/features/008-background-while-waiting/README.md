@@ -1,6 +1,6 @@
 # Renamed to 009-background-while-waiting
 
-This feature folder was renamed during PR #218 to resolve an ID collision with the already-shipped [[008-build-the-sdd-on-pi-extension-package]] (PR #214).
+This feature folder was renamed during PR #218 to resolve an ID collision with the already-shipped pi.dev adapter feature (PR #214 on origin/main, folder name `008-build-the-sdd-on-pi-extension-package` — link omitted because that folder is not on this branch yet, only on origin/main).
 
 **See the live work at [[009-background-while-waiting]].**
 
