@@ -201,13 +201,17 @@ for line in spec_lines:
     # the generic step-row branch and stall /next at §11→§13 forever
     # — bricking SPEC for non-technical users.
     #
-    # Tightened on PR #208 (CR cycle 1): the prior pattern accepted any
+    # Tightened on PR #208 (CR cycle 1+3): the prior pattern accepted any
     # T-prefixed token (e.g. `- [ ] TODO: foo`) as a placeholder because
     # `[A-Za-z0-9_-]` greedily matched the trailing letters. The fix
     # requires `AC` and `T` to be followed by digits (`AC\d+` / `T\d+`)
     # and `C-` to be followed by an alphanumeric slug (`C-[a-z0-9_-]+`).
-    # `TODO:` now correctly falls through to the generic step-row branch.
-    if re.match(r'^\s*-\s*\[ \]\s+(\*\*)?(AC\d+|T\d+|C-[a-z0-9_-]+)', line):
+    # CR cycle 3 added the trailing `\s*:` delimiter so prefix matches
+    # like `- [ ] AC1foo: …` no longer pass; the canonical shape is
+    # `<token>:` (with optional bold wrapping), and the colon is now
+    # required. `TODO:` and `AC1foo:` both correctly fall through to
+    # the generic step-row branch.
+    if re.match(r'^\s*-\s*\[ \]\s+(?:\*\*)?(?:AC\d+|T\d+|C-[a-z0-9_-]+)(?:\*\*)?\s*:', line):
         continue
     if "[ ]" in line:
         first_open_line = line
