@@ -394,7 +394,7 @@ Sam approved 2026-05-08 after preview in Chrome.
 - [x] T206 (GREEN): /sdd-status renders phase + blocker + suggested next
   action without invoking any LLM (verified via tool-call audit)
   — proves AC7
-- [ ] T207 (RED): /sdd-ship pushes the branch, opens or updates the PR,
+- [x] T207 (GREEN): /sdd-ship pushes the branch, opens or updates the PR,
   polls CI per existing scripts — proves AC8
 - [ ] T210 (RED): committing through pi.dev fires the same git
   pre-commit hook chain that fires from Claude Code (anti-theatre
