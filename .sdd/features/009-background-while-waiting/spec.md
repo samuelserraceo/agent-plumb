@@ -87,7 +87,7 @@ One new data structure: `.sdd/.cache/background-emit.log` — append-only JSONL 
 
 **Log schema (one JSON object per line):**
 
-```
+```json
 {"ts": "<ISO-8601>", "session_id": "<8-char-hex>", "wait_type": "cr-poll|ci-poll|other", "action_chosen": "re-read-corpus|pre-fetch-next-feature|draft-pr-description|draft-commit-msgs|speculative-cr-response|none-skipped"}
 ```
 
@@ -210,9 +210,9 @@ The new code path writes a small JSONL telemetry log to local disk. The §2 metr
 
 - [x] AC4 — CR-poll loop integration: After a `git push` that triggers the existing CR-poll loop, a new entry appears in the marker log within the first wait cycle. (Manual: push a branch with a deliberate small commit, watch for log entry.)
 
-- [x] AC5 — doctrine in both CLAUDE.md files: `awk '/^## Background while waiting/,/^## /' templates/CLAUDE.md` and the same against `.sdd/CLAUDE.md` produce equivalent doctrine sections (both list low-risk, judgement-required, and out-of-scope sets).
+- [x] AC5 — doctrine in `templates/CLAUDE.md`: `awk '/^## Background while waiting/,/^## /' templates/CLAUDE.md` produces a section listing the three sets (low-risk / judgement-required / out-of-scope). Framework dogfoods via `templates/CLAUDE.md` directly — no separate `.sdd/CLAUDE.md`; T6 folded into T5 during BUILD.
 
-- [x] AC6 — §2 metric is grep-able: After a session with at least one wait window, `wc -l .sdd/.cache/background-emit.log` returns a positive count and `grep -c '"action_chosen": "none-skipped"' .sdd/.cache/background-emit.log` returns a count not greater than the total. The §2 metric = total minus none-skipped lines.
+- [x] AC6 — §2 metric is computable via helper: After a session with at least one wait window, `bash .sdd/scripts/background-metric.sh` prints `<real>/<total>` where `<real>` excludes both `pending` (emit awaiting an action_chosen update) and `none-skipped` (agent declared no action), and `<total>` is the count of all emit lines. Verifiable against synthetic logs.
 
 - [x] AC7 — telemetry schema clean: `python3 -c "import sys,json;print(set(json.loads(l).keys()) for l in open('.sdd/.cache/background-emit.log'))"` outputs the set `{'ts', 'session_id', 'wait_type', 'action_chosen'}` for every parsed line. Has no extra keys, no PII fields.
 
