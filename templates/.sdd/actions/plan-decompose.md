@@ -79,7 +79,7 @@ The `[CHORE]` tag tells BUILD's run-mode that this task is mechanical (no human 
 | External service | `Third-party: Stripe / Resend / Cloudflare / …` |
 | Agent layer | `MCP server: enabled` / `Tier 3: enabled` |
 
-**If stack.md declares ≥3 distinct layers AND this is the project's first behaviour-touching feature** (no prior shipped feature has exercised all layers end-to-end — check INDEX.md `## Shipped`), the walking-skeleton check fires. Otherwise skip — the project already has a vertical proven by prior shipped work, or it's small enough that T01 = a single AC is fine.
+**If stack.md declares ≥3 distinct layers AND this is the project's first behaviour-touching feature** (no prior shipped feature has exercised all layers end-to-end — check `.sdd/INDEX.md` `## Shipped`), the walking-skeleton check fires. Otherwise skip — the project already has a vertical proven by prior shipped work, or it's small enough that T01 = a single AC is fine.
 
 **The check (two paths, parallel to the §4-constraints coverage check below).**
 

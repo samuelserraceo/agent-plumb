@@ -167,7 +167,7 @@
       "trust": "framework"
     },
     "plan-decompose": {
-      "expected_sha256": "6498c2e9c288233698162012d74509729c0db000639060deed56cb1990314e76",
+      "expected_sha256": "22ae2e4f1dd20149c1e643afa52d6b14853a4c04583538c7331edd6ff7092c9b",
       "path": ".sdd/actions/plan-decompose.md",
       "trust": "framework"
     },
