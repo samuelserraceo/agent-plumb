@@ -167,7 +167,7 @@ The new code path writes a small JSONL telemetry log to local disk. The §2 metr
 ### action: out-of-scope
 
 - [x] list: 5 items — speculative CR-response drafting, cross-worktree advance-N+1, auto-execution without agent declaration, remote metric dashboards, pre-fetch beyond next feature
-- [ ] approval: user_approves
+- [x] approval: confirmed — 5 deferrals locked (speculative CR responses, cross-worktree N+1, auto-execution, remote dashboards, deeper pre-fetch)
 
 **Out of scope for v1**
 

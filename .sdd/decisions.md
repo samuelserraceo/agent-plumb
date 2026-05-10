@@ -316,3 +316,6 @@ Sam approved §5: Approach B — doctrine + instrumentation. CLAUDE.md doctrine 
 
 ## 2026-05-10T17:45:00Z [[008-background-while-waiting]] feature/data-contract
 Sam approved §6: no new data-model.md entries. Single new internal telemetry log at `.sdd/.cache/background-emit.log` — append-only JSONL, gitignored, per-session, consumed by the §2 metric counter. Schema: `{ts, session_id, wait_type, action_chosen}`. Internal telemetry (same shape as existing hook logs in `.sdd/.cache/`); not a user-visible entity, so doesn't belong in data-model.md.
+
+## 2026-05-10T18:00:00Z [[008-background-while-waiting]] feature/out-of-scope
+Sam approved §9: 5 deferrals locked. (1) Speculative CR-response drafting — judgement-required, defer until safe-set proven. (2) Cross-worktree advance-N+1 — Approach C from §5, deferred until §2 metric data justifies. (3) Auto-execution without agent declaration — keep agent visibility in commit log + chat. (4) Remote metric dashboards / cross-machine aggregation — local JSONL only. (5) Pre-fetch beyond N+1 — Flow 2 only covers next feature.
