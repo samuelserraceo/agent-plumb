@@ -137,7 +137,7 @@
       "trust": "framework"
     },
     "data-contract": {
-      "expected_sha256": "cc99ec699aea65bc49a1f7d5421da407c1fbac15e6817a12a2cf05677006bccf",
+      "expected_sha256": "72748adbe39794f0664f1e87c98d28e5b6e098dd1848360351f1d4d4e35866be",
       "path": ".sdd/actions/data-contract.md",
       "trust": "framework"
     },
