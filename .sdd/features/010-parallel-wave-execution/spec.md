@@ -37,7 +37,15 @@ The strategic break: without waves, the multi-model unlock pays half its dividen
 
 ### action: success
 
-- [ ] metric: Pick a metric pattern (volume / speed / quality / engagement) or describe your own. Give a target number AND the current baseline if known.
+- [x] metric: Success = every §11 acceptance criterion passes mechanically via the framework's standard verification path (`verify-stage.sh`) on both execution modes — linear (single-wave, today's default) and parallel (multi-wave, the new mode 010 is adding) {verify-by: §11 AC pass via verify-stage.sh}
+
+**Success metric:** Mechanical, not market.
+
+When every acceptance criterion in §11 passes via `verify-stage.sh` on both execution modes (linear, the existing default; parallel, the new wave mode), this feature is done. {verify-by: §11 AC pass via verify-stage.sh}
+
+Market metrics — wall-clock time saved, token-spend reduction, adoption rate, etc. — are real signals but they arrive weeks or months after ship; treating them as success-gates would violate SDD's anti-theatre doctrine. Sam captured this concern as `ideas/004-remove-success-from-feature-playbook.md` during F008's walk and the parallel session at `sdd/009-feature-playbook-v2-brief-driven-spec-entry` is removing §2 from the playbook entirely. Once 009 ships, future features lean on §11 as the canonical success layer.
+
+For 010 specifically: when SPEC → BUILD → SHIP completes and §11 has all-green ACs running on both single-wave and multi-wave paths, the feature has shipped. Adoption signals come later, separately.
 
 ### action: user-stories
 
