@@ -311,7 +311,7 @@ The new code path writes a small JSONL telemetry log to local disk. The §2 metr
 
 ### action: playwright-explore
 
-- [ ] explore: playwright exploration (skipped — non-UI feature)
+- [x] explore: skipped — non-UI feature, no browser surface to explore
 
 ### action: learn
 
