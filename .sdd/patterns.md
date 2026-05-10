@@ -77,3 +77,21 @@ Source: [[003-claims-audit-fails-on-shipped-pr-self-reference-chicken-egg]] T01.
 A SDD-style framework that ships both as a Claude Code plugin (slash commands, hooks) AND as a project-installed tree (`.sdd/`) has TWO update channels with different semantics. Channel A (plugin layer) auto-flows when users run `/plugin update` — single replacement, no user data at risk. Channel B (project-template layer) does NOT auto-flow because the user's `.sdd/` contains their own project data (spec.md, INDEX.md, decisions.md, patterns.md) that can't be auto-replaced. Without a migration tool for Channel B, downstream teams stay on whatever framework version they first installed — making the "framework dogfoods every change" claim hollow for anyone but the maintainer. Solution: ship a migration tool (`sdd-migrate.sh`) that diffs user's tracked framework files vs upstream by hash, applies non-conflicting changes, prompts on locally-edited conflicts, and re-pins the manifest. User-data files are excluded by walk-list — they're invisible to the tool, not just blacklisted. See `templates/.sdd/scripts/sdd-migrate.sh`.
 
 Source: [[007-sdd-migrate-refresh-project-s-sdd-tree-from-upstream-framework]] feature ship.
+
+### Wizard-records-but-install-side-effect-fires anti-pattern
+
+A common framework anti-pattern: the wizard records the user's intent in some config file (e.g. `mcp.enabled: true`), but the install action that actually wires the feature into the project (`enable.sh`, dropping `.mcp.json`, registering with the host CLI) never fires. The user is convinced the feature is on; the agent never gets the tool calls; nobody notices until someone audits the transcript and sees zero `mcp__*` invocations. Discovered concurrently in two parallel flows: Claude Code's `/sdd-setup` brick 007 (#209 — `mcp.enabled:true` recorded but `enable.sh` never run) and pi.dev's MCP integration (F008 AC10 — manifest expects MCP but `.pi/mcp.json` not written). Same shape, both harnesses. Lesson: every wizard answer that triggers an install side-effect should verify the side-effect fired, ideally by writing a sentinel file the agent or audit can later check. Don't trust "config says yes" as proof — make the install act, then assert.
+
+Source: [[008-build-the-sdd-on-pi-extension-package]] T209 + parallel-session #209.
+
+### Worktree-scoped git config can override local config silently
+
+Git's `extensions.worktreeConfig=true` enables per-worktree config files at `.git/worktrees/<name>/config.worktree`. These take higher precedence than local config. So `git config core.hooksPath .claude/hooks` from a worktree silently writes to `.git/config` (local), but the worktree-scoped value (often pointing at the main repo's absolute path) keeps winning. The naïve `git config core.hooksPath ...` looks like it succeeded but doesn't actually change behaviour. Discovered live during F008's `/start` when SDD's own pre-commit hooks couldn't fire from the worktree. Fix shape: install/init scripts should check `git config --get extensions.worktreeConfig` first — if true, use `git config --worktree core.hooksPath .claude/hooks` instead. Documented as F008 EC#4; T210 wired the check into `session-start.sh`.
+
+Source: [[008-build-the-sdd-on-pi-extension-package]] §15 ec-pick + T210.
+
+### Scaffold templates need to satisfy their own ship-time validators
+
+The framework's own `/start` scaffold emitted exit-checks lines (`C-spec-acs: ≥1 acceptance criterion exists in §11`) that lacked the `{verify-by: verify-stage.sh}` annotation the anti-theatre lint expects. Result: every freshly-scaffolded feature traps on its first commit, until the user (or agent) hand-patches the missing annotation. The scaffold and the validators drift in lockstep — additions to one don't update the other. Lesson: the scaffold itself is a feature with its own AC, and its AC is "every line emitted passes every shipping lint and moat check." When you tighten a lint, run it against the scaffold's output. When you change the scaffold, re-run shipping lints against a freshly-scaffolded feature. Caught + filed as a separate fix-task during F008 SPEC.
+
+Source: [[008-build-the-sdd-on-pi-extension-package]] /start scaffold trip + spawn_task fix.
