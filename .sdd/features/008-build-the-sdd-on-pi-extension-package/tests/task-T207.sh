@@ -45,8 +45,13 @@ fi
 # downstream agent knows what the ship flow actually does. Without each
 # of these terms in the prompt body, AC8's claim travels into the model
 # context without any guidance attached. ---
+# Token-level matching — `PR`/`CI` could otherwise be embedded in
+# unrelated words (e.g. "PRINT", "CICERO") and falsely satisfy the
+# check. CR cycle 2 #10. Pattern requires the needle to be flanked
+# by non-alphanumeric/underscore boundaries.
 for needle in push PR CI; do
-  if ! grep -qiF "$needle" "$PROMPT"; then
+  pattern="(^|[^[:alnum:]_])${needle}([^[:alnum:]_]|$)"
+  if ! grep -Eqi "$pattern" "$PROMPT"; then
     fails+=("prompt missing AC8 term: $needle")
   fi
 done
@@ -111,15 +116,16 @@ na_out="$(cd "$PROJECT" && bash .sdd/scripts/next-action.sh "$FEATURE/spec.md" 2
 na_rc=$?
 [ "$na_rc" -eq 0 ] || fails+=("next-action.sh failed (exit $na_rc): $na_out")
 
+# Whitespace-tolerant JSON match — equivalent valid JSON (different
+# spacing, indentation, minified) should still pass. CR cycle 2 #11.
 for needle in \
-  '"phase": "SHIP"' \
-  '"action": "push-pr"' \
-  '"step": "push"'
+  '"phase"[[:space:]]*:[[:space:]]*"SHIP"' \
+  '"action"[[:space:]]*:[[:space:]]*"push-pr"' \
+  '"step"[[:space:]]*:[[:space:]]*"push"'
 do
-  case "$na_out" in
-    *"$needle"*) : ;;
-    *) fails+=("next-action.sh JSON missing field: $needle (got: $na_out)") ;;
-  esac
+  if ! printf '%s' "$na_out" | grep -Eq "$needle"; then
+    fails+=("next-action.sh JSON missing field pattern: $needle (got: $na_out)")
+  fi
 done
 
 if [ ${#fails[@]} -gt 0 ]; then
