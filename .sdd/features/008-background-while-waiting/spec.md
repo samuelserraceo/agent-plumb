@@ -22,7 +22,14 @@ playbook: feature
 
 ### action: user-stories
 
-- [ ] stories: Which personas matter? For each: 'As <persona>, I want <action>, so that <outcome>.' 1-5 stories total.
+- [x] stories: 4 stories — Sam wants low-risk background work, pre-fetched next-feature context, and pre-written PR descriptions during CR/CI waits; downstream SDD users inherit the same behaviour post-ship
+
+**User stories**
+
+1. **As** Sam dogfooding SDD on the framework, **I want** the agent to fill CR/CI deadtime with low-risk background work, **so that** I don't watch a 15-min idle timer between every push and merge.
+2. **As** Sam dogfooding SDD on the framework, **I want** the agent to pre-fetch the next feature's spec context while waiting on the current PR, **so that** the next loop starts with corpus already warm.
+3. **As** Sam dogfooding SDD on the framework, **I want** the agent to draft the PR description while waiting on CodeRabbit, **so that** /ship is a one-button move the moment CR clears.
+4. **As** an SDD user (post-ship), **I want** the same background behaviour applied to my own framework loops, **so that** my dev velocity inherits the same idle-time savings.
 
 ### action: ux-brief
 
