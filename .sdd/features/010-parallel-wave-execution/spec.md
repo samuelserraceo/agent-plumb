@@ -63,9 +63,11 @@ For 010 specifically: when SPEC → BUILD → SHIP completes and §11 has all-gr
 
 (Names "Marco" / "Lucia" are F008-inherited placeholders — Sam to swap with real colleagues' names if useful before SHIP.)
 
-### action: ux-brief
+### action: ux-brief [SKIPPED]
 
-- [ ] brief: infer the UX direction from problem, success, and user stories
+- ⏭ brief: skipped — backend-only feature — framework BUILD-phase scheduler, no UI surface
+
+**§4 skipped:** Parallel wave execution is a framework BUILD-phase scheduler — no screens, no visual layout, no motion. Visualisation for this non-UI feature lives in §13 Wireframe (flow + architecture diagram + concrete examples) per the wireframe-redesign rule, same pattern F008 used.
 
 ### action: proposed-approach
 
