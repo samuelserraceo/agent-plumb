@@ -12,6 +12,16 @@
 (none)
 
 
+## Ideas
+
+- ideas/001-brief-builder-prefills-spec — brief from `/write-brief` plugin pre-fills SPEC §0; SDD grills only the gaps + audits against project corpus — captured 2026-05-10
+- ideas/002-lego-style-model-right-sizing — each step declares thinking/routine/mechanical tier; framework picks model per tier; works for Claude-only + pi.dev — captured 2026-05-10
+- ideas/003-prompt-caching-across-turns — order prompt so stable corpus comes first, variable turn comes last; provider cache picks up the prefix — captured 2026-05-10
+- ideas/004-background-while-waiting — fill CR/CI deadtime with next-safe-thing (most isolated speed lever, lowest collision risk) — captured 2026-05-10
+- ideas/005-auto-advance-agent-led-steps — default `requires_user_approval` false; setup-time automation-level toggle; extends BUILD-autonomy across SPEC/SHIP — captured 2026-05-10
+- ideas/006-plain-english-sweep-sdd-prose — survey + rewrite SDD's user-facing prose to match brief-builder v0.4's plain-English bar (jargon → notes-from-a-colleague tone) — captured 2026-05-10
+
+
 ## Shipped
 
 - **[[007-sdd-migrate-refresh-project-s-sdd-tree-from-upstream-framework]]** — closes the load-bearing gap that prevented SDD from being a real updatable internal package. Ships `bash .sdd/scripts/sdd-migrate.sh --upstream=<path>` (dry-run by default) + `--apply` mode with per-file confirmation on conflicts. Categorises every framework-tracked file as ADD / UPDATE-CLEAN / UPDATE-CONFLICT / REMOVED via the framework's normalised SHA-256 hash. User-data files (spec.md, INDEX.md, decisions.md, patterns.md, data-model.md, stack.md, principles.md, .sdd/features/**, .sdd/bugs/**, .sdd/refactors/**, .sdd/ideas/**) are invisible to the tool by walk-list design. After --apply the manifest is re-pinned to upstream so commits stop tripping drift errors. Bash 3.2 compat (tempfile-backed prior-hash lookup; declare -A would crash on macOS). 1 CR review cycle (5 Major + 4 Minor closed: bit-for-bit hash check on AC7, apply error handling pre-manifest-repin, T161 UPDATE-CLEAN + post-apply idempotence, REMOVED-only message, MD022, decisions.md correction).
