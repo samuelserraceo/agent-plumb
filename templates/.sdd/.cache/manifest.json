@@ -172,7 +172,7 @@
       "trust": "framework"
     },
     "edge-case-sweep": {
-      "expected_sha256": "ba6b4936c1c477fb52c9a3b245943417592b9987622a48389db6306dfb8e8847",
+      "expected_sha256": "8feb75fd9e286fea13176101d6120f52a6dbeb89ee6deaf5e65b0873f67b2757",
       "path": ".sdd/actions/edge-case-sweep.md",
       "trust": "framework"
     },
