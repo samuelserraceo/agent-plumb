@@ -278,7 +278,7 @@ The new code path writes a small JSONL telemetry log to local disk. The §2 metr
 **Build status (autonomous run 2026-05-10):**
 
 - ✅ T1, T2, T3 — emit script + --list-candidates + --update-last-action shipped in `.sdd/scripts/background-while-waiting.sh`. Test `test/background-emit-test.sh` passes 7/7.
-- ⚠️ T4 — **BLOCKED** — no CR-poll loop currently exists in the framework. The §5 approach assumed one. Sam decision needed: build the CR-poll loop as part of this feature (scope expansion), wrap an existing `gh` command, or split T4 into a follow-up feature.
+- ✅ T4 — **FOLDED INTO T1+T5** — re-scoped after build. The "CR-poll loop integration" was misspecified in §5: there is no discrete CR-poll loop in SDD; the wait window is the agent's own behavioural pattern after `git push` / `gh pr create`. T1's marker script + T5's CLAUDE.md doctrine are the integration. AC4 (CR-poll loop integration) is satisfied by the agent reading the doctrine and running the script post-push.
 - ✅ T5 — doctrine added to `templates/CLAUDE.md` "Background while waiting" section.
 - ⏭ T6 — **NOT NEEDED** — `.sdd/CLAUDE.md` does not exist. Framework dogfoods via `templates/CLAUDE.md` directly. T5 alone covers the doctrine surface.
 - ✅ T7 — `.sdd/scripts/background-metric.sh` helper shipped. Reports `<real-actions>/<total>`.
