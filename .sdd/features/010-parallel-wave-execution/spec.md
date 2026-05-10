@@ -98,7 +98,7 @@ Trade-offs:
 - ✅ Uses Claude Code's existing Agent tool natively; no new subagent infra.
 - ✅ Audit trail preserved (each wave-task is its own commit; only the order between sibling wave-tasks is non-deterministic — and that order wasn't causally meaningful in the first place).
 - ⚠️ Requires manual annotation in plan-decompose; agent could miss a parallelism opportunity (acceptable — under-parallelising is safer than over-parallelising).
-- ⚠️ Wave-tasks editing the same spec.md row → conflict; mitigated by each wave-task only touching its own `[ ] T-NNN` line (different rows, standard 3-way merge handles it cleanly).
+- ⚠️ Wave-tasks editing the same spec.md row → conflict; mitigated by each wave-task only touching its own task row (unchecked-state token for the wave-task's `T-NNN`; different rows, standard 3-way merge handles it cleanly).
 
 **Approach B — Auto-detect wave membership (rejected).** Framework analyses each BUILD task's test file + likely-touched files; tasks with no overlap auto-form a wave; `/next` computes the independence graph and dispatches automatically. Zero-effort for the developer, but introspection is fragile (BUILD code can touch files the test fixture didn't predict, leading to silent races), violates Foundation 3 (`never-assume` — the framework guesses based on a heuristic), and adds more code + more failure modes.
 
