@@ -6,7 +6,7 @@ playbook: feature
 
 [PHASE: SPEC]
 
-**Active blocker:** §4 (action: ux-brief)
+**Active blocker:** §5 (action: proposed-approach)
 
 ## PHASE: SPEC
 
@@ -16,7 +16,7 @@ playbook: feature
 - [x] why-now: F01 audit (2026-05-08) produced 4 concrete failure modes; doctrine alone insufficient
 - [x] what-breaks: 4 concrete failure modes — startup-pitch §1, redundant §2, lazy first-pass record, bundled-question turns
 
-### §1 Problem
+#### §1 Problem
 
 #### who-has-it
 
@@ -39,7 +39,7 @@ Four things break, drawn directly from #207's *"What's wrong with the current SP
 
 - ⏭ metric: skipped — out of scope — this redesign deletes §2 from the playbook (per #207 Part 2; argued in §5 proposed-approach)
 
-### §2 Success [SKIPPED]
+#### §2 Success [SKIPPED]
 
 **Skipped on purpose** — out of scope — this redesign deletes §2 from the playbook (per #207 Part 2; argued in §5 proposed-approach)
 
@@ -51,7 +51,7 @@ Honest discipline: skip with documented reason. Verification of this redesign's 
 
 - [x] stories: 3 personas — fresh-project founder, engineer-opt-out, framework-dogfood meta-case
 
-### §3 User Stories
+#### §3 User Stories
 
 **3 personas, drawn from #207 + the F01 audit + this F009 ceremony itself:**
 
@@ -77,7 +77,35 @@ Already proven in this SPEC ceremony — §2 was skipped honestly with a documen
 
 ### action: ux-brief
 
-- [ ] brief: infer the UX direction from problem, success, and user stories
+- [x] brief: chat-as-UX — agent message shapes (entry / mid-section / first-draft / end-of-section recap); no visual wireframe
+
+
+**Primary surface(s):** the agent's chat output. F009 changes 4 message shapes the agent prints during SPEC walkthrough — no visual UI artefact, no wireframe.
+
+| Surface | Old shape | New shape (per #207) |
+|---|---|---|
+| **Entry prompt** (start of SPEC) | "Three quick questions: who / why-now / what-breaks?" | "Paste your brief, upload a doc, or use the template at `.sdd/ideas/2026-05-08-brief-template-v2.md`." |
+| **Mid-section turn** | Agent bundles 2-4 sub-questions per turn | Agent asks **at most ONE** question per turn |
+| **First draft (AGENT-LED)** | Engineer-shape prose; lint catches jargon retroactively | Plain-English-first; technical detail in foldable `<details>` block |
+| **End-of-section recap** | None | "Here's what I just heard across §N:" + 3-bullet restate |
+
+**Tone / voice constraints (mix of already-shipped + new):**
+
+| Doctrine | Status |
+|---|---|
+| Plain English; jargon translated on first use (CLAUDE.md non-tech lens + lint #110) | shipped |
+| 5-line hard cap on end-of-turn messages | shipped via #205 (v1.6 batch) |
+| Approval prompts kept short (no 6-step ceremony block) — best-effort doctrine, agent self-check at every approval | shipped via #201 (v1.6 batch) |
+| Free-form escape on every multi-choice question | doctrine |
+| **One question per turn** | new — #207 Part 3 (this feature) |
+| **Plain-English-first as DEFAULT** (not just lint-enforced) | new — #207 Part 4 (this feature) |
+| **End-of-section recap** | new — #207 Part 6 (this feature) |
+
+**Visual / device constraints — N/A.** Mobile / desktop / responsive: chat output renders in Claude Code's UI; this feature doesn't touch the harness's chrome. WCAG accessibility: inherited from Claude Code; not affected. i18n: English-only for v1.6.
+
+**Document-upload UX (#207 Part 5):** §6 data-contract action prose explicitly invites uploads — *"drop a Google Sheets export, a schema dump, a screenshot."* Supported: markdown / CSV / JSON / plain text (clean); PDFs (spotty); screenshots (vision-capable models). Failure path: agent reports plain-English error if format unsupported.
+
+**Wireframe.html: N/A.** The "wireframe" for an agent-chat feature is the action prose templates themselves (`templates/.sdd/actions/<slug>.md`). Updating those IS the wireframe update. The `wireframe.html` file at the feature root is a stub explaining this; per CLAUDE.md rule 5 (wireframe should reflect current state — best-effort doctrine, agent self-check), action prose changes are tracked in the `touches:` field of each downstream action, not in a separate HTML file.
 
 ### action: proposed-approach
 
