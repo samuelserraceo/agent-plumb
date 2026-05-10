@@ -174,7 +174,7 @@ acknowledging this and pointing at this §6 for context.
 
 **Flow 1 — Agent walks SPEC with brief paste (NEW, replaces 3-question Pitch flow):**
 
-```
+```text
 User: /start <title>
 Agent: "Paste your brief, upload a doc, or use the template at <path>."
 User: <pastes brief OR uploads doc OR responds: "use template">
