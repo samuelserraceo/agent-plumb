@@ -373,7 +373,7 @@ All §10 mechanical-shape claims have AC coverage. Compliance items (license, no
             <spec-path> args, structured JSON result on stdout, executable
             bit + correct shebang
             — proves AC2
-- [ ] T202: linear-mode regression — spec.md without [WAVE:] markers
+- [x] T202: linear-mode regression — spec.md without [WAVE:] markers
             returns the existing tag/action/step shape (no WAVE-DISPATCH);
             current sequential walk unchanged
             — proves AC3
