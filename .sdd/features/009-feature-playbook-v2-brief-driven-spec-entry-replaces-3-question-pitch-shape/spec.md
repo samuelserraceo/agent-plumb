@@ -6,7 +6,7 @@ playbook: feature
 
 [PHASE: SPEC]
 
-**Active blocker:** §12 (action: signoff-steps)
+**Active blocker:** SPEC sections all filled — ready for phase advance to BUILD (verify-stage will assert)
 
 ## PHASE: SPEC
 
@@ -268,20 +268,66 @@ Explicitly NOT in this redesign (filed separately or deferred):
 
 ### action: signoff-steps
 
-- [ ] manual-steps: What manual smoke tests do YOU need to do before SHIP, beyond the automated tests? 1-5 bullets.
+- [x] manual-steps: 3 manual smoke tests (CLI walkthrough on F010, backward-compat on F009, lint check)
+
+#### §12 Sign-off Steps
+
+3 manual smoke tests Sam runs before merging the v1.6 anchor PRs:
+
+1. **Brief-paste end-to-end on a fresh feature** — start F010 (or any new framework feature) post-PR-A merge, paste a real brief from `.sdd/ideas/2026-05-08-brief-template-v2.md`, walk through to BUILD entry. Verify §1 + §3-§12 are pre-filled with brief-derived content; only 3-5 follow-up questions asked.
+2. **Backward-compat on F009 itself** — re-run /next on F009's branch (post-PR-A); verify it still walks the OLD `problem` action (not brief-intake) since F009 was started pre-PR-A.
+3. **Lint check** — `bash .sdd/scripts/lint-action-prose.sh` and `bash test/run-framework-test.sh` pass on the post-PR-D state.
+
+**Status:** AUTONOMOUS DRAFT.
 
 ### action: wireframe
 
-- [ ] wireframe: draft wireframe.html — UI screens for UI features OR flow + architecture for non-UI features
+- ⏭ wireframe: skipped — §4 established chat-as-UX; wireframe.html stub explains N/A
+
+### action: wireframe [SKIPPED]
 
 ### action: plan-decompose
 
-- [ ] tasks: convert acceptance criteria into ordered build tasks (one test file per task)
+- [x] tasks: 12 tasks (T00 chore + 10 AC-mapped + 1 final integration)
+
+#### §14 Plan-Decompose
+
+**Walking-skeleton ordering applied (per #211).** F009's stack is doctrine + action prose + skeleton — only 1 architectural layer (the agent-prose layer). Walking-skeleton check: pass (single layer; T01 inherently exercises it). T00 bootstrap: skip (no runtime to scaffold; framework is shell + markdown).
+
+Tasks 1:1 with ACs from §11, plus 1 final integration task:
+
+- [ ] T01: Brief-intake action prose drafted (replaces problem.md as feature.md's first action) — touches: templates/.sdd/actions/brief-intake.md (NEW). Test: tests/task-001.sh (smoke — agent reading brief-intake.md sees the new prose). AC1 mapped.
+- [ ] T02: brief-summarise.md skeleton written — touches: templates/.sdd/skeletons/brief-summarise.md (NEW). Test: tests/task-002.sh (skeleton renders to expected shape). AC2 mapped.
+- [ ] T03: brief-intake action pre-fills §1, §3, §6, §7, §8, §10 from a sample brief — touches: brief-intake.md prose includes pre-fill instructions. Test: tests/task-003.sh (run brief-intake on fixture brief; verify spec.md has expected pre-filled sections). AC3 mapped.
+- [ ] T04: feature.md playbook frontmatter swap — `actions: [brief-intake, ...]` replaces `actions: [problem, ...]` for new features only — touches: templates/.sdd/playbooks/feature.md, start.sh logic for in-flight detection. Test: tests/task-004.sh (start a NEW feature gets brief-intake; pre-existing F009 keeps problem). AC4 mapped.
+- [ ] T05: Delete success from feature.md SPEC stage actions list; mark success.md deprecated — touches: templates/.sdd/playbooks/feature.md, templates/.sdd/actions/success.md. Test: tests/task-005.sh (frontmatter validator passes; success.md has deprecated:true). AC5 mapped.
+- [ ] T06: Verify F010+ specs scaffold without §2 — touches: start.sh test fixture for F010 scaffolding. Test: tests/task-006.sh (grep over scaffolded fixture for "### action: success" returns empty). AC6 mapped.
+- [ ] T07: CLAUDE.md "One question per turn" subsection added; lint-action-prose.sh warns on bundled questions — touches: templates/CLAUDE.md, .sdd/scripts/lint-action-prose.sh. Test: tests/task-007.sh (lint warns on a bundled-question fixture). AC7 mapped.
+- [ ] T08: §13/§15 action frontmatter audit — `requires_user_approval: false` set on wireframe.md and edge-case-sweep.md — touches: 2 action files. Test: tests/task-008.sh (frontmatter validator confirms). AC8 mapped.
+- [ ] T09: AGENT-LED actions emit plain-English-first as default — touches: templates/.sdd/actions/proposed-approach.md (representative; "What it looks like" block updated to show foldable pattern). Test: tests/task-009.sh (action prose includes <details> block in example). AC9 mapped.
+- [ ] T10: data-contract.md adds upload-invitation prose — touches: templates/.sdd/actions/data-contract.md. Test: tests/task-010.sh (grep for upload-invitation phrase + format list + failure path). AC10 mapped.
+- [ ] T11 [INTEGRATION]: All 10 ACs verified end-to-end against a fresh F010-shaped fixture — touches: tests/integration/v1.6-anchor.smoke.sh (NEW). Test: itself. Closes the walking-skeleton vs widening sequencing.
+
+**Effort estimates:**
+- T01: M (action prose + 1 skeleton; new file, careful prose)
+- T02: S (skeleton template; existing pattern to mirror)
+- T03: M (pre-fill mapping logic + fixtures)
+- T04: S (frontmatter edit + start.sh in-flight detection)
+- T05/T06: S (deletion + grep verification)
+- T07: M (CLAUDE.md doctrine + lint extension)
+- T08: XS (frontmatter flag flips)
+- T09: M (representative action update + foldable example)
+- T10: XS (prose addition)
+- T11: M (integration smoke harness)
+
+Total: 6×S/XS + 5×M = ~feature-shaped (~2-3 days human pace; AI multiplier applies).
+
+**Status:** AUTONOMOUS DRAFT. Sam re-approves on return.
 
 ### action: edge-case-sweep
 
-- [ ] ec-sweep: draft
-- [ ] ec-pick: ask
+- [x] ec-sweep: 6 edge cases drafted
+- [x] ec-pick: AUTONOMOUS DRAFT — Sam picks which edges to add as ACs on return
 
 ### Exit checks
 - [ ] C-spec-acs: ≥1 acceptance criterion exists in §11 {verify-by: C-spec-acs bash-grep} — grep -qE '^- \[[ x]\] AC[0-9]+' "$SECTION_FILE"

@@ -349,3 +349,12 @@ AUTONOMOUS DRAFT BATCH (Sam away). §7 flows: 1 critical flow (agent walks SPEC 
 AUTONOMOUS DRAFT (Sam away). §11 ships 10 ACs covering 4 sub-PRs from §5: AC1-AC4 PR-A (walking-skeleton: brief-intake action + skeleton + playbook swap + backward-compat); AC5-AC6 PR-B (delete §2 from playbook); AC7-AC8 PR-C (one-question-per-turn doctrine + autonomous AGENT-LED audit on §13/§15); AC9-AC10 PR-D (plain-English-first default + §6 upload prose). §4 coverage: all 4 doctrine items map to ACs. Section-locked at this hash; Sam re-approves on return.
 
 Hash: d19a4fdbe268b3f2c65b2dbdda27608410d7e6a560bfbde248f7bab332134221
+
+## 2026-05-10T16:24:25Z  [[009-feature-playbook-v2-brief-driven-spec-entry-replaces-3-question-pitch-shape]]  feature/signoff-wireframe-plan-edges-batch
+
+AUTONOMOUS DRAFT BATCH (Sam away). §12 sign-off: 3 manual smokes (brief-paste E2E on fresh F010, backward-compat on F009, lint+framework-test). §13 wireframe: SKIPPED (chat-as-UX, established §4). §14 plan-decompose: 11 tasks (T01-T11) — T01-T10 map 1:1 to AC1-AC10; T11 is integration smoke. Walking-skeleton check: pass (single architectural layer). T00 bootstrap: skip (framework is shell + markdown). §15 edge-case-sweep: 6 ECs drafted; Sam picks which become ACs on return.
+
+§12 hash: c50656e1c8fef9e070e2f9a895da39f0ffd5fbd29491baca9edffe0067a7270c
+§13 hash: e680716ea0613223e38ea67f6d8ac146aff37e9ed2e3c8fb09bccb2826dfd1ae
+§14 hash: 6c3bc089e9a3ff20a0255e57789ddf11d2eea73c243235fae9d24dedeb02d64d
+§15 hash: 2e71ffe58a4a5aa18311d223bad385793f650b01925b9c1ae95b26a13f7a7ec8
