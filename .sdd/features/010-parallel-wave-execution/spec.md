@@ -4,9 +4,9 @@ playbook: feature
 
 # parallel wave execution
 
-[PHASE: BUILD]
+[PHASE: SHIP]
 
-**Active blocker:** §14 (BUILD action: run-mode-chosen)
+**Active blocker:** § (SHIP action: verify-test-run)
 
 ## PHASE: SPEC
 
@@ -485,7 +485,7 @@ All §10 mechanical-shape claims have AC coverage. Compliance items (license, no
 
 ### Exit checks
 
-- [ ] C-build-tasks-green: T200-T211 all GREEN; framework tests pass {verify-by: verify-stage.sh}
+- [x] C-build-tasks-green: T200-T211 all GREEN; framework tests pass {verify-by: verify-stage.sh}
 
 ## PHASE: SHIP
 
