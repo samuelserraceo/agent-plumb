@@ -319,15 +319,15 @@ The new code path writes a small JSONL telemetry log to local disk. The §2 metr
 
 ### action: push-pr
 
-- [ ] pr: push branch, open PR
+- [x] pr: branch pushed, PR #218 opened, 9 CR cycles iterated
 
 ### action: verify-ci-green
 
-- [ ] ci: confirm CI green and CR clean
+- [x] ci: CR auto-check SUCCESS at 21:03 post-final-push; framework tests 218/218 + per-feature 7/7 GREEN throughout
 
 ### action: mark-shipped
 
-- [ ] shipped: mark INDEX.md, append decisions.md SHIPPED entry
+- [x] shipped: PR #218 merged to main at aee2f32 (2026-05-10T21:10:33Z); INDEX.md moved 009 → Shipped; decisions.md SHIPPED entry appended; .shipped marker created (this cleanup PR resolves the loose ends from the squash-merge)
 
 ### Exit checks
 - [ ] C-ship-pr-url: PR URL recorded in INDEX.md Shipped section
