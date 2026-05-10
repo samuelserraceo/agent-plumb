@@ -13,12 +13,20 @@ playbook: feature
 ### action: problem
 
 - [x] who: Sam, when running BUILD phases with many small independent tasks (F008 lived this — 36 atomic commits, orchestrator context filled past turn ~50, small drift started landing). Future adopters too — pain scales with task count × task independence.
-- [ ] why-now: Why is it worth solving now?
+- [x] why-now: Three signals just lined up — F008 unlocked multi-model so sub-task delegation is now physically possible; F008 made the context-rot pain concrete (36 commits, 3 CR cycles, residual drift); GSD's proven parallel-wave pattern is mature prior art (Sam said live "I really want to execute" this during the GSD comparison).
 - [ ] what-breaks: What breaks (concretely) if it isn't solved?
 
 **Who has this problem:** Sam is the primary persona. Specifically: Sam running an SDD BUILD phase with 10+ acceptance criteria and 30+ atomic build tasks. F008 just lived it — 36 atomic commits across the BUILD walk, then 3 CR cycles cleaning up small drift the orchestrator should have caught itself but didn't (T200-T211 residual references after T212 was added, "12 vs 13 task count" mismatches across multiple spec sections, post-cycle-2 partial-e2e gap). The CR cycles burned real time fixing what fresh-context tasks would not have produced.
 
 The same shape hits any SDD adopter doing big-feature work — anyone scaffolding multi-component features (endpoint + tests + docs + types per item × N items). They pay wall-clock cost (linear walk) and quality cost (orchestrator context-rot) — both compound on long sessions.
+
+**Why now:** Three things just lined up at once.
+
+1. **F008 just unlocked multi-model.** Before F008, every step ran the orchestrator's model. With pi.dev as the second harness, sub-task delegation to Haiku or Kimi K2 is real. The cost-and-quality combo of "waves × cheaper-model" now becomes physically possible — without that, parallel waves would just mean "more parallel Sonnet-rate calls," which is a dubious win on its own.
+2. **F008 made the pain concrete.** 36 BUILD-task commits + 3 CR cycles + post-cycle-2 partial-e2e gap = real lived cost. Sam has the receipts: turn ~50 onwards had small drift CR caught (T200-T211 residual references, task-count mismatches, deferred-vs-blocked confusion). Each one cost a cycle to fix.
+3. **Prior art is mature.** GSD's `/gsd-execute-phase` parallel-wave logic is in production at fulgidus/pi-gsd v2.1.4 — the same pattern Sam saw during the SDD-vs-GSD comparison walk and explicitly said "this is something I really want to execute." The architecture works; we need a smaller version that fits SDD's atomic-step doctrine.
+
+The "if not now, when?" answer: as adopters take SDD-on-pi for bigger features (now physically possible with multi-model), the context-rot ceiling gets hit faster. Without waves, the multi-model unlock pays half its dividend.
 
 ### action: success
 
