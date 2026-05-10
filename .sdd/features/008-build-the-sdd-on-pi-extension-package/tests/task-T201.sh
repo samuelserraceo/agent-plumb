@@ -25,6 +25,10 @@ if [ ! -f "$PKG" ]; then
 fi
 
 # Resolve prompts dir from package.json#pi.prompts (no jq dep).
+# Constrain the resolved path to stay inside EXT_ROOT — without this an
+# absolute or `..`-laden manifest value (e.g. "/etc" or "../../escape")
+# could pass the directory checks while pointing outside the extension
+# package, falsely marking an invalid manifest as compliant.
 PROMPTS_DIR="$(python3 - "$PKG" "$EXT_ROOT" <<'PY'
 import json, os, sys
 pkg_path, ext_root = sys.argv[1], sys.argv[2]
@@ -33,13 +37,26 @@ with open(pkg_path) as f:
 rel = (pkg.get("pi") or {}).get("prompts") or ""
 if not rel:
     print("")
+    sys.exit(0)
+# realpath both sides so symlinks + .. + absolute paths are all
+# normalised to the same canonical form before the containment check.
+ext_root_real = os.path.realpath(ext_root)
+resolved      = os.path.realpath(os.path.join(ext_root, rel))
+# Containment check: resolved must equal ext_root or live strictly under it.
+if resolved != ext_root_real and not resolved.startswith(ext_root_real + os.sep):
+    print("ESCAPED:" + resolved)
 else:
-    print(os.path.normpath(os.path.join(ext_root, rel)))
+    print(resolved)
 PY
 )"
 
 if [ -z "$PROMPTS_DIR" ]; then
   echo "FAIL: T201 — package.json#pi.prompts not set"
+  exit 1
+fi
+
+if [[ "$PROMPTS_DIR" == ESCAPED:* ]]; then
+  echo "FAIL: T201 — package.json#pi.prompts resolves outside extension root: ${PROMPTS_DIR#ESCAPED:}"
   exit 1
 fi
 
