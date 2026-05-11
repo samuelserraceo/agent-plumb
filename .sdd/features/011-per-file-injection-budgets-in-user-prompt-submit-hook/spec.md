@@ -4,9 +4,15 @@ playbook: feature
 
 # per-file injection budgets in user-prompt-submit hook
 
-[PHASE: BUILD]
+[PHASE: SHIP]
 
-**Active blocker:** § (BUILD action: run-mode-chosen)
+**Active blocker:** § (SHIP action: verify-test-run)
+
+## PHASE: SHIP
+
+### action: verify-test-run
+
+- [ ] tests: Run full test sweep one more time + push branch + open PR.
 
 ## PHASE: BUILD
 
@@ -16,7 +22,7 @@ playbook: feature
 
 ### action: build-task
 
-- [ ] tasks: Execute T220-T236 per §14 plan-decompose. 5 sequential cores (T220 → T223 → T221 → T222 + T224) + 3 parallel waves (W1, W2, W3) per F010 wave-execution doctrine.
+- [x] tasks: 17/17 BUILD tasks GREEN (T220-T236). 5 sequential cores done (T220 → T223 → T221 → T222 + T224); 3 waves done (W1=T225; W2=T226/T227/T228/T236; W3=T229/T230/T231/T232/T233/T234/T235). Full test sweep 17/17 PASS. Closed 2026-05-11 full-autonomous run.
 
 ## PHASE: SPEC
 
@@ -387,23 +393,23 @@ All 20 claim-rows have at least one covering AC. NF1 (latency), NF2 (no-regressi
 
 Flat list (canonical) — detailed table below:
 
-- [ ] T220: Add `parameters.injection.per_file_budget_chars` map (6 entries) to `templates/.sdd/config.md` — AC1
-- [ ] T221: Rewrite `user-prompt-submit.sh` truncation block as per-file loop — AC2
-- [ ] T222: Sentinel marker emitted on truncation with byte-count substitution — AC3
-- [ ] T223: Extend `resolve-parameters.sh` for new `per_file_budget_chars` map — AC4
-- [ ] T224: Apply `cap_total_chars` as defensive floor on combined output — AC5
-- [ ] T225: Add `InjectionBudget` entity entry to `.sdd/data-model.md` — AC6
-- [ ] T226: Partial override test — declared key wins, defaults fill the rest — AC7
-- [ ] T227: Unknown basename test — resolver returns documented default — AC8
-- [ ] T228: Missing-block test — `null`/omitted → framework defaults — AC9
-- [ ] T229: Sum-overshoot test — per-file truncation first, then cap clip — AC10
-- [ ] T230: Multi-file overflow test — each file present + sentinel — AC11
-- [ ] T231: Determinism test — byte-identical output on identical input — AC12
-- [ ] T232: Network-surface test — `git diff` shows zero new network calls — AC13
-- [ ] T233: Framing-preserved test — `[PROJECT DATA]` marker still emitted — AC14
-- [ ] T234: One-byte-over-boundary test — sentinel with `<N> = 1` — AC15
-- [ ] T235: UTF-8 char boundary backoff + test — AC16
-- [ ] T236: Negative-budget clamp + stderr warning + test — AC17
+- [x] T220: Add `parameters.injection.per_file_budget_chars` map (6 entries) to `templates/.sdd/config.md` — AC1
+- [x] T221: Rewrite `user-prompt-submit.sh` truncation block as per-file loop — AC2
+- [x] T222: Sentinel marker emitted on truncation with byte-count substitution — AC3
+- [x] T223: Extend `resolve-parameters.sh` for new `per_file_budget_chars` map — AC4
+- [x] T224: Apply `cap_total_chars` as defensive floor on combined output — AC5
+- [x] T225: Add `InjectionBudget` entity entry to `.sdd/data-model.md` — AC6
+- [x] T226: Partial override test — declared key wins, defaults fill the rest — AC7
+- [x] T227: Unknown basename test — resolver returns documented default — AC8
+- [x] T228: Missing-block test — `null`/omitted → framework defaults — AC9
+- [x] T229: Sum-overshoot test — per-file truncation first, then cap clip — AC10
+- [x] T230: Multi-file overflow test — each file present + sentinel — AC11
+- [x] T231: Determinism test — byte-identical output on identical input — AC12
+- [x] T232: Network-surface test — `git diff` shows zero new network calls — AC13
+- [x] T233: Framing-preserved test — `[PROJECT DATA]` marker still emitted — AC14
+- [x] T234: One-byte-over-boundary test — sentinel with `<N> = 1` — AC15
+- [x] T235: UTF-8 char boundary backoff + test — AC16
+- [x] T236: Negative-budget clamp + stderr warning + test — AC17
 
 Detailed table (file paths, dependencies, wave-marks):
 

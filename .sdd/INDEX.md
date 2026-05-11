@@ -2,13 +2,13 @@
 
 **Active:** features/011-per-file-injection-budgets-in-user-prompt-submit-hook
 **Playbook:** feature
-**Active blocker:** § (BUILD action: run-mode-chosen)
+**Active blocker:** § (SHIP action: verify-test-run)
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
 
 ## In flight
-- features/011-per-file-injection-budgets-in-user-prompt-submit-hook — per-file injection budgets in user-prompt-submit hook (PHASE: BUILD)
+- features/011-per-file-injection-budgets-in-user-prompt-submit-hook — per-file injection budgets in user-prompt-submit hook (PHASE: SHIP)
 
 
 

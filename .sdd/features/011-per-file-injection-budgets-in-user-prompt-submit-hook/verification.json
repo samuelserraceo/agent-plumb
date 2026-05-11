@@ -1,8 +1,9 @@
 {
-  "phase": "BUILD",
+  "phase": "SHIP",
   "checks": [
     {"id": "C-spec-acs", "result": "pass"},
-    {"id": "C-spec-tasks", "result": "pass"}
+    {"id": "C-spec-tasks", "result": "pass"},
+    {"id": "C-build-tasks-green", "result": "pass"}
   ],
   "approved_sections": {
     "proposed-approach": "3414bfe7f0a92a4aa7348140797de8e56bd4f820b91f3ea5291109ea52c00d1f",
