@@ -103,21 +103,21 @@
   - Shipped: 2026-05-03 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/147
   - Data-model: (none — single-file hook fix + 3 new regression tests)
   - Extends: bugs/001 (#138 fix); narrow follow-up surfacing the 3 sibling bugs that #138's verification didn't catch
-  - Lesson: forward-pointer to a future `[[pattern:gate-on-parsed-result-not-raw-input]]` — when an early gate decides whether a parser runs, prefer scoping the gate's regex to the same segment the parser will examine (not the raw input string). Raw-input regex false-positives on tool-prefix flags + edge cases like stdin-backed files; segment-scoped + edge-stripped regex aligns the gate with the parser's actual capabilities. Plus: when refining a guard, use existing tests (T45) to verify the refinement doesn't regress the original defence — single-condition fixes are tempting but break attack scenarios; dual-condition fixes are safer.
+  - Lesson: forward-pointer to a future pattern (`gate-on-parsed-result-not-raw-input`) — when an early gate decides whether a parser runs, prefer scoping the gate's regex to the same segment the parser will examine (not the raw input string). Raw-input regex false-positives on tool-prefix flags + edge cases like stdin-backed files; segment-scoped + edge-stripped regex aligns the gate with the parser's actual capabilities. Plus: when refining a guard, use existing tests (T45) to verify the refinement doesn't regress the original defence — single-condition fixes are tempting but break attack scenarios; dual-condition fixes are safer.
   - 3 CR cycles, 6 findings closed (3 → 2 → 1 → silent). 200/200 framework tests + 31/31 claims audit + relevant MCP tests.
 
 - **bugs/001-safety-hook-blocks-legitimate-framework-updates** — moves the manifest-repin marker check from pre-commit to a new commit-msg hook so legitimate `git commit -m '[SDD] manifest: repin — ...'` from the terminal works (native git pre-commit fundamentally cannot see -m text — verified empirically). _(plain text — wiki-link form blocked by graph-cache resolver only walking `.sdd/features/`; bugs/refactors handling tracked separately)_
   - Shipped: 2026-05-03 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/144
   - Data-model: (none — adds new `templates/.claude/hooks/commit-msg`, gates existing pre-commit marker block behind `git_commit_cmd` non-empty)
   - Extends: (root); narrow follow-up to #137's framework-self-hosts-hooks
-  - Lesson: forward-pointer to a future `[[pattern:hook-stage-must-match-data-availability]]` — when a hook needs to see commit message text, it must run at commit-msg time, not pre-commit. Pre-commit is for staged-content checks; commit-msg is for message-context checks.
+  - Lesson: forward-pointer to a future pattern (`hook-stage-must-match-data-availability`) — when a hook needs to see commit message text, it must run at commit-msg time, not pre-commit. Pre-commit is for staged-content checks; commit-msg is for message-context checks.
   - Filed 2 sibling bugs surfaced during this fix's verification: Bug A (multi-manifest path regex breaks `git show`); Bug B (HEAD content check fires false-positive cross-commit-attack on every legitimate repin). Tracked as the in-flight bugs/002 follow-up. T142 regression test covers the commit-msg flow.
 
 - **[[005-wireframe-action-redesign]]** — v1.2 wireframe action redesign: drops `[SKIPPABLE: non-UI features]`, branches on UI vs non-UI shape with two skeleton starters (`wireframe-ui.html` + `wireframe-non-ui.html`). Non-UI features now ship a flow + architecture diagram + concrete chat/CLI examples — visualisation a non-technical reviewer can read end-to-end without reading code.
   - Shipped: 2026-05-03 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/128
   - Data-model: (none — action-prose rewrite + 2 new HTML skeleton files)
   - Extends: (root)
-  - Lesson: forward-pointer to a future `[[pattern:non-ui-features-need-more-visualisation-not-less]]` — the wireframe is the only doc a non-technical reviewer can read to decide *"yes, that's what I asked for"*. UI features inherit visualisation from the screens themselves; non-UI features need MORE explicit visualisation (flow + architecture diagrams + concrete examples), not less, because reviewers can't infer behaviour from code.
+  - Lesson: forward-pointer to a future pattern (`non-ui-features-need-more-visualisation-not-less`) — the wireframe is the only doc a non-technical reviewer can read to decide *"yes, that's what I asked for"*. UI features inherit visualisation from the screens themselves; non-UI features need MORE explicit visualisation (flow + architecture diagrams + concrete examples), not less, because reviewers can't infer behaviour from code.
   - 5 CR cycles, 20 findings closed (8 → 5 → 4 → 3 → silent). 196/196 framework + 161/161 MCP + 10/10 task tests.
 
 - **[[004-graph-cache-multi-line-code-span-fix]]** — v1.2 graph-cache multi-line code span fix: `_INLINE_CODE_MULTILINE_RE` + `_mask_inline_code_in_content()` mask CommonMark backtick spans across newlines while preserving line numbers. `_CACHE_VERSION` bumped 1 → 2 so old caches regenerate.
@@ -131,14 +131,14 @@
   - Shipped: 2026-05-02 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/121
   - Data-model: (none — bash lint + pre-commit hook, no new entities)
   - Extends: (root)
-  - Lesson: forward-pointer to a future `[[pattern:annotated-theatre-instead-of-soft-prose]]` — Foundation 3 applied at the spec layer. Every claim either checks (`{verify-by}`), admits judgement (`{best-effort}`), or names live-infra (`{prod-only}`) — soft prose alone isn't enough.
+  - Lesson: forward-pointer to a future pattern (`annotated-theatre-instead-of-soft-prose`) — Foundation 3 applied at the spec layer. Every claim either checks (`{verify-by}`), admits judgement (`{best-effort}`), or names live-infra (`{prod-only}`) — soft prose alone isn't enough.
   - 4 CR cycles, 11 findings closed (7 → 3 → 1 → silent). 196/196 framework + 15/15 task tests.
 
 - **[[002-plain-english-prose-sweep]]** — v1.2 plain-English prose sweep + lint: every USER-LED / AGENT-LED action file ships a concrete plain-English example block (`**What it looks like:**`) the agent can mirror; `lint-action-prose.sh` catches future drift on every PR.
   - Shipped: 2026-05-02 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/118
   - Data-model: (none — markdown sweep + bash lint, no new entities)
   - Extends: (root)
-  - Lesson: forward-pointer to a future `[[pattern:plain-english-mum-test-overrides-mechanical-proxies]]` — when a quality concern is human-judged ("would mum understand this?"), the lint enforces a positive concrete fact (the example block exists), not a heuristic proxy (sentence count, char count, jargon denylist). Foundation 3 applied at the lint layer.
+  - Lesson: forward-pointer to a future pattern (`plain-english-mum-test-overrides-mechanical-proxies`) — when a quality concern is human-judged ("would mum understand this?"), the lint enforces a positive concrete fact (the example block exists), not a heuristic proxy (sentence count, char count, jargon denylist). Foundation 3 applied at the lint layer.
   - 5 CR cycles, 38 findings closed (24 → 5 → 3 → 3 → 0). 195/195 framework + 10/10 task tests.
 
 - **[[001-tier-3-llm-driven-synthesis]]** — v1.1 Tier 3 LLM-driven synthesis: chat-style answers over `.sdd/` corpus with cite-checked `[[…]]` citations.
