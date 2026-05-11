@@ -1,14 +1,15 @@
 # SDD framework — INDEX
 
-**Active:** features/012-promote-legacy-queued-sh-migrator-for-pre-v1-5-2-phase-state-drift-closes-206
+**Active:** _(none)_
 **Playbook:** feature
-**Active blocker:** §1 (first action: brief-intake)
+**Active blocker:** _(no active feature — v1.7.2 shipped 2026-05-11 via PR #237, closes #206 (promote-legacy-queued.sh migrator for pre-v1.5.2 PHASE state drift). Pick next from ## Ideas below or open issues.)_
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
 
 ## In flight
-- features/012-promote-legacy-queued-sh-migrator-for-pre-v1-5-2-phase-state-drift-closes-206 — promote-legacy-queued.sh migrator for pre-v1.5.2 PHASE state drift (closes #206) (PHASE: SPEC)
+
+(none)
 
 
 
@@ -25,6 +26,13 @@
 
 
 ## Shipped
+
+- **[[012-promote-legacy-queued-sh-migrator-for-pre-v1-5-2-phase-state-drift-closes-206]]** — closes #206 (pre-v1.5.2 PHASE state drift). Ships `bash .sdd/scripts/promote-legacy-queued.sh` — a one-shot opt-in migrator that walks `.sdd/{features,bugs,refactors}/`, skips cold (`.shipped`) items, and for each work item whose INDEX row matches `queued|Backlog|backlog` AND whose spec.md PHASE is not already `QUEUED`, flips both atomically: spec.md from `[PHASE: SPEC]` to `[PHASE: QUEUED]` AND INDEX row to canonical `(scaffolded, PHASE: QUEUED)`. Stages via `git add` but does NOT auto-commit (user reviews `git diff --cached` first). Idempotent. Two-file ship (live + templates copy, both manifest-tracked). One-paragraph doc update in `templates/CLAUDE.md` "Multi-feature parallel work" section naming the migrator + when to run it (after `sdd-migrate.sh --apply`). 5 BUILD task-tests T01-T05 + T06 doc paragraph; all 5 tests GREEN. Cycle-1 CR clean.
+  - Shipped: 2026-05-11 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/237 · Tag: `v1.7.2`
+  - Data-model: (none — behavioural change to add one new script + one doc paragraph; no entity changes)
+  - Extends: (root); v1.7 patch — completes the v1.7 maintenance trio (v1.7.0 hook merge-exception #220 + v1.7.1 hash bold-strip #197p2 + v1.7.2 legacy-queued migrator #206)
+  - Patterns: state-machine migration shape (one-shot opt-in script staged-not-committed; INDEX row + spec.md PHASE updated atomically; cold-feature skip via `.shipped`; idempotence via "is INDEX row already canonical" check). Folded into existing hash-section discipline — no new patterns.md entry needed.
+  - Deferred: auto-running migrator from `sdd-migrate.sh --apply` (out-of-scope per §9 — state-machine changes are explicit opt-in); migration of non-canonical INDEX rows (deferred until a real downstream project hits it); retroactive hash recomputation for already-approved sections (independent system).
 
 - **[[011-next-action-sh-regex-stalls-on-bold-ac-labels-closes-197]]** — closes #197 part 2 (hash-section.sh bold-strip) on top of v1.7.0. Live audit on 2026-05-11 confirmed `next-action.sh` line 220 regex was already fixed by PR #227 (parallel-waves) — only the hash-side remained. `hash-section.sh` (both `.sdd/scripts/` and `templates/.sdd/scripts/` copies) now applies a scoped regex normalisation to LIST-ITEM LABELS matching `AC<N>` / `T<N>` (incl. `T<N> [WAVE: ...]`) / `C-<slug>` and strips wrapping `**` markers before SHA-256. Bold `- [ ] **AC1:** foo` and plain `- [ ] AC1: foo` now hash identically. Prose-emphasis `**Note:**` / `**TODO:**` inside the section is preserved (T02 scope-check locks the boundary). Plain-label hash is pinned to its pre-fix value (T03 regression-lock — `9c148b6b3cb6...`). CR cycle-1 raised 3 actionable findings — all closed in 74c5a39: regex charclass extended to `[ xX]` so `[X]` (uppercase-checked) rows match too, and the T01 fixture extended to cover the full regex scope (T-task + C-checklist labels alongside ACs, plus an `[X]` row exercising the new charclass). 5/5 CI checks GREEN; 3 BUILD tasks T01-T03 GREEN.
   - Shipped: 2026-05-11 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/233 · Tag: `v1.7.1`
