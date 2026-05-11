@@ -375,6 +375,28 @@ All 20 claim-rows have at least one covering AC. NF1 (latency), NF2 (no-regressi
 
 **BUILD tasks (17 total — one per AC):**
 
+Flat list (canonical) — detailed table below:
+
+- [ ] T220: Add `parameters.injection.per_file_budget_chars` map (6 entries) to `templates/.sdd/config.md` — AC1
+- [ ] T221: Rewrite `user-prompt-submit.sh` truncation block as per-file loop — AC2
+- [ ] T222: Sentinel marker emitted on truncation with byte-count substitution — AC3
+- [ ] T223: Extend `resolve-parameters.sh` for new `per_file_budget_chars` map — AC4
+- [ ] T224: Apply `cap_total_chars` as defensive floor on combined output — AC5
+- [ ] T225: Add `InjectionBudget` entity entry to `.sdd/data-model.md` — AC6
+- [ ] T226: Partial override test — declared key wins, defaults fill the rest — AC7
+- [ ] T227: Unknown basename test — resolver returns documented default — AC8
+- [ ] T228: Missing-block test — `null`/omitted → framework defaults — AC9
+- [ ] T229: Sum-overshoot test — per-file truncation first, then cap clip — AC10
+- [ ] T230: Multi-file overflow test — each file present + sentinel — AC11
+- [ ] T231: Determinism test — byte-identical output on identical input — AC12
+- [ ] T232: Network-surface test — `git diff` shows zero new network calls — AC13
+- [ ] T233: Framing-preserved test — `[PROJECT DATA]` marker still emitted — AC14
+- [ ] T234: One-byte-over-boundary test — sentinel with `<N> = 1` — AC15
+- [ ] T235: UTF-8 char boundary backoff + test — AC16
+- [ ] T236: Negative-budget clamp + stderr warning + test — AC17
+
+Detailed table (file paths, dependencies, wave-marks):
+
 | # | Task | AC | Depends on | Touches | Wave |
 |---|---|---|---|---|---|
 | T220 | Add `parameters.injection.per_file_budget_chars` map (6 entries) to `templates/.sdd/config.md`. Test: bash assertion sums values == 20000. | AC1 | — | `templates/.sdd/config.md`, `tests/feature-011/T220-config-shape.bats` | — |
