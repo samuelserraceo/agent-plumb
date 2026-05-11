@@ -57,6 +57,13 @@ if [ "$size" -gt 5800 ]; then
   echo "FAIL: T229 — sum-overshoot output ($size bytes) exceeds cap envelope (~5800)"
   exit 1
 fi
+# CR cycle 4 MAJ: lower-bound check prevents false positives — a hook
+# that over-clips (very small output) while still emitting Theme 11
+# sentinel would otherwise pass silently. Mirrors T224's pattern.
+if [ "$size" -lt 3000 ]; then
+  echo "FAIL: T229 — sum-overshoot output suspiciously small ($size bytes); cap may have clipped too aggressively"
+  exit 1
+fi
 
 # Theme 11 TRUNCATED sentinel should fire.
 if ! printf '%s' "$out" | grep -q "TRUNCATED"; then
