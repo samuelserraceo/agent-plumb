@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Auto-advance AGENT-LED steps — auto-advance through SPEC + SHIP technical actions</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --ink-2: #4a4a4a;
+    --ink-3: #8a8a8a;
+    --line-1: #e8e8e8;
+    --line-2: #d4d4d4;
+    --bg: #fafafa;
+    --accent: #4f46e5;
+    --accent-bg: #eef2ff;
+    --rose-bg: #fef2f2;
+    --green-bg: #f0fdf4;
+    --slate-bg: #f1f5f9;
+    --violet: #8b5cf6;
+    --violet-bg: #f5f3ff;
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; color: var(--ink); background: var(--bg); }
+  .chat { background: #fff; border: 1px solid var(--line-2); border-radius: 12px; padding: 20px; }
+  .chat .user { background: var(--slate-bg); border-radius: 12px 12px 0 12px; padding: 10px 14px; margin: 8px 0 8px auto; max-width: 85%; }
+  .chat .agent { background: var(--accent-bg); border-radius: 12px 12px 12px 0; padding: 10px 14px; margin: 8px 0; max-width: 85%; }
+  .chat .cite { color: var(--accent); font-family: "SF Mono", Monaco, Consolas, monospace; font-size: 12.5px; padding: 1px 4px; background: var(--accent-bg); border-radius: 3px; cursor: pointer; transition: background .15s ease; }
+  .chat .cite:hover { background: #c7d2fe; }
+  .chat .cite:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .step-box { fill: #fff; stroke: var(--line-2); stroke-width: 1.5; cursor: pointer; transition: fill .15s ease, stroke .15s ease, stroke-width .15s ease; }
+  .step-box:hover { fill: var(--accent-bg); stroke: var(--accent); }
+  .step-box.active { fill: var(--accent-bg); stroke: var(--accent); stroke-width: 2.5; }
+  .step-box.cache { fill: var(--green-bg); stroke: #86efac; }
+  .step-box.fallback { fill: var(--rose-bg); stroke: #fca5a5; }
+  .arch-box { fill: #fff; stroke: var(--line-2); stroke-width: 1.5; cursor: pointer; transition: fill .15s ease, stroke .15s ease, stroke-width .15s ease; }
+  .arch-box:hover { fill: var(--accent-bg); stroke: var(--accent); }
+  .arch-box.active { fill: var(--accent-bg); stroke: var(--accent); stroke-width: 2.5; }
+  .arch-box.existing { fill: var(--slate-bg); stroke: #94a3b8; }
+  .arch-box.new { fill: var(--accent-bg); stroke: var(--accent); }
+  .arch-box.future { fill: var(--violet-bg); stroke: var(--violet); stroke-dasharray: 6 4; }
+  /* Keyboard focus styles (CR cycle 4): visible cue BEFORE activation
+     so keyboard users can see which interactive group has focus. The
+     <g class="step-grp"> wrapper holds tabindex/role; we style the
+     wrapper's :focus and :focus-visible to draw a 3-stroke focus ring
+     on the inner box. Modifier classes (.cache / .fallback / .existing /
+     .new / .future) keep their fill but get the same accent stroke + width. */
+  .step-grp:focus, .step-grp:focus-visible { outline: none; }
+  .step-grp:focus .step-box,
+  .step-grp:focus-visible .step-box {
+    stroke: var(--accent);
+    stroke-width: 3;
+    fill: var(--accent-bg);
+  }
+  .step-grp:focus .step-box.cache,
+  .step-grp:focus-visible .step-box.cache,
+  .step-grp:focus .step-box.fallback,
+  .step-grp:focus-visible .step-box.fallback {
+    /* Keep modifier fills; only override stroke + width. */
+    stroke: var(--accent);
+    stroke-width: 3;
+  }
+  .arch-grp:focus, .arch-grp:focus-visible { outline: none; }
+  .arch-grp:focus .arch-box,
+  .arch-grp:focus-visible .arch-box {
+    stroke: var(--accent);
+    stroke-width: 3;
+    fill: var(--accent-bg);
+  }
+  .arch-grp:focus .arch-box.existing,
+  .arch-grp:focus-visible .arch-box.existing,
+  .arch-grp:focus .arch-box.new,
+  .arch-grp:focus-visible .arch-box.new,
+  .arch-grp:focus .arch-box.future,
+  .arch-grp:focus-visible .arch-box.future {
+    stroke: var(--accent);
+    stroke-width: 3;
+  }
+</style>
+</head>
+<body class="p-8 max-w-6xl mx-auto">
+
+<!-- TODO: Feature summary —————————————————————————————————————————————— -->
+<header class="mb-12">
+  <h1 class="text-3xl font-bold mb-2">Auto-advance AGENT-LED steps — auto-advance through SPEC + SHIP technical actions</h1>
+  <p class="text-stone-700">TODO: One-paragraph plain-English summary. Link back to <a href="../../../docs/walkthrough.html" class="text-indigo-600 hover:underline">the global walkthrough</a> when relevant. (Path is 3 levels up: from `.sdd/features/&lt;id&gt;/wireframe.html` → `.sdd/features/` → `.sdd/` → repo root.)</p>
+</header>
+
+<!-- TODO: Example interactions ——————————————————————————————————————— -->
+<section class="mb-12">
+  <h2 class="text-2xl font-semibold mb-4">Example interactions</h2>
+  <p class="text-stone-600 mb-6">Concrete chat / CLI / API examples per user story. Show what the user does and what they get back.</p>
+
+  <!-- TODO: Example 1 -->
+  <div class="chat mb-6">
+    <p class="text-sm text-stone-500 mb-2">TODO: Story 1 — name</p>
+    <div class="user">TODO: user input here</div>
+    <div class="agent">TODO: agent / system response. Citations: <span class="cite">[[001-feature]]</span></div>
+  </div>
+
+  <!-- TODO: Example 2, 3, ... -->
+</section>
+
+<!-- TODO: Flow diagram ———————————————————————————————————————————————— -->
+<section class="mb-12">
+  <h2 class="text-2xl font-semibold mb-4">Flow — what happens when the user does X</h2>
+  <p class="text-stone-600 mb-6">Click any step for details. Numbered, top-to-bottom or left-to-right.</p>
+
+  <svg viewBox="0 0 800 220" class="w-full" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Flow diagram">
+    <!-- TODO: Step 1 -->
+    <g class="step-grp" data-step="step-1" tabindex="0" role="button" aria-label="Step 1" aria-pressed="false">
+      <rect class="step-box" x="20" y="20" width="160" height="60" rx="6"/>
+      <text x="100" y="55" text-anchor="middle" font-size="13" font-weight="500">TODO: Step 1</text>
+    </g>
+    <!-- TODO: arrow -->
+    <line x1="180" y1="50" x2="220" y2="50" stroke="#94a3b8" stroke-width="1.5"/>
+    <polyline points="215,46 220,50 215,54" fill="none" stroke="#94a3b8" stroke-width="1.5"/>
+    <!-- TODO: Step 2 -->
+    <g class="step-grp" data-step="step-2" tabindex="0" role="button" aria-label="Step 2" aria-pressed="false">
+      <rect class="step-box" x="220" y="20" width="160" height="60" rx="6"/>
+      <text x="300" y="55" text-anchor="middle" font-size="13" font-weight="500">TODO: Step 2</text>
+    </g>
+  </svg>
+
+  <!-- Detail panel populated by JS click/keyboard handler.
+       aria-live="polite" + role="status" means screen readers announce
+       updates without interrupting; aria-atomic="true" means the whole
+       region is read on each update (not just the diff). -->
+  <div id="stepDetail" class="mt-4 p-4 bg-white border border-stone-200 rounded text-sm text-stone-700"
+       aria-live="polite" aria-atomic="true" role="status">
+    Click any step above for plain-English details.
+  </div>
+</section>
+
+<!-- TODO: Architecture diagram ——————————————————————————————————————— -->
+<section class="mb-12">
+  <h2 class="text-2xl font-semibold mb-4">Architecture — where this feature sits</h2>
+  <p class="text-stone-600 mb-6">Click any box for details. Solid border = existing; coloured = new this feature; dashed = future.</p>
+
+  <svg viewBox="0 0 800 300" class="w-full" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Architecture diagram">
+    <!-- TODO: example boxes -->
+    <g class="arch-grp" data-box="user" tabindex="0" role="button" aria-label="User" aria-pressed="false">
+      <rect class="arch-box existing" x="20" y="120" width="120" height="60" rx="6"/>
+      <text x="80" y="155" text-anchor="middle" font-size="13" font-weight="500">TODO: User</text>
+    </g>
+    <g class="arch-grp" data-box="feature" tabindex="0" role="button" aria-label="This feature" aria-pressed="false">
+      <rect class="arch-box new" x="200" y="120" width="180" height="60" rx="6"/>
+      <text x="290" y="155" text-anchor="middle" font-size="13" font-weight="500">TODO: This feature (new)</text>
+    </g>
+    <g class="arch-grp" data-box="downstream" tabindex="0" role="button" aria-label="Downstream system" aria-pressed="false">
+      <rect class="arch-box existing" x="440" y="120" width="160" height="60" rx="6"/>
+      <text x="520" y="155" text-anchor="middle" font-size="13" font-weight="500">TODO: Downstream</text>
+    </g>
+  </svg>
+
+  <div id="archDetail" class="mt-4 p-4 bg-white border border-stone-200 rounded text-sm text-stone-700"
+       aria-live="polite" aria-atomic="true" role="status">
+    Click any box above for details.
+  </div>
+</section>
+
+<!-- TODO: New vs existing ———————————————————————————————————————————— -->
+<section class="mb-12">
+  <h2 class="text-2xl font-semibold mb-4">New vs existing</h2>
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="text-left border-b border-stone-300">
+        <th class="py-2 pr-4">Component / behaviour</th>
+        <th class="py-2 pr-4">Status</th>
+        <th class="py-2">Notes</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-stone-200">
+      <tr><td class="py-2 pr-4">TODO: Component A</td><td class="py-2 pr-4">existing</td><td class="py-2">unchanged</td></tr>
+      <tr><td class="py-2 pr-4">TODO: Component B</td><td class="py-2 pr-4"><span class="text-indigo-600 font-medium">new</span></td><td class="py-2">added by this feature</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- TODO: Approved checkbox —————————————————————————————————————————— -->
+<footer class="border-t border-stone-300 pt-6 text-stone-600">
+  <label class="inline-flex items-center gap-2">
+    <input type="checkbox" class="form-checkbox" />
+    <span>Approved by user — wireframe captures the behaviour without me reading code.</span>
+  </label>
+</footer>
+
+<script>
+(function() {
+  // Step + arch detail tables. Fill TODO entries; the click + keyboard
+  // handlers below populate the matching detail panel.
+  const STEP_DETAIL = {
+    'step-1': { t: 'TODO: Step 1 title', d: 'TODO: plain-English description of what step 1 does for the user.' },
+    'step-2': { t: 'TODO: Step 2 title', d: 'TODO: plain-English description of what step 2 does for the user.' },
+  };
+  const ARCH_DETAIL = {
+    'user':       { t: 'TODO: User',       d: 'TODO: who they are and what they want.' },
+    'feature':    { t: 'TODO: This feature', d: 'TODO: what it does for the user (not what it IS technically).' },
+    'downstream': { t: 'TODO: Downstream', d: 'TODO: existing system this feature talks to.' },
+  };
+
+  // Render via textContent (not innerHTML) so any user-supplied
+  // TODO content can't inject HTML. Build <p> elements explicitly.
+  function renderDetail(targetId, d) {
+    const target = document.getElementById(targetId);
+    if (!target) return; // CR cycle 2: null-guard so a customised
+    // wireframe that removes / renames the detail panel doesn't
+    // throw on first interaction and disable the whole JS path.
+    target.textContent = ''; // clear previous
+    const title = document.createElement('p');
+    title.className = 'font-semibold text-stone-900 mb-1';
+    title.textContent = d.t;
+    const body = document.createElement('p');
+    body.className = 'text-sm text-stone-700 leading-relaxed';
+    body.textContent = d.d;
+    target.appendChild(title);
+    target.appendChild(body);
+  }
+
+  function activateStep(g) {
+    const s = g.dataset.step;
+    const d = STEP_DETAIL[s];
+    if (!d) return;
+    // Visual + ARIA: peer .step-grp wrappers reset to aria-pressed="false";
+    // this one becomes aria-pressed="true". Same toggle pattern for the
+    // visual `.active` class on the inner box.
+    document.querySelectorAll('.step-grp').forEach(peer => peer.setAttribute('aria-pressed', 'false'));
+    document.querySelectorAll('.step-box').forEach(b => b.classList.remove('active'));
+    g.setAttribute('aria-pressed', 'true');
+    const box = g.querySelector('.step-box');
+    if (box) box.classList.add('active');
+    renderDetail('stepDetail', d);
+  }
+
+  function activateArch(g) {
+    const k = g.dataset.box;
+    const d = ARCH_DETAIL[k];
+    if (!d) return;
+    document.querySelectorAll('.arch-grp').forEach(peer => peer.setAttribute('aria-pressed', 'false'));
+    document.querySelectorAll('.arch-box').forEach(b => b.classList.remove('active'));
+    g.setAttribute('aria-pressed', 'true');
+    const box = g.querySelector('.arch-box');
+    if (box) box.classList.add('active');
+    renderDetail('archDetail', d);
+  }
+
+  document.querySelectorAll('.step-grp').forEach(g => {
+    g.addEventListener('click', () => activateStep(g));
+    g.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+        e.preventDefault();
+        activateStep(g);
+      }
+    });
+  });
+
+  document.querySelectorAll('.arch-grp').forEach(g => {
+    g.addEventListener('click', () => activateArch(g));
+    g.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+        e.preventDefault();
+        activateArch(g);
+      }
+    });
+  });
+
+  // .cite spans are non-interactive in this skeleton (visual styling
+  // only). When a downstream wireframe wires up a real cite-modal,
+  // re-add tabindex="0" + role="button" + aria-label on the spans
+  // AND restore the click + keydown handlers below. Until then,
+  // shipping interactive attributes with no-op handlers misleads
+  // screen-reader users into expecting a control that doesn't work.
+})();
+</script>
+
+</body>
+</html>

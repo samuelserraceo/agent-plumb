@@ -202,7 +202,7 @@ Trade-offs:
 
 ### action: wireframe
 
-- [ ] wireframe: draft wireframe.html — UI screens for UI features OR flow + architecture for non-UI features
+- [x] wireframe: non-UI wireframe.html from v1.2 wireframe-non-ui skeleton (277 lines). Shows the 3-way decision tree (Full/Most/Checkpoint), the new setup-wizard question, the 3 flows from §7, and the destructive-actions list. Out-of-scope panel mirrors §9. Sam to refine post-CR if shape unclear.
 
 ### action: plan-decompose
 
