@@ -16,7 +16,7 @@ parameters:
     halt_on_red_after_attempts: 3
   ralph:
     max_iters: 50
-    timeout_per_iter: 600
+    timeout_per_iter: 1800   # bumped 600 → 1800 (F010 BUILD) — framework dogfooding modifies sealed scripts so pre-commit-test-first.sh runs the full 218-test suite (~5min) per code commit; 30min/iter absorbs that + Claude's actual work + the manifest-repin dance. Revert to 600 for non-framework features.
   review:
     bot: ""              # "coderabbit" | "sourcery" | "" (none)
     poll_interval: 180   # seconds; 180s × 5 polls = 15 min default for CodeRabbit

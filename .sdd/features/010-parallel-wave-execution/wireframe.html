@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>F010 — Parallel wave execution</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; color: #1a1a1a; background: #fafafa; }
+  .card { background: #fff; border: 1px solid #d4d4d4; border-radius: 12px; padding: 24px; margin-bottom: 16px; }
+  .codebox { background: #1a1a1a; color: #e5e7eb; padding: 14px 18px; border-radius: 8px; font-family: "SF Mono", Monaco, Consolas, monospace; font-size: 13px; line-height: 1.55; white-space: pre; overflow-x: auto; }
+  .row-arrow { color: #4f46e5; font-weight: 600; }
+  .pill { display: inline-block; padding: 2px 9px; border-radius: 9999px; font-size: 12px; font-weight: 600; }
+  .pill-existing { background: #f1f5f9; color: #475569; }
+  .pill-new { background: #eef2ff; color: #4f46e5; }
+  .pill-future { background: #f5f3ff; color: #8b5cf6; border: 1px dashed #8b5cf6; }
+  .pill-haiku { background: #fef3c7; color: #92400e; }
+  .pill-sonnet { background: #dbeafe; color: #1e40af; }
+  h2 { font-size: 22px; font-weight: 700; margin-top: 28px; margin-bottom: 12px; }
+  h3 { font-size: 17px; font-weight: 600; margin-top: 18px; margin-bottom: 8px; }
+  .arrow-down { font-size: 20px; color: #4f46e5; line-height: 1; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid #e8e8e8; vertical-align: top; }
+  th { background: #f8fafc; font-weight: 600; font-size: 13px; color: #475569; }
+</style>
+</head>
+<body class="max-w-5xl mx-auto p-6">
+
+<header class="mb-6">
+  <p class="text-xs uppercase tracking-wider text-gray-500 font-semibold">SDD feature 010 · framework BUILD-phase scheduler</p>
+  <h1 class="text-3xl font-bold mt-1">Parallel wave execution</h1>
+  <p class="text-gray-700 mt-2 max-w-3xl">
+    Independent BUILD tasks marked <code class="bg-gray-100 px-1.5 py-0.5 rounded text-sm">[WAVE: N]</code> dispatch in parallel via Claude Code's Agent tool, each in a fresh per-subagent context. The orchestrator stays small (it gains ~1 turn per wave instead of ~30 linear). Cheaper models (Haiku, Kimi K2) run the wave-tasks in parallel while the orchestrator on Sonnet does coordination — the killer combo F008's multi-model unlock made possible.
+  </p>
+</header>
+
+<section class="card">
+  <h2>Architecture (3 layers)</h2>
+  <p class="text-gray-600 text-sm mb-4">Existing pieces in <span class="pill pill-existing">grey</span>, new in <span class="pill pill-new">indigo</span>, future / out-of-scope in <span class="pill pill-future">violet dashed</span>.</p>
+
+  <div class="codebox">
++--------------------------------------------------------------------+
+|  ORCHESTRATOR SESSION (Claude Code or pi.dev)                      |
+|                                                                    |
+|   /next  --&gt;  reads spec.md  --&gt;  next-action.sh                    |
+|                                  |                                 |
+|                                  v                                 |
+|                  +-----------------------------+                   |
+|                  | tag: WAVE-DISPATCH          |  &lt;-- NEW          |
+|                  | wave: 1                     |                   |
+|                  | tasks: [T200, T201, T202]   |                   |
+|                  +--------------+--------------+                   |
+|                                 v                                  |
+|              .sdd/scripts/dispatch-wave.sh 1 spec.md               |
++--------------------------------+-----------------------------------+
+                                 |
+              parallel Agent dispatches (Claude Code Agent tool)
+                                 |
+        +------------------------+------------------------+
+        v                        v                        v
+ +----------------+      +----------------+      +----------------+
+ | SUBAGENT T200  |      | SUBAGENT T201  |      | SUBAGENT T202  |
+ | fresh context  |      | fresh context  |      | fresh context  |
+ | Haiku model    |      | Haiku model    |      | Haiku model    |
+ | ralph BUILD    |      | ralph BUILD    |      | ralph BUILD    |
+ | test-code-green|      | test-code-green|      | test-code-green|
+ +-------+--------+      +-------+--------+      +-------+--------+
+         |                       |                       |
+         v                       v                       v
+ git pre-commit chain (anti-theatre, atomic-step, test-first, append-only)
+                                 |
+                                 v
+                         3 commits per task = 9 commits land
+                          on the branch in non-deterministic order
+  </div>
+</section>
+
+<section class="card">
+  <h2>Flow 1 — Wave dispatch happy path</h2>
+  <ol class="list-decimal ml-6 space-y-1.5 text-sm text-gray-800">
+    <li><code>/next</code> reads spec.md → next-action.sh resolves <code>{ tag: WAVE-DISPATCH, wave: 1, tasks: [T200, T201, T202] }</code></li>
+    <li><code>/next</code> invokes <code>dispatch-wave.sh 1 &lt;spec-path&gt;</code></li>
+    <li><code>dispatch-wave.sh</code> spawns 3 Agent calls in parallel (each gets fresh ~0-turn context + framework brain + single BUILD-task prompt + selected model)</li>
+    <li>Each agent runs <code>test → code</code> as 2 atomic commits on its own test+code files only. Wave-task agents do NOT edit <code>spec.md</code> (row-isolation architecture from §6 EC#9 / §7). Pre-commit hooks fire on each commit independently.</li>
+    <li>dispatch-wave.sh awaits all 3 (synchronous, no polling)</li>
+    <li>All 3 return success → orchestrator commits ONE spec.md edit flipping all 3 wave-task rows from <code>[ ]</code> to <code>[x]</code> (the "wave-green" step), then <code>/next</code> reports "wave 1 done: T200/T201/T202 GREEN (7 commits: 3×2 wave-task + 1 wave-green)"</li>
+    <li>Next <code>/next</code> picks up the next blocker (sequential T203, or wave 2)</li>
+  </ol>
+  <p class="text-xs text-gray-500 mt-3">Postcondition: 7 commits landed (3 wave-tasks × 2 atomic each + 1 orchestrator wave-green spec.md edit); orchestrator's context grew by ~1 turn (the dispatch + report-back + wave-green), not 30.</p>
+</section>
+
+<section class="card">
+  <h2>Flow 2 — Wave-task fails mid-wave</h2>
+  <ol class="list-decimal ml-6 space-y-1.5 text-sm text-gray-800">
+    <li>Same as Flow 1 steps 1-3</li>
+    <li>T200 + T202 land 3 atomic commits each cleanly</li>
+    <li>T201's Agent hits the anti-theatre hook (its test contained a guard-shaped sentence without <code>{verify-by:}</code> annotation). Pre-commit blocks; Agent reports <code>commit failed</code>.</li>
+    <li>dispatch-wave.sh collects: 2/3 PASS, 1/3 FAIL</li>
+    <li><code>/next</code> reports honestly to Sam (see "Partial-wave report" example below)</li>
+    <li>Sam picks <code>retry T201</code>, <code>abandon wave 1 + advance</code>, or <code>pause</code> to fix manually</li>
+  </ol>
+  <p class="text-xs text-gray-500 mt-3">Postcondition: spec.md has 2 GREEN + 1 still-RED for T201. The partial wave is honest about what landed. No silent half-state.</p>
+</section>
+
+<section class="card">
+  <h2>Flow 3 — Multi-model wave (the killer combo)</h2>
+  <ol class="list-decimal ml-6 space-y-1.5 text-sm text-gray-800">
+    <li>Sam configures <code>parameters.wave.worker_model: "haiku"</code> in <code>.sdd/config.md</code> (or sets <code>WAVE_WORKER_MODEL=haiku</code> as an env override per-invocation)</li>
+    <li>Same as Flow 1 steps 1-2</li>
+    <li>dispatch-wave.sh reads the config — each Agent call passes <code>model: "claude-haiku-4-x"</code></li>
+    <li>3 wave-tasks run on Haiku in parallel <span class="pill pill-haiku">cheap workers</span> while the orchestrator stays on Sonnet <span class="pill pill-sonnet">smart coordinator</span></li>
+    <li>SDD discipline (anti-theatre, atomic-step, test-first, append-only) imposes the same shape regardless of model — discipline travels with the framework brain, not the model</li>
+    <li>Wave finishes; cost/wall-clock numbers reported (best-effort: per-Agent cost field at SHIP)</li>
+  </ol>
+  <p class="text-xs text-gray-500 mt-3">Postcondition: same correctness as Flow 1, lower cost + faster wall-clock. The orchestrator earns its Sonnet rate on planning + coordination; mechanical BUILD steps run on Haiku where it's sufficient.</p>
+</section>
+
+<section class="card">
+  <h2>Concrete examples</h2>
+
+  <h3>Example A — Spec.md plan-decompose with wave markers</h3>
+  <div class="codebox">### action: plan-decompose
+
+- [x] tasks: 13 ordered T-tasks across 3 waves + 4 sequential
+
+```text
+- [ ] T200 [WAVE: 1]: scaffold endpoint A (independent)
+- [ ] T201 [WAVE: 1]: scaffold endpoint B (independent)
+- [ ] T202 [WAVE: 1]: scaffold endpoint C (independent)
+- [ ] T203: integration test (depends on T200-T202 - sequential)
+- [ ] T204 [WAVE: 2]: docs sweep
+- [ ] T205 [WAVE: 2]: type-check sweep
+- [ ] T206: ship-check (depends on T204-T205 - sequential)
+```
+  </div>
+
+  <h3>Example B — Partial-wave report (Flow 2 output)</h3>
+  <div class="codebox">$ /next
+Wave 1 finished partially:
+  &check; T200 (3 commits landed: test, code, green)
+  &check; T202 (3 commits landed: test, code, green)
+  &cross; T201: pre-commit hook blocked the test step
+          (anti-theatre claim on line 7 of tests/task-T201.sh -
+           the guard-shaped sentence on line 7 needs a verify-by
+           annotation)
+
+What next?
+  retry T201             - re-dispatch just the failing task
+  abandon wave 1         - flip the wave-1 marker off, T200/T202
+                           stay GREEN, T201 stays RED, advance
+  pause                  - stop here, fix manually, run /next again
+  </div>
+
+  <h3>Example C — Multi-model config (Flow 3 setup)</h3>
+  <div class="codebox"># .sdd/config.md (excerpt)
+
+parameters:
+  wave:
+    enabled: true
+    worker_model: "claude-haiku-4-x"   # workers run on Haiku
+    # orchestrator inherits the session's selected model
+    # (Sonnet by default in Claude Code)
+    fallback_to_orchestrator_model: true   # if worker_model
+    # is unavailable on the harness, fall back silently
+  </div>
+</section>
+
+<section class="card border-violet-300 border-dashed">
+  <h2 style="color:#7c3aed">Out of scope (for v1)</h2>
+  <table class="text-sm">
+    <thead>
+      <tr><th>Deferred</th><th>Reason</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Auto-detect wave membership</td><td>Approach B from §5 — fragile heuristic, violates Foundation 3 (<code>never-assume</code>)</td></tr>
+      <tr><td>Always-subagent dispatch</td><td>Approach C from §5 — too aggressive a default; manual marker is the v1 path</td></tr>
+      <tr><td>Multi-block wave namespaces</td><td>Cross-block waves get confusing, no current use case</td></tr>
+      <tr><td>Auto-retry of failed wave-tasks</td><td>Sam picks retry/abandon/pause manually via Flow 2</td></tr>
+      <tr><td>Wave-level cost dashboard / aggregation</td><td>Best-effort per-Agent cost in v1; aggregation deferred to follow-up</td></tr>
+      <tr><td>Idea 003 specialised subagents</td><td>Separate feature, pairs nicely with 010 but ships independently</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<footer class="text-xs text-gray-500 mt-8 mb-12">
+  <p>SDD framework — feature 010 wireframe (non-UI variant per v1.2 wireframe-redesign rule).</p>
+  <p>Existing pieces: <code>next-action.sh</code>, ralph-style BUILD-task prompt, git pre-commit chain, Claude Code's Agent tool, framework brain digest.</p>
+  <p>New pieces in v1: <code>dispatch-wave.sh</code>, <code>WAVE-DISPATCH</code> tag in next-action.sh, <code>[WAVE: N]</code> token recognised in plan-decompose, optional <code>parameters.wave.worker_model</code> in config.md.</p>
+</footer>
+
+</body>
+</html>

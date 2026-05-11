@@ -211,11 +211,107 @@ for line in spec_lines:
     # `<token>:` (with optional bold wrapping), and the colon is now
     # required. `TODO:` and `AC1foo:` both correctly fall through to
     # the generic step-row branch.
-    if re.match(r'^\s*-\s*\[ \]\s+(?:\*\*)?(?:AC\d+|T\d+|C-[a-z0-9_-]+)(?:\*\*)?\s*:', line):
+    # T-rows with ANY `[WAVE: <token>]` suffix (numeric OR malformed) are
+    # placeholders during the SPEC walk — `_find_next_wave()` stays strict
+    # about wave-N validity, but here we just need to not stop on them so
+    # the SPEC→BUILD transition can fire. Without the broader match, a
+    # typo like `T200 [WAVE: foo]` would block phase advance.
+    if re.match(
+        r'^\s*-\s*\[ \]\s+(?:\*\*)?(?:AC\d+|T\d+(?:\s+\[WAVE:[^\]]*\])?|C-[a-z0-9_-]+)(?:\*\*)?\s*:',
+        line,
+    ):
         continue
     if "[ ]" in line:
         first_open_line = line
         break
+
+# 3a-pre. BUILD phase + no other open [ ] in BUILD body → check whether the
+# spec's plan-decompose section declares any [WAVE: N] markers. If so, emit
+# a WAVE-DISPATCH tag carrying the smallest open wave's task IDs (source order).
+# Specs without [WAVE:] markers fall through to the normal transition signal,
+# preserving the linear-mode regression contract (AC3).
+#
+# The plan-decompose T-task rows live inside a ```text fenced block by
+# convention (see .sdd/actions/plan-decompose.md), so this scan deliberately
+# ignores fence state within the plan-decompose section. Non-positive-integer
+# markers ([WAVE: 0], [WAVE: foo]) are skipped — they don't contribute a wave
+# and don't produce a WAVE-DISPATCH on their own.
+def _find_next_wave():
+    # Single-block wave namespace contract (§9 out-of-scope #3): scan the
+    # FIRST `### action: plan-decompose` block only. Stop accumulating
+    # matches as soon as we exit that block; ignore later plan-decompose
+    # sections (specs SHOULD have one but the parser must not silently
+    # merge tasks across blocks).
+    in_plan = False
+    plan_block_seen = False
+    waves = {}  # wave_n (int) -> [T-IDs] in source order
+    # Sequential-gate: if an UNMARKED `- [ ] T-row` appears in source order
+    # BEFORE any wave-marked row, we are in linear mode for that block — do
+    # not skip the sequential task by dispatching a later wave. Return None
+    # so /next falls through to the normal linear walk.
+    seen_seq_t_before_wave = False
+    seq_t_re = re.compile(r'^\s*-\s*\[ \]\s+(?:\*\*)?(T\d+)(?:\*\*)?\s*:')
+    wave_t_re = re.compile(r'^\s*-\s*\[ \]\s+(?:\*\*)?(T\d+)\s+\[WAVE:\s*(\d+)\s*\](?:\*\*)?\s*:')
+    for ln in spec_lines:
+        if ln.startswith("### "):
+            new_in_plan = bool(re.match(r'^###\s+action:\s+plan-decompose\s*$', ln))
+            if in_plan and not new_in_plan:
+                # Exiting the first plan-decompose block via another ### action.
+                break
+            if new_in_plan:
+                if plan_block_seen:
+                    # Second plan-decompose block — stop, do not merge.
+                    break
+                plan_block_seen = True
+                in_plan = True
+            continue
+        if ln.startswith("## "):
+            if in_plan:
+                break  # Exiting the first plan-decompose via phase boundary.
+            in_plan = False
+            continue
+        if not in_plan:
+            continue
+        # Check for a wave-marked row first; if not wave-marked, check
+        # whether this is a plain T-row (sequential gate).
+        m_wave = wave_t_re.match(ln)
+        if m_wave:
+            wave_n = int(m_wave.group(2))
+            if wave_n < 1:
+                continue
+            if not waves and seen_seq_t_before_wave:
+                # First wave-marked row in this block, but an earlier sequential
+                # T-row is still open — return None to gate dispatch on the
+                # earliest open task in source order.
+                return None
+            waves.setdefault(wave_n, []).append(m_wave.group(1))
+            continue
+        m_seq = seq_t_re.match(ln)
+        if m_seq:
+            seen_seq_t_before_wave = True
+    if not waves:
+        return None
+    smallest = min(waves)
+    return smallest, waves[smallest]
+
+if phase == "BUILD" and first_open_line is None:
+    wave_result = _find_next_wave()
+    if wave_result is not None:
+        wave_n, task_ids = wave_result
+        emit({
+            "phase": phase,
+            "action": "build-task",
+            "step": None,
+            "tag": "WAVE-DISPATCH",
+            "wave": wave_n,
+            "tasks": task_ids,
+            "prompt": None,
+            "field": None,
+            "sub_action": None,
+            "transition": None,
+            "parameters": None,
+        })
+        sys.exit(0)
 
 # 3a. No open [ ] in active phase → transition signal.
 if first_open_line is None:
