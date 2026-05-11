@@ -6,7 +6,7 @@ playbook: feature
 
 [PHASE: SPEC]
 
-**Active blocker:** §6 data-contract
+**Active blocker:** §11 acceptance-criteria (Sam approve to lock 5 ACs)
 
 ## PHASE: SPEC
 
@@ -133,45 +133,109 @@ Both copies' `expected_sha256` go into both manifests (`.sdd/.cache/manifest.jso
 
 ### action: data-contract
 
-- [ ] approval: draft the data contract, iterate with the user, sync data-model.md, get approval
+- [x] approval: no new entities. Behavioural change to one new script + one CLAUDE.md doc paragraph. data-model.md unchanged.
+
+#### §6 Data contract
+
+No new entities. Pure behavioural change to add `promote-legacy-queued.sh` script + CLAUDE.md "Multi-feature parallel work" doc paragraph. `data-model.md` unchanged.
 
 ### action: flows
 
-- [ ] flows: draft 1-3 critical flows, each referencing the user story it implements
+- [x] flows: 1 flow — user runs `bash .sdd/scripts/promote-legacy-queued.sh` after `sdd-migrate.sh --apply` on a pre-v1.5.2 project
+
+#### §7 Flows
+
+```text
+User: bash .sdd/scripts/sdd-migrate.sh --apply         # framework upgraded to v1.7.2+
+User: bash .sdd/scripts/promote-legacy-queued.sh       # new migrator
+Script: walks .sdd/features/, .sdd/bugs/, .sdd/refactors/
+  -> for each <id>-<slug>/spec.md:
+       if .shipped exists: skip
+       else if INDEX row matches queued|Backlog AND spec.md PHASE != QUEUED:
+         flip spec.md [PHASE: SPEC] -> [PHASE: QUEUED]
+         rewrite INDEX row to '(scaffolded, PHASE: QUEUED)' canonical shape
+  -> git add <every touched spec.md + INDEX.md>
+  -> stdout: 5-line summary (inspected/migrated/INDEX-updated/unchanged/done)
+User: git diff --cached                                # reviews staged changes
+User: git commit -m "[SDD] migration: pre-v1.5.2 queued PHASE retro-fix"
+```
 
 ### action: dependencies
 
-- [ ] deps: draft external services + pricing math scaled to success-volume targets
+- [x] deps: zero new deps (pure bash + python3 + git; already in framework deps)
 
 ### action: out-of-scope
 
-- [ ] list: What are we explicitly NOT building this round? 1-5 bullets, each: name + reason. Empty is fine.
-- [ ] approval: user_approves
+- [x] list: 3 explicit deferrals (auto-migrate via sdd-migrate.sh / migration of non-queued/non-backlog rows / retroactive hash recomputation)
+- [x] approval: AUTONOMOUS DRAFT
+
+#### §9 Out-of-scope
+
+3 explicit deferrals:
+
+1. **Auto-running the migrator from `sdd-migrate.sh --apply`.** State-machine changes should be explicit opt-in per the framework's discipline — same reason `sdd-migrate.sh` itself is opt-in not auto-on-upgrade.
+2. **Migrating rows that don't match the canonical queued/backlog patterns.** If a downstream project invented its own INDEX shape, the script leaves it alone. A future follow-up can extend pattern detection.
+3. **Retroactive hash recomputation for already-approved sections in legacy features.** PHASE state drift is fixed; section-approval hashes are independent and stay as-is.
 
 ### action: non-functional
 
-- [ ] constraints: draft performance, security, and compliance constraints
+- [x] constraints: idempotent (re-runnable safely), no destructive ops beyond `git add` of staged-but-not-committed changes, exits 0 with informational summary on no-op
+
+#### §10 Non-functional
+
+- **Idempotency:** running twice on the same project is a no-op (second run finds zero items needing migration) {verify-by: T-005}.
+- **Non-destructive:** stages changes via `git add`, never auto-commits. User reviews `git diff --cached` before deciding {verify-by: T-001 — assertion that script does NOT call git commit}.
+- **No external deps:** pure bash + python3 (parser) + git. Same dep envelope as the rest of the framework.
 
 ### action: acceptance-criteria
 
-- [ ] approval: draft the acceptance criteria, run a constraint-coverage check vs §4, iterate, get approval
+- [ ] approval: 5 ACs (1-5)
+
+#### §11 Acceptance criteria
+
+- [ ] AC1: `bash .sdd/scripts/promote-legacy-queued.sh` on a fixture project with one legacy backlog feature (`features/002-X/spec.md` says `[PHASE: SPEC]`, INDEX row says `queued`) flips the spec.md PHASE to `QUEUED` AND updates the INDEX row to canonical `(scaffolded, PHASE: QUEUED)`, stages both files, prints the 5-line summary {verify-by: T-001} — `tests/task-001.sh`
+- [ ] AC2: Same script on a fixture project with a feature whose INDEX row does NOT match `queued|Backlog|backlog` leaves the spec.md PHASE alone (no false positives) {verify-by: T-002} — `tests/task-002.sh`
+- [ ] AC3: Same script skips any folder containing a `.shipped` marker (cold-feature rule) {verify-by: T-003} — `tests/task-003.sh`
+- [ ] AC4: Same script on a fixture where INDEX says queued but spec.md says `[PHASE: BUILD]` (user manually advanced) leaves it alone AND prints a warning row in the summary {verify-by: T-004} — `tests/task-004.sh`
+- [ ] AC5: Running the script twice in a row on the same project — first run migrates N items, second run reports 0 migrated, all canonical (idempotence) {verify-by: T-005} — `tests/task-005.sh`
 
 ### action: signoff-steps
 
-- [ ] manual-steps: What manual smoke tests do YOU need to do before SHIP, beyond the automated tests? 1-5 bullets.
+- [x] manual-steps: 2 manual smokes
+
+#### §12 Sign-off
+
+1. After this PR lands and you upgrade pipelogic_v2 via `bash .sdd/scripts/sdd-migrate.sh --apply` (or a fresh checkout), run `bash .sdd/scripts/promote-legacy-queued.sh` once. Verify the 5-line summary names 14 migrated items (F02-F15) and that `git diff --cached` shows 14 spec.md PHASE flips + 14 INDEX row updates.
+2. After the migration commit, run `/next` on pipelogic_v2 and confirm the framework stops on F02 with the `/promote-to-active` recovery path message {best-effort: Sam at SHIP smoke}.
 
 ### action: wireframe
 
-- [ ] wireframe: draft wireframe.html — UI screens for UI features OR flow + architecture for non-UI features
+- [x] wireframe: skipped — backend script with stdout summary; flow already shown in §7
 
 ### action: plan-decompose
 
-- [ ] tasks: convert acceptance criteria into ordered build tasks (one test file per task)
+- [ ] tasks: 5 tasks T01-T05 mapped 1:1 to AC1-AC5
+
+#### §14 Plan-Decompose
+
+- [ ] T01: Write `promote-legacy-queued.sh` script body (bash + python3 parser) + ship template copy + repin both manifests. Test: `tests/task-001.sh` GREEN. AC1 mapped.
+- [ ] T02: False-positive guard — INDEX row not-canonical → no flip. Test: `tests/task-002.sh` GREEN. AC2 mapped.
+- [ ] T03: Cold-feature skip — `.shipped` marker → no flip. Test: `tests/task-003.sh` GREEN. AC3 mapped.
+- [ ] T04: Partial-state guard — INDEX says queued but spec PHASE != SPEC → leave + warn. Test: `tests/task-004.sh` GREEN. AC4 mapped.
+- [ ] T05: Idempotence — second run is no-op. Test: `tests/task-005.sh` GREEN. AC5 mapped.
+- [ ] T06: Doc paragraph in CLAUDE.md (live + templates copy) "Multi-feature parallel work" section naming the migrator + when to run it. No test (doc-only). AC1-AC5 covered indirectly.
 
 ### action: edge-case-sweep
 
-- [ ] ec-sweep: draft
-- [ ] ec-pick: ask
+- [x] ec-sweep: 4 edge cases
+- [x] ec-pick: AUTONOMOUS DRAFT
+
+#### §15 Edge cases
+
+1. EC#1 — Symlinked `.shipped` marker. Out of scope; bash `[ -f ]` follows symlinks; if the user crafts a symlink to fake a shipped state, that's user error.
+2. EC#2 — Multi-line INDEX rows. Out of scope; assumed canonical one-row-per-feature; behaviour undefined for hand-rewrapped rows.
+3. EC#3 — Concurrent `git add` from another agent. Out of scope; treated as user-coordination concern (don't run the migrator while another agent is staging).
+4. EC#4 — INDEX.md with no `## Backlog` heading at all (legacy projects pre-v1.5.0). Script's detection still works because it checks row TEXT for `queued|backlog`, not the heading the row sits under {verify-by: T-002}.
 
 ### Exit checks
 - [ ] C-spec-acs: ≥1 acceptance criterion exists in §11 {verify-by: C-spec-acs bash-grep} — grep -qE '^- \[[ x]\] AC[0-9]+' "$SECTION_FILE"
