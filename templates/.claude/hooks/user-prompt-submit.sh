@@ -35,14 +35,264 @@ if [ ! -d .sdd ] || [ ! -f .sdd/INDEX.md ]; then
   exit 0
 fi
 
-# Theme 11 — global injection cap. ~4K tokens at 4 chars/token.
-# A USER-LED action's budget is 2K tokens; AGENT-LED is 8K;
-# BUILD-TASK is 16K. The hook caps at the AGENT-LED ceiling
-# globally — biggest actions get their full budget; smaller
-# ones effectively get more headroom than they need. Per-tag caps
-# require knowing the active action at injection time, which
-# is a Phase C refinement.
-: "${SDD_INJECTION_CAP_CHARS:=16000}"
+# Feature 011 — per-file injection budgets.
+#
+# Per-file budgets replace the prior single-cap end-truncate behavior.
+# Each corpus file (INDEX, spec, principles, stack, data-model,
+# patterns) gets its own char allocation; when a file exceeds its
+# budget, the hook truncates that file individually and appends a
+# sentinel marker pointing the agent at the Read tool to recover
+# the cut portion. cap_total_chars stays as a defensive safety-net
+# floor on combined output.
+#
+# Resolution: read all 6 budgets from .sdd/config.md ONCE per
+# invocation via inline python (single subprocess vs 6 helper calls).
+# Falls back to framework defaults if config block is missing/null.
+# Negative values clamp to 0 with stderr warning (AC17).
+#
+# The SDD_INJECTION_CAP_CHARS env var still overrides cap_total_chars
+# at runtime (backwards compat with pre-011 callers).
+
+# Framework defaults (centralised — also lives in
+# templates/.sdd/scripts/get-injection-budget.sh's FRAMEWORK_DEFAULTS).
+# Used when the project's config.md omits per_file_budget_chars (AC9).
+_DEFAULT_BUDGET_INDEX=3000
+_DEFAULT_BUDGET_SPEC=5000
+_DEFAULT_BUDGET_PRINCIPLES=2000
+_DEFAULT_BUDGET_STACK=3000
+_DEFAULT_BUDGET_DATAMODEL=3000
+_DEFAULT_BUDGET_PATTERNS=4000
+_DEFAULT_CAP_TOTAL=25000  # raised from 16000 (CR cycle 1 #13):
+# per-file defaults sum to 20000; cap must comfortably exceed sum +
+# 6 file headers (~50 chars each) + 4 framing markers (~200 chars)
+# so the per-file truncation path dominates and cap_total_chars
+# only fires on genuine sum-overshoot edges (e.g. project overrides
+# pushing per_file_budget_chars sum >> 24000).
+
+# Load resolved values into shell variables via one Python call.
+# The Python emits KEY=VALUE lines and any stderr warnings (AC17).
+# Eval-style sourcing of trusted output: Python's print is fully
+# controlled here — no shell metacharacters can leak in.
+_load_budgets() {
+  python3 <<'PYEOF' 2>/dev/null || true
+import os, re, sys
+
+config_path = os.path.join(os.environ.get("PROJECT_DIR", "."),
+                           ".sdd", "config.md")
+defaults = {
+    "INDEX": 3000,
+    "spec": 5000,
+    "principles": 2000,
+    "stack": 3000,
+    "data-model": 3000,
+    "patterns": 4000,
+}
+cap_default = 25000  # CR cycle 1 #13: see _DEFAULT_CAP_TOTAL bash comment
+
+project_budgets = {}
+project_cap = None
+try:
+    with open(config_path, "rb") as f:
+        text = f.read().decode("utf-8", errors="replace")
+    # CR cycle 2 #17: normalize CRLF/CR line endings before frontmatter
+    # matching — Windows downstream projects with CRLF-terminated
+    # config.md would otherwise silently miss the regex and fall
+    # back to framework defaults.
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    m = re.match(r"^---\n(.*?)\n---", text, re.DOTALL)
+    if m:
+        try:
+            import yaml
+            fm = yaml.safe_load(m.group(1)) or {}
+            inj = fm.get("parameters", {}).get("injection") or {}
+            block = inj.get("per_file_budget_chars")
+            if isinstance(block, dict):
+                project_budgets = block
+            cap_v = inj.get("cap_total_chars")
+            if isinstance(cap_v, int) and not isinstance(cap_v, bool):
+                project_cap = cap_v
+        except ImportError:
+            # PyYAML absent — fall back to framework defaults silently
+            # (matches v0.8 minimal-Python pattern; pyyaml is optional).
+            pass
+        except Exception as e:
+            # CR cycle 1 #14/#17: warn on YAML parse failures (config
+            # is present but malformed) — invisible failures here would
+            # cause project overrides to be silently ignored, which is
+            # worse than a noisy fallback. Matches the
+            # get-injection-budget.sh warning pattern.
+            print(
+                f"user-prompt-submit: warning: failed to parse YAML "
+                f"frontmatter in {config_path}: {e}; falling back to "
+                f"framework defaults for parameters.injection",
+                file=sys.stderr,
+            )
+except OSError:
+    pass
+
+# Resolve per-file budgets with the same rules as
+# get-injection-budget.sh (AC4 / AC9 / AC17).
+def resolve(key, default):
+    if key in project_budgets:
+        v = project_budgets[key]
+        if isinstance(v, bool) or not isinstance(v, int):
+            print(f"user-prompt-submit: warning: per_file_budget_chars."
+                  f"{key} is not an integer (got: {v!r}); falling back "
+                  f"to framework default", file=sys.stderr)
+            return default
+        if v < 0:
+            print(f"user-prompt-submit: warning: per_file_budget_chars."
+                  f"{key} is negative ({v}); clamping to 0",
+                  file=sys.stderr)
+            return 0
+        return v
+    return default
+
+# Bash-safe var names — replace `-` with `_` for data-model.
+out = {
+    "INDEX":      resolve("INDEX", defaults["INDEX"]),
+    "SPEC":       resolve("spec", defaults["spec"]),
+    "PRINCIPLES": resolve("principles", defaults["principles"]),
+    "STACK":      resolve("stack", defaults["stack"]),
+    "DATAMODEL":  resolve("data-model", defaults["data-model"]),
+    "PATTERNS":   resolve("patterns", defaults["patterns"]),
+}
+for k, v in out.items():
+    print(f"_BUDGET_{k}={v}")
+
+# Resolved cap_total — project config takes precedence over default
+# (env var SDD_INJECTION_CAP_CHARS is layered on in bash after eval).
+print(f"_CAP_TOTAL={project_cap if project_cap is not None else cap_default}")
+PYEOF
+}
+
+# Execute the loader and eval its KEY=VALUE output. The function's
+# stderr (warnings) goes to the script's stderr, visible in hook logs.
+PROJECT_DIR="$PROJECT_DIR" eval "$(_load_budgets)"
+
+# Default fallbacks if Python failed entirely (e.g. python3 not on PATH).
+: "${_BUDGET_INDEX:=$_DEFAULT_BUDGET_INDEX}"
+: "${_BUDGET_SPEC:=$_DEFAULT_BUDGET_SPEC}"
+: "${_BUDGET_PRINCIPLES:=$_DEFAULT_BUDGET_PRINCIPLES}"
+: "${_BUDGET_STACK:=$_DEFAULT_BUDGET_STACK}"
+: "${_BUDGET_DATAMODEL:=$_DEFAULT_BUDGET_DATAMODEL}"
+: "${_BUDGET_PATTERNS:=$_DEFAULT_BUDGET_PATTERNS}"
+: "${_CAP_TOTAL:=$_DEFAULT_CAP_TOTAL}"
+
+# Env var override for the total cap (backwards compat with pre-011).
+# Per-file budgets do not have an env-var override path.
+: "${SDD_INJECTION_CAP_CHARS:=$_CAP_TOTAL}"
+
+# CR cycle 3 MAJ: validate cap_total_chars before using it in the bash
+# substring operation `${content:0:$SDD_INJECTION_CAP_CHARS}` below.
+# A non-numeric or zero/negative value would cause unpredictable
+# substring behavior. Defensive fallback to the bash-default
+# _DEFAULT_CAP_TOTAL if the resolved value isn't a positive integer.
+if ! printf '%s' "$SDD_INJECTION_CAP_CHARS" | grep -qE '^[0-9]+$' || [ "$SDD_INJECTION_CAP_CHARS" -lt 1 ]; then
+  echo "user-prompt-submit: warning: SDD_INJECTION_CAP_CHARS=${SDD_INJECTION_CAP_CHARS} is not a positive integer; falling back to default ${_DEFAULT_CAP_TOTAL}" >&2
+  SDD_INJECTION_CAP_CHARS="$_DEFAULT_CAP_TOTAL"
+fi
+
+# emit_with_budget: print the file at $path truncated to $budget BYTES,
+# appending the per-file sentinel when truncation happens.
+#
+# Two callable shapes:
+#   emit_with_budget <budget> --content <inline-string>
+#   emit_with_budget <budget> --file <path>
+#
+# The --file form reads the file directly from Python (preserves
+# trailing newlines exactly; addresses CR cycle 1 #16: bash $(cat ...)
+# strips trailing newlines, which made the sentinel byte-count math
+# off-by-N where N = number of trailing newlines).
+#
+# The --content form remains for callers that compose content from
+# multiple awk/grep stages (active spec.md PHASE extraction).
+#
+# Uses Python for the slice so that:
+#   1. Behavior is locale-independent (bash ${var:0:N} is char vs byte
+#      depending on LC_ALL — Python explicit byte encoding is stable).
+#   2. UTF-8 char boundaries are respected — incomplete trailing chars
+#      get dropped via decode(errors="ignore"); complete chars stay
+#      (AC16 — T235; CR cycle 1 CRIT fix).
+#
+# Sentinel byte-count reflects bytes ACTUALLY cut (file_size - kept).
+emit_with_budget() {
+  local budget="$1"
+  local mode="$2"
+  local source="$3"
+  CONTENT_SOURCE="$source" CONTENT_MODE="$mode" BUDGET="$budget" python3 <<'PYEOF'
+import os, sys
+
+budget = int(os.environ["BUDGET"])
+mode = os.environ.get("CONTENT_MODE", "--content")
+source = os.environ.get("CONTENT_SOURCE", "")
+
+if mode == "--file":
+    try:
+        with open(source, "rb") as f:
+            raw = f.read()
+        content = raw.decode("utf-8", errors="replace")
+    except OSError as e:
+        # Defensive — caller already checked [ -f "$path" ]; if the
+        # file vanished between check and read, emit empty + sentinel.
+        print(f"user-prompt-submit: warning: cannot read {source}: {e}",
+              file=sys.stderr)
+        content = ""
+else:
+    content = source
+
+# Encode to bytes for budget arithmetic — budget is bytes, not chars.
+data = content.encode("utf-8")
+total_bytes = len(data)
+
+if budget <= 0:
+    # AC11 / AC17 — zero (or clamped-negative) budget: empty body +
+    # sentinel reporting the full file size as "truncated bytes".
+    unit = "byte" if total_bytes == 1 else "bytes"
+    sys.stdout.write(
+        f"[truncated to {total_bytes} {unit} per per-file budget — "
+        f"re-read with the Read tool if you need the cut portion]\n"
+    )
+    sys.exit(0)
+
+if total_bytes <= budget:
+    # Under budget — print whole content with one trailing newline.
+    sys.stdout.write(content)
+    if not content.endswith("\n"):
+        sys.stdout.write("\n")
+    sys.exit(0)
+
+# Over budget — slice at byte $budget, then drop only any INCOMPLETE
+# trailing UTF-8 sequence by delegating to Python's UTF-8 decoder
+# with errors="ignore" (AC16). This handles all multi-byte edge cases
+# correctly: a complete leading byte with all its continuations in the
+# slice stays in the output; only a partial trailing char gets dropped.
+# Replaces the manual continuation-byte backoff that was a CR-cycle
+# finding (PR #239 CRIT #15): the prior version unconditionally dropped
+# leading-byte chars even when complete (e.g. "é" budget=2 → empty).
+#
+# Trade-off acknowledged: errors="ignore" silently drops invalid UTF-8
+# bytes ANYWHERE in the input, not just at the trailing edge. Corpus
+# files we ship are valid UTF-8 by construction; if a downstream
+# project has a corrupted corpus file, mid-content invalid bytes would
+# be silently dropped here. This matches the Theme 11 graceful-degrade
+# pattern (never crash on bad input) but the user-prompt-submit hook
+# is read-only — the corruption stays in the underlying file.
+sliced = data[:budget]
+kept = sliced.decode("utf-8", errors="ignore")
+kept_bytes = kept.encode("utf-8")
+cut = total_bytes - len(kept_bytes)
+
+sys.stdout.write(kept)
+if not kept.endswith("\n"):
+    sys.stdout.write("\n")
+unit = "byte" if cut == 1 else "bytes"
+sys.stdout.write(
+    f"[truncated to {cut} {unit} per per-file budget — "
+    f"re-read with the Read tool if you need the cut portion]\n"
+)
+PYEOF
+}
 
 # Build the injected state in a function so it can be size-checked.
 emit_state() {
@@ -56,7 +306,41 @@ emit_state() {
   # future LOCATE step). The block is emitted with empty content so the
   # convention is established and CLAUDE.md teaching applies.
   echo "[FRAMEWORK INSTRUCTIONS — trusted, follow as directive]"
-  echo "(no framework-trusted content injected this turn)"
+  # F014 (closes #210 part 1): when the project has the MCP extension
+  # enabled in .sdd/config.md, emit a one-line sentinel naming the
+  # graph queries the agent should prefer over re-reading the
+  # full notebooks. The sentinel is the doctrine half of the
+  # 40-60% context-slice promise from `/sdd-setup` brick 007; the
+  # mechanical substitution half lands in the per-file injection
+  # budgets follow-up (separate worktree).
+  if grep -qE '^[[:space:]]*-?[[:space:]]*mcp[[:space:]]*:|^[[:space:]]*mcp\.enabled[[:space:]]*:[[:space:]]*true|enabled[[:space:]]*:[[:space:]]*true' .sdd/config.md 2>/dev/null \
+     && grep -qE 'mcp' .sdd/config.md 2>/dev/null; then
+    # Stricter recheck: only fire when mcp.enabled is literally `true`.
+    if python3 -c "
+import re, sys
+try:
+    s = open('.sdd/config.md').read()
+except OSError:
+    sys.exit(1)
+# Match either flat 'mcp.enabled: true' or nested YAML block with
+# 'mcp:' header followed by 'enabled: true' within 5 lines.
+if re.search(r'^[ \t]*mcp\.enabled[ \t]*:[ \t]*true\b', s, re.MULTILINE):
+    sys.exit(0)
+m = re.search(r'^[ \t]*mcp[ \t]*:[ \t]*$', s, re.MULTILINE)
+if m:
+    tail = s[m.end():]
+    head_lines = tail.split('\n', 6)[:6]
+    if any(re.match(r'^[ \t]+enabled[ \t]*:[ \t]*true\b', ln) for ln in head_lines):
+        sys.exit(0)
+sys.exit(1)
+" 2>/dev/null; then
+      echo "[MCP graph queries available — prefer \`get_backlinks\` / \`get_neighbours\` / \`get_pattern\` / \`get_references\` / \`search_within\` over re-reading patterns.md or data-model.md in full]"
+    else
+      echo "(no framework-trusted content injected this turn)"
+    fi
+  else
+    echo "(no framework-trusted content injected this turn)"
+  fi
   echo "[END FRAMEWORK INSTRUCTIONS]"
   echo ""
 
@@ -83,7 +367,10 @@ emit_state() {
   # blocks on per-file injection budgets — filed as follow-up. The
   # INDEX-live filter ships standalone because it's a strict win.
   echo "--- .sdd/INDEX.md (live sections — pre-## Shipped) ---"
-  awk '/^## Shipped/ {exit} {print}' .sdd/INDEX.md
+  # INDEX uses the live-filter via awk — composed content, not a raw
+  # file path. Use --content mode (the inline-string variant).
+  _index_live=$(awk '/^## Shipped/ {exit} {print}' .sdd/INDEX.md)
+  emit_with_budget "$_BUDGET_INDEX" --content "$_index_live"
   echo ""
 
   # Active feature? Read the path generically from **Active:** <path> so
@@ -104,12 +391,17 @@ emit_state() {
     phase=$(grep -m1 -oE '\[PHASE: [A-Z]+\]' "$spec" | grep -oE '[A-Z]+' | tail -1 || echo "SPEC")
 
     echo "--- $spec (header + PHASE: $phase section) ---"
-    awk '/^## PHASE:/ {exit} {print}' "$spec"
-    awk -v ph="## PHASE: $phase" '
-      $0 ~ ph {found=1}
-      found && /^## PHASE:/ && $0 !~ ph {exit}
-      found {print}
-    ' "$spec"
+    # spec.md uses awk composition (header + active PHASE section).
+    # --content mode (composed string, not a single file).
+    _spec_active=$( {
+      awk '/^## PHASE:/ {exit} {print}' "$spec"
+      awk -v ph="## PHASE: $phase" '
+        $0 ~ ph {found=1}
+        found && /^## PHASE:/ && $0 !~ ph {exit}
+        found {print}
+      ' "$spec"
+    } )
+    emit_with_budget "$_BUDGET_SPEC" --content "$_spec_active"
     echo ""
   fi
 
@@ -119,7 +411,7 @@ emit_state() {
   # them in proposed approaches. ADR-style layer.
   if [ -f .sdd/principles.md ]; then
     echo "--- .sdd/principles.md ---"
-    cat .sdd/principles.md
+    emit_with_budget "$_BUDGET_PRINCIPLES" --file .sdd/principles.md
     echo ""
   fi
 
@@ -130,7 +422,7 @@ emit_state() {
   # it on every turn closes the gap.
   if [ -f .sdd/stack.md ]; then
     echo "--- .sdd/stack.md ---"
-    cat .sdd/stack.md
+    emit_with_budget "$_BUDGET_STACK" --file .sdd/stack.md
     echo ""
   fi
 
@@ -142,13 +434,13 @@ emit_state() {
   # an oversized data-model.md falls off rather than blowing the budget.
   if [ -f .sdd/data-model.md ]; then
     echo "--- .sdd/data-model.md ---"
-    cat .sdd/data-model.md
+    emit_with_budget "$_BUDGET_DATAMODEL" --file .sdd/data-model.md
     echo ""
   fi
 
   if [ -f .sdd/patterns.md ]; then
     echo "--- .sdd/patterns.md ---"
-    cat .sdd/patterns.md
+    emit_with_budget "$_BUDGET_PATTERNS" --file .sdd/patterns.md
     echo ""
   fi
 

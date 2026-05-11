@@ -326,6 +326,25 @@ Reads `CLAUDE.version` in your project, compares to the template, applies:
 
 Your data is never touched: `INDEX.md`, `data-model.md`, `patterns.md`, `decisions.md`, `features/`, `ideas/`, and your project rules stay exactly as they were.
 
+### Plugin install cache stuck on an old version? (closes #164 bug 2)
+
+If you installed SDD via `/plugin install sdd@sdd-marketplace` and the framework seems frozen on an old version even after `/plugin marketplace update`, Claude Code caches the install in three places. Any one of them stale will hold the old bytes. Clear all three:
+
+```bash
+# 1. The marketplace catalog (the index of what plugins exist):
+rm -rf ~/.claude/plugins/marketplaces/sdd-marketplace/
+
+# 2. The plugin cache (the actual SDD files, per-version):
+rm -rf ~/.claude/plugins/cache/sdd-marketplace/
+
+# 3. Per-install temp dirs (these accumulate and don't get auto-cleaned):
+rm -rf ~/.claude/plugins/cache/temp_local_*/
+```
+
+Then re-run `/plugin marketplace add sdd@sdd-marketplace` and `/plugin install sdd@sdd-marketplace` from scratch. The first session after install fires the SessionStart hook which now prints `[SDD bootstrap] ready — .sdd/ scaffold ready` so you can confirm it worked (v1.8.2+).
+
+If you're not sure which version you're on, look at the `v1.x.y` line in the SessionStart hook output or check `git tag | tail -5` if you cloned via git.
+
 ---
 
 ## Customizing for your project
