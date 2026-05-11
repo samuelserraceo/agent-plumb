@@ -6,7 +6,7 @@ playbook: feature
 
 [PHASE: SPEC]
 
-**Active blocker:** §3 user-stories
+**Active blocker:** §5 proposed-approach
 
 ## PHASE: SPEC
 
@@ -56,11 +56,40 @@ v1.5.2's #169 fix added QUEUED as a first-class state and `/next` is documented 
 
 ### action: user-stories
 
-- [ ] stories: Which personas matter? For each: 'As <persona>, I want <action>, so that <outcome>.' 1-5 stories total.
+- [x] stories: 2 personas — legacy-project upgrader (Sam-shape running sdd-migrate.sh on an old project) and INDEX reader (anyone trying to tell parked vs in-flight at a glance)
+
+#### §3 User Stories
+
+#### Story 1 — Legacy-project upgrader
+
+> *As Sam (or any framework user) running `bash .sdd/scripts/sdd-migrate.sh --apply` on a pre-v1.5.2 project, I want to be told (after the upgrade) "run `bash .sdd/scripts/promote-legacy-queued.sh` to fix N legacy backlog items" — and after I run it, I want `/next` to start refusing on those backlog features the way the framework now documents.*
+
+#### Story 2 — INDEX reader
+
+> *As someone reading `.sdd/INDEX.md` after a feature ships, I want backlog features to show as `(scaffolded, PHASE: QUEUED)` — the canonical v1.5.2+ shape — so I can tell at a glance that F02-F15 are parked-waiting-for-promote, not in-flight at SPEC.*
 
 ### action: ux-brief
 
-- [ ] brief: infer the UX direction from problem, success, and user stories
+- [x] brief: no UI surface — backend script that exits with a plain-English summary. Success is "moat starts refusing on legacy backlog items after one `bash promote-legacy-queued.sh` run."
+
+#### §4 UX & Design brief
+
+**Primary surface:** the script's stdout summary after a run — what the user reads to confirm what changed.
+
+**Output shape (target):**
+
+```
+[promote-legacy-queued] scanning .sdd/features/ + .sdd/bugs/ + .sdd/refactors/ ...
+[promote-legacy-queued] inspected: 16 work items
+[promote-legacy-queued] migrated:  14 items (F02-F15 spec.md PHASE flipped to QUEUED)
+[promote-legacy-queued] INDEX.md:  14 rows updated to canonical (scaffolded, PHASE: QUEUED)
+[promote-legacy-queued] unchanged: 2 items (F01 already SHIPPED; F16 already QUEUED)
+[promote-legacy-queued] done. Commit the staged changes when you're ready.
+```
+
+**Tone:** terse, concrete, "what I changed vs what I left alone". No jargon. Counts at top so the user has a single number to react to (per the non-technical-user lens 'show a total').
+
+**No HTML wireframe** — backend script, exit-status driven. Skip §13.
 
 ### action: proposed-approach
 
