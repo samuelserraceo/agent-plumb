@@ -301,7 +301,7 @@ PROD-ONLY AC9 + AC10 + best-effort AC8 = no T-task; verified at SHIP via §12 si
 
 ### action: verify-test-run
 
-- [ ] run-tests: run-tests pass
+- [x] run-tests: 218/218 framework tests pass + 7/7 F011 per-feature tests (T300-T306)
 
 ### action: learn
 
