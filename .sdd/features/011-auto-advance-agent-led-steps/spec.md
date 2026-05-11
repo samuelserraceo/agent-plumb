@@ -95,7 +95,7 @@ Trade-offs:
 
 ### action: data-contract
 
-- [ ] approval: draft the data contract, iterate with the user, sync data-model.md, get approval
+- [x] approval: 1 new config field (`parameters.automation.level`, string `full|most|checkpoint`, default `checkpoint`). 0 new project-state entities. 1 new framework-level concept (`AutomationLevel`, typed string — NOT a data-model.md entity, analogous to BUILD's `Run mode`). 0 new fields on existing entities. 3 edge cases at data layer: backward compat (no flag = checkpoint); downgrade mid-walk (subsequent /next respects new level, no persistent walk-state); mark-shipped keeps approve gate even at Full per §11 destructive-actions list. Sam approved 2026-05-11.
 
 **Draft (pre-filled from brief; awaiting /next approval):** One new config field, no new entities.
 
