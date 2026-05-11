@@ -1941,14 +1941,17 @@ else
 fi
 
 # ============================================================
-# T58 — user-prompt-submit truncates injection at SDD_INJECTION_CAP_CHARS
-#   (Theme 11 grain budget — closes Codex finding #9: "one /next too elastic")
-#   RED: hook emits unbounded content, agent's context bloats unboundedly.
+# T58 — user-prompt-submit truncates injection content per per-file budget
+#   (feature 011 — replaces the Theme 11 single-cap end-truncate with
+#    per-file budgets; the cap_total_chars stays as a defensive floor
+#    for sum-overshoot. RED case still detected: an oversized INDEX.md
+#    that fires no truncation at all = bloat regression.)
 # ============================================================
-note "T58: user-prompt-submit truncates content at injection cap (Theme 11)"
+note "T58: user-prompt-submit truncates oversized INDEX per per-file budget (feature 011)"
 d=$(mkproj_v08)
 cd "$d"
-# Make INDEX.md HUGE — 30,000 chars of dummy content (well over 16K cap)
+# Make INDEX.md HUGE — 30,000 chars of dummy content (well over 3000-char
+# INDEX budget AND well over 16K cap_total_chars).
 echo '**Active:** none' > .sdd/INDEX.md
 python3 -c "import sys; sys.stdout.write('# bloat\n' + ('lorem ipsum dolor sit amet ' * 1500))" >> .sdd/INDEX.md
 out=$(bash "$FRAMEWORK_ROOT/templates/.claude/hooks/user-prompt-submit.sh" 2>&1)
@@ -1956,13 +1959,19 @@ ec=$?
 chars=${#out}
 cd - >/dev/null
 rm -rf "$d"
-# Assert: hook exits 0, output is bounded near the cap, sentinel present
+# Assert: hook exits 0, output is bounded (per-file truncation kept
+# INDEX at ~3000 chars; total output ≤17000 for the cap-floor backstop),
+# and EITHER sentinel fired — the new per-file sentinel (preferred path
+# when per-file truncation runs first) OR the Theme 11 TRUNCATED
+# sentinel (defensive cap floor, for sum-overshoot edges).
+per_file_sentinel=$(echo "$out" | grep -c "per per-file budget")
+theme11_sentinel=$(echo "$out" | grep -c TRUNCATED)
 if [ "$ec" -eq 0 ] \
    && [ "$chars" -le 17000 ] \
-   && echo "$out" | grep -q 'TRUNCATED'; then
-  ok "T58 truncation enforced (output=${chars} chars, cap=16000, sentinel present)"
+   && { [ "$per_file_sentinel" -gt 0 ] || [ "$theme11_sentinel" -gt 0 ]; }; then
+  ok "T58 truncation enforced (output=${chars} chars, per-file=${per_file_sentinel}, theme11=${theme11_sentinel})"
 else
-  bad "T58 truncation broken or missing" "exit=$ec; chars=$chars; sentinel? $(echo "$out" | grep -c TRUNCATED)"
+  bad "T58 truncation broken or missing" "exit=$ec; chars=$chars; per-file=$per_file_sentinel; theme11=$theme11_sentinel"
 fi
 
 # ============================================================
