@@ -29,8 +29,12 @@ if [ -z "$BRICK" ]; then
 else
   # Extract frontmatter (between leading '---' and the second '---').
   # awk pattern: print between first and second '---' line.
-  FRONTMATTER=$(awk '/^---$/{c++; next} c==1 {print}' "$BRICK")
-  BODY=$(awk '/^---$/{c++; next} c==2 {print}' "$BRICK")
+  # CR cycle-5: BODY uses c>=2 so embedded '---' in markdown body
+  # (horizontal rules, fenced-block delimiters, etc.) do not truncate
+  # the captured body and false-fail subsequent tier/field assertions.
+  # Also allow trailing whitespace on the delimiter line.
+  FRONTMATTER=$(awk 'BEGIN{c=0} /^---[[:space:]]*$/{c++; next} c==1 {print}' "$BRICK")
+  BODY=$(awk 'BEGIN{c=0} /^---[[:space:]]*$/{c++; next} c>=2 {print}' "$BRICK")
 
   # Frontmatter must declare records_in.
   if ! printf '%s\n' "$FRONTMATTER" | grep -qE "^records_in:"; then

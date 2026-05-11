@@ -6,7 +6,7 @@ playbook: feature
 
 [PHASE: SHIP]
 
-**Active blocker:** SHIP action: verify-test-run
+**Active blocker:** SHIP action: verify-ci-green (PR #236)
 
 ## PHASE: SPEC
 
