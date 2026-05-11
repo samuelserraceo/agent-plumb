@@ -358,7 +358,7 @@ All 17 claim-rows have at least one covering AC. NF1 (latency), NF2 (no-regressi
 
 ### action: wireframe
 
-- [ ] wireframe: draft wireframe.html — UI screens for UI features OR flow + architecture for non-UI features
+- [x] wireframe: Non-UI shape — example interactions (3 per user story) + 6-step hook flow diagram + architecture diagram (user→hook→model + resolver→config + corpus → future idea 003 reorder) + 10-row new-vs-existing table. wireframe.html shipped 2026-05-11.
 
 ### action: plan-decompose
 
