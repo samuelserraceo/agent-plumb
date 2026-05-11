@@ -23,16 +23,29 @@ SPEC="$FRAMEWORK_ROOT/.sdd/features/010-parallel-wave-execution/spec.md"
 
 fails=()
 
+# Fail fast: a missing/unreadable dispatch-wave.sh would let the
+# harness-token scan silently no-op (no findings + AC11 PASS = false green).
+if [ ! -r "$SCRIPT" ]; then
+  fails+=("missing or unreadable dispatch script for AC11 scan: $SCRIPT")
+fi
+
 # --- A) Harness-agnostic by construction --------------------------------
 # Reject explicit conditionals on specific harnesses. The script should
 # stay model-agnostic — if it grows a `if claude_code` branch, that
-# breaks the AC11 parity claim.
-for token in "claude_code" "pi_dev" "harness ==" "HARNESS=="; do
-  if grep -nFi "$token" "$SCRIPT" >/dev/null 2>&1; then
-    line="$(grep -nFi "$token" "$SCRIPT" | head -1)"
-    fails+=("dispatch-wave.sh contains harness-specific token '$token' at $line — breaks AC11 parity")
+# breaks the AC11 parity claim. Regex-based detection handles spacing,
+# quoting, and case variants beyond the literal forms.
+if [ -r "$SCRIPT" ]; then
+  # Patterns:
+  #   * `claude_code` / `pi_dev` anywhere (lowercase via -i)
+  #   * `(if|case)` followed by HARNESS-style identifier comparison
+  #   * `[ "$HARNESS" ... ]` test-bracket comparisons
+  hits="$(grep -nEi 'claude_code|pi_dev|\bharness[[:space:]]*(=|==|!=)|\[[[:space:]]*"\$harness"[[:space:]]*(=|==|!=)' "$SCRIPT" 2>/dev/null || true)"
+  if [ -n "$hits" ]; then
+    while IFS= read -r line; do
+      [ -n "$line" ] && fails+=("dispatch-wave.sh contains harness-specific construct at $line — breaks AC11 parity")
+    done <<<"$hits"
   fi
-done
+fi
 
 # --- B) SHIP signoff has a multi-harness manual step --------------------
 # §12 signoff-steps must reference both Claude Code AND pi.dev so the

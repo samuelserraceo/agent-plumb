@@ -23,6 +23,12 @@ SCRIPT="$FRAMEWORK_ROOT/.sdd/scripts/dispatch-wave.sh"
 
 fails=()
 
+# Fail fast: a missing/unreadable dispatch-wave.sh would let the
+# token-scan loop silently no-op (no findings + AC5 PASS = false green).
+if [ ! -r "$SCRIPT" ]; then
+  fails+=("missing or unreadable dispatch script: $SCRIPT")
+fi
+
 # --- A) Code-shape: no bypass tokens -----------------------------------
 # `--no-verify` is the canonical bypass flag for `git commit`.
 if grep -nE '\-\-no\-verify' "$SCRIPT" >/dev/null 2>&1; then
@@ -58,6 +64,10 @@ git config user.name "T204 test"
 git config commit.gpgsign false
 
 mkdir -p .git/hooks
+# Pin the hooksPath to repo-local so a global `core.hooksPath` in the
+# developer's git config doesn't redirect away from our sentinel hook
+# (which would make this fixture pass-or-fail for the wrong reason).
+git config core.hooksPath .git/hooks
 cat > .git/hooks/pre-commit <<HOOK
 #!/usr/bin/env bash
 touch "$WORK/.hook-fired"
