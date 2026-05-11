@@ -6,7 +6,7 @@ playbook: feature
 
 [PHASE: BUILD]
 
-**Active blocker:** §14 T01 (add MCP-doctrine sentinel to user-prompt-submit.sh)
+**Active blocker:** SHIP — T01 GREEN, ready to PR
 
 **Run mode:** full-autonomous
 
@@ -193,7 +193,7 @@ Agent: reads the sentinel, sees MCP is on, can choose to call get_backlinks / ge
 
 #### §14 Plan-Decompose
 
-- [ ] T01: Replace the legacy line in `user-prompt-submit.sh` (live + templates) with conditional MCP-sentinel emission. Test: `tests/task-001.sh` GREEN. AC1 mapped. Manifest repin both copies.
+- [x] T01: Replace the legacy line in `user-prompt-submit.sh` (live + templates) with conditional MCP-sentinel emission. Test: `tests/task-001.sh` GREEN. AC1 mapped. (Hook not manifest-tracked — no repin needed.)
 
 **Status:** AUTONOMOUS DRAFT.
 
