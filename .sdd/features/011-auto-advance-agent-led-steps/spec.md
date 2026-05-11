@@ -181,7 +181,7 @@ Trade-offs:
 
 - **AC1 — Default tier is `checkpoint`.** Fresh project (no `parameters.automation.level` in `.sdd/config.md`) → `resolve-parameters.sh` returns `checkpoint`. {verify-by: T300}
 - **AC2 — Config field accepts `full | most | checkpoint`.** `resolve-parameters.sh parameters.automation.level` returns the configured tier when set to any of the three valid values. {verify-by: T301}
-- **AC3 — Invalid tier rejected.** Setting `parameters.automation.level: invalid` → `resolve-parameters.sh` errors with a clear message + falls back to `checkpoint`. {verify-by: T302}
+- **AC3 — Invalid tier rejected.** Setting `parameters.automation.level: invalid` → `resolve-parameters.sh` errors with a clear message + falls back to `checkpoint`. {verify-by: T301}
 - **AC4 — `/sdd-setup` includes the automation question.** Setup wizard prose contains an "Automation level" question with Full/Most/Checkpoint options + plain-English description of each tier. {verify-by: T303}
 - **AC5 — `/sdd-config` supports tier change.** `/sdd-config automation full` updates `.sdd/config.md` to `parameters.automation.level: full`. {verify-by: T304}
 - **AC6 — `/next` slash command prose contains the 3-way decision tree.** `.claude/commands/next.md` (or templates equivalent) describes: "if tier=full AND action.requires_user_approval=false AND action NOT in destructive list → auto-advance; else if tier=most AND action in destructive list → prompt; else if tier=checkpoint → prompt". {verify-by: T305}
@@ -261,7 +261,7 @@ PROD-ONLY AC9 + AC10 + best-effort AC8 = no T-task; verified at SHIP via §12 si
 | 2 | Mid-walk tier change (Full → Checkpoint during BUILD) | Low | `/next` re-reads tier per call (cached but invalidates on config.md change). Subsequent steps respect new tier. |
 | 3 | Destructive action with `requires_user_approval: false` (misclassified) | Medium | Destructive list (AC7) gates regardless of frontmatter — flag is overridden by the destructive list at Most. Filed as bug if surfaces. |
 | 4 | New action added post-AC7 not in destructive list but should be | Low | T306 documents how to add a slug to the enumeration. Future actions should think about destructive-ness at creation time. |
-| 5 | `parameters.automation.level: ` (empty string) | Low | Treated same as unset → default `checkpoint`. T301 fixture covers this. |
+| 5 | `parameters.automation.level:` (empty string) | Low | Treated same as unset → default `checkpoint`. T301 fixture covers this. |
 | 6 | `pi.dev` harness behaves differently than Claude Code on auto-advance | Medium | Both harnesses execute `/next` via the same SDD framework brain; tier check is in the brain, not harness-specific. Verified at SHIP (folded into AC9 PROD-ONLY scope). |
 | 7 | Auto-advance under Full skips a step that touches a sealed framework file (manifest repin) | Low | Already in destructive list — manifest-repin commits prompt under Most. Under Full, the framework-tamper hook would still fire on the commit attempt (`pre-commit-stage-verified.sh`). |
 
