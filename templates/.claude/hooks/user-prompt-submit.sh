@@ -161,28 +161,75 @@ PROJECT_DIR="$PROJECT_DIR" eval "$(_load_budgets)"
 # Per-file budgets do not have an env-var override path.
 : "${SDD_INJECTION_CAP_CHARS:=$_CAP_TOTAL}"
 
-# emit_with_budget: print $content truncated to $budget chars,
+# emit_with_budget: print $content truncated to $budget BYTES,
 # appending the per-file sentinel when truncation happens.
-# Pure-bash slicing (LC_ALL-locale dependent — see T235 for the
-# UTF-8 char-boundary backoff refinement).
+#
+# Uses Python for the slice so that:
+#   1. Behavior is locale-independent (bash ${var:0:N} is char vs byte
+#      depending on LC_ALL — Python explicit byte encoding is stable).
+#   2. UTF-8 char boundaries are respected — when the budget falls
+#      inside a multi-byte UTF-8 char, the slice backs off to the
+#      previous clean char boundary (at most 3 trailing bytes
+#      dropped). Output stays valid UTF-8 (AC16 — T235).
+#
+# Sentinel byte-count reflects bytes ACTUALLY cut (file_size - kept).
 emit_with_budget() {
   local budget="$1"
   local content="$2"
-  local size=${#content}
-  if [ "$budget" -le 0 ]; then
-    # AC17 / AC11 — zero (or clamped-negative) budget: empty body +
+  CONTENT="$content" BUDGET="$budget" python3 <<'PYEOF'
+import os, sys
+
+budget = int(os.environ["BUDGET"])
+content = os.environ.get("CONTENT", "")
+
+# Encode to bytes for budget arithmetic — budget is bytes, not chars.
+data = content.encode("utf-8")
+total_bytes = len(data)
+
+if budget <= 0:
+    # AC11 / AC17 — zero (or clamped-negative) budget: empty body +
     # sentinel reporting the full file size as "truncated bytes".
-    printf '[truncated to %d bytes per per-file budget — re-read with the Read tool if you need the cut portion]\n' "$size"
-    return
-  fi
-  if [ "$size" -gt "$budget" ]; then
-    local truncated="${content:0:$budget}"
-    local cut=$((size - budget))
-    printf '%s\n' "$truncated"
-    printf '[truncated to %d bytes per per-file budget — re-read with the Read tool if you need the cut portion]\n' "$cut"
-  else
-    printf '%s\n' "$content"
-  fi
+    sys.stdout.write(
+        f"[truncated to {total_bytes} bytes per per-file budget — "
+        f"re-read with the Read tool if you need the cut portion]\n"
+    )
+    sys.exit(0)
+
+if total_bytes <= budget:
+    # Under budget — print whole content with one trailing newline.
+    sys.stdout.write(content)
+    if not content.endswith("\n"):
+        sys.stdout.write("\n")
+    sys.exit(0)
+
+# Over budget — slice at byte $budget, then back off to a clean UTF-8
+# char boundary if the slice lands mid-character (AC16).
+sliced = data[:budget]
+# UTF-8 continuation bytes start with 10xxxxxx (0x80..0xBF). If the
+# byte at position $budget is a continuation byte, the char started
+# earlier — back off until we land on a leading byte (0xxxxxxx OR
+# 11xxxxxx). At most 3 bytes of backoff (UTF-8 chars are 1-4 bytes).
+backoff = 0
+while sliced and (sliced[-1] & 0xC0) == 0x80 and backoff < 3:
+    sliced = sliced[:-1]
+    backoff += 1
+# If the last byte is a leading byte of a multi-byte char (11xxxxxx)
+# but the expected continuation bytes were cut, drop it too — it's
+# an incomplete char.
+if sliced and (sliced[-1] & 0xC0) == 0xC0:
+    sliced = sliced[:-1]
+
+kept = sliced.decode("utf-8", errors="strict")
+cut = total_bytes - len(sliced)
+
+sys.stdout.write(kept)
+if not kept.endswith("\n"):
+    sys.stdout.write("\n")
+sys.stdout.write(
+    f"[truncated to {cut} bytes per per-file budget — "
+    f"re-read with the Read tool if you need the cut portion]\n"
+)
+PYEOF
 }
 
 # Build the injected state in a function so it can be size-checked.
