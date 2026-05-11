@@ -6,7 +6,7 @@ playbook: feature
 
 [PHASE: SPEC]
 
-**Active blocker:** §1 problem
+**Active blocker:** §3 user-stories
 
 ## PHASE: SPEC
 
@@ -32,9 +32,27 @@ playbook: feature
 
 ### action: problem
 
-- [ ] who: Who specifically has this problem? (real persona, not 'users')
-- [ ] why-now: Why is it worth solving now?
-- [ ] what-breaks: What breaks (concretely) if it isn't solved?
+- [x] who: users of SDD projects bootstrapped before v1.5.2 (#169's QUEUED state). Direct hit: Sam's pipelogic_v2 F02-F15.
+- [x] why-now: framework now says `/next` should stop on QUEUED, but legacy specs still say `[PHASE: SPEC]` for backlog → silent state-machine drift {verify-by: T-001}.
+- [x] what-breaks: `/next` on pipelogic_v2 F02 would advance instead of stopping; INDEX row says "queued" while spec.md says SPEC (source-of-truth ambiguity); backlog items read as in-flight {verify-by: T-001}.
+
+#### §1 Problem
+
+#### who-has-it
+
+Users of SDD projects bootstrapped before v1.5.2 (the release that introduced the `[PHASE: QUEUED]` pre-active state via #169). Direct concrete hit: Sam's `pipelogic_v2` project — all 14 backlog features F02-F15 were scaffolded on 2026-05-05 (before v1.5.2's 2026-05-07 ship) and still carry `[PHASE: SPEC]` in their spec.md files even though their INDEX.md rows describe them as queued/backlog.
+
+#### why-now
+
+v1.5.2's #169 fix added QUEUED as a first-class state and `/next` is documented to stop on any work item whose spec.md says `[PHASE: QUEUED]` {verify-by: T-001 — the migrator's regression test confirms the stop fires on the canonical marker}. Plus the v1.4 `sdd-migrate.sh --apply` flow now ships, so old projects ARE being upgraded to the latest framework — and the moment they upgrade past v1.5.2, the documented behaviour doesn't kick in for their legacy backlog items because those items' PHASE markers are stale.
+
+#### what-breaks
+
+3 concrete failure modes {verify-by: T-001 / T-002 / T-003}:
+
+1. **`/next` advances a queued feature silently.** Sam runs `/next` on `pipelogic_v2`. Framework reads `.sdd/features/002-X/spec.md`, sees `[PHASE: SPEC]`, doesn't stop, walks the agent through §1's `who` question — even though F02 is supposed to be parked {verify-by: T-001}.
+2. **Source-of-truth ambiguity.** INDEX.md row `- features/002-X — Y (PHASE: QUEUED)` contradicts spec.md `[PHASE: SPEC]`. Which is right? `resolve-active.sh` reads the branch + INDEX, not the spec.md — but `pre-commit-stage-verified.sh` reads spec.md PHASE. Mixed signals when the two disagree.
+3. **Reading INDEX after a ship looks wrong.** F01 just shipped, F02-F15 are listed below; user reads them as "all in flight at SPEC" instead of "parked at QUEUED waiting for promote-to-active" → false sense of progress.
 
 ### action: user-stories
 
