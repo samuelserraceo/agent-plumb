@@ -25,7 +25,7 @@ Recap (3 bullets):
 ### action: problem
 
 - [x] who: SDD framework maintainers and downstream users on mature projects — Sam first (patterns.md is 20KB on this repo today, gets silently cut mid-paragraph every turn), downstream users hit the same problem as their patterns.md grows
-- [ ] why-now: Why is it worth solving now?
+- [x] why-now: patterns.md hit 20KB on this repo this week (4 features shipped 2026-05-10/11 each adding lessons); #228 shipped the INDEX-live filter as the small win, but the full idea-003 reorder is blocked on this because today's "truncate from end" drops INDEX+spec entirely when stable corpus is reordered to the top — per-file budgets unblock the reorder
 - [ ] what-breaks: What breaks (concretely) if it isn't solved?
 
 ### action: user-stories
