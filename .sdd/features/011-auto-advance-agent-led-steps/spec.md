@@ -206,7 +206,47 @@ Trade-offs:
 
 ### action: plan-decompose
 
-- [ ] tasks: convert acceptance criteria into ordered build tasks (one test file per task)
+- [x] tasks: 7 ordered T-tasks T300-T306, one-per-mechanical-AC. T300 walking-skeleton (resolve-parameters.sh exposes new field). T301-T306 are largely independent files (different scripts / setup prose / config command / /next prose / config.md sections) — eligible for `[WAVE: 1]` dispatch once F010 fully lands. AC8 named-eye + AC9/AC10 PROD-ONLY at SHIP — no T-task.
+
+**BUILD task plan — 7 ordered T-tasks (one test file per mechanical AC):**
+
+```text
+- [ ] T300: resolve-parameters.sh exposes parameters.automation.level
+            with default `checkpoint` when unset
+            — proves AC1 + AC2
+- [ ] T301: resolve-parameters.sh accepts all 3 valid tier values
+            (full / most / checkpoint), rejects invalid + falls back
+            to checkpoint with clear error message
+            — proves AC2 + AC3
+- [ ] T302: .sdd/config.md (live + template) gains a new
+            parameters.automation: section with documented default
+            (checkpoint) + plain-English description of each tier
+            — proves AC7 groundwork + supports AC4/AC5
+- [ ] T303: /sdd-setup wizard adds an "Automation level" question
+            with Full/Most/Checkpoint options + plain-English
+            descriptions; writes parameters.automation.level on user
+            answer
+            — proves AC4
+- [ ] T304: /sdd-config supports `automation <tier>` subcommand to
+            change parameters.automation.level post-setup
+            — proves AC5
+- [ ] T305: .claude/commands/next.md (live + template) gains the
+            3-way decision tree section (full/most/checkpoint)
+            describing when to auto-advance vs prompt
+            — proves AC6
+- [ ] T306: .sdd/config.md (live + template) lists the destructive-
+            actions enumeration under parameters.automation.
+            destructive_actions or sibling field
+            — proves AC7
+```
+
+**Order rationale:** foundation first (T300/T301/T302 config-layer plumbing), then user-facing surface (T303 setup + T304 config commands), then the decision tree itself (T305 /next prose), then the destructive-actions enumeration (T306). T306 depends on T302's structure being in place.
+
+**Walking-skeleton T01:** T300 — `resolve-parameters.sh` exposes the new field. Smallest end-to-end thread.
+
+**Wave dispatch (F010 unlock):** T301/T302/T303/T304/T305/T306 are largely independent (different files: `.sdd/scripts/resolve-parameters.sh`, `.sdd/config.md`, `templates/.sdd/setup/`, `.claude/commands/sdd-config.md`, `.claude/commands/next.md`, `.sdd/config.md` again). Could mark `[WAVE: 1]` on T301-T306 once F010 fully lands + the framework-self-mod four-step dance is documented. For v1 ship them linearly — the dance per F010's lessons takes care to get right.
+
+PROD-ONLY AC9 + AC10 + best-effort AC8 = no T-task; verified at SHIP via §12 signoff steps.
 
 ### action: edge-case-sweep
 
