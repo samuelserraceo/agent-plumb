@@ -1,15 +1,15 @@
 # SDD framework — INDEX
 
-**Active:** _(none)_
+**Active:** features/012-promote-legacy-queued-sh-migrator-for-pre-v1-5-2-phase-state-drift-closes-206
 **Playbook:** feature
-**Active blocker:** _(no active feature — v1.7.1 shipped 2026-05-11 via PR #233, closes #197 part 2 (hash-section.sh bold-strip for AC/T/C- list-item labels — cosmetic bold/plain edits no longer trip the section-approval moat). Pick next from ## Ideas below or open issues.)_
+**Active blocker:** §1 (first action: brief-intake)
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
 
 ## In flight
+- features/012-promote-legacy-queued-sh-migrator-for-pre-v1-5-2-phase-state-drift-closes-206 — promote-legacy-queued.sh migrator for pre-v1.5.2 PHASE state drift (closes #206) (PHASE: SPEC)
 
-(none)
 
 
 
