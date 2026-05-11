@@ -173,7 +173,28 @@ Trade-offs:
 
 ### action: acceptance-criteria
 
-- [ ] approval: draft the acceptance criteria, run a constraint-coverage check vs §4, iterate, get approval
+- [x] approval: 10 ACs (AC1-AC10), each with `{verify-by: T-NNN}` / `{best-effort: <who>}` / `{prod-only: <why>}` annotation per anti-theatre. T300-T306 reserved for 7 mechanical ACs; AC8 best-effort named-eye at SHIP; AC9-10 PROD-ONLY at SHIP (real-session walk under Full / Most-tier destructive gate). Coverage maps to §10 non-functional (perf cached read = AC1+AC2; backward-compat default = AC1; destructive gate = AC10; audit trail unchanged = implicit in commit-shape preservation). Sam approved 2026-05-11.
+
+**Acceptance criteria (10 ACs):**
+
+**Mechanically verifiable (7 ACs):**
+
+- **AC1 — Default tier is `checkpoint`.** Fresh project (no `parameters.automation.level` in `.sdd/config.md`) → `resolve-parameters.sh` returns `checkpoint`. {verify-by: T300}
+- **AC2 — Config field accepts `full | most | checkpoint`.** `resolve-parameters.sh parameters.automation.level` returns the configured tier when set to any of the three valid values. {verify-by: T301}
+- **AC3 — Invalid tier rejected.** Setting `parameters.automation.level: invalid` → `resolve-parameters.sh` errors with a clear message + falls back to `checkpoint`. {verify-by: T302}
+- **AC4 — `/sdd-setup` includes the automation question.** Setup wizard prose contains an "Automation level" question with Full/Most/Checkpoint options + plain-English description of each tier. {verify-by: T303}
+- **AC5 — `/sdd-config` supports tier change.** `/sdd-config automation full` updates `.sdd/config.md` to `parameters.automation.level: full`. {verify-by: T304}
+- **AC6 — `/next` slash command prose contains the 3-way decision tree.** `.claude/commands/next.md` (or templates equivalent) describes: "if tier=full AND action.requires_user_approval=false AND action NOT in destructive list → auto-advance; else if tier=most AND action in destructive list → prompt; else if tier=checkpoint → prompt". {verify-by: T305}
+- **AC7 — Destructive-actions list is enumerated in `.sdd/config.md`.** `.sdd/config.md` contains a section/field listing destructive action slugs: `mark-shipped`, `manifest-repin`, `--delete-branch`, `decisions.md-append`, `.shipped-marker`, `repin`. {verify-by: T306}
+
+**Best-effort named-eye (1 AC):**
+
+- **AC8 — Existing per-action `requires_user_approval` flags correctly classify SPEC + SHIP actions.** Manual audit of all `.sdd/actions/*.md` confirms each action's flag matches the doctrine ("technical → false; product/business/scope/destructive → true"). {best-effort: Sam at SHIP — eye-check the matrix}
+
+**PROD-ONLY (2 ACs):**
+
+- **AC9 — Real-session walk under Full tier completes a feature without prompts on technical actions.** In a real Claude Code session with `automation.level: full`, walking a fixture feature's SPEC → BUILD → SHIP triggers no approve CTAs on AGENT-LED steps marked `requires_user_approval: false`. Product-judgement steps still prompt. {prod-only: requires live agent session at first-SHIP walk}
+- **AC10 — Most-tier destructive gate fires on mark-shipped.** In a real Claude Code session with `automation.level: most`, reaching mark-shipped on a fixture feature triggers an approve CTA (the destructive gate), even though mark-shipped's `requires_user_approval: false` would otherwise auto-advance under Full. {prod-only: requires live agent session at first-SHIP walk}
 
 ### action: signoff-steps
 
