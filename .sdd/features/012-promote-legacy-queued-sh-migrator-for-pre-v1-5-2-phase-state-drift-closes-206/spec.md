@@ -6,7 +6,7 @@ playbook: feature
 
 [PHASE: BUILD]
 
-**Active blocker:** §14 T01 (write promote-legacy-queued.sh + repin manifests)
+**Active blocker:** §14 T02 (false-positive guard test)
 
 **Run mode:** full-autonomous
 
@@ -220,7 +220,7 @@ User: git commit -m "[SDD] migration: pre-v1.5.2 queued PHASE retro-fix"
 
 #### §14 Plan-Decompose
 
-- [ ] T01: Write `promote-legacy-queued.sh` script body (bash + python3 parser) + ship template copy + repin both manifests. Test: `tests/task-001.sh` GREEN. AC1 mapped.
+- [x] T01: Write `promote-legacy-queued.sh` script body (bash + python3 parser) + ship template copy + repin both manifests. Test: `tests/task-001.sh` GREEN. AC1 mapped.
 - [ ] T02: False-positive guard — INDEX row not-canonical → no flip. Test: `tests/task-002.sh` GREEN. AC2 mapped.
 - [ ] T03: Cold-feature skip — `.shipped` marker → no flip. Test: `tests/task-003.sh` GREEN. AC3 mapped.
 - [ ] T04: Partial-state guard — INDEX says queued but spec PHASE != SPEC → leave + warn. Test: `tests/task-004.sh` GREEN. AC4 mapped.
