@@ -6,7 +6,7 @@ playbook: feature
 
 [PHASE: SPEC]
 
-**Active blocker:** §5 proposed-approach
+**Active blocker:** §6 data-contract
 
 ## PHASE: SPEC
 
@@ -93,7 +93,43 @@ v1.5.2's #169 fix added QUEUED as a first-class state and `/next` is documented 
 
 ### action: proposed-approach
 
-- [ ] approval: draft the approach with 2 alternatives and tradeoffs, iterate with the user, get approval
+- [x] approval: APPROVED by Sam — one-shot `promote-legacy-queued.sh` migrator that flips spec.md PHASE + canonicalises INDEX row in the same pass; skip cold `.shipped` items; stage but don't auto-commit.
+
+#### §5 Proposed approach
+
+**Approach (chosen):** ship `bash .sdd/scripts/promote-legacy-queued.sh` as a one-shot opt-in migrator. Run it once per old project after `sdd-migrate.sh --apply` lands the latest framework. The script:
+
+1. Walks `.sdd/features/`, `.sdd/bugs/`, `.sdd/refactors/` (the three work-item folders).
+2. For each `<id>-<slug>/spec.md`, skips if `.shipped` marker exists (cold feature) {verify-by: T-003}.
+3. Reads the first `[PHASE: X]` line after the H1 in `spec.md`.
+4. Reads `.sdd/INDEX.md`. Locates the row whose path matches this folder.
+5. If the INDEX row's text matches `queued|Backlog|backlog` AND the spec.md PHASE is not already `QUEUED` → flip both {verify-by: T-001}:
+   - `spec.md`: `[PHASE: SPEC]` → `[PHASE: QUEUED]`
+   - `INDEX.md` row: append `(scaffolded, PHASE: QUEUED)` if not already canonical {verify-by: T-002}.
+6. Stages the changes via `git add` but does NOT commit. User inspects + commits via their normal workflow.
+7. Prints a 5-line plain-English summary (inspected / migrated / INDEX-updated / unchanged / done).
+
+**Two files ship (manifest-tracked):**
+- `.sdd/scripts/promote-legacy-queued.sh` (live framework copy)
+- `templates/.sdd/scripts/promote-legacy-queued.sh` (downstream-project copy — identical bytes)
+
+Both copies' `expected_sha256` go into both manifests (`.sdd/.cache/manifest.json` + `templates/.sdd/.cache/manifest.json`) using the normalised SHA-256 the framework's other manifest entries use.
+
+**Doc update (same PR):**
+- `templates/CLAUDE.md` "Multi-feature parallel work" section: one paragraph naming the migrator + when to run it (after `sdd-migrate.sh --apply` on a pre-v1.5.2 project).
+- `CLAUDE.md` (live framework copy): same paragraph.
+
+**Alternatives considered + rejected:**
+
+1. *Minimum-diff: just flip spec.md PHASE, leave INDEX.md alone.* Rejected — leaves INDEX row drifted from canonical shape; future `/status` runs read partially-migrated state.
+2. *Auto-run at sdd-migrate.sh time (transparent migration).* Rejected — migration is a destructive-shape change to user-edited content; explicit one-shot opt-in is the framework's discipline for state-machine fixes (same pattern as `sdd-migrate.sh --apply`).
+
+**Risk register:**
+- **False positives:** a legacy project with non-standard INDEX shape — script detects nothing, exits clean, no damage {verify-by: T-002 — fixture without canonical rows leaves spec.md PHASE alone}.
+- **Partial state:** INDEX row says queued but spec.md says BUILD (user manually advanced) — script LEAVES it alone, prints a warning row in the summary {verify-by: T-004}.
+- **Re-run idempotence:** running twice on an already-migrated project is a no-op — second run reports 0 migrated, all canonical {verify-by: T-005}.
+
+**Status:** APPROVED by Sam (turn confirmation; will append decisions.md in this commit).
 
 ### action: data-contract
 
