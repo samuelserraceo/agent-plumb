@@ -46,15 +46,9 @@ else
   fi
 fi
 
-# README index should reference the new brick (if README has a list).
-README="$BRICK_DIR/README.md"
-if [ -f "$README" ]; then
-  if grep -qiE "automation[[:space:]]level|automation-level" "$README"; then
-    : # OK
-  else
-    fails+=("setup README.md doesn't reference the new automation-level brick")
-  fi
-fi
+# README index check removed — README is format-explanation, not a
+# brick list. New bricks are discovered by the wizard via directory
+# walk in numbered order; no README update required.
 
 if [ ${#fails[@]} -gt 0 ]; then
   echo "FAIL: T303 — AC4 violations:"
