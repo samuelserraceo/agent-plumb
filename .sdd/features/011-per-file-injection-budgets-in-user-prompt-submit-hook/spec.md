@@ -279,9 +279,9 @@ parameters:
 
 ### action: acceptance-criteria
 
-- [x] approval: 14 ACs drafted, each with `{verify-by: T-NNN}` annotation. T220-T233 reserved one-per-AC. Coverage check vs §1 problem, §5 approach, §6 data-contract, §7 flows, §10 non-functional — every claim row maps to at least one AC. Approved by Sam 2026-05-11.
+- [x] approval: 17 ACs (AC1-AC17), each with `{verify-by: T-NNN}` annotation. T220-T236 reserved one-per-AC. Initial 14 ACs approved 2026-05-11; AC15-AC17 added 2026-05-11 from §15 edge-case-pick (1-byte-over boundary, UTF-8 boundary backoff, negative-budget clamp) and re-approved by Sam in the same step.
 
-**Acceptance criteria (14 ACs — each carries a `{verify-by: T-NNN}` annotation):**
+**Acceptance criteria (17 ACs — each carries a `{verify-by: T-NNN}` annotation):**
 
 - [ ] AC1: `templates/.sdd/config.md` contains a `parameters.injection.per_file_budget_chars` map with 6 entries (INDEX, spec, principles, stack, data-model, patterns) whose values sum to a declared total of 20000. {verify-by: T220}
 
@@ -311,6 +311,12 @@ parameters:
 
 - [ ] AC14: `[PROJECT DATA]` framing preserved — the hook still emits the `[PROJECT DATA]` framing marker around the concatenated output, so the model's trust-boundary contract for project-supplied content is unchanged. {verify-by: T233}
 
+- [ ] AC15: One-byte-over boundary — when a corpus file has exactly `<budget> + 1` chars on disk, the hook truncates to `<budget>` chars and appends the sentinel line with `<N> = 1` substituted into the byte-count slot. {verify-by: T234}
+
+- [ ] AC16: UTF-8 char boundary backoff — when the budget falls inside a multi-byte UTF-8 character, the hook backs the truncation point off to the previous clean UTF-8 char boundary (up to 3 trailing bytes dropped). Output stays valid UTF-8; sentinel reflects the actual byte count after backoff. {verify-by: T235}
+
+- [ ] AC17: Negative-budget clamp — when a project's `config.md` declares a negative value for any `per_file_budget_chars.<key>` (typo or malicious), the resolver clamps to 0, emits a stderr warning naming the offending key, and the hook treats it as if the budget were 0 (empty body + sentinel). {verify-by: T236}
+
 **Coverage check vs prior sections:**
 
 | Source section | Claim | Covered by |
@@ -332,8 +338,11 @@ parameters:
 | §10 NF3 — determinism | byte-identical output | AC12 |
 | §10 NF4 — no new network surface | grep test on hook diff | AC13 |
 | §10 NF5 — `[PROJECT DATA]` framing preserved | framing marker still emitted | AC14 |
+| §15 edge-case #4 — 1-byte over boundary | sentinel `<N> = 1` | AC15 |
+| §15 edge-case #5 — UTF-8 boundary backoff | char-boundary backoff with ≤3 bytes dropped | AC16 |
+| §15 edge-case #7 — negative budget | clamp to 0 + stderr warning | AC17 |
 
-All 17 claim-rows have at least one covering AC. NF1 (latency), NF2 (no-regression), NF6 (read-only), NF7 (no PII), NF8 (no licensed code) are covered by their inline `{verify-by: T-NNN ...}` and `{best-effort: ...}` annotations in §10 and feed into BUILD-task test IDs, but do not need a separate AC entry per the v1.0 doctrine that NFs verify themselves.
+All 20 claim-rows have at least one covering AC. NF1 (latency), NF2 (no-regression), NF6 (read-only), NF7 (no PII), NF8 (no licensed code) are covered by their inline `{verify-by: T-NNN ...}` and `{best-effort: ...}` annotations in §10 and feed into BUILD-task test IDs, but do not need a separate AC entry per the v1.0 doctrine that NFs verify themselves.
 
 ### action: signoff-steps
 
@@ -362,9 +371,9 @@ All 17 claim-rows have at least one covering AC. NF1 (latency), NF2 (no-regressi
 
 ### action: plan-decompose
 
-- [x] tasks: 14 BUILD tasks (T220-T233), one per AC. Test-first per task. 5 sequential cores (T220 → T223 → T221 → T222 + T224) + 3 waves (W1 = T225 alone; W2 = T226/T227/T228 after T223; W3 = T229/T230/T231/T232/T233 after T221/T222/T224). Approved by Sam 2026-05-11.
+- [x] tasks: 17 BUILD tasks (T220-T236), one per AC. Test-first per task. 5 sequential cores (T220 → T223 → T221 → T222 + T224) + 4 waves (W1 = T225 alone; W2 = T226/T227/T228/T236 after T223; W3 = T229/T230/T231/T232/T233/T234/T235 after T221/T222/T224). Initial 14 tasks approved 2026-05-11; T234-T236 added 2026-05-11 from §15 edge-case-pick (AC15-AC17) and re-approved by Sam in the same step.
 
-**BUILD tasks (14 total — one per AC):**
+**BUILD tasks (17 total — one per AC):**
 
 | # | Task | AC | Depends on | Touches | Wave |
 |---|---|---|---|---|---|
@@ -382,11 +391,14 @@ All 17 claim-rows have at least one covering AC. NF1 (latency), NF2 (no-regressi
 | T231 | Determinism test — run hook twice on identical corpus + config; `diff -q` returns success. No random ordering, no time-based sentinel fields. | AC12 | T221 | `tests/feature-011/T231-determinism.bats` | W3 |
 | T232 | Network-surface test — `git diff` of the new hook + resolver adds zero new matches for `curl|wget|http[s]?://|nc |socket`. | AC13 | T221, T223 | `tests/feature-011/T232-no-network.bats` | W3 |
 | T233 | Framing-preserved test — hook still emits `[PROJECT DATA]` framing marker around the concatenated output. Trust-boundary contract unchanged. | AC14 | T221 | `tests/feature-011/T233-framing-preserved.bats` | W3 |
+| T234 | One-byte-over-boundary test — fixture with corpus file at exactly `<budget> + 1` chars; hook output asserts truncation to `<budget>` chars + sentinel with `<N> = 1`. | AC15 | T221, T222 | `tests/feature-011/T234-one-byte-over.bats` | W3 |
+| T235 | UTF-8 char boundary backoff — when budget falls inside a multi-byte UTF-8 char, hook backs off to the previous clean char boundary (at most 3 trailing bytes dropped). Test: fixture with `—` (e2 80 94) straddling the budget; assert output is valid UTF-8 + sentinel byte-count reflects backoff. {verify-by: T235} | AC16 | T221 | `templates/.claude/hooks/user-prompt-submit.sh`, `tests/feature-011/T235-utf8-backoff.bats` | W3 |
+| T236 | Negative-budget clamp — resolver detects negative value in `per_file_budget_chars.<key>`, clamps to 0, emits stderr warning naming the key. Test: project config with `patterns: -1000`; assert resolver returns 0 + stderr contains key name. | AC17 | T223 | `templates/.sdd/scripts/resolve-parameters.sh`, `tests/feature-011/T236-negative-clamp.bats` | W2 |
 
 **Wave-mark notes (per F010 parallel-wave-execution doctrine):**
 - **W1** (1 task) — T225 (data-model.md edit) is fully independent; can run in parallel with the test-first cycle.
-- **W2** (3 tasks) — T226, T227, T228 are independent resolver-edge-case tests; depend only on T223. Can run in parallel after T223 lands green.
-- **W3** (5 tasks) — T229, T230, T231, T232, T233 are independent integration tests on the hook; depend on T221 (± T222/T224). Can run in parallel after T221+T222+T224 land green.
+- **W2** (4 tasks) — T226, T227, T228, T236 are independent resolver-edge-case tests; depend only on T223. Can run in parallel after T223 lands green.
+- **W3** (7 tasks) — T229, T230, T231, T232, T233, T234, T235 are independent integration tests on the hook; depend on T221 (± T222/T224). Can run in parallel after T221+T222+T224 land green.
 
 Sequential cores (cannot wave):
 - T220 → T223 (config exists before resolver can read it)
@@ -394,12 +406,37 @@ Sequential cores (cannot wave):
 - T221 → T222 (hook truncates before sentinel is observable)
 - T224 needs T221 (hook applies cap after per-file truncation)
 
-Total: 14 tasks → 5 sequential cores (T220, T223, T221, T222, T224) + 3 waves (W1 = 1, W2 = 3, W3 = 5). Wave-marks give ~9 of 14 tasks the option to dispatch in parallel via the Agent tool.
+Total: 17 tasks → 5 sequential cores (T220, T223, T221, T222, T224) + 3 waves (W1 = 1, W2 = 4, W3 = 7). Wave-marks give ~12 of 17 tasks the option to dispatch in parallel via the Agent tool.
 
 ### action: edge-case-sweep
 
-- [ ] ec-sweep: draft
-- [ ] ec-pick: ask
+- [x] ec-sweep: 8 candidates drafted across 3 applicable categories (empty / max / bad-input). Network / concurrency / auth / mobile / time-based all N/A for this hook+config feature.
+- [x] ec-pick: Sam picked #4 (1-byte-over boundary), #5 (UTF-8 char boundary backoff), #7 (negative budget clamp) — added as AC15-AC17 with T234-T236. #1, #2, #3, #6, #8 dropped as regression-only or specified-behavior. Approved 2026-05-11.
+
+**Edge-case candidates (8 total):**
+
+1. **Empty corpus file** [empty] — a corpus file exists but is 0 bytes (e.g. `principles.md` is empty on a project that hasn't filled it yet) — proposed: hook emits the file header `--- .sdd/<file> ---` with no body and no sentinel; assertion AC. Probably already handled by today's hook; worth a regression test.
+
+2. **Missing corpus file** [empty] — a corpus file doesn't exist (e.g. `principles.md` not present on this project) — proposed: hook skips the file entirely with no header and no sentinel; assertion AC. Today's behavior; worth a regression test.
+
+3. **Corpus file at exactly the budget** [max] — file has exactly `<budget>` chars on disk — proposed: hook emits the file in full with NO sentinel (no truncation happened); assertion AC.
+
+4. **Corpus file 1 byte over budget** [max] — file has `<budget> + 1` chars — proposed: hook truncates to `<budget>` chars and appends sentinel with `<N> = 1`; assertion AC on the byte-count substitution.
+
+5. **Multi-byte UTF-8 char at the truncation boundary** [bad-input] — patterns.md is 4001 bytes where byte 4001 is the second byte of a 2-byte UTF-8 char (e.g. `—`, `'`) — proposed: hook truncates at byte 4000 (mid-char) and either (a) writes the partial char, leaving the agent to see a `\xff` replacement, or (b) backs off to a char boundary. Decide: char-boundary backoff with at most 3 trailing bytes dropped to land on a clean UTF-8 boundary.
+
+6. **Zero budget for a file** [bad-input] — project config sets `per_file_budget_chars: {patterns: 0}` — proposed: hook emits the file header with 0 bytes of body + sentinel saying everything was truncated; assertion AC. Decide whether 0 should mean "skip entirely" or "empty + sentinel"; recommendation: empty + sentinel for observability.
+
+7. **Negative budget value** [bad-input] — project config sets `per_file_budget_chars: {patterns: -1000}` (typo or malicious) — proposed: resolver clamps to 0 (or rejects with stderr warning); hook treats it as case 6. Recommendation: clamp to 0 + emit stderr warning; assertion AC on the clamp behavior.
+
+8. **Unknown basename in config** [bad-input] — project config sets `per_file_budget_chars: {random_file: 5000}` for a file that's not in the corpus injection list — proposed: resolver returns the value when asked; hook does not query the unknown key (its corpus list is fixed); silent no-op. Recommendation: no warning needed — extensible by future corpus additions. Test asserts the resolver returns it on direct query but the hook does not error.
+
+**N/A categories:**
+- Network — hook is local-only, no network surface (per AC13).
+- Concurrency — hook is single-threaded per UserPromptSubmit event; no shared mutable state.
+- Authorisation — hook reads files via process-level filesystem perms; no auth layer.
+- Mobile — no UI surface.
+- Time-based — sentinel is byte-count substituted, not time-based (per AC12 determinism).
 
 ### Exit checks
 - [ ] C-spec-acs: ≥1 acceptance criterion exists in §11 {verify-by: C-spec-acs bash-grep} — grep -qE '^- \[[ x]\] AC[0-9]+' "$SECTION_FILE"

@@ -8,7 +8,7 @@
     "dependencies": "b3a95d8bd803cf4d159b64a2759a082ca6cc0c2d04bbfcf550da9f3d38572cf2",
     "out-of-scope": "4aba385fb7ee9aef8bfd984a9ef21952ea395b59ec2a57f77cc0c0adb9edb7cc",
     "non-functional": "0a38944afcb141e18f9926f9bd475908a7f37b574fb3e15c1d39842b61939332",
-    "acceptance-criteria": "9f30cbff063018df5bd6ae59f106b9136079437c6248c9198fd7b1f99712e8f0",
-    "plan-decompose": "faab6b5f9e36d0f684481825d8c9580bcb4a569da2fbae12542666d4b27bdf70"
+    "acceptance-criteria": "bfa3c6d15e4c34025842d25ba4a311ea4a30ed24eca01b6805f9eb40ef6faf08",
+    "plan-decompose": "73508d717e31b16af5d0530c7d976ebeee88235dff066099cdc90a14dd0ae658"
   }
 }
