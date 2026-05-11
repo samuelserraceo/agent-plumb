@@ -6,13 +6,29 @@ playbook: feature
 
 [PHASE: SPEC]
 
-**Active blocker:** §1 (first action: brief-intake)
+**Active blocker:** §1 problem
 
 ## PHASE: SPEC
 
 ### action: brief-intake
 
-- [ ] brief: Paste your brief, upload a doc, or use the template at .sdd/ideas/2026-05-08-brief-template-v2.md
+- [x] brief: GitHub issue #206 IS the brief. Pre-v1.5.2 projects have backlog features stored as `[PHASE: SPEC]` instead of `[PHASE: QUEUED]`; ship a one-shot migrator + document it in CLAUDE.md.
+
+#### §0 Brief
+
+**Source:** https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/206 — *"Pre-v1.5.2 queued features show `[PHASE: SPEC, §1 done]` not `[PHASE: QUEUED]` (#169 retro-fix)"*
+
+**Problem (verbatim from issue):** Projects scaffolded before v1.5.2 — which added the `[PHASE: QUEUED]` pre-active state via #169 — have backlog features written with `[PHASE: SPEC]` instead of `[PHASE: QUEUED]`. Their INDEX.md rows look like they're in flight at SPEC rather than queued waiting for `/promote-to-active`. `/next` would happily advance them.
+
+**Affected project (live audit 2026-05-11):** pipelogic_v2's F02-F15 all carry `[PHASE: SPEC]` despite being backlog. Plus any other multi-feature project bootstrapped before v1.5.2.
+
+**Fix shape (two-step):**
+1. **One-shot migrator** `bash .sdd/scripts/promote-legacy-queued.sh` — scans every `.sdd/<work-item-folder>/<id>-<slug>/spec.md`; if the INDEX.md row marks the item as backlog/queued but the spec.md PHASE is not `QUEUED`, flip the PHASE marker AND update the INDEX.md row to the canonical `(scaffolded, PHASE: QUEUED)` shape.
+2. **Documentation** in CLAUDE.md "Multi-feature parallel work" section: one paragraph noting the migration path and when to run it (after `sdd-migrate.sh --apply`).
+
+**Severity:** Minor — only affects pre-v1.5.2 projects. New projects don't hit this.
+
+**Target:** v1.7 patch line (alongside v1.7.0 hook merge-exception + v1.7.1 hash-bold-strip).
 
 ### action: problem
 
