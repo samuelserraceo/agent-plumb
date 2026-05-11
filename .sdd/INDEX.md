@@ -1,15 +1,15 @@
 # SDD framework — INDEX
 
-**Active:** _(none)_
+**Active:** features/014-user-prompt-submit-queries-mcp-for-context-slice-instead-of-full-notebook-inject
 **Playbook:** feature
-**Active blocker:** _(no active feature — v1.8.0 candidate F011 shipped 2026-05-11 via PR #236, closes the SPEC+SHIP auto-advance gap. Pairs with F008 (multi-model) + F010 (parallel waves) to deliver the drop-the-brief-walk-away shape. Pick next from ## Ideas below or open issues.)_
+**Active blocker:** §1 (first action: brief-intake)
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
 
 ## In flight
+- features/014-user-prompt-submit-queries-mcp-for-context-slice-instead-of-full-notebook-inject — user-prompt-submit queries MCP for context slice instead of full notebook injection (closes #210) (PHASE: SPEC)
 
-(none)
 
 
 ## Ideas
