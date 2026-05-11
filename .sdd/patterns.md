@@ -132,3 +132,23 @@ When SDD ships a behavioural rule the agent should apply at certain moments (e.g
 Source: [[008-background-while-waiting]] §5 / §14 T4 re-scope during BUILD.
 =======
 main
+
+## F011 — auto-advance AGENT-LED steps (2026-05-11)
+
+### Documentation-shape features ship as slash-command prose
+
+When a framework feature's behaviour is "agent does X under condition Y," the canonical implementation site is the slash command's body — the prose the agent re-reads every turn — not a runtime daemon or hook. F011 added the 3-way automation decision tree (full/most/checkpoint) entirely as prose in `.claude/commands/next.md` and `.claude/commands/sdd-config.md`. Zero runtime code paths changed; zero new hooks; zero new daemons. The agent reads `parameters.automation.level` from config, reads the decision-tree prose, applies it. Tests assert prose existence + tier names + behaviour descriptions via grep. Lesson: before designing a feature, ask whether the behaviour is "agent reads doctrine and acts" — if yes, the implementation is doctrine + tests, not code. The data-contract step's "0 new entities" answer is the first signal you're in this shape.
+
+Source: [[011-auto-advance-agent-led-steps]] §6 data-contract + T305 + T306 build walk.
+
+### resolve-parameters framework-defaults must handle empty-string AND unset
+
+The `_framework_default()` helper added in T300 originally checked `if cur.get(parts[-1]) is None` — which matches an unset key (missing from the dict) but NOT an empty-string value (`""`). Three of the four T300 fixtures passed; the empty-string fixture failed because `cur.get("level")` returned `""`, was-not-None, so the default never applied. Fix: keep the helper for the unset path but add an explicit force-set in the validation branch (`if _cur_level in (None, "")`). Generalises: when adding a config field with framework-default semantics, the default must trigger on BOTH the unset-key path AND any blank-value path (`""`, `None`, whitespace-only). The provenance tag is different too — `framework-default` for unset, `framework-default-on-invalid` for blank/garbage values that fell back.
+
+Source: [[011-auto-advance-agent-led-steps]] T300 + T301 BUILD walk.
+
+### grep -F still parses leading-dash and leading-dot args as flags
+
+T306 test grepped for destructive-action slugs starting with `-` (`-delete-branch`) and `.` (`.shipped-marker`). Initial form `grep -qF "$slug" "$CFG"` failed with `grep: unknown --directories option` because grep parsed `-delete-branch` as a flag attempt. `-F` flag fixes regex semantics (treat pattern as fixed string) but not argument-parsing — POSIX `--` separator or BSD `-e` are still needed. Fix: `grep -qF -e "$slug" "$CFG"`. Mnemonic: `-e` is the universal "this is a pattern, not a flag" marker. Applies anywhere a script grep-loops over a user-extensible slug list — F011's destructive_actions, but also future enumerable config lists.
+
+Source: [[011-auto-advance-agent-led-steps]] T306 test refinement.
