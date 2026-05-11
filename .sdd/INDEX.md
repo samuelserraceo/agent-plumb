@@ -1,14 +1,15 @@
 # SDD framework — INDEX
 
-**Active:** features/013-playwright-explore-ship-step-needs-first-class-skip-mechanism-closes-202
+**Active:** _(none)_
 **Playbook:** feature
-**Active blocker:** §1 (first action: brief-intake)
+**Active blocker:** _(no active feature — v1.7.3 shipped 2026-05-11 via PR #240, closes #202 (playwright-explore SHIP step gets first-class skip mechanism). v1.7 patch line complete after the v1.7.0/.1/.2/.3 four-pack. Pick next from ## Ideas below or open issues.)_
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
 
 ## In flight
-- features/013-playwright-explore-ship-step-needs-first-class-skip-mechanism-closes-202 — playwright-explore SHIP step needs first-class skip mechanism (closes #202) (PHASE: SPEC)
+
+(none)
 
 
 
@@ -26,6 +27,13 @@
 
 
 ## Shipped
+
+- **[[013-playwright-explore-ship-step-needs-first-class-skip-mechanism-closes-202]]** — closes #202. `playwright-explore` action now ships a `skip_when:` frontmatter field naming the canonical MCP-missing condition + the canonical single-line skip log (`playwright-explore: SKIPPED — explorer not installed; install via \`bash .sdd/extensions/playwright-explorer/enable.sh\``). A new `## When to skip` body section (above `**What it looks like:**`) tells the agent to emit the canonical line verbatim — NOT improvise a 12-line justification block (the failure mode F01 SHIP at transcript line 30493 surfaced). Documentation-only fix; the frontmatter field is read by the agent (same shape as `requires_user_approval`, `prelude_refresh`, `trust` — all agent-honoured, no runtime evaluator). 3 BUILD task-tests T01-T03 GREEN (frontmatter shape + log-line content + body-section presence). Cycle-1 CR clean. Completes the v1.7 patch four-pack: v1.7.0 (#220) + v1.7.1 (#197p2) + v1.7.2 (#206) + v1.7.3 (#202).
+  - Shipped: 2026-05-11 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/240 · Tag: `v1.7.3`
+  - Data-model: (none — frontmatter field + body prose; no entity changes)
+  - Extends: (root); v1.7 patch — last in the v1.7 four-pack
+  - Patterns: agent-honoured frontmatter convention for skip conditions (same shape as `requires_user_approval` / `prelude_refresh`); extensible to other actions if the same shape recurs (deferred per §9.3).
+  - Deferred: runtime `skip_when` evaluator in next-action.sh (over-engineering for cosmetic fix); auto-installing playwright-explorer at first SHIP (extensions are opt-in); generalising `skip_when:` to other actions (no documented failure modes yet beyond playwright-explore).
 
 - **[[012-promote-legacy-queued-sh-migrator-for-pre-v1-5-2-phase-state-drift-closes-206]]** — closes #206 (pre-v1.5.2 PHASE state drift). Ships `bash .sdd/scripts/promote-legacy-queued.sh` — a one-shot opt-in migrator that walks `.sdd/{features,bugs,refactors}/`, skips cold (`.shipped`) items, and for each work item whose INDEX row matches `queued|Backlog|backlog` AND whose spec.md PHASE is not already `QUEUED`, flips both atomically: spec.md from `[PHASE: SPEC]` to `[PHASE: QUEUED]` AND INDEX row to canonical `(scaffolded, PHASE: QUEUED)`. Stages via `git add` but does NOT auto-commit (user reviews `git diff --cached` first). Idempotent. Two-file ship (live + templates copy, both manifest-tracked). One-paragraph doc update in `templates/CLAUDE.md` "Multi-feature parallel work" section naming the migrator + when to run it (after `sdd-migrate.sh --apply`). 5 BUILD task-tests T01-T05 + T06 doc paragraph; all 5 tests GREEN. Cycle-1 CR clean.
   - Shipped: 2026-05-11 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/237 · Tag: `v1.7.2`
