@@ -1,15 +1,15 @@
 # SDD framework — INDEX
 
-**Active:** _(none)_
+**Active:** features/011-per-file-injection-budgets-in-user-prompt-submit-hook
 **Playbook:** feature
-**Active blocker:** _(no active feature — v1.7.0 shipped 2026-05-11 via PR #230, closes #220. Plus same-week: F010 parallel-wave-execution (#227), walkthrough refresh (#229), /start ID-collision check (#231), live-INDEX filter (#228). Pick next from ## Ideas below or open issues.)_
+**Active blocker:** §1 (first action: brief-intake)
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
 
 ## In flight
+- features/011-per-file-injection-budgets-in-user-prompt-submit-hook — per-file injection budgets in user-prompt-submit hook (PHASE: SPEC)
 
-(none)
 
 
 ## Ideas
