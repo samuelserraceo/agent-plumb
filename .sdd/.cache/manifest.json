@@ -122,6 +122,11 @@
       "expected_sha256": "5035174640d824d171c1d551bf51794651069b1b362de910c7b51954256a7ec6",
       "path": ".sdd/scripts/validate-sdd-path.sh",
       "trust": "framework"
+    },
+    "promote-legacy-queued.sh": {
+      "expected_sha256": "52b2cbf0ff2d0fd34e28ee8007fc6356c5aef493891a8d82e36ec7bcaed10eb4",
+      "path": ".sdd/scripts/promote-legacy-queued.sh",
+      "trust": "framework"
     }
   },
   "sdd_version": "1.0.0",

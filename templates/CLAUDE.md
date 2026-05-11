@@ -110,6 +110,8 @@ INDEX.md's `## In flight` section can hold multiple work items at once — one p
 
 **Why the row format didn't change:** the `## In flight` rows could carry an explicit `[branch: sdd/...]` label in theory, but the post-stop-lint invariant 2 path-shape regex would mis-flag the branch as an orphaned work-item path. The mapping between branch slug and folder name is mechanical (`sdd/001-foo` ↔ `<work-item-folder>/001-foo`) so the helper can resolve it without a row label. Future invariant updates may relax this; until then, the row stays minimal.
 
+**Pre-v1.5.2 migration (closes #206):** projects scaffolded before v1.5.2 — which introduced `[PHASE: QUEUED]` via #169 — may have backlog features stored as `[PHASE: SPEC]` in spec.md while their INDEX rows describe them as queued. `/next` would happily advance them instead of refusing per #169's contract. Run `bash .sdd/scripts/promote-legacy-queued.sh` once after `bash .sdd/scripts/sdd-migrate.sh --apply` lands the latest framework on the project. The migrator walks `.sdd/{features,bugs,refactors}/`, skips cold (`.shipped`) items, and for each work item whose INDEX row matches `queued|Backlog|backlog` AND whose spec.md PHASE is not already `QUEUED`, flips both: spec.md to `[PHASE: QUEUED]` and the INDEX row to canonical `(scaffolded, PHASE: QUEUED)`. Stages changes via `git add` but does NOT auto-commit — user reviews `git diff --cached` and commits when ready. Idempotent (re-running on a clean project reports 0 migrated).
+
 ## Slash commands available to the user
 
 | Command | Purpose | Branch | Phases |
