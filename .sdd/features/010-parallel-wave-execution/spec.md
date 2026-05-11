@@ -470,6 +470,7 @@ All §10 mechanical-shape claims have AC coverage. Compliance items (license, no
 
 **Net effect:** 0 new ACs added (§11 stays hash-locked, no re-approval flow). 4 edge cases folded into existing T-tasks (#1 + #4 → T201, #2 + #3 + #6 → T205, #7 → T200). 4 already covered by AC8/AC4/AC3 + §9 (#5, #8, #9, #10). Same shape as F008's edge-case-sweep.
 
+
 ### Exit checks
 - [x] C-spec-acs: ≥1 acceptance criterion exists in §11 {verify-by: C-spec-acs bash-grep} — grep -qE '^- \[[ x]\] AC[0-9]+' "$SECTION_FILE"
 - [x] C-spec-tasks: ≥1 task in plan-decompose section {verify-by: C-spec-tasks bash-grep} — grep -qE '^- \[[ x]\] T[0-9]+' "$SECTION_FILE"
