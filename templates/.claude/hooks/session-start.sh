@@ -44,3 +44,15 @@ fi
 echo ""
 echo "Commands: /next /status /ship /compress /skip /bug /idea"
 echo "────────────────────────"
+
+# F019 (closes #164 bug 4): first-install success signal. When .sdd/ exists
+# but no `.shipped` markers exist yet under any work-item folder, this is a
+# freshly-bootstrapped project — emit a clear single-line cue so the user
+# knows the install worked. Suppresses for returning users (any .shipped
+# marker present = signal silenced).
+if [ -d .sdd ]; then
+  shipped_count=$(find .sdd -maxdepth 3 -name .shipped -type f 2>/dev/null | head -1 | wc -l | tr -d ' ')
+  if [ "${shipped_count:-0}" -eq 0 ]; then
+    echo "[SDD bootstrap] ready — .sdd/ scaffold ready"
+  fi
+fi

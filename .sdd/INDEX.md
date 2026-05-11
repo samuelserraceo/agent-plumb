@@ -1,6 +1,6 @@
 # SDD framework — INDEX
 
-**Active:** _(none)_
+**Active:** features/019-session-start-hook-prints-bootstrap-success-signal-closes-164-bug-4
 **Playbook:** feature
 **Active blocker:** _(no active feature — **v1.8.0 + v1.8.1 shipped 2026-05-11**: v1.8.0 = F011 auto-advance AGENT-LED steps (#236, idea 005); v1.8.1 = F014 MCP-doctrine sentinel (#243, closes #210 part 1). Pick next from ## Ideas below or open issues. Parallel agents still in flight on `feat/cache-friendly-corpus-reorder-003` + `feat/per-file-injection-budgets` + `fix/sdd-setup-q1-...-163`.)_
 
@@ -9,7 +9,7 @@
 
 ## In flight
 
-(none)
+- features/019-session-start-hook-prints-bootstrap-success-signal-closes-164-bug-4 — session-start hook bootstrap-success signal (closes #164 bug 4) (PHASE: BUILD)
 
 
 
