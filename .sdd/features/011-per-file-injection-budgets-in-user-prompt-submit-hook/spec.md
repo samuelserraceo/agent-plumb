@@ -337,7 +337,24 @@ All 17 claim-rows have at least one covering AC. NF1 (latency), NF2 (no-regressi
 
 ### action: signoff-steps
 
-- [ ] manual-steps: What manual smoke tests do YOU need to do before SHIP, beyond the automated tests? 1-5 bullets.
+- [x] manual-steps: 4 manual smoke tests Sam to run before /ship (in this worktree, with the new hook wired):
+
+**Manual signoff steps (Sam runs before /ship):**
+
+1. **Real-prompt smoke test.** In a Claude Code session with the new hook active, type any `/next` and inspect the injected `[PROJECT DATA]` block. Confirm: (a) all 6 corpus files appear (INDEX live-filtered, spec, principles if present else absent, stack, data-model, patterns); (b) when patterns.md exceeds its 4000-char budget, a sentinel line appears at the end of the patterns.md block; (c) no file appears wholesale-dropped from the injection.
+
+2. **Mid-paragraph cut sanity check.** Compare the patterns.md content visible in the new injection vs the current (pre-PR) injection on this repo. Confirm the new version preserves the first ~4000 chars of patterns.md plus sentinel, instead of cutting mid-paragraph wherever the 16K total cap previously fell.
+
+3. **Per-project override smoke test.** Edit this repo's `.sdd/config.md` (NOT `templates/.sdd/config.md`) to add a small override block:
+   ```yaml
+   parameters:
+     injection:
+       per_file_budget_chars:
+         patterns: 1000   # smaller than default 4000, easy to eyeball
+   ```
+   Then type any `/next` and confirm: patterns.md block in injection is now capped near 1000 chars + sentinel, while other corpus files remain at framework defaults. Revert the local override before /ship.
+
+4. **Reorder-readiness check (forward-looking).** This feature is the prerequisite for idea 003's stable-first cache reorder. After /ship, manually re-order the corpus files in the hook (move INDEX + spec to the bottom) on a scratch branch and confirm INDEX + spec still appear in injection up to their budgets, validating the reorder is unblocked. Throw away the scratch branch. (Idea 003 itself ships separately — this step is just confirmation that the unblock works.)
 
 ### action: wireframe
 
