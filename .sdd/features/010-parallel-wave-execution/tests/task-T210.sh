@@ -37,7 +37,9 @@ done
 # --- B) SHIP signoff has a multi-harness manual step --------------------
 # §12 signoff-steps must reference both Claude Code AND pi.dev so the
 # live walk gets done before mark-shipped.
-if [ -f "$SPEC" ]; then
+if [ ! -f "$SPEC" ]; then
+  fails+=("missing spec file for §12 signoff-steps verification: $SPEC — cannot prove AC11 multi-harness signoff exists")
+else
   # Extract from `### action: signoff-steps` to the NEXT `### action:`
   # header (skip the first match against signoff-steps itself).
   signoff_block="$(awk '
