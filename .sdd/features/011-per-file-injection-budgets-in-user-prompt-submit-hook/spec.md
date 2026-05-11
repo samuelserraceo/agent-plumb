@@ -279,7 +279,61 @@ parameters:
 
 ### action: acceptance-criteria
 
-- [ ] approval: draft the acceptance criteria, run a constraint-coverage check vs §4, iterate, get approval
+- [x] approval: 14 ACs drafted, each with `{verify-by: T-NNN}` annotation. T220-T233 reserved one-per-AC. Coverage check vs §1 problem, §5 approach, §6 data-contract, §7 flows, §10 non-functional — every claim row maps to at least one AC. Approved by Sam 2026-05-11.
+
+**Acceptance criteria (14 ACs — each carries a `{verify-by: T-NNN}` annotation):**
+
+- [ ] AC1: `templates/.sdd/config.md` contains a `parameters.injection.per_file_budget_chars` map with 6 entries (INDEX, spec, principles, stack, data-model, patterns) whose values sum to a declared total of 20000. {verify-by: T220}
+
+- [ ] AC2: `templates/.claude/hooks/user-prompt-submit.sh` reads the per-file budget map via `resolve-parameters.sh` and applies each file's budget independently when concatenating corpus files for injection. {verify-by: T221}
+
+- [ ] AC3: When a corpus file's pre-budget content exceeds its budget, the hook keeps the first `<budget>` chars and appends the sentinel line `[truncated to <N> bytes per per-file budget — re-read with the Read tool if you need the cut portion]`, with `<N>` substituted with the truncation byte count. {verify-by: T222}
+
+- [ ] AC4: `templates/.sdd/scripts/resolve-parameters.sh` returns the project's overriding value when `per_file_budget_chars.<key>` is set in the project's `config.md`, and returns the documented framework default when the key is absent. {verify-by: T223}
+
+- [ ] AC5: `cap_total_chars` stays in `templates/.sdd/config.md` under `parameters.injection.cap_total_chars: 16000` and the hook applies it as a defensive safety-net floor on the concatenated output AFTER per-file truncation runs. {verify-by: T224}
+
+- [ ] AC6: `.sdd/data-model.md` includes a new entity entry for `InjectionBudget` describing the `parameters.injection` config block, its two fields (`cap_total_chars` + `per_file_budget_chars`), and its read-side caller (`user-prompt-submit.sh` via `resolve-parameters.sh`). {verify-by: T225}
+
+- [ ] AC7: Partial override — when a project's `config.md` declares only `per_file_budget_chars: {patterns: 2000}`, the resolver returns `{patterns: 2000}` for that key plus framework defaults for INDEX/spec/principles/stack/data-model. {verify-by: T226}
+
+- [ ] AC8: Unknown basename — when the hook is asked for the budget of a corpus filename not present in `per_file_budget_chars` (e.g. a future `glossary.md`), the resolver returns the documented default char count for unknown keys. {verify-by: T227}
+
+- [ ] AC9: Missing block — when a project's `config.md` omits the `per_file_budget_chars` block entirely (or sets it to `null`), the resolver returns framework defaults for each of the 6 declared corpus files. No null-deref. {verify-by: T228}
+
+- [ ] AC10: Sum-overshoot — when the sum of `per_file_budget_chars` values is configured above `cap_total_chars`, the hook applies per-file truncation first, then applies the total-cap clip to the tail of the concatenated output. Combined output length is bounded by `cap_total_chars`. {verify-by: T229}
+
+- [ ] AC11: Multi-file overflow — on a fixture where each of the 6 corpus files exceeds its budget on disk, the hook output contains at least one byte of each corpus file plus the sentinel line for each truncated file. No corpus file is dropped wholesale from the injection. {verify-by: T230}
+
+- [ ] AC12: Determinism — running the hook twice on the same corpus + same config produces byte-identical output (`diff -q` returns success). No random ordering, no time-based fields in the sentinel. {verify-by: T231}
+
+- [ ] AC13: No new network surface — `git diff` of the new hook + resolver adds zero new matches for `curl|wget|http[s]?://|nc |socket`. {verify-by: T232}
+
+- [ ] AC14: `[PROJECT DATA]` framing preserved — the hook still emits the `[PROJECT DATA]` framing marker around the concatenated output, so the model's trust-boundary contract for project-supplied content is unchanged. {verify-by: T233}
+
+**Coverage check vs prior sections:**
+
+| Source section | Claim | Covered by |
+|---|---|---|
+| §1 problem — patterns.md cut mid-paragraph | patterns.md gets its own budget independent of injection order | AC2, AC11 |
+| §1 problem — INDEX dropped on reorder | each file gets its budget regardless of position | AC2, AC11 |
+| §5 approach — config block | `per_file_budget_chars` map present in `templates/.sdd/config.md` | AC1 |
+| §5 approach — hook rewrite | hook reads + applies per-file budgets | AC2 |
+| §5 approach — sentinel marker | sentinel emitted on truncation | AC3 |
+| §5 approach — resolver helper | resolver returns override + default | AC4 |
+| §5 approach — cap as floor | `cap_total_chars` kept as safety net | AC5, AC10 |
+| §6 data-contract — InjectionBudget entity | data-model.md entry added | AC6 |
+| §6 data-contract — edge case 1 (partial override) | partial override merges per AC7's assertion | AC7 |
+| §6 data-contract — edge case 2 (unknown key) | unknown key → default | AC8 |
+| §6 data-contract — edge case 3 (null/omitted) | null/omitted → defaults | AC9 |
+| §6 data-contract — edge case 4 (sum overshoot) | per-file first, then cap clip | AC10 |
+| §7 flow 1 — hook injection per-file budgets | each file present up to budget + sentinel | AC11 |
+| §7 flow 2 — downstream override | partial override merges | AC7 |
+| §10 NF3 — determinism | byte-identical output | AC12 |
+| §10 NF4 — no new network surface | grep test on hook diff | AC13 |
+| §10 NF5 — `[PROJECT DATA]` framing preserved | framing marker still emitted | AC14 |
+
+All 17 claim-rows have at least one covering AC. NF1 (latency), NF2 (no-regression), NF6 (read-only), NF7 (no PII), NF8 (no licensed code) are covered by their inline `{verify-by: T-NNN ...}` and `{best-effort: ...}` annotations in §10 and feed into BUILD-task test IDs, but do not need a separate AC entry per the v1.0 doctrine that NFs verify themselves.
 
 ### action: signoff-steps
 
