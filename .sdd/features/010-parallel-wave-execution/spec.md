@@ -509,7 +509,7 @@ All §10 mechanical-shape claims have AC coverage. Compliance items (license, no
 
 ### action: verify-ci-green
 
-- [ ] ci: all CI checks GREEN on the PR
+- [x] ci: All 6 named CI checks GREEN on PR #227 (Browser tests / Claims audit / CodeRabbit / Framework tests / Graph integrity / Scope guard). 5 CR review cycles addressed: cycle 1 closed 13/16 findings (3 Trivial `set -e` deferred per accumulate-failures discipline); cycle 2 closed 7/7 Majors; cycle 3 closed 1/1 Major; cycle 4 closed 8/8 Majors + 2 Minors (decisions.md MD022 deferred per append-only contract; INDEX.md PHASE:SHIP folded into the merge); cycle 5 = CR positive ack ("Excellent cycle-4 close-out... PR is mergeable pending CI green on `0ef1c85`"). Cumulative: **29 findings closed across 4 cycles + 3 permanent Trivial deferrals**. Mid-SHIP v1.6.0 main merge resolved via Sam-authorized `git commit-tree` plumbing (commit `127cacfe`) bypassing the cofile-block hook's missing merge-commit exemption (issue #220 — logged for v1.7).
 
 ### action: mark-shipped
 
