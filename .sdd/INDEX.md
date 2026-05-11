@@ -1,15 +1,15 @@
 # SDD framework — INDEX
 
-**Active:** _(none)_
+**Active:** features/010-hook-merge-commit-exception-closes-220
 **Playbook:** feature
-**Active blocker:** _(no active feature — v1.6 anchor (#207) fully shipped 2026-05-10/11 across PR-A (#219, brief-driven SPEC entry) + PR-B (#222, §2 cleanup) + PR-C (#223, requires_user_approval matrix lock) + PR-D (#224, plain-English-first doctrine), plus same-day F008 pi-adapter (#214) and 009-background-while-waiting (#218); tagged `v1.6.0`. Pick next: v1.7 work — possibilities include #220 hook merge-commit exception, #217 `/start` ID collision, or a feature from ## Ideas below.)_
+**Active blocker:** §1 (first action: brief-intake)
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
 
 ## In flight
+- features/010-hook-merge-commit-exception-closes-220 — hook merge-commit exception (closes #220) (PHASE: SPEC)
 
-(none)
 
 
 ## Ideas
