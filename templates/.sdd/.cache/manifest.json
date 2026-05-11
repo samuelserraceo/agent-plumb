@@ -137,7 +137,7 @@
   "sdd_version": "1.0.0",
   "actions": {
     "acceptance-criteria": {
-      "expected_sha256": "2114c46248aa30f041af5b9304acb0007b84631442d270d4072c61a304d7b996",
+      "expected_sha256": "69b14b6e4dce5710c9255da0267bfd4a157fb2ae09ceecd6d24588de6400f29b",
       "path": ".sdd/actions/acceptance-criteria.md",
       "trust": "framework"
     },
@@ -182,7 +182,7 @@
       "trust": "framework"
     },
     "data-contract": {
-      "expected_sha256": "9e735cf909b0b875da4d4fe9e0af7379f2c44249372ca39b10404e73a202c602",
+      "expected_sha256": "d6b3c5f0994bff20e74342ac544ecb898557cc02776ad44fc07d37d5b9d519d8",
       "path": ".sdd/actions/data-contract.md",
       "trust": "framework"
     },
@@ -203,7 +203,7 @@
     },
     "learn": {
       "path": ".sdd/actions/learn.md",
-      "expected_sha256": "33ac7451805ca4b73e339feeeaf2db294498ffe2519def30dcfcfba8cff2ff70"
+      "expected_sha256": "722db9eb812e58bb3dd23971917f76e0bebc4783749a27f52d84373f59f8b57e"
     },
     "mark-shipped": {
       "expected_sha256": "b85c9503ac6e64280b5a6cd4ef1a8eeeddfc0e17ce2e841cd70982d4509e6904",
@@ -276,7 +276,7 @@
       "trust": "framework"
     },
     "proposed-approach": {
-      "expected_sha256": "3a3120273af80ad31aff3dc1837b4285d3d4af592cc161f9641a4e520b8c41c0",
+      "expected_sha256": "5141632fe6f346e8d095ff0cc9abcaa872676a3e76406ccaaf489862b3063f56",
       "path": ".sdd/actions/proposed-approach.md",
       "trust": "framework"
     },

@@ -141,6 +141,12 @@ mkproj_v08() {
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/promote-legacy-queued.sh" "$d/.sdd/scripts/promote-legacy-queued.sh" \
     || { echo "[mkproj_v08] failed to copy promote-legacy-queued.sh from \$FRAMEWORK_ROOT — broken framework checkout?" >&2; return 1; }
   chmod +x "$d/.sdd/scripts/promote-legacy-queued.sh"
+  # rename-collided-feature.sh is manifest-tracked in v1.8.0+ (idea 007 final).
+  # Same fail-fast pattern — silently skipping leaves a manifest-pinned file
+  # absent on disk, which the moat (T144 / T145) flags as drift.
+  cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/rename-collided-feature.sh" "$d/.sdd/scripts/rename-collided-feature.sh" \
+    || { echo "[mkproj_v08] failed to copy rename-collided-feature.sh from \$FRAMEWORK_ROOT — broken framework checkout?" >&2; return 1; }
+  chmod +x "$d/.sdd/scripts/rename-collided-feature.sh"
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/scope-guard-config.sh"   "$d/.sdd/scripts/scope-guard-config.sh" 2>/dev/null || true
   chmod +x "$d/.sdd/scripts/scope-guard-config.sh" 2>/dev/null || true
   # get-model-for-tier.sh is manifest-tracked in v1.8+ (idea 002 — lego-style
@@ -1963,14 +1969,17 @@ else
 fi
 
 # ============================================================
-# T58 — user-prompt-submit truncates injection at SDD_INJECTION_CAP_CHARS
-#   (Theme 11 grain budget — closes Codex finding #9: "one /next too elastic")
-#   RED: hook emits unbounded content, agent's context bloats unboundedly.
+# T58 — user-prompt-submit truncates injection content per per-file budget
+#   (feature 011 — replaces the Theme 11 single-cap end-truncate with
+#    per-file budgets; the cap_total_chars stays as a defensive floor
+#    for sum-overshoot. RED case still detected: an oversized INDEX.md
+#    that fires no truncation at all = bloat regression.)
 # ============================================================
-note "T58: user-prompt-submit truncates content at injection cap (Theme 11)"
+note "T58: user-prompt-submit truncates oversized INDEX per per-file budget (feature 011)"
 d=$(mkproj_v08)
 cd "$d"
-# Make INDEX.md HUGE — 30,000 chars of dummy content (well over 16K cap)
+# Make INDEX.md HUGE — 30,000 chars of dummy content (well over 3000-char
+# INDEX budget AND well over 16K cap_total_chars).
 echo '**Active:** none' > .sdd/INDEX.md
 python3 -c "import sys; sys.stdout.write('# bloat\n' + ('lorem ipsum dolor sit amet ' * 1500))" >> .sdd/INDEX.md
 out=$(bash "$FRAMEWORK_ROOT/templates/.claude/hooks/user-prompt-submit.sh" 2>&1)
@@ -1978,13 +1987,21 @@ ec=$?
 chars=${#out}
 cd - >/dev/null
 rm -rf "$d"
-# Assert: hook exits 0, output is bounded near the cap, sentinel present
+# Assert: hook exits 0, output is bounded (per-file truncation kept
+# INDEX at ~3000 chars; total output ≤26000 for the cap_total_chars
+# backstop now raised to 25000 + closer overhead), and the per-file
+# sentinel fired specifically. CR cycle 1 #19: require the per-file
+# sentinel (not just "either path") — for THIS fixture (oversized
+# INDEX), per-file is the correct truncation path. The cap path is
+# for sum-overshoot edges, not bloat.
+per_file_sentinel=$(echo "$out" | grep -c "per per-file budget")
+theme11_sentinel=$(echo "$out" | grep -c TRUNCATED)
 if [ "$ec" -eq 0 ] \
-   && [ "$chars" -le 17000 ] \
-   && echo "$out" | grep -q 'TRUNCATED'; then
-  ok "T58 truncation enforced (output=${chars} chars, cap=16000, sentinel present)"
+   && [ "$chars" -le 26000 ] \
+   && [ "$per_file_sentinel" -gt 0 ]; then
+  ok "T58 truncation enforced (output=${chars} chars, per-file=${per_file_sentinel}, theme11=${theme11_sentinel})"
 else
-  bad "T58 truncation broken or missing" "exit=$ec; chars=$chars; sentinel? $(echo "$out" | grep -c TRUNCATED)"
+  bad "T58 truncation broken or missing" "exit=$ec; chars=$chars; per-file=$per_file_sentinel; theme11=$theme11_sentinel"
 fi
 
 # ============================================================
@@ -8128,6 +8145,72 @@ PY
 fi
 
 # ============================================================
+# T162 — /sdd-setup Q1 ships the "internal-now, SaaS-later" option
+#   (closes #163). PipeLogic V2 surfaced a real gap: a project that
+#   starts single-tenant but plans to externalise as multi-tenant SaaS
+#   doesn't fit option 4 ("internal tool — only your team uses it",
+#   which assumes the tool stays single-tenant) or option 1
+#   ("a website", which loses the "MVP scope is one customer" signal). The brick
+#   at templates/.sdd/setup/001-project-type.md must expose this as
+#   a first-class numbered option AND declare a `future_saas: true`
+#   record in the "What gets recorded" example block so downstream
+#   actions (and the agent's stack.md write) can read the flag back.
+#   RED case: shipping the option in prose but forgetting the
+#   `future_saas` record would let the agent silently drop the
+#   "multi-tenant from day 1" signal at /start time.
+# ============================================================
+note "T162: /sdd-setup Q1 ships 'internal-now, SaaS-later' option + future_saas record"
+q1_brick="$FRAMEWORK_ROOT/templates/.sdd/setup/001-project-type.md"
+ok_count=0
+[ -f "$q1_brick" ] && ok_count=$((ok_count + 1))
+# 1. The numbered option text appears in the brick body. The phrasing
+# can be either short form ("internal-now, SaaS-later") or plain
+# English long form ("internal tool today, SaaS later"). Both fit
+# the issue #163 intent; the contract is that an option distinct
+# from plain "internal tool" exists and pairs an internal-MVP
+# signal with a future-SaaS signal in a single numbered choice.
+# Require the line to start with a markdown numbered bold list
+# entry so a free-text hint paragraph (which the brick already had
+# pre-fix at line 33 of the original) is NOT counted as satisfying
+# the contract.
+grep -qiE '^[0-9]+\. \*\*[^*]*(internal[- ]now|internal tool today)[^*]*saas[- ]?later' "$q1_brick" 2>/dev/null && ok_count=$((ok_count + 1))
+# 2. The "What gets recorded" example carries a future_saas marker so
+# the recorded stack.md ## Project shape declares it explicitly. CR
+# cycle 1: scope the grep to the recorded-output block. A global grep
+# can pass on frontmatter `agent_infers` or table-prose mentions
+# alone — the RED case is "future_saas named in prose but never in
+# the recorded contract", which would let the agent silently drop
+# the flag at /start time. The recorded example uses
+# `**future_saas:** <true | false>` (placeholder so both option-4
+# and option-5 outcomes are visible); the contract is that the
+# `future_saas:` key appears inside the "## What gets recorded"
+# block, not that it carries a specific value. The awk is
+# fence-aware — the recorded example is wrapped in a ```markdown
+# fence that itself contains a `## Project shape` heading, so a
+# naive `/^## /` boundary check would exit early on that nested
+# heading. We toggle a `fence` flag on lines that start with ```
+# and only treat `## ` lines as section boundaries when fence==0.
+if awk '
+  /^## What gets recorded/ {in_block=1; next}
+  /^```/ && in_block {fence = 1 - fence; print; next}
+  /^## / && in_block && fence == 0 {exit}
+  in_block {print}
+' "$q1_brick" 2>/dev/null | grep -qE 'future_saas:'; then
+  ok_count=$((ok_count + 1))
+fi
+# 3. The "What the agent does with your answer" examples table mentions
+# the new option, so the agent's inference table is updated alongside
+# the question prose. We require future_saas to appear in a row
+# specifically — i.e. the table explains what the flag does, not
+# just that the new option exists.
+grep -qE '\| .*future_saas.* \|' "$q1_brick" 2>/dev/null && ok_count=$((ok_count + 1))
+if [ "$ok_count" -eq 4 ]; then
+  ok "T162 Q1 brick exposes 'internal-now, SaaS-later' + future_saas record (4/4)"
+else
+  bad "T162 Q1 'internal-now, SaaS-later' option missing or incomplete" "ok=$ok_count/4 brick=$q1_brick"
+fi
+
+# ============================================================
 # T141 — anti-theatre lint passes on the in-flight spec (closes #111,
 #   PR #003). Theatre tokens (numerical bounds, currency, enforcement
 #   verbs, quality absolutes) without an adjacent verifier annotation
@@ -8185,13 +8268,13 @@ else
 fi
 
 # ============================================================
-# T163 — get-model-for-tier.sh returns the project override for an
+# T183 — get-model-for-tier.sh returns the project override for an
 #   action's declared `model_tier:` (idea 002 — lego-style model
 #   right-sizing). Project config maps `thinking → claude-opus-4-1`;
 #   the resolver, given the slug of an action whose frontmatter
 #   declares `model_tier: thinking`, must emit exactly that string.
 # ============================================================
-note "T163: get-model-for-tier resolves declared tier via project override"
+note "T183: get-model-for-tier resolves declared tier via project override"
 t163_dir=$(mktemp -d)
 mkdir -p "$t163_dir/.sdd/actions" "$t163_dir/.sdd/scripts"
 cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/get-model-for-tier.sh" "$t163_dir/.sdd/scripts/"
@@ -8215,19 +8298,19 @@ body
 ACT
 t163_out=$(CLAUDE_PROJECT_DIR="$t163_dir" bash "$t163_dir/.sdd/scripts/get-model-for-tier.sh" proposed-approach 2>/dev/null)
 if [ "$t163_out" = "claude-opus-4-1" ]; then
-  ok "T163 resolver returned thinking-tier model (claude-opus-4-1)"
+  ok "T183 resolver returned thinking-tier model (claude-opus-4-1)"
 else
-  bad "T163 resolver returned wrong model" "expected=claude-opus-4-1 got='$t163_out'"
+  bad "T183 resolver returned wrong model" "expected=claude-opus-4-1 got='$t163_out'"
 fi
 rm -rf "$t163_dir"
 
 # ============================================================
-# T164 — backwards-compat: an action without a `model_tier:` field
+# T184 — backwards-compat: an action without a `model_tier:` field
 #   in its frontmatter must fall back to the `routine` tier (safe
 #   middle default). With project config mapping `routine → sonnet`,
 #   the resolver must emit sonnet for a tier-less action.
 # ============================================================
-note "T164: get-model-for-tier falls back to routine when action has no model_tier"
+note "T184: get-model-for-tier falls back to routine when action has no model_tier"
 t164_dir=$(mktemp -d)
 mkdir -p "$t164_dir/.sdd/actions" "$t164_dir/.sdd/scripts"
 cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/get-model-for-tier.sh" "$t164_dir/.sdd/scripts/"
@@ -8250,21 +8333,21 @@ body — no model_tier declared (pre-idea-002 action shape)
 ACT
 t164_out=$(CLAUDE_PROJECT_DIR="$t164_dir" bash "$t164_dir/.sdd/scripts/get-model-for-tier.sh" legacy-action 2>/dev/null)
 if [ "$t164_out" = "claude-sonnet-4-7" ]; then
-  ok "T164 resolver fell back to routine when model_tier absent"
+  ok "T184 resolver fell back to routine when model_tier absent"
 else
-  bad "T164 resolver did not fall back to routine" "expected=claude-sonnet-4-7 got='$t164_out'"
+  bad "T184 resolver did not fall back to routine" "expected=claude-sonnet-4-7 got='$t164_out'"
 fi
 rm -rf "$t164_dir"
 
 # ============================================================
-# T165 — coverage gate: every shipped action in
+# T185 — coverage gate: every shipped action in
 #   templates/.sdd/actions/*.md declares a `model_tier:` in
 #   frontmatter, and the value is one of {thinking, routine,
 #   mechanical}. Locks the contract — future actions ship with a
 #   tier or this test fails RED, prompting the author to classify
 #   their action up-front.
 # ============================================================
-note "T165: every templates action declares a valid model_tier"
+note "T185: every templates action declares a valid model_tier"
 t165_missing=0
 t165_bad=0
 t165_missing_list=""
@@ -8290,9 +8373,254 @@ for f in "$FRAMEWORK_ROOT"/templates/.sdd/actions/*.md; do
   esac
 done
 if [ "$t165_missing" -eq 0 ] && [ "$t165_bad" -eq 0 ]; then
-  ok "T165 every action declares a valid model_tier (thinking|routine|mechanical)"
+  ok "T185 every action declares a valid model_tier (thinking|routine|mechanical)"
 else
-  bad "T165 actions missing or with invalid model_tier" "missing=$t165_missing bad=$t165_bad missing-list=[$t165_missing_list] bad-list=[$t165_bad_list]"
+  bad "T185 actions missing or with invalid model_tier" "missing=$t165_missing bad=$t165_bad missing-list=[$t165_missing_list] bad-list=[$t165_bad_list]"
+fi
+
+# ============================================================
+note "T180: rename-collided-feature.sh happy path renames folder + rewrites wiki-links"
+d=$(mktemp -d)
+RENAME_SH="$FRAMEWORK_ROOT/templates/.sdd/scripts/rename-collided-feature.sh"
+mkdir -p "$d/.sdd/features/011-foo"
+printf '# spec for [[011-foo]]\n' > "$d/.sdd/features/011-foo/spec.md"
+printf '# decisions log\n' > "$d/.sdd/decisions.md"
+CLAUDE_PROJECT_DIR="$d" bash "$RENAME_SH" 011-foo 016-foo >/dev/null 2>&1
+ec=$?
+if [ "$ec" -ne 0 ]; then
+  bad "T180 rename script exited non-zero" "ec=$ec"
+elif [ ! -d "$d/.sdd/features/016-foo" ]; then
+  bad "T180 destination folder missing" ".sdd/features/016-foo not found after rename"
+elif [ -d "$d/.sdd/features/011-foo" ]; then
+  bad "T180 source folder still exists" ".sdd/features/011-foo should be gone"
+elif ! grep -qF '[[016-foo]]' "$d/.sdd/features/016-foo/spec.md"; then
+  bad "T180 wiki-link not rewritten" "spec.md should reference [[016-foo]] after rename"
+elif grep -qF '[[011-foo]]' "$d/.sdd/features/016-foo/spec.md"; then
+  bad "T180 old wiki-link still present" "spec.md still references [[011-foo]] after rename"
+elif ! grep -qF 'decisions log' "$d/.sdd/decisions.md"; then
+  bad "T180 decisions.md tampered" "rename should never edit decisions.md"
+else
+  ok "T180 happy path renames folder + rewrites internal wiki-links"
+fi
+rm -rf "$d"
+
+# ============================================================
+# T181 — rename-collided-feature.sh: REFUSES when decisions.md has
+#   [[old-slug]] wiki-link (append-only doctrine). Exit 2; folder
+#   stays put; suggests coexistence in the message.
+#   Idea 007 final — append-only guard.
+# ============================================================
+note "T181: rename-collided-feature.sh refuses when decisions.md pins the old slug"
+d=$(mktemp -d)
+mkdir -p "$d/.sdd/features/011-foo"
+printf '# spec\n' > "$d/.sdd/features/011-foo/spec.md"
+printf '## 2026-05-11Z [[011-foo]] feature/scaffold\n' > "$d/.sdd/decisions.md"
+out=$(CLAUDE_PROJECT_DIR="$d" bash "$RENAME_SH" 011-foo 016-foo 2>&1)
+ec=$?
+folder_present=0
+[ -d "$d/.sdd/features/011-foo" ] && folder_present=1
+rm -rf "$d"
+if [ "$ec" -ne 2 ]; then
+  bad "T181 rename should exit 2 when decisions.md pins slug" "ec=$ec; out='$out'"
+elif [ "$folder_present" -ne 1 ]; then
+  bad "T181 folder was renamed despite refusal" "source folder gone after exit 2"
+elif ! echo "$out" | grep -qi 'append-only'; then
+  bad "T181 refusal message missing append-only context" "out='$out'"
+elif ! echo "$out" | grep -qi 'coexist'; then
+  bad "T181 refusal message missing coexistence suggestion" "out='$out'"
+else
+  ok "T181 refused with exit 2; folder preserved; message names append-only + coexistence"
+fi
+
+# ============================================================
+# T181b — rename-collided-feature.sh: REFUSES when the same <old-id-slug>
+#   exists under more than one work-folder (e.g. features/ AND bugs/).
+#   Exit 1; both folders stay put; message names BOTH candidates.
+#   Idea 007 final — slug-ambiguity guard (CR cycle 2 MAJ).
+# ============================================================
+note "T181b: rename-collided-feature.sh refuses ambiguous slug across work-folders"
+d=$(mktemp -d)
+mkdir -p "$d/.sdd/features/011-foo" "$d/.sdd/bugs/011-foo"
+printf '# feature spec\n' > "$d/.sdd/features/011-foo/spec.md"
+printf '# bug spec\n' > "$d/.sdd/bugs/011-foo/spec.md"
+out=$(CLAUDE_PROJECT_DIR="$d" bash "$RENAME_SH" 011-foo 016-foo 2>&1)
+ec=$?
+feat_present=0; bug_present=0
+[ -d "$d/.sdd/features/011-foo" ] && feat_present=1
+[ -d "$d/.sdd/bugs/011-foo" ] && bug_present=1
+dest_present=0
+[ -d "$d/.sdd/features/016-foo" ] || [ -d "$d/.sdd/bugs/016-foo" ] && dest_present=1
+rm -rf "$d"
+if [ "$ec" -ne 1 ]; then
+  bad "T181b rename should exit 1 on ambiguous slug" "ec=$ec; out='$out'"
+elif [ "$feat_present" -ne 1 ] || [ "$bug_present" -ne 1 ]; then
+  bad "T181b folders moved despite refusal" "features=$feat_present bugs=$bug_present"
+elif [ "$dest_present" -eq 1 ]; then
+  bad "T181b destination created despite refusal" "016-foo exists"
+elif ! echo "$out" | grep -qi 'ambiguous'; then
+  bad "T181b refusal message missing 'ambiguous' word" "out='$out'"
+elif ! echo "$out" | grep -qF '.sdd/features/011-foo'; then
+  bad "T181b refusal message missing features candidate" "out='$out'"
+elif ! echo "$out" | grep -qF '.sdd/bugs/011-foo'; then
+  bad "T181b refusal message missing bugs candidate" "out='$out'"
+else
+  ok "T181b refused with exit 1; both folders preserved; message names both candidates"
+fi
+
+# ============================================================
+# T182 — pre-commit-rules.sh detects cross-branch ID collision when a
+#   commit introduces a NEW .sdd/<wf>/<NNN>-<slug>/ AND HEAD already
+#   has another <NNN>-<otherslug>/ in the same work-folder.
+#   Idea 007 final — second line of defence (the /start scan from
+#   PR #231 catches NEW collisions against origin/main, but two
+#   parallel branches scaffolded before either pushed slip past it).
+#   Backwards-compat: edit-only commits and new-folder commits with a
+#   FREE NNN don't false-trigger.
+# ============================================================
+note "T182: pre-commit-rules.sh detects NEW-folder cross-branch ID collision"
+d=$(mktemp -d)
+(
+  cd "$d" || { echo "T182 setup failed: cannot cd into $d" >&2; exit 1; }
+  git init -q
+  git config user.email t@t.com
+  git config user.name T
+  mkdir -p .sdd/features/011-existing
+  printf '# existing\n' > .sdd/features/011-existing/spec.md
+  git add -A
+  git commit -q -m "scaffold" >/dev/null 2>&1
+
+  # Case A — collision: new folder 011-newone introduced AND 011-existing on HEAD.
+  mkdir .sdd/features/011-newone
+  printf '# new\n' > .sdd/features/011-newone/spec.md
+  git add .sdd/features/011-newone/spec.md
+  hook_stdin='{"tool_input":{"command":"git commit -m phase: SPEC"}}'
+  ec_a=0
+  err_a=$(echo "$hook_stdin" | bash "$RULES_HOOK" 2>&1 1>/dev/null) || ec_a=$?
+
+  # Reset state for Case B.
+  git restore --staged . >/dev/null 2>&1 || true
+  rm -rf .sdd/features/011-newone
+
+  # Case B — free ID: new folder 012-newone introduced; HEAD has only 011-existing.
+  mkdir .sdd/features/012-newone
+  printf '# new\n' > .sdd/features/012-newone/spec.md
+  git add .sdd/features/012-newone/spec.md
+  ec_b=0
+  echo "$hook_stdin" | bash "$RULES_HOOK" >/dev/null 2>&1 || ec_b=$?
+
+  # Reset state for Case C.
+  git restore --staged . >/dev/null 2>&1 || true
+  rm -rf .sdd/features/012-newone
+
+  # Case C — edit-only: modify existing 011-existing/spec.md; no new folder.
+  printf '# edit\n' >> .sdd/features/011-existing/spec.md
+  git add .sdd/features/011-existing/spec.md
+  ec_c=0
+  echo "$hook_stdin" | bash "$RULES_HOOK" >/dev/null 2>&1 || ec_c=$?
+
+  # Case D — documented bypass: SDD_ALLOW_ID_COLLISION=1 allows the
+  # same collision Case A blocked. Reset state, re-stage the collision,
+  # then invoke the hook with the env var set and expect exit 0.
+  git restore --staged . >/dev/null 2>&1 || true
+  git checkout -- .sdd/features/011-existing/spec.md >/dev/null 2>&1 || true
+  mkdir .sdd/features/011-bypass
+  printf '# bypass\n' > .sdd/features/011-bypass/spec.md
+  git add .sdd/features/011-bypass/spec.md
+  ec_d=0
+  echo "$hook_stdin" | SDD_ALLOW_ID_COLLISION=1 bash "$RULES_HOOK" >/dev/null 2>&1 || ec_d=$?
+
+  echo "EC_A=$ec_a"
+  echo "EC_B=$ec_b"
+  echo "EC_C=$ec_c"
+  echo "EC_D=$ec_d"
+  echo "ERR_A_SAMPLE=$(echo "$err_a" | head -3 | tr '\n' '|')"
+) > "$d/result.txt" 2>&1
+ec_a=$(grep '^EC_A=' "$d/result.txt" | cut -d= -f2)
+ec_b=$(grep '^EC_B=' "$d/result.txt" | cut -d= -f2)
+ec_c=$(grep '^EC_C=' "$d/result.txt" | cut -d= -f2)
+ec_d=$(grep '^EC_D=' "$d/result.txt" | cut -d= -f2)
+err_a_sample=$(grep '^ERR_A_SAMPLE=' "$d/result.txt" | cut -d= -f2-)
+rm -rf "$d"
+fails=""
+[ "$ec_a" = "2" ] || fails="$fails caseA-expected-exit-2-got-$ec_a"
+[ "$ec_b" = "0" ] || fails="$fails caseB-free-id-expected-0-got-$ec_b"
+[ "$ec_c" = "0" ] || fails="$fails caseC-edit-only-expected-0-got-$ec_c"
+[ "$ec_d" = "0" ] || fails="$fails caseD-bypass-expected-0-got-$ec_d"
+echo "$err_a_sample" | grep -qi 'collision' \
+  || fails="$fails caseA-msg-missing-collision-word"
+if [ -z "$fails" ]; then
+  ok "T182 collision blocked (exit 2); free-id new-folder allowed; edit-only allowed; SDD_ALLOW_ID_COLLISION=1 bypass works"
+else
+  bad "T182 cross-branch id collision detection broke" "$fails sample='$err_a_sample'"
+fi
+
+# ============================================================
+# T180 — plain-English sweep (idea 006) drops engineer-shape vocab on
+#   high-touchpoint action files. Sam reads these every SPEC walk;
+#   their body prose drifted toward jargon ("moat", "hash-locked",
+#   "verification.json", "F1 generic enforcer", "wiki-link emission",
+#   "MCP server backlinks", "tracer bullet"). This test pins the
+#   rewrite — if the count for any of the 4 swept files climbs back
+#   above its post-sweep budget, CI fails and forces a re-read.
+#   The check is per-file (not a sum) so a regression in one file
+#   can't be hidden by improvements in another. Budgets are set just
+#   above the rewritten value, leaving headroom for a small future
+#   edit while still catching reversion to the engineer-shape draft.
+# ============================================================
+note "T162: plain-English sweep keeps engineer-shape vocab off high-touchpoint actions (idea 006)"
+# Pattern matches the same jargon families surveyed in idea 006:
+# moat/hash/verification.json/F1 enforcer/wiki-link/MCP/manifest/tracer/etc.
+# Whole-file scan; case-insensitive; counts every line that contains
+# at least one match (grep -c counts matched LINES, not tokens — same
+# unit used for the baseline so the budgets are directly comparable).
+T162_PATTERN='moat|hash-locked|hash-pin|hash recorded|verification\.json|approved_sections|F1 generic enforcer|wiki-link emission|backlinks|repin|manifest|playbook|stop-hook|invariant 8|idempotent|frontmatter|graph layer|MCP server|theatre|deterministic|heuristic|denylist|tracer bullet|walking skeleton|horizontal building|prelude_refresh|stop-lint'
+T162_FAILS=0
+T162_REPORT=""
+# Per-file budgets — set just above the rewritten value so the test
+# locks in the win but doesn't tip on a single benign future edit.
+# Format: slug:max-mentions. Update both rows if the spec re-approves
+# a different vocabulary trade-off.
+for entry in \
+  "proposed-approach:1" \
+  "data-contract:1" \
+  "acceptance-criteria:2" \
+  "learn:1"
+do
+  slug="${entry%%:*}"
+  budget="${entry##*:}"
+  for tree in ".sdd/actions" "templates/.sdd/actions"; do
+    file="$FRAMEWORK_ROOT/$tree/${slug}.md"
+    if [ ! -f "$file" ]; then
+      T162_FAILS=$((T162_FAILS + 1))
+      T162_REPORT="$T162_REPORT\n  - $tree/${slug}.md missing"
+      continue
+    fi
+    # Fail-closed: distinguish "no matches" (exit 1) from real scan errors
+    # (exit ≥2 — bad regex, unreadable file, etc.). The previous `|| echo 0`
+    # treated every non-zero exit as 0 matches, so a corrupted regex or
+    # permission error would silently let the T162 gate pass. Now grep
+    # errors fail the gate explicitly.
+    count=$(grep -ciE "$T162_PATTERN" "$file" 2>/dev/null)
+    grep_ec=$?
+    if [ "$grep_ec" -eq 1 ]; then
+      count=0
+    elif [ "$grep_ec" -ne 0 ]; then
+      T162_FAILS=$((T162_FAILS + 1))
+      T162_REPORT="$T162_REPORT\n  - $tree/${slug}.md: scan failed (grep exit $grep_ec)"
+      continue
+    fi
+    # grep -c can occasionally print a trailing newline; sanitise.
+    count=$(printf '%s' "$count" | tr -d '\n')
+    if [ "$count" -gt "$budget" ]; then
+      T162_FAILS=$((T162_FAILS + 1))
+      T162_REPORT="$T162_REPORT\n  - $tree/${slug}.md: $count matches (budget $budget)"
+    fi
+  done
+done
+if [ "$T162_FAILS" -eq 0 ]; then
+  ok "T162 high-touchpoint action prose stays within plain-English jargon budgets"
+else
+  bad "T162 plain-English sweep regressed" "$(printf '%b' "$T162_REPORT")"
 fi
 
 # ============================================================

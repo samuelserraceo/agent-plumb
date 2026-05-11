@@ -112,6 +112,14 @@ INDEX.md's `## In flight` section can hold multiple work items at once — one p
 
 **Pre-v1.5.2 migration (closes #206):** projects scaffolded before v1.5.2 — which introduced `[PHASE: QUEUED]` via #169 — may have backlog features stored as `[PHASE: SPEC]` in spec.md while their INDEX rows describe them as queued. `/next` would happily advance them instead of refusing per #169's contract. Run `bash .sdd/scripts/promote-legacy-queued.sh` once after `bash .sdd/scripts/sdd-migrate.sh --apply` lands the latest framework on the project. The migrator walks `.sdd/{features,bugs,refactors}/`, skips cold (`.shipped`) items, and for each work item whose INDEX row matches `queued|Backlog|backlog` AND whose spec.md PHASE is not already `QUEUED`, flips both: spec.md to `[PHASE: QUEUED]` and the INDEX row to canonical `(scaffolded, PHASE: QUEUED)`. Stages changes via `git add` but does NOT auto-commit — user reviews `git diff --cached` and commits when ready. Idempotent (re-running on a clean project reports 0 migrated).
 
+**Cross-branch ID collision tooling (idea 007 final):** `/start` already scans `origin/main` for taken IDs before scaffolding (PR #231), but two branches scaffolded in parallel BEFORE either pushes can still produce the same `<NNN>-` prefix. Two safeguards close that window:
+
+1. **Detection at commit time** — `pre-commit-rules.sh` refuses any commit that introduces a new `.sdd/<work-folder>/<NNN>-<slug>/` directory when HEAD already has another `<NNN>-<otherslug>/` in the same work-folder. Plain-English error names both folders + the rename helper. Bypass with `SDD_ALLOW_ID_COLLISION=1 git commit ...` if you've decided the collision is acceptable.
+
+2. **Auto-rename helper** — `bash .sdd/scripts/rename-collided-feature.sh <old-id-slug> <new-id-slug>` renames the folder, rewrites internal wiki-links (`[[<old>]]` → `[[<new>]]`) inside the renamed folder, and REFUSES if `.sdd/decisions.md` already contains a wiki-link to the old slug — append-only doctrine means once a decisions.md entry pins `[[<NNN>-<slug>]]`, the rename can't be done without breaking the audit log. In that case both folders coexist (the slug after `<NNN>-` already disambiguates them in new decisions.md entries).
+
+Run the rename helper BEFORE the first decisions.md entry references the colliding feature. After that, accept coexistence — the slugs disambiguate.
+
 ## Slash commands available to the user
 
 | Command | Purpose | Branch | Phases |

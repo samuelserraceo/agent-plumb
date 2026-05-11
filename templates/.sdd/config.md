@@ -5,6 +5,49 @@ playbooks_available: [feature, project, bug, refactor]
 default_playbook: feature
 extensions: {}
 parameters:
+  injection:
+    # Total-output safety-net CEILING (maximum). The user-prompt-submit
+    # hook applies this as a defensive cap on combined output AFTER
+    # per-file truncation runs — catches sum-overshoot edge cases when
+    # a project's per_file_budget_chars sum exceeds this value
+    # (feature 011, AC10). Env var SDD_INJECTION_CAP_CHARS overrides
+    # at runtime.
+    #
+    # Set to 25000 so the per-file defaults (summing to 20000) plus
+    # headers + framing markers (~500 chars overhead) fit comfortably
+    # under the cap on the common case — the cap_total_chars path is
+    # the exceptional safety net, not the common truncation path
+    # (CR cycle 1 #13 reconciliation).
+    cap_total_chars: 25000
+    # Per-file budget map. The hook truncates each corpus file
+    # independently to its BYTE budget and appends a sentinel marker
+    # `[truncated to <N> bytes per per-file budget — re-read with
+    # the Read tool if you need the cut portion]` when truncation
+    # happens. Replaces the prior "concatenate then truncate from the
+    # end" behavior, which on mature projects silently cut patterns.md
+    # mid-paragraph (feature 011, AC2 / AC3 / AC11).
+    #
+    # Historic note on the name `per_file_budget_chars`: the field
+    # name is kept for backwards compatibility, but the semantic is
+    # BYTES (not Unicode codepoints). The hook slices at the budget
+    # byte boundary, then backs off to a clean UTF-8 char boundary
+    # (≤3 trailing bytes dropped) so output stays valid UTF-8 (AC16).
+    # On a pure-ASCII corpus, byte ≈ char.
+    #
+    # Defaults sum to 20000 bytes (AC1). Downstream projects override
+    # in their own config.md per-key; unspecified keys fall back to
+    # framework defaults (AC7). Unknown keys (e.g. a future
+    # corpus file) fall back to a documented default of 2000 bytes
+    # (AC8). Negative values clamp to 0 with a stderr warning naming
+    # the key (AC17). Malformed YAML emits a parse-error warning
+    # before falling back (CR cycle 1 #12/#17).
+    per_file_budget_chars:
+      INDEX: 3000
+      spec: 5000
+      principles: 2000
+      stack: 3000
+      data-model: 3000
+      patterns: 4000
   budget:
     max_minutes: 5
     max_tokens: 4000

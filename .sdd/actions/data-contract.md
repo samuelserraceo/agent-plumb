@@ -36,11 +36,11 @@ Every entity, field, transition, and edge case must be named before code. The da
 
 **Push hard on edge cases.** Ask: *"What if a user signs up twice? What if they try to delete their account while a transaction is pending? What if two writers race to update the same row?"* If you can't articulate what happens, the design is incomplete.
 
-**Sync requirement (enforced by F1 generic enforcer (`pre-commit-rules.sh`)'s `touches:` enforcement):** when this section is committed, `.sdd/data-model.md` MUST be staged in the same commit. Never duplicate schema definitions in spec.md — reference by name.
+**Stage the data file too.** When you commit §6, the schema file (`.sdd/data-model.md`) MUST be staged in the same commit. The framework refuses the commit otherwise — that's how we stop schema docs from drifting from the spec. Never duplicate the schema in spec.md; the spec names the entity (e.g. `User`) and the schema file owns the columns.
 
-**Wiki-link emission (v1.0 graph layer).** When §6 references an entity that lives in `.sdd/data-model.md`, name the entity with a wiki-link in §6 prose: `[[entity:User]]` (case-insensitive, slug from the entity's H2/H3 heading in data-model.md). This makes the feature → entity edge mechanically queryable: the MCP server's `get_backlinks` query reveals which features touch a given entity, so future schema changes can find their downstream consumers without grep. Only emit links for entities that already exist in data-model.md after this commit lands; if you're adding a brand-new entity, the link is correct because data-model.md is staged in the same commit.
+**Link to data entities.** When §6 mentions a table or entity that lives in `.sdd/data-model.md`, name it with a `[[entity:User]]` link — like a footnote pointing at the schema. Slug = the heading text in data-model.md, case-insensitive. The framework checks the link points to a real entity. The payoff: anyone reading later can click straight to the schema; future schema changes can pull up "which features touch this table" without grepping by hand. Only link to entities that exist (or will exist after this commit lands — fine, since the schema file is staged in the same commit).
 
-**On approval.** Hash recorded in `verification.json.approved_sections.data-contract`. Future edits require `/re-approve §6`.
+**What happens when you `approve`.** The framework takes a fingerprint of this section's text. If §6 changes later (you, me, or a future session edits it), the framework spots the diff at the next phase advance and walks you through a quick "review + reply `approve`" flow. Section-lock that keeps the spec honest.
 
 **What it looks like:**
 
