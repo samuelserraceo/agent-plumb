@@ -18,12 +18,13 @@ test.describe("walkthrough.html — marketplace landing page", () => {
     await page.goto("/docs/walkthrough.html");
   });
 
-  test("page loads with the v1.0+v1.1+v1.2 shipped pill", async ({ page }) => {
-    // Assert: header pill says all three sweeps are live, not "v1.0.0
-    // shipped" alone (which was the pre-#131 drift state).
+  test("page loads with the v1.0→v1.6.0 shipped pill", async ({ page }) => {
+    // Assert: header pill says all shipped sweeps are live, not "v1.0.0
+    // shipped" alone (which was the pre-#131 drift state) and not stuck
+    // on v1.2 (which was the pre-#229 stale state).
     const pill = page.locator(".pill-v10").first();
     await expect(pill).toBeVisible();
-    await expect(pill).toContainText("v1.0 + v1.1 + v1.2 shipped");
+    await expect(pill).toContainText("v1.0 → v1.6.0 shipped");
   });
 
   test("hero headline reads the framework's plain-English claim", async ({
@@ -74,7 +75,7 @@ test.describe("walkthrough.html — marketplace landing page", () => {
     // stale section AND a future drift where a v1.x sweep ships but the
     // walkthrough doesn't get refreshed.
     const planned = page.locator("#planned");
-    await expect(planned).toContainText("v1.1 + v1.2 + v1.3 — shipped");
+    await expect(planned).toContainText("v1.1 → v1.6.0 — shipped");
     await expect(planned).toContainText("PR #114"); // Tier 3 (v1.1)
     await expect(planned).toContainText("PR #118"); // plain-English action lint (v1.2)
     await expect(planned).toContainText("PR #121"); // anti-theatre spec lint (v1.2)
