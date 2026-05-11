@@ -214,7 +214,7 @@ Trade-offs:
 - [x] T300: resolve-parameters.sh exposes parameters.automation.level
             with default `checkpoint` when unset
             — proves AC1 + AC2
-- [ ] T301: resolve-parameters.sh accepts all 3 valid tier values
+- [x] T301: resolve-parameters.sh accepts all 3 valid tier values
             (full / most / checkpoint), rejects invalid + falls back
             to checkpoint with clear error message
             — proves AC2 + AC3
