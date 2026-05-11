@@ -250,8 +250,32 @@ PROD-ONLY AC9 + AC10 + best-effort AC8 = no T-task; verified at SHIP via §12 si
 
 ### action: edge-case-sweep
 
-- [ ] ec-sweep: draft
-- [ ] ec-pick: ask
+- [x] ec-sweep: 7 edge cases — (1) per-action `requires_user_approval: true` overrides tier-Full; (2) mid-walk tier change; (3) misclassified destructive action; (4) new action added post-AC7; (5) empty-string tier value; (6) pi.dev parity; (7) sealed framework file tamper.
+- [x] ec-pick: 0 new ACs added (§11 hash-locked). 4 folded into existing ACs/tests (#2 → AC2, #3 → AC7, #5 → T301, #6 → AC9). 2 documented at SHIP (#1, #4). 1 already-covered (#7 by pre-commit-stage-verified.sh).
+
+**Edge-case sweep — 7 candidates:**
+
+| # | Edge case | Risk | Mitigation |
+|---|---|---|---|
+| 1 | User sets tier=Full but a per-action `requires_user_approval: true` flag exists | Medium | Frontmatter flag wins (per-action override). Documented in §5. |
+| 2 | Mid-walk tier change (Full → Checkpoint during BUILD) | Low | `/next` re-reads tier per call (cached but invalidates on config.md change). Subsequent steps respect new tier. |
+| 3 | Destructive action with `requires_user_approval: false` (misclassified) | Medium | Destructive list (AC7) gates regardless of frontmatter — flag is overridden by the destructive list at Most. Filed as bug if surfaces. |
+| 4 | New action added post-AC7 not in destructive list but should be | Low | T306 documents how to add a slug to the enumeration. Future actions should think about destructive-ness at creation time. |
+| 5 | `parameters.automation.level: ` (empty string) | Low | Treated same as unset → default `checkpoint`. T301 fixture covers this. |
+| 6 | `pi.dev` harness behaves differently than Claude Code on auto-advance | Medium | Both harnesses execute `/next` via the same SDD framework brain; tier check is in the brain, not harness-specific. Verified at SHIP (folded into AC9 PROD-ONLY scope). |
+| 7 | Auto-advance under Full skips a step that touches a sealed framework file (manifest repin) | Low | Already in destructive list — manifest-repin commits prompt under Most. Under Full, the framework-tamper hook would still fire on the commit attempt (`pre-commit-stage-verified.sh`). |
+
+**ec-pick disposition (Sam approved 2026-05-11):**
+
+- **#1 (per-action flag override)** — Already covered by §5 Approach A's "respect the frontmatter" rule. No new AC.
+- **#2 (mid-walk tier change)** — Folded into AC2 (`/next` reads tier per call).
+- **#3 (misclassified destructive)** — Folded into AC7 (destructive list gates regardless).
+- **#4 (new action enumeration)** — Documented at SHIP in `patterns.md` ("when adding a new action, classify it for the destructive list if applicable").
+- **#5 (empty string)** — Folded into T301 fixture.
+- **#6 (pi.dev parity)** — Folded into AC9 PROD-ONLY (the real-session walk should also run on pi.dev once F008's adapter is stable).
+- **#7 (sealed framework file tamper)** — Already covered by existing `pre-commit-stage-verified.sh` hook; no new AC.
+
+**Net effect:** 0 new ACs (§11 stays hash-locked). 4 folded into existing T-tasks (#2 → AC2; #3 → AC7; #5 → T301; #6 → AC9). 2 documented at SHIP (#1, #4). 1 already-covered (#7).
 
 ### Exit checks
 - [ ] C-spec-acs: ≥1 acceptance criterion exists in §11 {verify-by: C-spec-acs bash-grep} — grep -qE '^- \[[ x]\] AC[0-9]+' "$SECTION_FILE"
