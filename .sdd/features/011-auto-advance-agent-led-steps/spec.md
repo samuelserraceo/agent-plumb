@@ -218,7 +218,7 @@ Trade-offs:
             (full / most / checkpoint), rejects invalid + falls back
             to checkpoint with clear error message
             — proves AC2 + AC3
-- [ ] T302: .sdd/config.md (live + template) gains a new
+- [x] T302: .sdd/config.md (live + template) gains a new
             parameters.automation: section with documented default
             (checkpoint) + plain-English description of each tier
             — proves AC7 groundwork + supports AC4/AC5
