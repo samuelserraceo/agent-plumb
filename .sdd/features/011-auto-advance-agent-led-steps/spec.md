@@ -140,8 +140,16 @@ Trade-offs:
 
 ### action: out-of-scope
 
-- [ ] list: What are we explicitly NOT building this round? 1-5 bullets, each: name + reason. Empty is fine.
-- [ ] approval: user_approves
+- [x] list: 5 explicit deferrals — (1) per-step `auto-advance:` frontmatter (Approach B from §5); (2) explicit allow/deny lists (Approach C from §5); (3) per-feature override (e.g., feature frontmatter overrides project default); (4) decision-tree audit logging (which steps auto-advanced vs prompted); (5) misclassified `requires_user_approval` flag audit-and-fix sweep (trust v1.6.0 PR-C's matrix lock).
+- [x] approval: Sam approved 2026-05-11.
+
+**Out of scope — 5 explicit deferrals:**
+
+1. **Per-step `auto-advance:` frontmatter (Approach B from §5).** Explicitly rejected — leverage existing `requires_user_approval` instead. Approach A wins on smallest-delta + leverages PR-C's matrix lock.
+2. **Explicit allow/deny lists (Approach C from §5).** Rejected — two sources of truth; Approach A's "respect the frontmatter" is simpler and already partially audited.
+3. **Per-feature override.** Today a project sets one `parameters.automation.level`. A feature can't override (e.g., "this risky feature uses Checkpoint even though the project is Full"). Not in scope for v1; can ship later if friction surfaces — design space: feature-level frontmatter `automation_level:` field, OR a `/sdd-config --feature 011 full` per-feature override command.
+4. **Decision-tree audit logging.** Today there's no record of which steps auto-advanced vs prompted under which tier. Could ship as a follow-up observability feature (Append a marker line to `decisions.md` or a sibling `.sdd/.cache/automation.log` per step). Not blocking — git log still shows every commit; just doesn't say "auto-advanced under Full".
+5. **Misclassified `requires_user_approval` flag audit-and-fix sweep.** Out of scope to audit-and-fix every action's frontmatter flag. We trust v1.6.0 PR-C's existing matrix lock. If misclassified flags surface in usage (e.g., a "technical" action turns out to need product judgement), file as bugs against that action; don't block 011.
 
 ### action: non-functional
 
