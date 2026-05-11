@@ -63,7 +63,7 @@ Future SDD adopters running the framework on bigger workloads hit the same pain 
 
 Use the EXISTING per-action `requires_user_approval: true|false` frontmatter that every action already has. The framework reads `parameters.automation.level` once per `/next` call and applies one of three decision trees:
 
-- **`full`** → if action has `requires_user_approval: false` AND action slug NOT in destructive list → execute + commit + advance silently. Skip the CTA.
+- **`full`** → if action has `requires_user_approval: false` → execute + commit + advance silently. Skip the CTA. (Destructive list is NOT consulted at Full; the per-action `requires_user_approval: true` flag is the only gate. Destructive actions are classified `true` in v1.6.0's matrix, so they prompt under Full via the flag.)
 - **`most`** → same as Full BUT destructive-list actions (`mark-shipped`, `manifest: repin` commits, `--delete-branch`, `decisions.md` append, `.shipped` marker, repin) still prompt.
 - **`checkpoint`** → today's behaviour (prompts at every AGENT-LED step regardless of frontmatter flag).
 
@@ -107,13 +107,13 @@ Trade-offs:
 
 ### action: flows
 
-- [x] flows: 3 flows — Flow 1: User picks automation level at setup (`/sdd-setup` or `/sdd-config` → wizard → writes `parameters.automation.level`); Flow 2: Full-tier auto-advance (`/next` skips approve CTA when action `requires_user_approval: false` AND not destructive); Flow 3: Most-tier destructive gate (action on destructive list still prompts even at Most). Sam approved 2026-05-11.
+- [x] flows: 3 flows — Flow 1: User picks automation level at setup (`/sdd-setup` or `/sdd-config` → wizard → writes `parameters.automation.level`); Flow 2: Full-tier auto-advance (`/next` skips approve CTA when action `requires_user_approval: false`; destructive list is NOT consulted at Full); Flow 3: Most-tier destructive gate (action on §11 destructive list still prompts under Most regardless of per-action flag). Sam approved 2026-05-11.
 
 **Draft (pre-filled from brief; awaiting /next approval):** 3 flows.
 
 1. **Flow 1 — User picks automation level at setup** (user story #3). User runs `/sdd-setup` (new project) or `/sdd-config` (existing project) → wizard asks "Automation level for AGENT-LED steps? [Full / Most / Checkpoint]" with a 1-paragraph plain-English description of each tier → user picks → `.sdd/config.md` writes `parameters.automation.level: <tier>` → subsequent /next calls respect it.
 
-2. **Flow 2 — /next walks an AGENT-LED step under `full`** (user stories #1, #2). /next resolves the next blocker → AGENT-LED step. Framework reads `automation.level: full`. Framework reads action's `requires_user_approval: false` (default for technical actions) AND the action isn't on the destructive list (§11 enumerates) → /next executes the step's body (agent proposes + commits) WITHOUT prompting Sam for approve. Reports done; advances to next step.
+2. **Flow 2 — /next walks an AGENT-LED step under `full`** (user stories #1, #2). /next resolves the next blocker → AGENT-LED step. Framework reads `automation.level: full`. If the action's `requires_user_approval: false`, /next executes the step's body (agent proposes + commits) WITHOUT prompting Sam for approve. Reports done; advances to next step. The §11 destructive list is NOT consulted at Full — per-action flag is the only gate; destructive actions already carry `requires_user_approval: true` in v1.6.0's matrix so they prompt via the flag.
 
 3. **Flow 3 — /next walks an AGENT-LED step under `most` against a destructive action** (Most tier safety gate). Same as Flow 2 BUT the action's slug matches the §11 destructive list (e.g. `mark-shipped`, manifest-repin commits, `--delete-branch` merges, `decisions.md` append). Framework still prompts Sam for approve, even though `automation.level: most` would otherwise auto-advance. Reports the gate reason ("destructive action under Most tier — confirm").
 
@@ -184,7 +184,7 @@ Trade-offs:
 - **AC3 — Invalid tier rejected.** Setting `parameters.automation.level: invalid` → `resolve-parameters.sh` errors with a clear message + falls back to `checkpoint`. {verify-by: T301}
 - **AC4 — `/sdd-setup` includes the automation question.** Setup wizard prose contains an "Automation level" question with Full/Most/Checkpoint options + plain-English description of each tier. {verify-by: T303}
 - **AC5 — `/sdd-config` supports tier change.** `/sdd-config automation full` updates `.sdd/config.md` to `parameters.automation.level: full`. {verify-by: T304}
-- **AC6 — `/next` slash command prose contains the 3-way decision tree.** `.claude/commands/next.md` (or templates equivalent) describes: "if tier=full AND action.requires_user_approval=false AND action NOT in destructive list → auto-advance; else if tier=most AND action in destructive list → prompt; else if tier=checkpoint → prompt". {verify-by: T305}
+- **AC6 — `/next` slash command prose contains the 3-way decision tree.** `.claude/commands/next.md` (or templates equivalent) describes: "if tier=full AND action.requires_user_approval=false → auto-advance; else if tier=most AND action in destructive list → prompt; else if tier=most → auto-advance; else if tier=checkpoint → prompt". {verify-by: T305}
 - **AC7 — Destructive-actions list is enumerated in `.sdd/config.md`.** `.sdd/config.md` contains a section/field listing destructive action slugs: `mark-shipped`, `manifest-repin`, `--delete-branch`, `decisions.md-append`, `.shipped-marker`, `repin`. {verify-by: T306}
 
 **Best-effort named-eye (1 AC):**
@@ -194,7 +194,7 @@ Trade-offs:
 **PROD-ONLY (2 ACs):**
 
 - **AC9 — Real-session walk under Full tier completes a feature without prompts on technical actions.** In a real Claude Code session with `automation.level: full`, walking a fixture feature's SPEC → BUILD → SHIP triggers no approve CTAs on AGENT-LED steps marked `requires_user_approval: false`. Product-judgement steps still prompt. {prod-only: requires live agent session at first-SHIP walk}
-- **AC10 — Most-tier destructive gate fires on mark-shipped.** In a real Claude Code session with `automation.level: most`, reaching mark-shipped on a fixture feature triggers an approve CTA (the destructive gate), even though mark-shipped's `requires_user_approval: false` would otherwise auto-advance under Full. {prod-only: requires live agent session at first-SHIP walk}
+- **AC10 — Most-tier destructive gate fires on mark-shipped.** In a real Claude Code session with `automation.level: most`, reaching mark-shipped on a fixture feature triggers an approve CTA via the §11 `destructive_actions` list — even though Most otherwise auto-advances every AGENT-LED step regardless of per-action flag. Under `full`, mark-shipped's gate comes from its `requires_user_approval: true` frontmatter (v1.6.0 matrix classification), not from the destructive list. {prod-only: requires live agent session at first-SHIP walk}
 
 ### action: signoff-steps
 
@@ -278,6 +278,7 @@ PROD-ONLY AC9 + AC10 + best-effort AC8 = no T-task; verified at SHIP via §12 si
 **Net effect:** 0 new ACs (§11 stays hash-locked). 4 folded into existing T-tasks (#2 → AC2; #3 → AC7; #5 → T301; #6 → AC9). 2 documented at SHIP (#1, #4). 1 already-covered (#7).
 
 ### Exit checks
+
 - [x] C-spec-acs: ≥1 acceptance criterion exists in §11 {verify-by: C-spec-acs bash-grep} — grep -qE '^- \[[ x]\] AC[0-9]+' "$SECTION_FILE"
 - [x] C-spec-tasks: ≥1 task in plan-decompose section {verify-by: C-spec-tasks bash-grep} — grep -qE '^- \[[ x]\] T[0-9]+' "$SECTION_FILE"
 

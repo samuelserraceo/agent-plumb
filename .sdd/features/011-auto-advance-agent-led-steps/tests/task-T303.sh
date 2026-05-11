@@ -36,12 +36,21 @@ else
   if ! printf '%s\n' "$FRONTMATTER" | grep -qE "^records_in:"; then
     fails+=("setup brick $BRICK frontmatter missing 'records_in:'")
   fi
-  # CR cycle-3 #4: records_at (or records_in) must point at the canonical
-  # config field. The 008-automation-level brick splits the value across
-  # `records_in: '.sdd/config.md'` + `records_at: 'parameters.automation.level'` —
-  # accept either path-pair shape or a combined records_in value.
-  if ! printf '%s\n' "$FRONTMATTER" | grep -qE "parameters\.automation\.level|records_at:.*automation\.level"; then
-    fails+=("setup brick $BRICK frontmatter missing 'parameters.automation.level' target (records_in / records_at)")
+  # CR cycle-3 #4 + cycle-4 tightening: records_at (or records_in) must
+  # point at the canonical config field. The 008-automation-level brick
+  # splits the value across `records_in: '.sdd/config.md'` + `records_at:
+  # 'parameters.automation.level'` — accept either key as the carrier,
+  # but require an EXPLICIT key-scoped value match (not a free-floating
+  # mention anywhere in frontmatter).
+  has_target=0
+  if printf '%s\n' "$FRONTMATTER" | grep -qE "^records_at:[[:space:]]*['\"]?parameters\.automation\.level['\"]?[[:space:]]*$"; then
+    has_target=1
+  fi
+  if printf '%s\n' "$FRONTMATTER" | grep -qE "^records_in:[[:space:]]*['\"]?parameters\.automation\.level['\"]?[[:space:]]*$"; then
+    has_target=1
+  fi
+  if [ "$has_target" -eq 0 ]; then
+    fails+=("setup brick $BRICK frontmatter: records_at / records_in does not point at 'parameters.automation.level' as the key-scoped value")
   fi
   # Frontmatter must declare 'when' (start vs sub-stage).
   if ! printf '%s\n' "$FRONTMATTER" | grep -qE "^when:"; then
