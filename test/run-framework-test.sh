@@ -2049,15 +2049,18 @@ PAT
   ec=$?
   cd - >/dev/null
   rm -rf "$d"
-  # CR cycle 1 fix: assert ordering — data-model.md before patterns.md.
+  # Idea 003 (cache-friendly reorder): data-model.md now sits AFTER
+  # patterns.md (moderate-change-rate after the two append-only-ish
+  # files). The original CR-cycle-1 invariant (data-model.md is injected
+  # AND has content) still holds; only the position invariant flipped.
   dm_line=$(echo "$out" | grep -n "\.sdd/data-model\.md ---" | head -1 | cut -d: -f1)
   patterns_line=$(echo "$out" | grep -n "\.sdd/patterns\.md ---" | head -1 | cut -d: -f1)
   if [ "$ec" -eq 0 ] \
      && echo "$out" | grep -q "\.sdd/data-model\.md ---" \
      && echo "$out" | grep -q "Subscription" \
      && [ -n "$dm_line" ] && [ -n "$patterns_line" ] \
-     && [ "$dm_line" -lt "$patterns_line" ]; then
-    ok "T148 data-model.md injected per turn (header + content + ordering before patterns)"
+     && [ "$patterns_line" -lt "$dm_line" ]; then
+    ok "T148 data-model.md injected per turn (header + content + after patterns per idea 003)"
   else
     bad "T148 data-model.md not auto-injected or ordering wrong" "exit=$ec; has-header=$(echo "$out" | grep -c "data-model\.md"); has-content=$(echo "$out" | grep -c Subscription); dm_line=$dm_line; patterns_line=$patterns_line"
   fi
@@ -2102,6 +2105,86 @@ PAT
     ok "T149 principles.md injected per turn (header + content + ordering before patterns)"
   else
     bad "T149 principles.md not auto-injected or ordering wrong" "exit=$ec; has-header=$(echo "$out" | grep -c "principles\.md"); has-content=$(echo "$out" | grep -c 'All dates'); prin_line=$prin_line; patterns_line=$patterns_line"
+  fi
+fi
+
+# ============================================================
+# T162 — user-prompt-submit emits corpus in cache-friendly order
+#        (idea 003 — stable-first / variable-last reorder).
+#   RED: the original v1.3 order put INDEX.md + active spec.md FIRST,
+#        which are the most variable files turn-to-turn. That forced the
+#        prompt-cache prefix to break on every iteration. Reordering
+#        stable → variable lets Claude's prompt cache hold the longest
+#        possible stable prefix across turns, dropping new-turn token
+#        cost dramatically when the stable files don't change.
+#   Target order in emit_state():
+#     1. principles.md (stable — longest cached span)
+#     2. stack.md (stable)
+#     3. patterns.md (stable, append-only growth)
+#     4. data-model.md (moderate change rate)
+#     5. INDEX.md live filter (changes per-feature)
+#     6. active spec.md (changes per-turn — LAST so prefix above caches)
+# ============================================================
+note "T162: user-prompt-submit emits corpus in cache-friendly order (idea 003)"
+d=$(mkproj_v08)
+if ! cd "$d"; then
+  bad "T162 setup failed" "cannot cd into temp project at $d"
+else
+  cat > .sdd/INDEX.md <<'IDX'
+**Active:** features/001-test
+
+## Active
+
+## Shipped
+IDX
+  cat > .sdd/principles.md <<'PRIN'
+# Principles
+- principles content marker
+PRIN
+  cat > .sdd/stack.md <<'STK'
+# Stack
+- stack content marker
+STK
+  cat > .sdd/patterns.md <<'PAT'
+# Patterns
+- patterns content marker
+PAT
+  cat > .sdd/data-model.md <<'DM'
+# Data model
+- data-model content marker
+DM
+  cat > .sdd/features/001-test/spec.md <<'SPEC'
+# Test feature
+[PHASE: PROBLEM]
+
+## PHASE: PROBLEM
+- spec content marker
+SPEC
+  out=$(bash "$FRAMEWORK_ROOT/templates/.claude/hooks/user-prompt-submit.sh" 2>&1)
+  ec=$?
+  cd - >/dev/null
+  rm -rf "$d"
+  # Capture the line number of each file's header marker. The hook
+  # emits one `--- .sdd/<file> ---` (or for spec: `--- .sdd/<path>/spec.md ...`)
+  # line per file. First occurrence wins via `head -1`.
+  prin_line=$(echo "$out"     | grep -n "\.sdd/principles\.md ---"     | head -1 | cut -d: -f1)
+  stack_line=$(echo "$out"    | grep -n "\.sdd/stack\.md ---"          | head -1 | cut -d: -f1)
+  patterns_line=$(echo "$out" | grep -n "\.sdd/patterns\.md ---"       | head -1 | cut -d: -f1)
+  dm_line=$(echo "$out"       | grep -n "\.sdd/data-model\.md ---"     | head -1 | cut -d: -f1)
+  index_line=$(echo "$out"    | grep -n "\.sdd/INDEX\.md (live"        | head -1 | cut -d: -f1)
+  spec_line=$(echo "$out"     | grep -n "001-test/spec\.md (header"    | head -1 | cut -d: -f1)
+  if [ "$ec" -eq 0 ] \
+     && [ -n "$prin_line" ] && [ -n "$stack_line" ] && [ -n "$patterns_line" ] \
+     && [ -n "$dm_line" ] && [ -n "$index_line" ] && [ -n "$spec_line" ] \
+     && [ "$prin_line"     -lt "$stack_line"    ] \
+     && [ "$stack_line"    -lt "$patterns_line" ] \
+     && [ "$patterns_line" -lt "$dm_line"       ] \
+     && [ "$dm_line"       -lt "$index_line"    ] \
+     && [ "$index_line"    -lt "$spec_line"     ]; then
+    ok "T162 corpus emitted in cache-friendly order: principles→stack→patterns→data-model→INDEX→spec"
+  else
+    bad "T162 corpus ordering wrong (idea 003 reorder not applied)" \
+        "exit=$ec; prin=$prin_line stack=$stack_line patterns=$patterns_line dm=$dm_line index=$index_line spec=$spec_line"
   fi
 fi
 
