@@ -1,6 +1,9 @@
 {
-  "phase": "SPEC",
-  "checks": [],
+  "phase": "BUILD",
+  "checks": [
+    {"id": "C-spec-acs", "result": "pass"},
+    {"id": "C-spec-tasks", "result": "pass"}
+  ],
   "approved_sections": {
     "proposed-approach": "3414bfe7f0a92a4aa7348140797de8e56bd4f820b91f3ea5291109ea52c00d1f",
     "data-contract": "bb14e0800bb210a23e2f37013d5297da99ba2c0403fa9d32e78075d75e2463b3",

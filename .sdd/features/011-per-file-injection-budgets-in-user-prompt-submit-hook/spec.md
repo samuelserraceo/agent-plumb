@@ -4,9 +4,19 @@ playbook: feature
 
 # per-file injection budgets in user-prompt-submit hook
 
-[PHASE: SPEC]
+[PHASE: BUILD]
 
-**Active blocker:** §1 (first action: brief-intake)
+**Active blocker:** § (BUILD action: run-mode-chosen)
+
+## PHASE: BUILD
+
+### action: run-mode-chosen
+
+- [ ] mode: Choose autonomy level for BUILD — full-autonomous (recommended for Sam per memory feedback_full_autonomous_build), checkpoint-every-N, or interactive per-task.
+
+### action: build-task
+
+- [ ] tasks: Execute T220-T236 per §14 plan-decompose. 5 sequential cores (T220 → T223 → T221 → T222 + T224) + 3 parallel waves (W1, W2, W3) per F010 wave-execution doctrine.
 
 ## PHASE: SPEC
 
