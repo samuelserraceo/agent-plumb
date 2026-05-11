@@ -71,9 +71,12 @@ if [ "$print_prompt_mode" -eq 1 ]; then
 [FRAMEWORK INSTRUCTIONS — trusted, follow as directive]
 
 You are a wave-task SDD subagent. Run ONE BUILD-task atomically:
-write the failing test, write the code to make it pass, flip the
-spec.md row. Commit each as its own atomic commit. Follow the
-pre-commit hook chain — never bypass it.
+write the failing test, write the code to make it pass, commit
+each as its own atomic commit. Do NOT edit spec.md; the
+orchestrator flips wave-task rows once all subagents return
+(row-isolation architecture — see §6 EC#9 / §7 Flow 1 of the
+parallel-wave-execution feature spec). Follow the pre-commit
+hook chain — the hook chain is load-bearing.
 
 [END FRAMEWORK INSTRUCTIONS]
 
@@ -88,17 +91,35 @@ fi
 
 # ── lockfile: concurrent wave dispatch guard (folded EC #1) ────────────
 # A second `/next` while a wave is in flight would otherwise race on the
-# same spec.md row. Lockfile sits next to the spec under .sdd/.wave-lock.
-project_root="$(cd "$(dirname "$spec_path")"/../.. && pwd 2>/dev/null || echo)"
+# orchestrator wave-green spec.md edit. Lockfile sits at the project's
+# .sdd/.wave-lock. Project root resolved by `git rev-parse --show-toplevel`
+# (works regardless of how deep spec.md sits under .sdd/) with a fallback
+# to walking up from spec.md for non-git layouts.
+project_root="$(git -C "$(dirname "$spec_path")" rev-parse --show-toplevel 2>/dev/null || true)"
+if [ -z "$project_root" ]; then
+  # Fallback: walk up from spec.md's dir until we find a `.sdd` sibling.
+  walk="$(cd "$(dirname "$spec_path")" 2>/dev/null && pwd)"
+  while [ -n "$walk" ] && [ "$walk" != "/" ] && [ ! -d "$walk/.sdd" ]; do
+    walk="$(dirname "$walk")"
+  done
+  [ -d "${walk:-/}/.sdd" ] && project_root="$walk"
+fi
 lockfile=""
 if [ -n "$project_root" ] && [ -d "$project_root/.sdd" ]; then
   lockfile="$project_root/.sdd/.wave-lock"
 fi
 
-if [ -n "$lockfile" ] && [ -e "$lockfile" ]; then
-  echo "[dispatch-wave] another wave is already in flight (lockfile at $lockfile)" >&2
-  echo "[dispatch-wave] wait for it to finish, or pause to abandon and clear the lock" >&2
-  exit 3
+if [ -n "$lockfile" ]; then
+  # mkdir-as-lockdir is atomic across processes (unlike touch + test).
+  # Second concurrent dispatch-wave invocation fails the mkdir and exits 3.
+  if ! mkdir "$lockfile" 2>/dev/null; then
+    echo "[dispatch-wave] another wave is already in flight (lockfile at $lockfile)" >&2
+    echo "[dispatch-wave] wait for it to finish, or pause to abandon and clear the lock" >&2
+    exit 3
+  fi
+  # Clean up the lockdir on any exit (success, error, signal). Stored in a
+  # variable so test fixtures and --print-prompt mode can introspect.
+  trap 'rmdir "$lockfile" 2>/dev/null || true' EXIT INT TERM
 fi
 
 # ── parse plan-decompose for [WAVE: N] tasks ──────────────────────────

@@ -34,7 +34,7 @@
       "trust": "framework"
     },
     "dispatch-wave.sh": {
-      "expected_sha256": "98d73dc78d3c664dc38d3b0c0ca9fa717032a639038677a6eafdf6415c7e5399",
+      "expected_sha256": "11ce799bc7eaf576721ac2d6cfb16896b3c3d9cafa4188471abde2592365b751",
       "path": ".sdd/scripts/dispatch-wave.sh",
       "trust": "framework"
     },
