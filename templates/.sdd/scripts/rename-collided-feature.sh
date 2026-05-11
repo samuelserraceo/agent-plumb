@@ -60,15 +60,40 @@ EOF
   exit 1
 fi
 
-# Shape check: each argument must match NNN-<slug>.
-case "$OLD" in
-  [0-9][0-9][0-9]-*) ;;
-  *) echo "[rename-collided-feature] old id '$OLD' must start with NNN- (3 digits)" >&2; exit 1 ;;
-esac
-case "$NEW" in
-  [0-9][0-9][0-9]-*) ;;
-  *) echo "[rename-collided-feature] new id '$NEW' must start with NNN- (3 digits)" >&2; exit 1 ;;
-esac
+# Shape check: each argument must match NNN-<slug>, where <slug> is a non-empty
+# canonical slug — lowercase alnum + `_-`, no path separators, no whitespace,
+# no leading dot. This is a SECURITY guard: $NEW becomes part of $NEW_DIR which
+# is then passed to `mv`, so a slug containing `../` could escape the .sdd/
+# tree. The slug shape mirrors what /start scaffolds (kebab-case ids).
+validate_id_slug() {
+  # $1 = label ("old"/"new"), $2 = value
+  case "$2" in
+    [0-9][0-9][0-9]-*) ;;
+    *) echo "[rename-collided-feature] $1 id '$2' must start with NNN- (3 digits)" >&2; exit 1 ;;
+  esac
+  case "$2" in
+    # Empty slug: NNN- with nothing after the dash.
+    [0-9][0-9][0-9]-) echo "[rename-collided-feature] $1 id '$2' has empty slug after NNN-" >&2; exit 1 ;;
+  esac
+  case "$2" in
+    # Path separators or whitespace anywhere in the value — would let
+    # `mv` walk outside the work-folder via `../` or break parsing.
+    */*|*\\*|*' '*|*$'\t'*|*$'\n'*)
+      echo "[rename-collided-feature] $1 id '$2' contains path separator or whitespace — refused" >&2; exit 1 ;;
+  esac
+  case "$2" in
+    # Leading dot in slug — would create a hidden directory and confuse globs.
+    [0-9][0-9][0-9]-.*)
+      echo "[rename-collided-feature] $1 id '$2' slug must not start with a dot" >&2; exit 1 ;;
+  esac
+  case "$2" in
+    # Canonical slug shape: NNN- then lowercase alnum/underscore/dash only.
+    [0-9][0-9][0-9]-*[!a-z0-9_-]*)
+      echo "[rename-collided-feature] $1 id '$2' slug must be lowercase alnum + '_' or '-' only" >&2; exit 1 ;;
+  esac
+}
+validate_id_slug "old" "$OLD"
+validate_id_slug "new" "$NEW"
 
 [ -d ".sdd" ] || { echo "[rename-collided-feature] no .sdd/ directory — not an SDD project" >&2; exit 1; }
 
