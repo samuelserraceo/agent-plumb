@@ -148,7 +148,71 @@ parameters:
 
 ### action: flows
 
-- [ ] flows: draft 1-3 critical flows, each referencing the user story it implements
+- [x] flows: 2 critical flows — (1) hook injection with per-file budgets (covers stories 1 + 3); (2) downstream project overriding budgets (covers story 2). Approved by Sam 2026-05-11 with same anti-theatre constraint.
+
+**Flows (2 critical, mapped to user stories):**
+
+### Flow 1 — Hook injection with per-file budgets (stories 1 + 3)
+
+```text
+1. Sam (or any user on a project with .claude/hooks/user-prompt-submit.sh
+   wired) types a prompt in Claude Code.
+2. user-prompt-submit.sh fires BEFORE the prompt reaches the model.
+3. Hook reads per-file budgets via resolve-parameters.sh:
+     parameters.injection.per_file_budget_chars
+     → {INDEX:3000, spec:5000, principles:2000, stack:3000,
+        data-model:3000, patterns:4000}
+4. Hook iterates the corpus injection order:
+     a. INDEX.md  → live-filter via awk '/^## Shipped/ {exit} {print}'
+                    (#228), then apply 3000-char budget.
+     b. active spec.md → apply 5000-char budget.
+     c. principles.md → apply 2000-char budget.
+     d. stack.md → apply 3000-char budget.
+     e. data-model.md → apply 3000-char budget.
+     f. patterns.md → apply 4000-char budget.
+5. For each file whose pre-budget content exceeds its budget:
+     - keep first <budget> chars
+     - append sentinel line:
+       [truncated to <N> bytes per per-file budget — re-read with
+        the Read tool if you need the cut portion]
+6. Concatenate all files (each capped to its budget + optional sentinel).
+7. Defensive cap_total_chars: if combined output still exceeds 16000
+   (e.g. sum-overshoot edge case), apply the existing total-cap clip
+   to the tail. Documented as the safety-net path.
+8. Inject the concatenated text as [PROJECT DATA] alongside the
+   user's prompt. The model sees every corpus file up to its budget
+   plus a sentinel when truncated.
+```
+
+**What's different from today's hook:** today's logic concatenates all corpus files into one string, then truncates the END of that string at 16000 chars — so patterns.md (last in order, 20KB on this repo) gets cut mid-paragraph or wholesale. The per-file loop replaces step 5's behavior so each file's truncation is independent of the others' sizes. {verify-by: T-NNN compares output of today's hook vs new hook on a fixture where patterns.md > 16KB}
+
+**Acceptance signal for this flow:** the agent sees a sentinel string when truncation happens, plus at least the first <budget> chars of each corpus file. {verify-by: T-NNN sentinel-presence AC on a multi-file-overflow fixture}
+
+### Flow 2 — Downstream project overrides budgets (story 2)
+
+```text
+1. Lucia (downstream SDD user) clones the framework into her project;
+   her patterns.md is small (3KB) but data-model.md is huge (12KB).
+2. She edits her project's .sdd/config.md and adds:
+     parameters:
+       injection:
+         per_file_budget_chars:
+           patterns: 2000     # her patterns are small; tight budget is fine
+           data-model: 8000   # she wants more of her data-model visible
+3. She runs any /next or types a new prompt.
+4. user-prompt-submit.sh fires.
+5. resolve-parameters.sh reads HER config first, merges:
+     - patterns: 2000   (her override)
+     - data-model: 8000 (her override)
+     - INDEX, spec, principles, stack: framework defaults
+6. Hook applies the merged map per Flow 1.
+7. Lucia sees data-model.md content up to 8000 chars in injection
+   on this turn; patterns.md truncated at 2000 chars with sentinel.
+```
+
+**What's different from today's hook:** today there is no per-file budget map — only the single `cap_total_chars` (which itself has an env-var override but no per-file shape). Lucia today can either accept the framework default (16K total, end-truncated) or set `SDD_INJECTION_CAP_CHARS=N` (still single-cap shape). The per-file map gives her granular control without changing the framework hook code. {verify-by: T-NNN partial-override fixture asserts merged map matches expected}
+
+**Acceptance signal for this flow:** resolve-parameters.sh returns Lucia's override for declared keys + framework defaults for the rest; hook applies the merged map. {verify-by: T-NNN partial-override fixture}
 
 ### action: dependencies
 
