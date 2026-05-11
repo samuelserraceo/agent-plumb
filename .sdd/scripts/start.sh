@@ -311,26 +311,29 @@ for entry in os.listdir(work_dir):
 try:
     # Refresh origin/main first so the ls-tree below sees the latest shipped
     # state. 5s timeout protects against slow networks / unreachable remotes;
-    # `--quiet` keeps the /start output clean.
-    subprocess.run(
+    # `--quiet` keeps the /start output clean. Capture the result so we only
+    # proceed to ls-tree when the fetch succeeded — otherwise origin/main
+    # might be days-stale and we'd silently pick an ID from out-of-date data.
+    fetch = subprocess.run(
         ["git", "fetch", "--quiet", "origin", "main"],
         cwd=proj, timeout=5, check=False,
         capture_output=True,
     )
-    # ls-tree origin/main:<work_item_folder>/ — list folder entries on main.
-    # `--name-only` returns just the path (no mode/hash columns).
-    rel = work_item_folder.rstrip("/")
-    r = subprocess.run(
-        ["git", "ls-tree", "--name-only", f"origin/main:.sdd/{rel}"],
-        cwd=proj, timeout=5, check=False,
-        capture_output=True, text=True,
-    )
-    if r.returncode == 0:
-        for line in r.stdout.splitlines():
-            entry = os.path.basename(line.strip())
-            m = re.match(r"^(\d{3})-", entry)
-            if m:
-                existing_ids.append(int(m.group(1)))
+    if fetch.returncode == 0:
+        # ls-tree origin/main:<work_item_folder>/ — list folder entries on main.
+        # `--name-only` returns just the path (no mode/hash columns).
+        rel = work_item_folder.rstrip("/")
+        r = subprocess.run(
+            ["git", "ls-tree", "--name-only", f"origin/main:.sdd/{rel}"],
+            cwd=proj, timeout=5, check=False,
+            capture_output=True, text=True,
+        )
+        if r.returncode == 0:
+            for line in r.stdout.splitlines():
+                entry = os.path.basename(line.strip())
+                m = re.match(r"^(\d{3})-", entry)
+                if m:
+                    existing_ids.append(int(m.group(1)))
 except (subprocess.SubprocessError, OSError, FileNotFoundError):
     # Any failure → fall back to local-only scan (safe degradation).
     pass
