@@ -503,7 +503,7 @@ All §10 mechanical-shape claims have AC coverage. Compliance items (license, no
 
 ### action: push-pr
 
-- [ ] push-and-open: push the branch + open a PR
+- [x] push-and-open: PR #227 opened — https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/227. 58 commits ahead of main. Body covers summary, why-it-matters, AC coverage, test status, test plan, mid-walk T203 architectural correction.
 
 ### action: verify-ci-green
 
