@@ -49,9 +49,11 @@ Future SDD adopters running the framework on bigger workloads hit the same pain 
 
 4. **Cautious-mode adopter — Checkpoint stays default.** As a new SDD adopter learning the framework, I want the default to stay `Checkpoint` (today's behaviour), so I learn each step interactively before opting in to `Full` or `Most`.
 
-### action: ux-brief
+### action: ux-brief [SKIPPED]
 
-- [ ] brief: infer the UX direction from problem, success, and user stories
+- ⏭ brief: skipped — non-UI feature (framework config-flag + walk-behaviour change; chat-as-UX setup-wizard question is the only user-facing surface, visualised in §13 wireframe per the wireframe-redesign rule, same pattern as F008 + F010).
+
+**§4 skipped:** Auto-advance is a framework-internal walk-behaviour change. The only user-facing surface is the `/sdd-setup` wizard question (one-line CLI prompt + plain-English option list) — chat-as-UX, not visual UI. Visualisation lives in §13 wireframe (flow + architecture + concrete examples) per the v1.2 wireframe-redesign rule.
 
 ### action: proposed-approach
 
