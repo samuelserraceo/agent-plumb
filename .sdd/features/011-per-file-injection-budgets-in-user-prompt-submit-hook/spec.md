@@ -241,8 +241,18 @@ parameters:
 
 ### action: out-of-scope
 
-- [ ] list: What are we explicitly NOT building this round? 1-5 bullets, each: name + reason. Empty is fine.
-- [ ] approval: user_approves
+- [x] list: 4 explicit deferrals (each: name + reason)
+- [x] approval: Approved by Sam 2026-05-11. 4 deferrals locked: idea 003 full reorder, Tier 3 enablement, per-file truncation direction, token-aware budgets.
+
+**Out of scope this round (4 explicit deferrals):**
+
+1. **Idea 003 full stable-first cache reorder** — reordering the corpus injection sequence so stable files come first (cache-friendly) and the variable turn comes last is the bigger speed win this feature unblocks. Reason it is not bundled: per-file budgets are the prerequisite (today's truncate-from-end would drop INDEX+spec entirely if the order flipped). Reorder ships as a separate feature once 011 lands. {verify-by: separate feature ID will be issued when 011 ships}
+
+2. **Tier 3 (LLM-driven synthesis) enablement** — `parameters.mcp.tier3.enabled: true` would replace the corpus-dump injection with an on-the-fly synthesised summary. Reason it is not bundled: separate decision on its own merits (latency, cost, accuracy trade-offs); Sam wants per-file budgets as the immediate truncation fix without that wider commitment. {best-effort: Sam revisits Tier 3 enablement at the next idea-001 review}
+
+3. **Per-file truncation direction (head vs tail)** — today the per-file truncation keeps the first <budget> chars. A future schema addition could let downstream users pick head vs tail per file (e.g. patterns.md might want tail-kept once it has stable foundational sections at the top). Reason it is not bundled: additive schema change; revisit when a downstream user asks. {best-effort: Sam at the next downstream-user request}
+
+4. **Token-aware budgets** — `per_file_budget_chars` is char-count based, not token-count based. Reason it is not bundled: char-counting is provider-agnostic and bash-native; token-counting needs the provider's tokenizer (different per model). Char-budgets are a useful approximation; token-aware is a follow-up if measurement shows the approximation is too loose. {best-effort: Sam at SHIP — empirical check whether the char→token ratio holds for the corpus files on this project}
 
 ### action: non-functional
 
