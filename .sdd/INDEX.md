@@ -1,6 +1,6 @@
 # SDD framework — INDEX
 
-**Active:** features/019-session-start-hook-prints-bootstrap-success-signal-closes-164-bug-4
+**Active:** _(none)_
 **Playbook:** feature
 **Active blocker:** _(no active feature — **v1.8.0 + v1.8.1 shipped 2026-05-11**: v1.8.0 = F011 auto-advance AGENT-LED steps (#236, idea 005); v1.8.1 = F014 MCP-doctrine sentinel (#243, closes #210 part 1). Pick next from ## Ideas below or open issues. Parallel agents still in flight on `feat/cache-friendly-corpus-reorder-003` + `feat/per-file-injection-budgets` + `fix/sdd-setup-q1-...-163`.)_
 
@@ -9,7 +9,7 @@
 
 ## In flight
 
-- features/019-session-start-hook-prints-bootstrap-success-signal-closes-164-bug-4 — session-start hook bootstrap-success signal (closes #164 bug 4) (PHASE: BUILD)
+(none)
 
 
 
@@ -25,6 +25,13 @@
 
 
 ## Shipped
+
+- **[[019-session-start-hook-prints-bootstrap-success-signal-closes-164-bug-4]]** — closes #164 bug 4. Adds a first-install success cue to `templates/.claude/hooks/session-start.sh` (mirrored to live). When `.sdd/` exists but no `.shipped` markers anywhere under work-item folders, the hook echoes `[SDD bootstrap] ready — .sdd/ scaffold ready` — single line, suppresses for returning users. Closes the "did install actually work?" anxiety F01's 2026-05-05 install dance surfaced. Scope-trimmed to bug 4 only (bugs 1/2/3 deferred). 1 BUILD task-test T01 GREEN (fresh-install fires + returning-user suppresses). Cycle-0 CR (auto-merge no findings).
+  - Shipped: 2026-05-11 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/249 · Tag: `v1.8.2`
+  - Data-model: (none — single-hook addition)
+  - Extends: (root); v1.8 patch on top of v1.8.1
+  - Patterns: zero-state cue beats silence (one printed line at install resolves a class of "did it work?" support questions). Folded into existing UX-cue discipline.
+  - Deferred: #164 bug 1 (two-restart bootstrap UX); bug 2 (three cache locations on upgrade); bug 3 (v1.4 cascade — already fixed). Bugs 1+2+3 stay as separate follow-ups in same #164.
 
 - **[[014-user-prompt-submit-queries-mcp-for-context-slice-instead-of-full-notebook-inject]]** — closes #210 part 1. Adds an MCP-doctrine sentinel to `templates/.claude/hooks/user-prompt-submit.sh` (mirrored to live copy). When `.sdd/config.md` has `parameters.mcp.enabled: true` (flat OR nested YAML shape), the hook emits ONE extra line inside `[FRAMEWORK INSTRUCTIONS]` naming the 5 graph queries (`get_backlinks` / `get_neighbours` / `get_pattern` / `get_references` / `search_within`) the agent should prefer over re-reading patterns.md / data-model.md in full. When MCP disabled (default), the legacy `(no framework-trusted content injected this turn)` line stays. Doctrine half of the context-slice promise (per `/sdd-setup` brick 007 wording); the mechanical substitution half lands in the `feat/per-file-injection-budgets` worktree separately to avoid stomping its hook edits. 1 BUILD task-test T01 GREEN (sentinel-fires-when-enabled + 5-query-names-present + sentinel-inside-trust-block + no-false-positive-when-disabled). Cycle-0 CR (auto-merge no findings). Mid-flight rebase resolved INDEX.md conflict with F011's parallel ship.
   - Shipped: 2026-05-11 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/243 · Tag: `v1.8.1` (the parallel F011 ship took v1.8.0 first on commit e39d78a; F014 is the immediately-following companion tag)
