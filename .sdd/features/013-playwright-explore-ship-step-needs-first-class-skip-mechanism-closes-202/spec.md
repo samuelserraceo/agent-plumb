@@ -6,7 +6,7 @@ playbook: feature
 
 [PHASE: BUILD]
 
-**Active blocker:** §14 T01 (add skip_when frontmatter to playwright-explore.md)
+**Active blocker:** SHIP — all 3 tasks GREEN; ready to PR
 
 **Run mode:** full-autonomous
 
@@ -206,9 +206,9 @@ Agent: advances to next SHIP action
 
 #### §14 Plan-Decompose
 
-- [ ] T01: Add `skip_when:` frontmatter field to `templates/.sdd/actions/playwright-explore.md` with condition + detect + log_line. Test: `tests/task-001.sh` GREEN. AC1 mapped.
-- [ ] T02: Validate the log_line shape (single line, prefix, install command). Test: `tests/task-002.sh` GREEN. AC2 mapped.
-- [ ] T03: Add `## When to skip` body section before `**What it looks like:**`. Test: `tests/task-003.sh` GREEN. AC3 mapped.
+- [x] T01: Add `skip_when:` frontmatter field to `templates/.sdd/actions/playwright-explore.md` with condition + detect + log_line. Test: `tests/task-001.sh` GREEN. AC1 mapped.
+- [x] T02: Validate the log_line shape (single line, prefix, install command). Test: `tests/task-002.sh` GREEN. AC2 mapped.
+- [x] T03: Add `## When to skip` body section before `**What it looks like:**`. Test: `tests/task-003.sh` GREEN. AC3 mapped.
 
 **Status:** AUTONOMOUS DRAFT.
 

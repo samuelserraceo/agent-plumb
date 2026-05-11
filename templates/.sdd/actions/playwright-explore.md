@@ -17,6 +17,10 @@ budget:
   max_tokens: 6000
   max_commits: 2
 requires_user_approval: true
+skip_when:
+  - condition: "playwright-explorer MCP server not configured (extension not enabled)"
+    detect: "no parameters.playwright_explorer.provider in .sdd/config.md"
+    log_line: "playwright-explore: SKIPPED — explorer not installed; install via `bash .sdd/extensions/playwright-explorer/enable.sh`"
 ---
 
 > **§171 — Refresher first.** BEFORE asking the question below, emit the 3-section refresher per [`refresher-block.md`](../skeletons/refresher-block.md): **Where we are** (work-item identifier + **verbatim 1-line quote** from the work-item's mode-appropriate §1 source — copy it exactly as written; do not paraphrase from memory; if §1 isn't filled yet, use the skeleton's "§1 not yet written" fallback), **Today's question (§N <slug>)** (what this asks, in plain English), **Why now** (why it precedes the rest of the work). Skip on within-action continuations (e.g. §1.who → §1.pain share context).
@@ -154,6 +158,12 @@ The slug is derived from the finding's short name (lowercase, hyphen-separated, 
 This action **drives the deployed app in a real browser** and tries to break it. It catches what actually goes wrong in practice — the empty form that crashes the page, the 30-second timeout that hangs the submit button, the auth boundary that lets a logged-out user paste a private URL. Things the spec didn't think to test because the spec author hasn't actually used the feature yet.
 
 The cost ceiling is the bargain: at most a buck per run, at most 50 LLM calls, at most 200 browser actions. Predictable, bounded, repeatable. If the budget runs out, the explorer summarises what it found so far and exits cleanly — no runaway.
+
+## When to skip
+
+When `.sdd/config.md` has no `parameters.playwright_explorer.provider` (the extension hasn't been enabled), the agent emits the single-line skip log declared in this action's frontmatter `skip_when[0].log_line` **verbatim** and advances to the next SHIP action. Do not improvise a multi-line justification block — the canonical one-line output is the only shape that should appear in `/ship` output for un-Playwright'd projects (closes #202).
+
+Mark the step rows as `⏭ skipped — explorer not installed` (matching the framework's existing `[SKIPPED]` convention on other skippable actions) and append a one-line `decisions.md` entry per the ## Audit log doctrine. Then advance.
 
 **What it looks like:**
 
