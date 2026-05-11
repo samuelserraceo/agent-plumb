@@ -119,7 +119,7 @@ Trade-offs:
 
 ### action: dependencies
 
-- [ ] deps: draft external services + pricing math scaled to success-volume targets
+- [x] deps: Hard — existing per-action `requires_user_approval` frontmatter (on every action file), `/sdd-setup` + `/sdd-config` commands (need new automation question), `config.md` `parameters:` structure (need new `automation:` subsection), `resolve-parameters.sh` (needs to expose the new field). Soft — F008 (multi-model) + F010 (parallel waves) — pays full dividend when both in use. Explicitly NOT — no new MCP, no new npm packages, no new entities in `data-model.md`, no new harness API, no commit-shape changes. Sam approved 2026-05-11.
 
 **Draft (pre-filled from brief; awaiting /next approval):** Three buckets.
 
