@@ -1,28 +1,22 @@
 # SDD framework — INDEX
 
-**Active:** features/011-per-file-injection-budgets-in-user-prompt-submit-hook
+**Active:** _(none)_
 **Playbook:** feature
-**Active blocker:** § (SHIP action: verify-test-run)
+**Active blocker:** _(no active feature — **2026-05-11 ship day complete**: 6 PRs landed end-to-end (F011 per-file budgets #239 / wizard option #242 / plain-english sweep #245 / cross-branch ID collision #247 / model tier #248 / cache-friendly reorder #253). 2026-05-10 brainstorm 100% closed. Outstanding: idea 003-specialized-subagents (captured 2026-05-07, Sam to-build), idea 004-remove-success (captured 2026-05-08, Sam to-decide). 3 GH issues still open by design: #166 /ship CR-convergence (mechanical enforcement; "rely on agent memory" today), #165 /sdd-setup tool verification (post-wizard reality check), #113 corpus-edit race (Tier 3-gated).)_
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
 
 ## In flight
 
-- features/011-per-file-injection-budgets-in-user-prompt-submit-hook — per-file injection budgets in user-prompt-submit hook (PHASE: SHIP)
-
+(none)
 
 
 
 ## Ideas
 
-- ideas/001-brief-builder-prefills-spec — brief from `/write-brief` plugin pre-fills SPEC §0; SDD grills only the gaps + audits against project corpus — captured 2026-05-10
-- ideas/002-lego-style-model-right-sizing — each step declares thinking/routine/mechanical tier; framework picks model per tier; works for Claude-only + pi.dev — captured 2026-05-10
-- ideas/003-prompt-caching-across-turns — order prompt so stable corpus comes first, variable turn comes last; provider cache picks up the prefix — captured 2026-05-10
-- ideas/004-background-while-waiting — fill CR/CI deadtime with next-safe-thing (most isolated speed lever, lowest collision risk) — captured 2026-05-10
-- ideas/005-auto-advance-agent-led-steps — default `requires_user_approval` false; setup-time automation-level toggle; extends BUILD-autonomy across SPEC/SHIP — captured 2026-05-10
-- ideas/006-plain-english-sweep-sdd-prose — survey + rewrite SDD's user-facing prose to match brief-builder v0.4's plain-English bar (jargon → notes-from-a-colleague tone) — captured 2026-05-10
-- ideas/007-cross-branch-feature-id-collision — three SDD rules (append-only / cofile-block / wiki-link resolution) collide on git merges when two branches both scaffold the same feature ID — captured 2026-05-10
+- [`ideas/003-specialized-subagents`](ideas/003-specialized-subagents.md) — small set of role-specialised subagents (researcher / executor / verifier); cleaner role-specific prompts, pairs with F008 (multi-model) for tier-routing + F010 (parallel waves) for executor dispatch — captured 2026-05-07, Sam to-build
+- 004-remove-success-from-feature-playbook — drop §2 Success from feature playbook, lean on §11 Acceptance Criteria as the AI-verifiable success layer (§2 is market-shape metric the framework can't verify; §11's `{verify-by: T-NNN}` is the real check) — captured 2026-05-08 mid-F008
 
 
 ## Shipped
