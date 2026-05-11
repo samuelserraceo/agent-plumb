@@ -169,17 +169,18 @@ Trigger: `/next` is invoked when the active spec.md has BUILD tasks marked `[WAV
    files (disjoint from sibling wave-tasks). Wave-task agents do NOT touch
    spec.md. Pre-commit hooks (anti-theatre, atomic-step, test-first) fire on
    each commit independently.
-5. After all wave-tasks land, the orchestrator commits ONE spec.md edit that
-   flips every wave-task row from `[ ]` to `[x]` at once (the "wave-green"
-   step). Git sees one spec.md change per wave, not N concurrent edits.
 5. dispatch-wave.sh awaits all 3 Agent calls (synchronous wait, no polling).
-6. When all return success, dispatch-wave.sh exits 0 and /next reports
-   "wave 1 done: T200/T201/T202 GREEN (9 commits)".
-7. Orchestrator's next /next picks up the next blocker (e.g. T203 sequential, or
-   wave 2).
+6. When all 3 return success, the orchestrator commits ONE spec.md edit
+   flipping every wave-task row from `[ ]` to `[x]` at once (the
+   "wave-green" step). Git sees one spec.md change per wave, not N
+   concurrent edits.
+7. /next reports "wave 1 done: T200/T201/T202 GREEN (7 commits — 6
+   wave-task + 1 wave-green)".
+8. Orchestrator's next /next picks up the next blocker (e.g. T203 sequential,
+   or wave 2).
 ```
 
-Postcondition: 3 wave-tasks × 3 atomic commits each = 9 commits landed on the branch in non-deterministic order; spec.md has 3 newly-flipped GREEN markers; orchestrator's context has gained ~1 turn (just the dispatch + report-back), not 30+.
+Postcondition: 3 wave-tasks × 2 atomic commits each (test + code, on disjoint files only — no spec.md touch from wave-tasks per T203's orchestrator-flips model) + 1 orchestrator wave-green commit = 7 commits total. Commits land on the branch in non-deterministic order. Orchestrator's context grows by ~1 turn (the dispatch + report-back + wave-green), not ~30 turns linear.
 
 ### Flow 2 — Wave-task fails mid-wave
 

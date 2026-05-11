@@ -80,6 +80,14 @@ dw_check="$(printf '%s' "$dw_out" | python3 -c '
 import json, sys
 try: obj = json.loads(sys.stdin.read())
 except Exception: sys.exit(2)
+# Verify dispatch-wave.sh wired the REQUESTED wave (a broken dispatcher
+# could return mock PASS results with wrong wave/tasks and pass len + status
+# checks alone).
+if obj.get("wave") != 1:
+    print("step2: dispatched wave != 1 (got " + repr(obj.get("wave")) + ")"); sys.exit(5)
+expected_tasks = ["T300", "T301", "T302"]
+if obj.get("tasks") != expected_tasks:
+    print("step2: tasks != " + repr(expected_tasks) + " in source order (got " + repr(obj.get("tasks")) + ")"); sys.exit(6)
 results = obj.get("results") or []
 if len(results) != 3:
     print("step2: expected 3 results, got " + str(len(results))); sys.exit(3)

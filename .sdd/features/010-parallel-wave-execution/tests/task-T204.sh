@@ -36,9 +36,13 @@ if grep -nE '\-\-no\-verify' "$SCRIPT" >/dev/null 2>&1; then
   fails+=("dispatch-wave.sh contains --no-verify (bypasses pre-commit chain): $line")
 fi
 
-# `core.hooksPath=` (with `=` to spot config-clobber attempts).
-if grep -nE 'core\.hooksPath\s*=' "$SCRIPT" >/dev/null 2>&1; then
-  line="$(grep -nE 'core\.hooksPath\s*=' "$SCRIPT" | head -1)"
+# `core.hooksPath` clobber detection — three forms:
+#   1. Env-style `core.hooksPath=...` (assignment)
+#   2. `git config core.hooksPath ...` (config command)
+#   3. `git -c core.hooksPath=... commit` (per-command override)
+# All three would redirect/clobber the framework's hook chain.
+if grep -nE 'core\.hooksPath\s*=|git\s+(-[Cc]\s+\S+\s+)*config\s+(--\S+\s+)*core\.hooksPath|git\s+-c\s+core\.hooksPath' "$SCRIPT" >/dev/null 2>&1; then
+  line="$(grep -nE 'core\.hooksPath\s*=|git\s+(-[Cc]\s+\S+\s+)*config\s+(--\S+\s+)*core\.hooksPath|git\s+-c\s+core\.hooksPath' "$SCRIPT" | head -1)"
   fails+=("dispatch-wave.sh sets core.hooksPath (would clobber the hook chain): $line")
 fi
 

@@ -211,8 +211,13 @@ for line in spec_lines:
     # `<token>:` (with optional bold wrapping), and the colon is now
     # required. `TODO:` and `AC1foo:` both correctly fall through to
     # the generic step-row branch.
+    # T-rows with ANY `[WAVE: <token>]` suffix (numeric OR malformed) are
+    # placeholders during the SPEC walk — `_find_next_wave()` stays strict
+    # about wave-N validity, but here we just need to not stop on them so
+    # the SPEC→BUILD transition can fire. Without the broader match, a
+    # typo like `T200 [WAVE: foo]` would block phase advance.
     if re.match(
-        r'^\s*-\s*\[ \]\s+(?:\*\*)?(?:AC\d+|T\d+(?:\s+\[WAVE:\s*\d+\s*\])?|C-[a-z0-9_-]+)(?:\*\*)?\s*:',
+        r'^\s*-\s*\[ \]\s+(?:\*\*)?(?:AC\d+|T\d+(?:\s+\[WAVE:[^\]]*\])?|C-[a-z0-9_-]+)(?:\*\*)?\s*:',
         line,
     ):
         continue
@@ -240,6 +245,13 @@ def _find_next_wave():
     in_plan = False
     plan_block_seen = False
     waves = {}  # wave_n (int) -> [T-IDs] in source order
+    # Sequential-gate: if an UNMARKED `- [ ] T-row` appears in source order
+    # BEFORE any wave-marked row, we are in linear mode for that block — do
+    # not skip the sequential task by dispatching a later wave. Return None
+    # so /next falls through to the normal linear walk.
+    seen_seq_t_before_wave = False
+    seq_t_re = re.compile(r'^\s*-\s*\[ \]\s+(?:\*\*)?(T\d+)(?:\*\*)?\s*:')
+    wave_t_re = re.compile(r'^\s*-\s*\[ \]\s+(?:\*\*)?(T\d+)\s+\[WAVE:\s*(\d+)\s*\](?:\*\*)?\s*:')
     for ln in spec_lines:
         if ln.startswith("### "):
             new_in_plan = bool(re.match(r'^###\s+action:\s+plan-decompose\s*$', ln))
@@ -248,7 +260,7 @@ def _find_next_wave():
                 break
             if new_in_plan:
                 if plan_block_seen:
-                    # Second plan-decompose block — stop, don't merge.
+                    # Second plan-decompose block — stop, do not merge.
                     break
                 plan_block_seen = True
                 in_plan = True
@@ -260,13 +272,23 @@ def _find_next_wave():
             continue
         if not in_plan:
             continue
-        m = re.match(r'^\s*-\s*\[ \]\s+(?:\*\*)?(T\d+)\s+\[WAVE:\s*(\d+)\s*\](?:\*\*)?\s*:', ln)
-        if not m:
+        # Check for a wave-marked row first; if not wave-marked, check
+        # whether this is a plain T-row (sequential gate).
+        m_wave = wave_t_re.match(ln)
+        if m_wave:
+            wave_n = int(m_wave.group(2))
+            if wave_n < 1:
+                continue
+            if not waves and seen_seq_t_before_wave:
+                # First wave-marked row in this block, but an earlier sequential
+                # T-row is still open — return None to gate dispatch on the
+                # earliest open task in source order.
+                return None
+            waves.setdefault(wave_n, []).append(m_wave.group(1))
             continue
-        wave_n = int(m.group(2))
-        if wave_n < 1:
-            continue
-        waves.setdefault(wave_n, []).append(m.group(1))
+        m_seq = seq_t_re.match(ln)
+        if m_seq:
+            seen_seq_t_before_wave = True
     if not waves:
         return None
     smallest = min(waves)

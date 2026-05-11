@@ -60,35 +60,32 @@ if [ "$happy_rc" -ne 0 ]; then
   fails+=("happy: next-action.sh exited $happy_rc — output: $happy_out")
 fi
 
-if ! printf '%s' "$happy_out" | grep -q '"tag": *"WAVE-DISPATCH"'; then
-  fails+=("happy: missing tag=WAVE-DISPATCH — output: $happy_out")
-fi
-
-if ! printf '%s' "$happy_out" | grep -q '"wave": *1'; then
-  fails+=("happy: missing wave=1 — output: $happy_out")
-fi
-
-for t in T200 T201 T202; do
-  if ! printf '%s' "$happy_out" | grep -q "\"$t\""; then
-    fails+=("happy: tasks list missing $t — output: $happy_out")
-  fi
-done
-
-# T203 has no [WAVE:] marker — it must NOT appear in the wave-1 task list.
-# Use python to parse the JSON precisely so substring matches don't false-pass.
-if printf '%s' "$happy_out" | python3 -c '
+# Parse the JSON once and assert the FULL AC1 contract in one strict pass:
+# tag=WAVE-DISPATCH, wave=1, tasks == ["T200", "T201", "T202"] (source order),
+# T203 (no marker) absent. Grep-based substring checks would let a reordered
+# tasks list (["T202","T200","T201"]) pass even though AC1 demands source order.
+happy_assert="$(printf '%s' "$happy_out" | python3 -c '
 import json, sys
 try:
     d = json.loads(sys.stdin.read())
 except Exception as e:
-    print(f"json-parse-failed: {e}")
+    print("json-parse-failed: " + str(e))
     sys.exit(2)
-tasks = d.get("tasks") or []
-sys.exit(1 if "T203" in tasks else 0)
-' >/dev/null 2>&1; then
-  :
-else
-  fails+=("happy: T203 (no [WAVE:] marker) leaked into wave-1 tasks — output: $happy_out")
+problems = []
+if d.get("tag") != "WAVE-DISPATCH":
+    problems.append("tag != WAVE-DISPATCH (got " + repr(d.get("tag")) + ")")
+if d.get("wave") != 1:
+    problems.append("wave != 1 (got " + repr(d.get("wave")) + ")")
+expected_tasks = ["T200", "T201", "T202"]
+if d.get("tasks") != expected_tasks:
+    problems.append("tasks != " + repr(expected_tasks) + " in source order (got " + repr(d.get("tasks")) + ")")
+if problems:
+    print(" ; ".join(problems))
+    sys.exit(3)
+print("OK")
+' 2>&1)"
+if [ "$happy_assert" != "OK" ]; then
+  fails+=("happy: AC1 contract violation: $happy_assert — raw output: $happy_out")
 fi
 
 # --- B) Edge: malformed markers must NOT produce WAVE-DISPATCH -----------
@@ -118,9 +115,33 @@ playbook: feature
 BAD
 
 bad_out="$(CLAUDE_PROJECT_DIR="$FRAMEWORK_ROOT" bash "$SCRIPT" "$WORK/bad.md" 2>&1)"
+bad_rc=$?
 
-if printf '%s' "$bad_out" | grep -q '"tag": *"WAVE-DISPATCH"'; then
-  fails+=("edge: malformed [WAVE: foo]/[WAVE: 0] wrongly produced WAVE-DISPATCH — output: $bad_out")
+# Malformed-marker branch must EITHER (a) parse cleanly with no WAVE-DISPATCH
+# tag, OR (b) exit non-zero. Treating a parser-error as success would mask
+# a real regression where the parser crashes on bad input.
+if [ "$bad_rc" -ne 0 ]; then
+  # rc != 0 is acceptable for malformed-marker input — the parser refusing is
+  # fine. Nothing to verify in the output shape because the script bailed.
+  :
+else
+  # rc == 0 means the parser handled the bad input cleanly. Now verify it
+  # specifically did NOT produce a WAVE-DISPATCH tag.
+  bad_assert="$(printf '%s' "$bad_out" | python3 -c '
+import json, sys
+try:
+    d = json.loads(sys.stdin.read())
+except Exception as e:
+    print("json-parse-failed: " + str(e))
+    sys.exit(2)
+if d.get("tag") == "WAVE-DISPATCH":
+    print("malformed [WAVE: foo]/[WAVE: 0] wrongly produced WAVE-DISPATCH")
+    sys.exit(3)
+print("OK")
+' 2>&1)"
+  if [ "$bad_assert" != "OK" ]; then
+    fails+=("edge: $bad_assert — raw output: $bad_out")
+  fi
 fi
 
 # ------------------------------------------------------------------------
