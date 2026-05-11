@@ -310,7 +310,7 @@ PROD-ONLY AC9 + AC10 + best-effort AC8 = no T-task; verified at SHIP via §12 si
 
 ### action: push-pr
 
-- [ ] push-and-open: push the branch + open a PR
+- [x] push-and-open: PR #236 opened — https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/236
 
 ### action: verify-ci-green
 
