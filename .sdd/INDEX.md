@@ -1,15 +1,15 @@
 # SDD framework — INDEX
 
-**Active:** _(none)_
+**Active:** features/010-parallel-wave-execution
 **Playbook:** feature
-**Active blocker:** _(no active feature — v1.6 anchor (#207) fully shipped 2026-05-10/11 across PR-A (#219, brief-driven SPEC entry) + PR-B (#222, §2 cleanup) + PR-C (#223, requires_user_approval matrix lock) + PR-D (#224, plain-English-first doctrine), plus same-day F008 pi-adapter (#214) and 009-background-while-waiting (#218); tagged `v1.6.0`. Pick next: v1.7 work — possibilities include #220 hook merge-commit exception, #217 `/start` ID collision, or a feature from ## Ideas below.)_
+**Active blocker:** § (SHIP action: verify-ci-green)
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
 
 ## In flight
 
-(none)
+- features/010-parallel-wave-execution — parallel wave execution (PHASE: SHIP)
 
 
 ## Ideas
@@ -24,6 +24,13 @@
 
 
 ## Shipped
+
+- **[[010-parallel-wave-execution]]** — closes SDD's main scaling-bottleneck for BUILD phases with 30+ tasks by adding opt-in `[WAVE: N]` markers on BUILD task rows. Wave-marked tasks dispatch in parallel via Claude Code's Agent tool with fresh per-subagent contexts (`.sdd/scripts/dispatch-wave.sh` is the new manifest-tracked dispatcher; `.sdd/scripts/next-action.sh` learns to emit a `WAVE-DISPATCH` tag). Architectural correction surfaced at T203: wave-task subagents commit ONLY their disjoint test+code files; the orchestrator commits one wave-green `spec.md` edit after the wave returns (adjacent rows can't 3-way-merge cleanly, so the orchestrator-flips model sidesteps it). Killer combo with F008's multi-model unlock — wave-tasks dispatch to cheaper models (Haiku/Kimi K2) while the orchestrator stays on Sonnet for coordination. Validated by 12 mechanical task-tests (T200-T211): 8 mechanical, 1 named-eye assist (AC9), 1 fixture-count best-effort (AC10), 2 PROD-ONLY (AC11 multi-harness, AC12 end-to-end real session). **5 CR review cycles** (29 findings closed: 13+7+1+8 across cycles 1-4, cycle 5 positive ack from CR; 3 Trivial `set -e` permanently deferred per the framework's accumulate-all-failures discipline; 1 MD022 cosmetic on decisions.md deferred per append-only contract). Mid-SHIP merge of v1.6.0 main via Sam-authorized `git commit-tree` plumbing (`127cacfe`) bypassed issue #220's missing cofile-block merge-commit exemption. 6/6 CI checks GREEN.
+  - Shipped: 2026-05-11 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/227
+  - Data-model: (none — `Wave` deferred per YAGNI; reconstructible from spec.md text)
+  - Extends: (root); first feature shipped on top of v1.6.0
+  - Patterns: 4 lessons appended — framework-self-modification four-step dance (live script + template + live manifest + template manifest + repin marker); macOS bash 3.2 heredoc-with-single-quoted-delimiter still counts apostrophes (avoid `'` in heredoc comments); wave-tasks must not touch spec.md (T203 architectural insight, orchestrator owns spec.md); slow project test_runner forces Ralph timeout bump for framework-self-mod features (600s → 1800s).
+  - Deferred: managed lockfile cleanup races (currently mkdir-as-lockdir + EXIT/INT/TERM trap; multi-process race scenarios deferred); real-session AC9/AC11/AC12 walks (PROD-ONLY signoff — first wave-driven feature past F010 exercises them); merge-commit exemption for cofile-block hook (issue #220, v1.7 candidate).
 
 - **[[009-feature-playbook-v2-brief-driven-spec-entry-replaces-3-question-pitch-shape]]** — closes the F01/pipelogic_v2 audit's SPEC-ceremony pain (4 failure modes — startup-pitch §1, redundant §2, lazy first-pass record, bundled-question turns) by replacing the 3-question Pitch (`who / why-now / what-breaks`) with a brief-paste flow as the feature playbook's first action. Ships new `brief-intake` action + `brief-summarise` skeleton (paste a brief / upload a doc / use the v2 template; agent grills, summarises, pre-fills §1, §3, §6, §7, §8, §10 — 6 sections instead of ~20 follow-up questions). `success.md` marked `deprecated: true` and removed from `feature.md` SPEC actions list (§2 Success folds into §11 ACs); `success.md` retained for backward-compat with in-flight features whose spec.md scaffolded pre-PR-A. `CLAUDE.md` gains "One question per turn" doctrine (closes #207 Part 3) + `lint-action-prose.sh` heuristic warning on bundled-question example blocks. `proposed-approach.md` updated as the representative AGENT-LED action with `<details>` foldable for technical detail (plain-English-first default). `data-contract.md` adds upload-invitation prose. **3 CR review cycles** (24 of 25 actionable findings closed; #11 declined per byte-prefix append-only contract on `decisions.md` — same precedent as F008 (#214) MD022 deferral; filed as #220 for v1.7 hook merge-commit exception). **4 cosmetic §-level re-approvals** preserving audit trail (§5 + §7 + §12 + §14, all logged in `decisions.md`). 6/6 CI checks GREEN; 11 BUILD tasks T01-T11 + integration smoke `tests/integration/v1.6-anchor.smoke.sh` GREEN.
   - Shipped: 2026-05-10 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/219 · Tag: `v1.6-anchor-pr-a`

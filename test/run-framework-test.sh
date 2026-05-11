@@ -112,6 +112,13 @@ mkproj_v08() {
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/install-mcp-server.sh"   "$d/.sdd/scripts/install-mcp-server.sh" \
     || { echo "[mkproj_v08] failed to copy install-mcp-server.sh from \$FRAMEWORK_ROOT — broken framework checkout?" >&2; return 1; }
   chmod +x "$d/.sdd/scripts/install-mcp-server.sh"
+  # dispatch-wave.sh is manifest-tracked in v1.6+ (closes F010 AC2). Same
+  # fail-fast pattern: silently skipping the copy leaves the fixture
+  # missing a manifest-pinned file, breaking the moat hash-pin check on
+  # every test that uses mkproj_v08.
+  cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/dispatch-wave.sh"        "$d/.sdd/scripts/dispatch-wave.sh" \
+    || { echo "[mkproj_v08] failed to copy dispatch-wave.sh from \$FRAMEWORK_ROOT — broken framework checkout?" >&2; return 1; }
+  chmod +x "$d/.sdd/scripts/dispatch-wave.sh"
   # CR cycle 1 finding (#195): promote-to-active.sh is manifest-tracked
   # in v1.5.2+. Silently skipping the copy with `|| true` would leave the
   # mock project missing a tracked file, causing the moat hash-pin check
