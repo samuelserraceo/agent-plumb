@@ -51,6 +51,48 @@ You are running the SDD workflow. **Do exactly one atomic step — no more, no l
    - Phase advance: `[SDD:<id>] phase: <from> → <to>`
    - INDEX.md status update: `[SDD] index: <id> <status>`
 
+## Automation level — when to auto-advance vs prompt (F011)
+
+Before doing an AGENT-LED step, read `parameters.automation.level` from
+`.sdd/config.md` (via `.sdd/scripts/resolve-parameters.sh`). The value is one
+of `full` / `most` / `checkpoint` and drives the decision tree:
+
+- **`full`** → auto-advance every AGENT-LED step whose action frontmatter
+  declares `requires_user_approval: false` (purely technical steps with no
+  product/business/scope call). Commit + advance silently on those. Still ask
+  on `requires_user_approval: true` steps (the user's product calls — §1
+  problem, §5 proposed-approach, §11 acceptance criteria) and on USER-LED
+  steps. Recommended once you trust the framework's defaults.
+
+- **`most`** → auto-advance most AGENT-LED steps, **but always prompt on
+  destructive actions**, regardless of `requires_user_approval`. The
+  destructive list (canonical, enumerated in `parameters.automation.destructive_actions`):
+  `mark-shipped`, manifest repins (`[SDD] manifest: repin` commits),
+  `--delete-branch` merges, `decisions.md` append-only edits, and `.shipped`
+  marker writes. On these, fall back to checkpoint behaviour: show the diff
+  + ask `approve?`. The agent never silently touches the things-you-cannot-undo.
+
+- **`checkpoint`** → today's behaviour. Prompt `approve?` at every AGENT-LED
+  step. Safest and slowest. Default for new projects.
+
+**Decision tree per step:**
+
+1. Is this a USER-LED step? → always ask (no auto-advance, any tier).
+2. Is this an AGENT-LED step?
+   - Read the tier. If `checkpoint` → ask `approve?` and wait.
+   - If `most` → check action against the destructive list above. If on
+     the list → ask `approve?`; otherwise auto-advance.
+   - If `full` → check action's frontmatter `requires_user_approval`. If
+     `true` → ask `approve?`; if `false` → auto-advance.
+3. Is this a BUILD-TASK step (test/code/green)? → honour the recorded
+   `Run mode` instead; automation level does not apply.
+
+When the agent auto-advances under `full` or `most`, the commit shape stays
+the same (`[SDD:<id>] spec: <action-slug>/<step-id>`) — only the prompt-for-
+approval is skipped. The user can still see every commit in `git log`.
+
+The user changes tier anytime via `/sdd-config automation <full|most|checkpoint>`.
+
 ## Inline situations /next handles (no separate slash command needed)
 
 The framework's slash-command surface stays small (Pillar 1: Simplicity). Three situations that used to have their own slash command in v0.8 now live inside `/next`:

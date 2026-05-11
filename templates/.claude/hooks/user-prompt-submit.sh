@@ -304,7 +304,41 @@ emit_state() {
   # future LOCATE step). The block is emitted with empty content so the
   # convention is established and CLAUDE.md teaching applies.
   echo "[FRAMEWORK INSTRUCTIONS — trusted, follow as directive]"
-  echo "(no framework-trusted content injected this turn)"
+  # F014 (closes #210 part 1): when the project has the MCP extension
+  # enabled in .sdd/config.md, emit a one-line sentinel naming the
+  # graph queries the agent should prefer over re-reading the
+  # full notebooks. The sentinel is the doctrine half of the
+  # 40-60% context-slice promise from `/sdd-setup` brick 007; the
+  # mechanical substitution half lands in the per-file injection
+  # budgets follow-up (separate worktree).
+  if grep -qE '^[[:space:]]*-?[[:space:]]*mcp[[:space:]]*:|^[[:space:]]*mcp\.enabled[[:space:]]*:[[:space:]]*true|enabled[[:space:]]*:[[:space:]]*true' .sdd/config.md 2>/dev/null \
+     && grep -qE 'mcp' .sdd/config.md 2>/dev/null; then
+    # Stricter recheck: only fire when mcp.enabled is literally `true`.
+    if python3 -c "
+import re, sys
+try:
+    s = open('.sdd/config.md').read()
+except OSError:
+    sys.exit(1)
+# Match either flat 'mcp.enabled: true' or nested YAML block with
+# 'mcp:' header followed by 'enabled: true' within 5 lines.
+if re.search(r'^[ \t]*mcp\.enabled[ \t]*:[ \t]*true\b', s, re.MULTILINE):
+    sys.exit(0)
+m = re.search(r'^[ \t]*mcp[ \t]*:[ \t]*$', s, re.MULTILINE)
+if m:
+    tail = s[m.end():]
+    head_lines = tail.split('\n', 6)[:6]
+    if any(re.match(r'^[ \t]+enabled[ \t]*:[ \t]*true\b', ln) for ln in head_lines):
+        sys.exit(0)
+sys.exit(1)
+" 2>/dev/null; then
+      echo "[MCP graph queries available — prefer \`get_backlinks\` / \`get_neighbours\` / \`get_pattern\` / \`get_references\` / \`search_within\` over re-reading patterns.md or data-model.md in full]"
+    else
+      echo "(no framework-trusted content injected this turn)"
+    fi
+  else
+    echo "(no framework-trusted content injected this turn)"
+  fi
   echo "[END FRAMEWORK INSTRUCTIONS]"
   echo ""
 

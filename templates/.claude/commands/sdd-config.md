@@ -75,6 +75,44 @@ new entry rather than overwriting; the old answer stays in the audit trail.
   existing tests; only NEW features use the new runner. The agent will mention
   this trade-off when you confirm.
 
+## Subcommand: `automation <tier>` (F011)
+
+In addition to the per-question editor above, `/sdd-config` accepts a small
+literal subcommand for the F011 automation level — the parameter that controls
+how aggressively the framework auto-advances AGENT-LED steps.
+
+Usage:
+
+```text
+/sdd-config automation full        # auto-advance every AGENT-LED step where
+                                   # the action says it doesn't need approval
+/sdd-config automation most        # auto-advance most steps, but STILL prompt
+                                   # on destructive actions (mark-shipped,
+                                   # manifest repins, --delete-branch,
+                                   # decisions.md edits, .shipped writes)
+/sdd-config automation checkpoint  # today's behaviour — prompt on every
+                                   # AGENT-LED step (default for new projects)
+```
+
+The subcommand parses the tier name (`full` / `most` / `checkpoint`,
+case-insensitive — `Full`, `Most`, `Checkpoint` all accepted), validates it,
+and writes the chosen value to `parameters.automation.level` in
+`.sdd/config.md`. Invalid tiers (`fast`, `auto`, `yolo`, etc.) are refused
+with a plain-English error listing the three valid choices.
+
+After writing, the agent confirms back: which tier was picked, what changes
+about its behaviour, and how to switch again. No restart needed — the next
+`/next` invocation reads the new value.
+
+**What it looks like:**
+
+> *Sam:* `/sdd-config automation most`
+> *Agent:* "OK — `parameters.automation.level` is now `most` in
+> `.sdd/config.md`. From here, AGENT-LED steps that don't touch destructive
+> actions auto-advance without asking; mark-shipped, manifest repins,
+> branch deletions, and `decisions.md` edits still prompt for approval.
+> Switch again anytime with `/sdd-config automation <full|most|checkpoint>`."
+
 ## Adding a new question (Lego)
 
 Same as `/sdd-setup` — drop a `<NNN>-<slug>.md` file in `.sdd/setup/`. Both
