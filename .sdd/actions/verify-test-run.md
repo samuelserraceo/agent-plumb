@@ -2,6 +2,7 @@
 type: action
 slug: verify-test-run
 tag: AGENT-LED
+model_tier: mechanical
 title: "verify-test-run"
 short_label: "Test run"
 steps:

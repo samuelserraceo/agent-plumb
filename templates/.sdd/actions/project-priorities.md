@@ -2,6 +2,7 @@
 type: action
 slug: project-priorities
 tag: AGENT-LED
+model_tier: routine
 prelude_refresh: true
 title: "Project priorities"
 short_label: "§5 Priorities"

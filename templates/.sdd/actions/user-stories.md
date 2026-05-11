@@ -2,6 +2,7 @@
 type: action
 slug: user-stories
 tag: USER-LED
+model_tier: routine
 prelude_refresh: true
 title: "§3 User stories"
 short_label: "User stories"

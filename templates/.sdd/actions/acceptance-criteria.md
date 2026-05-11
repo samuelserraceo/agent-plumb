@@ -2,6 +2,7 @@
 type: action
 slug: acceptance-criteria
 tag: AGENT-LED
+model_tier: thinking
 prelude_refresh: true
 title: "§11 Acceptance criteria"
 short_label: "ACs"

@@ -2,6 +2,7 @@
 type: action
 slug: out-of-scope
 tag: USER-LED
+model_tier: thinking
 prelude_refresh: true
 title: "§9 Out of scope"
 short_label: "Out of scope"

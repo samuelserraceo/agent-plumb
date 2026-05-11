@@ -2,6 +2,7 @@
 type: action
 slug: ux-brief
 tag: AGENT-LED
+model_tier: thinking
 prelude_refresh: true
 title: "§4 UX & Design brief"
 short_label: "UX brief"

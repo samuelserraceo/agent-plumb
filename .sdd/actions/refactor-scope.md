@@ -2,6 +2,7 @@
 type: action
 slug: refactor-scope
 tag: USER-LED
+model_tier: thinking
 prelude_refresh: true
 title: "§1 Scope"
 short_label: "Scope"

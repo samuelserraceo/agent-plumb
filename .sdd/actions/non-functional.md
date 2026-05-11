@@ -2,6 +2,7 @@
 type: action
 slug: non-functional
 tag: AGENT-LED
+model_tier: thinking
 prelude_refresh: true
 title: "§10 Non-functional"
 short_label: "Non-functional"

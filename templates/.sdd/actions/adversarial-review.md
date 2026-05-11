@@ -2,6 +2,7 @@
 type: action
 slug: adversarial-review
 tag: AGENT-LED
+model_tier: thinking
 prelude_refresh: true
 title: "Adversarial review"
 short_label: "§13 Adversarial review"

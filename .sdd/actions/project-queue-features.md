@@ -2,6 +2,7 @@
 type: action
 slug: project-queue-features
 tag: AGENT-LED
+model_tier: routine
 title: "Queue features in backlog"
 short_label: "§6 Queue"
 steps:

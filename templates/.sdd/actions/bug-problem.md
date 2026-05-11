@@ -2,6 +2,7 @@
 type: action
 slug: bug-problem
 tag: USER-LED
+model_tier: thinking
 prelude_refresh: true
 title: "§1 What's broken"
 short_label: "Problem"

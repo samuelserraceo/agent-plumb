@@ -2,6 +2,7 @@
 type: action
 slug: signoff-steps
 tag: USER-LED
+model_tier: routine
 prelude_refresh: true
 title: "§12 Human sign-off steps"
 short_label: "Sign-off steps"

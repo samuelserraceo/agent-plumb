@@ -2,6 +2,7 @@
 type: action
 slug: build-task
 tag: BUILD-TASK
+model_tier: routine
 title: "Build a task"
 short_label: "Task"
 steps:

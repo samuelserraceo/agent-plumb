@@ -2,6 +2,7 @@
 type: action
 slug: dependencies
 tag: AGENT-LED
+model_tier: routine
 prelude_refresh: true
 title: "§8 Dependencies"
 short_label: "Dependencies"

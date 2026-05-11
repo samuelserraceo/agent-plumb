@@ -66,6 +66,17 @@ Shape: JSON dict keyed by `<sha256(question)>:<corpus_signature>` → `{answer, 
 
 Invalidation: any corpus signature flip (any `.sdd/` markdown change) marks all entries from prior signatures stale; new keys use the new signature so old entries can stay readable until eviction. **Eviction policy:** LRU at 1000 entries (hardcoded for v1.1; configurable in v1.2+ if friction surfaces — added by §15 edge-case sweep on 2026-05-01). v1.1 adds this when [[001-tier-3-llm-driven-synthesis]] ships.
 
+### ModelTier
+
+A two-part declaration that lets the framework pick a different model per action's cognitive load (Sam's idea 002, 2026-05-10 — "lego-style model right-sizing"):
+
+1. **Per-action**: each `templates/.sdd/actions/<slug>.md` frontmatter declares `model_tier:` with one of three values — `thinking` (high-reasoning: proposed-approach, edge-case-sweep, adversarial-review), `routine` (structured drafting: data-contract, flows, plan-decompose, build-task), `mechanical` (file edits + record-keeping: mark-shipped, verify-test-run, push-pr).
+2. **Per-project**: `parameters.models:` in `templates/.sdd/config.md` maps each tier to a model identifier string (`thinking: "claude-opus-4-1"`, `routine: "claude-sonnet-4-7"`, `mechanical: "claude-haiku-4-5"`). Empty defaults = opt-in; the framework falls back to Claude Code's current model when a tier isn't mapped.
+
+Resolver: `templates/.sdd/scripts/get-model-for-tier.sh <action-slug>` reads the action's `model_tier:` + the project's `parameters.models.<tier>` and emits the model string. **Backwards-compat:** an action without `model_tier:` falls back to `routine` (safe middle). **Unknown tier values** (not in `{thinking, routine, mechanical}`) emit a stderr warning + fall back to `routine` — same shape as `resolve-parameters.sh`'s `automation.level` validation.
+
+Same provider-agnostic shape as [[entity:Tier3Config]] (foundation 3: the framework declares the *contract*, the project plugs in the *provider* — works for Claude Code's three-tier Opus/Sonnet/Haiku and for pi.dev's any-provider-of-your-choice). Today: **42 actions** declare a tier (16 thinking + 20 routine + 6 mechanical).
+
 ### Tier3Config
 
 A config block under `parameters.mcp.tier3` in `templates/.sdd/config.md`. Off by default; opt-in. Required when `enabled: true`: `provider`, `endpoint`, `model`, plus mechanically-enforced cost caps (`max_calls_per_run`, `max_input_tokens_per_call`, `max_total_tokens_per_run`) and optional `auth_header` with `${ENV_VAR}` indirection. **v1.1 wizard configures Ollama+Gemma only**; the schema is provider-agnostic (foundation 3) but other providers require a manual config edit until v1.2+ widens wizard scope. **No `cost_limit_usd` field** — the framework can't price external services (anti-theatre, post-2026-05-01 audit).

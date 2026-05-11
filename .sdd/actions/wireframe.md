@@ -2,6 +2,7 @@
 type: action
 slug: wireframe
 tag: AGENT-LED
+model_tier: thinking
 title: "Wireframe"
 short_label: "Wireframe"
 steps:

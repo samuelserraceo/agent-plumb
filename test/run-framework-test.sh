@@ -149,6 +149,14 @@ mkproj_v08() {
   chmod +x "$d/.sdd/scripts/rename-collided-feature.sh"
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/scope-guard-config.sh"   "$d/.sdd/scripts/scope-guard-config.sh" 2>/dev/null || true
   chmod +x "$d/.sdd/scripts/scope-guard-config.sh" 2>/dev/null || true
+  # get-model-for-tier.sh is manifest-tracked in v1.8+ (idea 002 — lego-style
+  # model right-sizing). Same fail-fast pattern as dispatch-wave.sh /
+  # promote-to-active.sh: silently skipping the copy leaves the fixture
+  # missing a manifest-pinned file, breaking the moat hash-pin check on
+  # every test that uses mkproj_v08.
+  cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/get-model-for-tier.sh"   "$d/.sdd/scripts/get-model-for-tier.sh" \
+    || { echo "[mkproj_v08] failed to copy get-model-for-tier.sh from \$FRAMEWORK_ROOT — broken framework checkout?" >&2; return 1; }
+  chmod +x "$d/.sdd/scripts/get-model-for-tier.sh"
   chmod +x "$d/.sdd/scripts/check-setup-answer.sh" 2>/dev/null || true
   cp "$FRAMEWORK_ROOT/templates/.sdd/decisions.md"                    "$d/.sdd/decisions.md"
   cp "$VERIFY_STAGE" "$d/.sdd/scripts/verify-stage.sh" 2>/dev/null || true
@@ -8260,7 +8268,117 @@ else
 fi
 
 # ============================================================
-====================================================
+# T183 — get-model-for-tier.sh returns the project override for an
+#   action's declared `model_tier:` (idea 002 — lego-style model
+#   right-sizing). Project config maps `thinking → claude-opus-4-1`;
+#   the resolver, given the slug of an action whose frontmatter
+#   declares `model_tier: thinking`, must emit exactly that string.
+# ============================================================
+note "T183: get-model-for-tier resolves declared tier via project override"
+t163_dir=$(mktemp -d)
+mkdir -p "$t163_dir/.sdd/actions" "$t163_dir/.sdd/scripts"
+cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/get-model-for-tier.sh" "$t163_dir/.sdd/scripts/"
+cat > "$t163_dir/.sdd/config.md" <<'CFG'
+---
+parameters:
+  models:
+    thinking: "claude-opus-4-1"
+    routine: "claude-sonnet-4-7"
+    mechanical: "claude-haiku-4-5"
+---
+CFG
+cat > "$t163_dir/.sdd/actions/proposed-approach.md" <<'ACT'
+---
+type: action
+slug: proposed-approach
+tag: AGENT-LED
+model_tier: thinking
+---
+body
+ACT
+t163_out=$(CLAUDE_PROJECT_DIR="$t163_dir" bash "$t163_dir/.sdd/scripts/get-model-for-tier.sh" proposed-approach 2>/dev/null)
+if [ "$t163_out" = "claude-opus-4-1" ]; then
+  ok "T183 resolver returned thinking-tier model (claude-opus-4-1)"
+else
+  bad "T183 resolver returned wrong model" "expected=claude-opus-4-1 got='$t163_out'"
+fi
+rm -rf "$t163_dir"
+
+# ============================================================
+# T184 — backwards-compat: an action without a `model_tier:` field
+#   in its frontmatter must fall back to the `routine` tier (safe
+#   middle default). With project config mapping `routine → sonnet`,
+#   the resolver must emit sonnet for a tier-less action.
+# ============================================================
+note "T184: get-model-for-tier falls back to routine when action has no model_tier"
+t164_dir=$(mktemp -d)
+mkdir -p "$t164_dir/.sdd/actions" "$t164_dir/.sdd/scripts"
+cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/get-model-for-tier.sh" "$t164_dir/.sdd/scripts/"
+cat > "$t164_dir/.sdd/config.md" <<'CFG'
+---
+parameters:
+  models:
+    thinking: "claude-opus-4-1"
+    routine: "claude-sonnet-4-7"
+    mechanical: "claude-haiku-4-5"
+---
+CFG
+cat > "$t164_dir/.sdd/actions/legacy-action.md" <<'ACT'
+---
+type: action
+slug: legacy-action
+tag: AGENT-LED
+---
+body — no model_tier declared (pre-idea-002 action shape)
+ACT
+t164_out=$(CLAUDE_PROJECT_DIR="$t164_dir" bash "$t164_dir/.sdd/scripts/get-model-for-tier.sh" legacy-action 2>/dev/null)
+if [ "$t164_out" = "claude-sonnet-4-7" ]; then
+  ok "T184 resolver fell back to routine when model_tier absent"
+else
+  bad "T184 resolver did not fall back to routine" "expected=claude-sonnet-4-7 got='$t164_out'"
+fi
+rm -rf "$t164_dir"
+
+# ============================================================
+# T185 — coverage gate: every shipped action in
+#   templates/.sdd/actions/*.md declares a `model_tier:` in
+#   frontmatter, and the value is one of {thinking, routine,
+#   mechanical}. Locks the contract — future actions ship with a
+#   tier or this test fails RED, prompting the author to classify
+#   their action up-front.
+# ============================================================
+note "T185: every templates action declares a valid model_tier"
+t165_missing=0
+t165_bad=0
+t165_missing_list=""
+t165_bad_list=""
+for f in "$FRAMEWORK_ROOT"/templates/.sdd/actions/*.md; do
+  slug=$(basename "$f" .md)
+  # Extract the model_tier value from the YAML frontmatter (between
+  # the first two `---` lines). BSD/macOS-compatible: awk + grep.
+  fm=$(awk '/^---$/{c++; next} c==1' "$f")
+  tier=$(printf '%s\n' "$fm" | grep -E '^model_tier:[[:space:]]*' | head -1 | sed 's/^model_tier:[[:space:]]*//' | tr -d '"' | tr -d "'" | awk '{$1=$1; print}')
+  if [ -z "$tier" ]; then
+    t165_missing=$((t165_missing + 1))
+    t165_missing_list="$t165_missing_list $slug"
+    continue
+  fi
+  case "$tier" in
+    thinking|routine|mechanical)
+      : ;;
+    *)
+      t165_bad=$((t165_bad + 1))
+      t165_bad_list="$t165_bad_list $slug=$tier"
+      ;;
+  esac
+done
+if [ "$t165_missing" -eq 0 ] && [ "$t165_bad" -eq 0 ]; then
+  ok "T185 every action declares a valid model_tier (thinking|routine|mechanical)"
+else
+  bad "T185 actions missing or with invalid model_tier" "missing=$t165_missing bad=$t165_bad missing-list=[$t165_missing_list] bad-list=[$t165_bad_list]"
+fi
+
+# ============================================================
 note "T180: rename-collided-feature.sh happy path renames folder + rewrites wiki-links"
 d=$(mktemp -d)
 RENAME_SH="$FRAMEWORK_ROOT/templates/.sdd/scripts/rename-collided-feature.sh"

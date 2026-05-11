@@ -2,6 +2,7 @@
 type: action
 slug: project-success
 tag: USER-LED
+model_tier: routine
 prelude_refresh: true
 title: "Project success"
 short_label: "§2 Success"
