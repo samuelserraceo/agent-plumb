@@ -211,7 +211,7 @@ Trade-offs:
 **BUILD task plan — 7 ordered T-tasks (one test file per mechanical AC):**
 
 ```text
-- [ ] T300: resolve-parameters.sh exposes parameters.automation.level
+- [x] T300: resolve-parameters.sh exposes parameters.automation.level
             with default `checkpoint` when unset
             — proves AC1 + AC2
 - [ ] T301: resolve-parameters.sh accepts all 3 valid tier values
