@@ -80,76 +80,108 @@
 </head>
 <body class="p-8 max-w-6xl mx-auto">
 
-<!-- TODO: Feature summary —————————————————————————————————————————————— -->
+<!-- Feature summary —————————————————————————————————————————————— -->
 <header class="mb-12">
-  <h1 class="text-3xl font-bold mb-2">Auto-advance AGENT-LED steps — auto-advance through SPEC + SHIP technical actions</h1>
-  <p class="text-stone-700">TODO: One-paragraph plain-English summary. Link back to <a href="../../../docs/walkthrough.html" class="text-indigo-600 hover:underline">the global walkthrough</a> when relevant. (Path is 3 levels up: from `.sdd/features/&lt;id&gt;/wireframe.html` → `.sdd/features/` → `.sdd/` → repo root.)</p>
+  <h1 class="text-3xl font-bold mb-2">Auto-advance AGENT-LED steps (Full / Most / Checkpoint)</h1>
+  <p class="text-stone-700">F011 lets you pick how much auto-advancement the framework does for AGENT-LED steps in SPEC + SHIP phases. Three tiers trade speed against safety. <strong>Full</strong> auto-advances every step where the action says it doesn't need your approval. <strong>Most</strong> does the same, except destructive actions (mark-shipped, manifest repins, branch deletions, append-only edits) still prompt. <strong>Checkpoint</strong> is today's behaviour — prompt every step. Default is Checkpoint, so existing projects don't change unless you opt in. Pairs with F008 (multi-model) + F010 (parallel waves) to deliver the drop-the-brief-walk-away shape.</p>
 </header>
 
-<!-- TODO: Example interactions ——————————————————————————————————————— -->
+<!-- Example interactions ——————————————————————————————————————— -->
 <section class="mb-12">
   <h2 class="text-2xl font-semibold mb-4">Example interactions</h2>
-  <p class="text-stone-600 mb-6">Concrete chat / CLI / API examples per user story. Show what the user does and what they get back.</p>
+  <p class="text-stone-600 mb-6">Three concrete walks showing how the user picks a tier and what /next does under each.</p>
 
-  <!-- TODO: Example 1 -->
+  <!-- Story 1: pick tier at setup -->
   <div class="chat mb-6">
-    <p class="text-sm text-stone-500 mb-2">TODO: Story 1 — name</p>
-    <div class="user">TODO: user input here</div>
-    <div class="agent">TODO: agent / system response. Citations: <span class="cite">[[001-feature]]</span></div>
+    <p class="text-sm text-stone-500 mb-2">Story 1 — fresh project, picking a tier at setup</p>
+    <div class="user">/sdd-setup</div>
+    <div class="agent"><em>(wizard reaches the automation-level brick)</em> "Automation level for AGENT-LED steps — Full / Most / Checkpoint?"</div>
+    <div class="user">Most.</div>
+    <div class="agent">Writing `parameters.automation.level: most` to `.sdd/config.md`. From now on technical AGENT-LED steps auto-advance, but mark-shipped, manifest repins, branch deletions, and decisions.md edits still ask for approve. Switch anytime with `/sdd-config automation &lt;tier&gt;`.</div>
   </div>
 
-  <!-- TODO: Example 2, 3, ... -->
+  <!-- Story 2: Full-tier auto-advance -->
+  <div class="chat mb-6">
+    <p class="text-sm text-stone-500 mb-2">Story 2 — /next under Full skips the approve CTA on technical steps</p>
+    <div class="user">/next</div>
+    <div class="agent"><em>(action's frontmatter says <code>requires_user_approval: false</code> + action slug not in §11 destructive list + tier=full)</em> Drafted §7 flows, committed `[SDD:011] spec: flows/approval`, advancing to §8 dependencies.</div>
+    <div class="agent">No approve CTA. The decision tree in <span class="cite">[[011-auto-advance-agent-led-steps]]</span>'s /next doctrine fired.</div>
+  </div>
+
+  <!-- Story 3: Most-tier destructive gate -->
+  <div class="chat mb-6">
+    <p class="text-sm text-stone-500 mb-2">Story 3 — /next under Most still prompts on mark-shipped</p>
+    <div class="user">/next</div>
+    <div class="agent"><em>(action slug=mark-shipped, which is in the §11 destructive list + tier=most)</em> About to write the `.shipped` marker, append to `decisions.md`, and update `INDEX.md`'s Shipped section. This is a destructive action — gated under Most regardless of `requires_user_approval`. Approve?</div>
+    <div class="user">approve</div>
+    <div class="agent">Shipped. Citations: <span class="cite">[[011-auto-advance-agent-led-steps]]</span> §11 destructive_actions list.</div>
+  </div>
 </section>
 
-<!-- TODO: Flow diagram ———————————————————————————————————————————————— -->
+<!-- Flow diagram ———————————————————————————————————————————————— -->
 <section class="mb-12">
-  <h2 class="text-2xl font-semibold mb-4">Flow — what happens when the user does X</h2>
-  <p class="text-stone-600 mb-6">Click any step for details. Numbered, top-to-bottom or left-to-right.</p>
+  <h2 class="text-2xl font-semibold mb-4">Flow — /next's 3-way decision tree</h2>
+  <p class="text-stone-600 mb-6">Click any step for details. The agent reads <code>parameters.automation.level</code> every /next call and applies this tree.</p>
 
-  <svg viewBox="0 0 800 220" class="w-full" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Flow diagram">
-    <!-- TODO: Step 1 -->
-    <g class="step-grp" data-step="step-1" tabindex="0" role="button" aria-label="Step 1" aria-pressed="false">
-      <rect class="step-box" x="20" y="20" width="160" height="60" rx="6"/>
-      <text x="100" y="55" text-anchor="middle" font-size="13" font-weight="500">TODO: Step 1</text>
+  <svg viewBox="0 0 800 220" class="w-full" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Flow diagram of /next decision tree">
+    <!-- Step 1: read level -->
+    <g class="step-grp" data-step="step-1" tabindex="0" role="button" aria-label="Step 1: read level" aria-pressed="false">
+      <rect class="step-box" x="20" y="80" width="180" height="60" rx="6"/>
+      <text x="110" y="105" text-anchor="middle" font-size="13" font-weight="500">1. Read tier from</text>
+      <text x="110" y="123" text-anchor="middle" font-size="13" font-weight="500">config.md</text>
     </g>
-    <!-- TODO: arrow -->
-    <line x1="180" y1="50" x2="220" y2="50" stroke="#94a3b8" stroke-width="1.5"/>
-    <polyline points="215,46 220,50 215,54" fill="none" stroke="#94a3b8" stroke-width="1.5"/>
-    <!-- TODO: Step 2 -->
-    <g class="step-grp" data-step="step-2" tabindex="0" role="button" aria-label="Step 2" aria-pressed="false">
-      <rect class="step-box" x="220" y="20" width="160" height="60" rx="6"/>
-      <text x="300" y="55" text-anchor="middle" font-size="13" font-weight="500">TODO: Step 2</text>
+    <line x1="200" y1="110" x2="240" y2="110" stroke="#94a3b8" stroke-width="1.5"/>
+    <polyline points="235,106 240,110 235,114" fill="none" stroke="#94a3b8" stroke-width="1.5"/>
+    <!-- Step 2: classify -->
+    <g class="step-grp" data-step="step-2" tabindex="0" role="button" aria-label="Step 2: classify action" aria-pressed="false">
+      <rect class="step-box" x="240" y="80" width="220" height="60" rx="6"/>
+      <text x="350" y="105" text-anchor="middle" font-size="13" font-weight="500">2. Classify action</text>
+      <text x="350" y="123" text-anchor="middle" font-size="13" font-weight="500">(USER-LED / AGENT-LED / BUILD)</text>
+    </g>
+    <line x1="460" y1="110" x2="500" y2="110" stroke="#94a3b8" stroke-width="1.5"/>
+    <polyline points="495,106 500,110 495,114" fill="none" stroke="#94a3b8" stroke-width="1.5"/>
+    <!-- Step 3: apply -->
+    <g class="step-grp" data-step="step-3" tabindex="0" role="button" aria-label="Step 3: apply tier rule" aria-pressed="false">
+      <rect class="step-box" x="500" y="80" width="280" height="60" rx="6"/>
+      <text x="640" y="105" text-anchor="middle" font-size="13" font-weight="500">3. Auto-advance OR prompt</text>
+      <text x="640" y="123" text-anchor="middle" font-size="13" font-weight="500">per tier × action class × destructive list</text>
     </g>
   </svg>
 
-  <!-- Detail panel populated by JS click/keyboard handler.
-       aria-live="polite" + role="status" means screen readers announce
-       updates without interrupting; aria-atomic="true" means the whole
-       region is read on each update (not just the diff). -->
   <div id="stepDetail" class="mt-4 p-4 bg-white border border-stone-200 rounded text-sm text-stone-700"
        aria-live="polite" aria-atomic="true" role="status">
     Click any step above for plain-English details.
   </div>
 </section>
 
-<!-- TODO: Architecture diagram ——————————————————————————————————————— -->
+<!-- Architecture diagram ——————————————————————————————————————— -->
 <section class="mb-12">
-  <h2 class="text-2xl font-semibold mb-4">Architecture — where this feature sits</h2>
-  <p class="text-stone-600 mb-6">Click any box for details. Solid border = existing; coloured = new this feature; dashed = future.</p>
+  <h2 class="text-2xl font-semibold mb-4">Architecture — where F011 plugs in</h2>
+  <p class="text-stone-600 mb-6">Click any box for details. Solid border = existing; coloured = new this feature; dashed = future. F011 is documentation-shape: no new daemons, no new hooks — the agent reads doctrine + config at every /next.</p>
 
-  <svg viewBox="0 0 800 300" class="w-full" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Architecture diagram">
-    <!-- TODO: example boxes -->
-    <g class="arch-grp" data-box="user" tabindex="0" role="button" aria-label="User" aria-pressed="false">
+  <svg viewBox="0 0 800 300" class="w-full" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Architecture diagram for F011">
+    <!-- User -->
+    <g class="arch-grp" data-box="user" tabindex="0" role="button" aria-label="User (Sam)" aria-pressed="false">
       <rect class="arch-box existing" x="20" y="120" width="120" height="60" rx="6"/>
-      <text x="80" y="155" text-anchor="middle" font-size="13" font-weight="500">TODO: User</text>
+      <text x="80" y="155" text-anchor="middle" font-size="13" font-weight="500">User (Sam)</text>
     </g>
-    <g class="arch-grp" data-box="feature" tabindex="0" role="button" aria-label="This feature" aria-pressed="false">
-      <rect class="arch-box new" x="200" y="120" width="180" height="60" rx="6"/>
-      <text x="290" y="155" text-anchor="middle" font-size="13" font-weight="500">TODO: This feature (new)</text>
+    <line x1="140" y1="150" x2="195" y2="150" stroke="#94a3b8" stroke-width="1.5"/>
+    <polyline points="190,146 195,150 190,154" fill="none" stroke="#94a3b8" stroke-width="1.5"/>
+    <!-- Feature: /next decision tree + config -->
+    <g class="arch-grp" data-box="feature" tabindex="0" role="button" aria-label="F011 — config field + /next decision tree" aria-pressed="false">
+      <rect class="arch-box new" x="200" y="120" width="220" height="60" rx="6"/>
+      <text x="310" y="143" text-anchor="middle" font-size="13" font-weight="500">F011 (new)</text>
+      <text x="310" y="161" text-anchor="middle" font-size="11">automation.level config +</text>
+      <text x="310" y="174" text-anchor="middle" font-size="11">/next decision-tree prose</text>
     </g>
-    <g class="arch-grp" data-box="downstream" tabindex="0" role="button" aria-label="Downstream system" aria-pressed="false">
-      <rect class="arch-box existing" x="440" y="120" width="160" height="60" rx="6"/>
-      <text x="520" y="155" text-anchor="middle" font-size="13" font-weight="500">TODO: Downstream</text>
+    <line x1="420" y1="150" x2="475" y2="150" stroke="#94a3b8" stroke-width="1.5"/>
+    <polyline points="470,146 475,150 470,154" fill="none" stroke="#94a3b8" stroke-width="1.5"/>
+    <!-- Downstream: existing actions + frontmatter -->
+    <g class="arch-grp" data-box="downstream" tabindex="0" role="button" aria-label="Existing actions + requires_user_approval frontmatter" aria-pressed="false">
+      <rect class="arch-box existing" x="480" y="120" width="280" height="60" rx="6"/>
+      <text x="620" y="143" text-anchor="middle" font-size="13" font-weight="500">Existing actions</text>
+      <text x="620" y="161" text-anchor="middle" font-size="11">.sdd/actions/*.md frontmatter</text>
+      <text x="620" y="174" text-anchor="middle" font-size="11">(requires_user_approval flag)</text>
     </g>
   </svg>
 
@@ -159,7 +191,7 @@
   </div>
 </section>
 
-<!-- TODO: New vs existing ———————————————————————————————————————————— -->
+<!-- New vs existing ———————————————————————————————————————————— -->
 <section class="mb-12">
   <h2 class="text-2xl font-semibold mb-4">New vs existing</h2>
   <table class="w-full text-sm">
@@ -171,8 +203,13 @@
       </tr>
     </thead>
     <tbody class="divide-y divide-stone-200">
-      <tr><td class="py-2 pr-4">TODO: Component A</td><td class="py-2 pr-4">existing</td><td class="py-2">unchanged</td></tr>
-      <tr><td class="py-2 pr-4">TODO: Component B</td><td class="py-2 pr-4"><span class="text-indigo-600 font-medium">new</span></td><td class="py-2">added by this feature</td></tr>
+      <tr><td class="py-2 pr-4"><code>parameters.automation.level</code> config field</td><td class="py-2 pr-4"><span class="text-indigo-600 font-medium">new</span></td><td class="py-2">String: full | most | checkpoint. Default checkpoint (backwards-compat). Lives in <code>.sdd/config.md</code>.</td></tr>
+      <tr><td class="py-2 pr-4"><code>parameters.automation.destructive_actions</code> list</td><td class="py-2 pr-4"><span class="text-indigo-600 font-medium">new</span></td><td class="py-2">6 slugs: mark-shipped, manifest-repin, --delete-branch, decisions.md-append, .shipped-marker, repin. Gates the Most tier.</td></tr>
+      <tr><td class="py-2 pr-4">008-automation-level setup brick</td><td class="py-2 pr-4"><span class="text-indigo-600 font-medium">new</span></td><td class="py-2"><code>templates/.sdd/setup/008-automation-level.md</code>. Wizard asks once at project start. Records to <code>parameters.automation.level</code>.</td></tr>
+      <tr><td class="py-2 pr-4"><code>/sdd-config automation &lt;tier&gt;</code> subcommand</td><td class="py-2 pr-4"><span class="text-indigo-600 font-medium">new</span></td><td class="py-2">Post-setup tier change. Accepts full / most / checkpoint (case-insensitive). Writes config, confirms.</td></tr>
+      <tr><td class="py-2 pr-4"><code>/next</code> decision-tree prose</td><td class="py-2 pr-4">modified</td><td class="py-2">New section in <code>.claude/commands/next.md</code>. Agent reads doctrine each turn and applies tier × action-class × destructive-list rule.</td></tr>
+      <tr><td class="py-2 pr-4"><code>resolve-parameters.sh</code> automation handling</td><td class="py-2 pr-4">modified</td><td class="py-2">New <code>_framework_default()</code> helper + 3-way validation. Unset → checkpoint; invalid → checkpoint + warn; non-dict shape → checkpoint + warn (CR cycle-1 #10).</td></tr>
+      <tr><td class="py-2 pr-4">Per-action <code>requires_user_approval</code> frontmatter</td><td class="py-2 pr-4">unchanged</td><td class="py-2">Already shipped in v1.6.0 matrix lock. F011 leverages it; no flag changes.</td></tr>
     </tbody>
   </table>
 </section>
@@ -190,13 +227,14 @@
   // Step + arch detail tables. Fill TODO entries; the click + keyboard
   // handlers below populate the matching detail panel.
   const STEP_DETAIL = {
-    'step-1': { t: 'TODO: Step 1 title', d: 'TODO: plain-English description of what step 1 does for the user.' },
-    'step-2': { t: 'TODO: Step 2 title', d: 'TODO: plain-English description of what step 2 does for the user.' },
+    'step-1': { t: '1. Read tier from config.md', d: 'At the start of each /next, the agent reads parameters.automation.level from .sdd/config.md (via resolve-parameters.sh). The value is full, most, or checkpoint. If unset, missing, or invalid, the resolver falls back to checkpoint (the safest default) and writes a stderr warning naming the bad value.' },
+    'step-2': { t: '2. Classify the active action', d: 'The agent identifies whether the next [ ] step is USER-LED (always ask the user), AGENT-LED (subject to the tier), or BUILD-TASK (governed by the recorded Run mode, not by automation.level). The classification comes from the action file under .sdd/actions/<slug>.md and its requires_user_approval frontmatter flag.' },
+    'step-3': { t: '3. Apply the tier rule', d: 'For AGENT-LED steps: under full, auto-advance if requires_user_approval=false AND the action is not in the destructive list; otherwise prompt. Under most, auto-advance unless the action slug is in §11 destructive_actions; otherwise prompt. Under checkpoint, always prompt. The commit shape stays the same in every tier — only the approve CTA is skipped under full/most.' },
   };
   const ARCH_DETAIL = {
-    'user':       { t: 'TODO: User',       d: 'TODO: who they are and what they want.' },
-    'feature':    { t: 'TODO: This feature', d: 'TODO: what it does for the user (not what it IS technically).' },
-    'downstream': { t: 'TODO: Downstream', d: 'TODO: existing system this feature talks to.' },
+    'user':       { t: 'User (Sam)', d: 'The non-technical SDD adopter. Picks the automation tier once at /sdd-setup (or via /sdd-config later) and otherwise interacts with the framework through /next + slash commands. Existing user — no change to who they are or what they bring; F011 only changes when /next asks for approval.' },
+    'feature':    { t: 'F011 — config field + /next decision-tree prose', d: 'The new pieces: parameters.automation.level (and destructive_actions list) in .sdd/config.md; the 008-automation-level setup brick; the /sdd-config automation <tier> subcommand; the 3-way decision tree prose in .claude/commands/next.md that the agent reads each turn. Documentation-shape: no runtime daemon, no new hooks, no new MCP servers.' },
+    'downstream': { t: 'Existing actions + requires_user_approval frontmatter', d: 'The already-shipped (v1.6.0) per-action frontmatter flag classifying each action as requiring user approval or not. F011 leverages this matrix as-is — no flags change. The flag is the second guard on destructive actions under the full tier (the first guard being the destructive_actions list under most).' },
   };
 
   // Render via textContent (not innerHTML) so any user-supplied
