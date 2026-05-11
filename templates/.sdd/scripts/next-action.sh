@@ -232,18 +232,35 @@ for line in spec_lines:
 # markers ([WAVE: 0], [WAVE: foo]) are skipped — they don't contribute a wave
 # and don't produce a WAVE-DISPATCH on their own.
 def _find_next_wave():
+    # Single-block wave namespace contract (§9 out-of-scope #3): scan the
+    # FIRST `### action: plan-decompose` block only. Stop accumulating
+    # matches as soon as we exit that block; ignore later plan-decompose
+    # sections (specs SHOULD have one but the parser must not silently
+    # merge tasks across blocks).
     in_plan = False
+    plan_block_seen = False
     waves = {}  # wave_n (int) -> [T-IDs] in source order
     for ln in spec_lines:
         if ln.startswith("### "):
-            in_plan = bool(re.match(r'^###\s+action:\s+plan-decompose\s*$', ln))
+            new_in_plan = bool(re.match(r'^###\s+action:\s+plan-decompose\s*$', ln))
+            if in_plan and not new_in_plan:
+                # Exiting the first plan-decompose block via another ### action.
+                break
+            if new_in_plan:
+                if plan_block_seen:
+                    # Second plan-decompose block — stop, don't merge.
+                    break
+                plan_block_seen = True
+                in_plan = True
             continue
         if ln.startswith("## "):
+            if in_plan:
+                break  # Exiting the first plan-decompose via phase boundary.
             in_plan = False
             continue
         if not in_plan:
             continue
-        m = re.match(r'^\s*-\s*\[ \]\s+(T\d+)\s+\[WAVE:\s*(\d+)\s*\]\s*:', ln)
+        m = re.match(r'^\s*-\s*\[ \]\s+(?:\*\*)?(T\d+)\s+\[WAVE:\s*(\d+)\s*\](?:\*\*)?\s*:', ln)
         if not m:
             continue
         wave_n = int(m.group(2))

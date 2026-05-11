@@ -140,7 +140,7 @@ except OSError as e:
 
 in_plan = False
 tasks = []
-row_re = re.compile(r'^\s*-\s*\[ \]\s+(T\d+)\s+\[WAVE:\s*(\d+)\s*\]\s*:')
+row_re = re.compile(r'^\s*-\s*\[ \]\s+(?:\*\*)?(T\d+)\s+\[WAVE:\s*(\d+)\s*\](?:\*\*)?\s*:')
 for ln in lines:
     if ln.startswith("### "):
         in_plan = bool(re.match(r'^###\s+action:\s+plan-decompose\s*$', ln))
