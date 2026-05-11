@@ -2,7 +2,7 @@
 
 **Active:** features/011-auto-advance-agent-led-steps
 **Playbook:** feature
-**Active blocker:** SHIP action: verify-test-run
+**Active blocker:** SHIP action: verify-ci-green (PR #236)
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
@@ -10,7 +10,8 @@
 ## In flight
 - features/011-auto-advance-agent-led-steps — auto-advance AGENT-LED steps (PHASE: SHIP)
 
-- features/010-parallel-wave-execution — parallel wave execution (PHASE: SHIP)
+(none)
+
 
 
 ## Ideas
@@ -25,6 +26,20 @@
 
 
 ## Shipped
+
+- **[[011-next-action-sh-regex-stalls-on-bold-ac-labels-closes-197]]** — closes #197 part 2 (hash-section.sh bold-strip) on top of v1.7.0. Live audit on 2026-05-11 confirmed `next-action.sh` line 220 regex was already fixed by PR #227 (parallel-waves) — only the hash-side remained. `hash-section.sh` (both `.sdd/scripts/` and `templates/.sdd/scripts/` copies) now applies a scoped regex normalisation to LIST-ITEM LABELS matching `AC<N>` / `T<N>` (incl. `T<N> [WAVE: ...]`) / `C-<slug>` and strips wrapping `**` markers before SHA-256. Bold `- [ ] **AC1:** foo` and plain `- [ ] AC1: foo` now hash identically. Prose-emphasis `**Note:**` / `**TODO:**` inside the section is preserved (T02 scope-check locks the boundary). Plain-label hash is pinned to its pre-fix value (T03 regression-lock — `9c148b6b3cb6...`). CR cycle-1 raised 3 actionable findings — all closed in 74c5a39: regex charclass extended to `[ xX]` so `[X]` (uppercase-checked) rows match too, and the T01 fixture extended to cover the full regex scope (T-task + C-checklist labels alongside ACs, plus an `[X]` row exercising the new charclass). 5/5 CI checks GREEN; 3 BUILD tasks T01-T03 GREEN.
+  - Shipped: 2026-05-11 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/233 · Tag: `v1.7.1`
+  - Data-model: (none — behavioural change to one normalisation step; no entity changes)
+  - Extends: (root); v1.7 patch — completes #197 fix-shape (part 1 by PR #227, part 2 by PR #233)
+  - Patterns: 1 lesson candidate noted in the PR — scope normalisation to identifiable LIST-ITEM LABEL prefixes (not arbitrary prose) keeps hash stability without over-stripping. Folded into existing hash-section discipline (no new patterns.md entry needed).
+  - Deferred: out-of-scope per §9 of spec.md — alternate emphasis syntax `__bold__` (CommonMark; framework prose uses `**` exclusively), prose-wide `**` strip (too aggressive), retroactive hash recomputation for already-approved sections (the fix applies forward).
+
+- **[[010-hook-merge-commit-exception-closes-220]]** — closes #220 (the dae7758 friction filed during F009's SHIP). Pre-commit-rules.sh now detects merge / rebase / cherry-pick state via `.git/MERGE_HEAD` / `REBASE_HEAD` / `CHERRY_PICK_HEAD` (plus `rebase-merge/` and `rebase-apply/` directory probes for both rebase flows) and applies a lenient-mode skip on `cofile-block` — legitimate parallel-stream merges no longer get refused for spanning CLAIM (`verification.json`) + POLICY (`manifest.json` + actions) classes by nature. Audit log: stderr line `[moat] <mode> in progress — lenient mode (cofile-block skipped; append_only keeps byte-prefix check)` fires so forensic reviewers can correlate post-hoc. **append_only stays enforced unconditionally** — byte-prefix check runs in both modes; a merge that rewrote prior entries still fails it. The `fi` closes BEFORE the FILE_RULES section (CR cycle-1 #7 Critical fix). 2 CR review cycles (8 of 9 findings closed; 1 declined per byte-prefix append-only contract on pre-existing dae7758 stray markers in patterns.md — same precedent as F009 (#219) cycle-3 #11). 6/6 CI checks GREEN. 4 BUILD tasks T01-T04 GREEN (T01 detection block, T02 cofile-block skip, T03 regression-lock for regular-commit strictness, T04 pattern entry in patterns.md documenting the pre-v1.7 git-commit-tree workaround). **Meta-validation**: the merge commit bringing this fix INTO main (`72560318`) was itself the EXACT pattern this fix is supposed to solve — pre-existing dae7758 stray markers in HEAD vs origin/main's chronological ordering — and needed a final `git commit-tree` bypass to land. The fix lands in v1.7.0; v1.8+ merges no longer need the bypass.
+  - Shipped: 2026-05-11 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/230 · Tag: `v1.7.0`
+  - Data-model: (none — behavioural change to 2 hooks; no entity changes)
+  - Extends: (root); v1.7 anchor, fixes F009-era dae7758 bypass authorization
+  - Patterns: 1 lesson appended (bypass-via-git-commit-tree workaround for hook-blocked legitimate merges, with the v1.7 cutover named explicitly).
+  - Deferred: CR cycle-1 #6 (pre-existing dae7758 stray-marker text in patterns.md above the new T04 entry) — modifying those bytes violates the append-only contract this PR DOCUMENTS; the new entry threads to dae7758 + #220 so the audit trail still resolves. v1.7+ does not produce new instances.
 
 - **[[010-parallel-wave-execution]]** — closes SDD's main scaling-bottleneck for BUILD phases with 30+ tasks by adding opt-in `[WAVE: N]` markers on BUILD task rows. Wave-marked tasks dispatch in parallel via Claude Code's Agent tool with fresh per-subagent contexts (`.sdd/scripts/dispatch-wave.sh` is the new manifest-tracked dispatcher; `.sdd/scripts/next-action.sh` learns to emit a `WAVE-DISPATCH` tag). Architectural correction surfaced at T203: wave-task subagents commit ONLY their disjoint test+code files; the orchestrator commits one wave-green `spec.md` edit after the wave returns (adjacent rows can't 3-way-merge cleanly, so the orchestrator-flips model sidesteps it). Killer combo with F008's multi-model unlock — wave-tasks dispatch to cheaper models (Haiku/Kimi K2) while the orchestrator stays on Sonnet for coordination. Validated by 12 mechanical task-tests (T200-T211): 8 mechanical, 1 named-eye assist (AC9), 1 fixture-count best-effort (AC10), 2 PROD-ONLY (AC11 multi-harness, AC12 end-to-end real session). **5 CR review cycles** (29 findings closed: 13+7+1+8 across cycles 1-4, cycle 5 positive ack from CR; 3 Trivial `set -e` permanently deferred per the framework's accumulate-all-failures discipline; 1 MD022 cosmetic on decisions.md deferred per append-only contract). Mid-SHIP merge of v1.6.0 main via Sam-authorized `git commit-tree` plumbing (`127cacfe`) bypassed issue #220's missing cofile-block merge-commit exemption. 6/6 CI checks GREEN.
   - Shipped: 2026-05-11 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/227

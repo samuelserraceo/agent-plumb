@@ -160,7 +160,7 @@ fi
 # Validate playbook exists. Compute next NNN. Derive slug from title.
 # Scaffold spec.md + update INDEX.md. All in one python3 block for safety.
 TITLE_INPUT="$TITLE" PLAYBOOK_OVERRIDE="$PLAYBOOK_OVERRIDE" EXTENDS="$EXTENDS" QUEUED="$QUEUED" PROJ="$PROJECT_DIR" python3 <<'PYEOF'
-import json, os, re, sys
+import json, os, re, subprocess, sys
 
 proj = os.environ["PROJ"]
 title = os.environ["TITLE_INPUT"].strip()
@@ -295,6 +295,49 @@ for entry in os.listdir(work_dir):
     m = re.match(r"^(\d{3})-", entry)
     if m:
         existing_ids.append(int(m.group(1)))
+
+# Idea 007 (cross-branch ID-collision prevention): also scan origin/main's
+# work-item folder for already-shipped features the user hasn't fetched yet.
+# Without this, two long-running parallel branches can both /start with the
+# same ID — exactly what hit feature 008 yesterday (008-pi-adapter shipped
+# to main while a brainstorm worktree was scaffolding its own 008-…).
+#
+# Failure mode is graceful: if `git fetch` or `git ls-tree` errors (offline,
+# no remote, fresh repo with no origin/main), we fall back to local-only
+# scanning. Collision window is just narrowed, not eliminated — two
+# branches both /start'ing within seconds of each other can still race;
+# scanning open PR branches via `gh pr list` would close that gap and is
+# filed as follow-up.
+try:
+    # Refresh origin/main first so the ls-tree below sees the latest shipped
+    # state. 5s timeout protects against slow networks / unreachable remotes;
+    # `--quiet` keeps the /start output clean. Capture the result so we only
+    # proceed to ls-tree when the fetch succeeded — otherwise origin/main
+    # might be days-stale and we'd silently pick an ID from out-of-date data.
+    fetch = subprocess.run(
+        ["git", "fetch", "--quiet", "origin", "main"],
+        cwd=proj, timeout=5, check=False,
+        capture_output=True,
+    )
+    if fetch.returncode == 0:
+        # ls-tree origin/main:<work_item_folder>/ — list folder entries on main.
+        # `--name-only` returns just the path (no mode/hash columns).
+        rel = work_item_folder.rstrip("/")
+        r = subprocess.run(
+            ["git", "ls-tree", "--name-only", f"origin/main:.sdd/{rel}"],
+            cwd=proj, timeout=5, check=False,
+            capture_output=True, text=True,
+        )
+        if r.returncode == 0:
+            for line in r.stdout.splitlines():
+                entry = os.path.basename(line.strip())
+                m = re.match(r"^(\d{3})-", entry)
+                if m:
+                    existing_ids.append(int(m.group(1)))
+except (subprocess.SubprocessError, OSError, FileNotFoundError):
+    # Any failure → fall back to local-only scan (safe degradation).
+    pass
+
 next_id = (max(existing_ids) + 1) if existing_ids else 1
 nnn = f"{next_id:03d}"
 
