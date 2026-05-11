@@ -50,8 +50,10 @@ pat_sec=$(printf '%s' "$out" | awk '/--- .sdd\/patterns\.md ---/{f=1;next} f&&/^
 fails=()
 
 # Sentinel should report exactly 1 byte cut.
-if ! printf '%s' "$pat_sec" | grep -qF "truncated to 1 bytes per per-file budget"; then
-  fails+=("expected sentinel 'truncated to 1 bytes' (file=101, budget=100, cut=1)")
+# CR cycle 7 MIN: grammar — "1 bytes" → "1 byte" (singular). Hook now
+# pluralises per cut count.
+if ! printf '%s' "$pat_sec" | grep -qF "truncated to 1 byte per per-file budget"; then
+  fails+=("expected sentinel 'truncated to 1 byte' (file=101, budget=100, cut=1; singular byte)")
   echo "Section content:"
   printf '%s\n' "$pat_sec" | head -3
 fi
@@ -70,4 +72,4 @@ if [ ${#fails[@]} -gt 0 ]; then
   exit 1
 fi
 
-echo "PASS: T234 — AC15 1-byte-over boundary: budget=100, file=101 → kept=100 P's + sentinel 'truncated to 1 bytes'"
+echo "PASS: T234 — AC15 1-byte-over boundary: budget=100, file=101 → kept=100 P's + sentinel 'truncated to 1 byte' (singular)"

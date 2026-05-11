@@ -52,11 +52,18 @@ fi
 fails=()
 
 # Each corpus file should appear with at least 1 byte of content.
-# CR cycle 1 #5: spec.md must be in the header check too — every
-# corpus file means EVERY, including the active spec.
-for hdr in ".sdd/INDEX.md" "/spec.md" ".sdd/principles.md" ".sdd/stack.md" ".sdd/data-model.md" ".sdd/patterns.md"; do
-  if ! printf '%s' "$out" | grep -qF -- "$hdr"; then
-    fails+=("missing header for $hdr (file dropped wholesale)")
+# CR cycle 7 MAJ: the spec.md header check must be section-scoped to
+# the [PROJECT DATA] block (not a whole-file grep) so a "/spec.md"
+# substring appearing elsewhere in the output (e.g. a sentinel
+# referencing the active spec.md path) can't false-positive the
+# "header present" assertion. Extract the [PROJECT DATA] block once
+# then check headers only within it.
+project_data=$(printf '%s' "$out" | awk '/\[PROJECT DATA/,/\[END PROJECT DATA\]/')
+for hdr in "--- .sdd/INDEX.md" "--- .sdd/features/001-test/spec.md" "--- .sdd/principles.md" "--- .sdd/stack.md" "--- .sdd/data-model.md" "--- .sdd/patterns.md"; do
+  # Use a full --- <path> --- shape so the match anchors on the
+  # canonical header form, not any incidental substring of the path.
+  if ! printf '%s' "$project_data" | grep -qF -- "$hdr"; then
+    fails+=("missing header '$hdr' inside [PROJECT DATA] block (file dropped wholesale)")
   fi
 done
 

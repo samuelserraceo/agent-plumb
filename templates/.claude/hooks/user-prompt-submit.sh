@@ -248,8 +248,9 @@ total_bytes = len(data)
 if budget <= 0:
     # AC11 / AC17 — zero (or clamped-negative) budget: empty body +
     # sentinel reporting the full file size as "truncated bytes".
+    unit = "byte" if total_bytes == 1 else "bytes"
     sys.stdout.write(
-        f"[truncated to {total_bytes} bytes per per-file budget — "
+        f"[truncated to {total_bytes} {unit} per per-file budget — "
         f"re-read with the Read tool if you need the cut portion]\n"
     )
     sys.exit(0)
@@ -285,8 +286,9 @@ cut = total_bytes - len(kept_bytes)
 sys.stdout.write(kept)
 if not kept.endswith("\n"):
     sys.stdout.write("\n")
+unit = "byte" if cut == 1 else "bytes"
 sys.stdout.write(
-    f"[truncated to {cut} bytes per per-file budget — "
+    f"[truncated to {cut} {unit} per per-file budget — "
     f"re-read with the Read tool if you need the cut portion]\n"
 )
 PYEOF

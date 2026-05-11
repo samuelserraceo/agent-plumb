@@ -57,8 +57,15 @@ if [ "$out1" != "$out2" ]; then
   exit 1
 fi
 
-# A third run for good measure.
-out3=$(cd "$tmp" && PROJECT_DIR="$tmp" CLAUDE_PROJECT_DIR="$tmp" bash "$HOOK" 2>/dev/null)
+# A third run for good measure. CR cycle 7 MAJ: include rc check for
+# consistency with runs 1+2 — an errored run with empty output would
+# byte-match runs 1+2 trivially if they also errored, so the rc gate
+# protects the determinism assertion.
+out3=$(cd "$tmp" && PROJECT_DIR="$tmp" CLAUDE_PROJECT_DIR="$tmp" bash "$HOOK" 2>/dev/null); rc3=$?
+if [ "$rc3" -ne 0 ]; then
+  echo "FAIL: T231 — hook exited non-zero on run 3 (rc=$rc3); cannot validate determinism"
+  exit 1
+fi
 if [ "$out1" != "$out3" ]; then
   echo "FAIL: T231 — AC12 determinism: run #3 differs from run #1"
   exit 1
