@@ -172,7 +172,7 @@ while content_lines and content_lines[-1] == "":
 # only — prose-emphasis `**Note:**` / `**TODO:**` inside the section is
 # unchanged (only labels matching the canonical pattern get stripped).
 _label_bold_re = re.compile(
-    r'^(\s*-\s*\[[ x]\]\s+)\*\*((?:AC\d+|T\d+(?:\s+\[WAVE:[^\]]*\])?|C-[a-z0-9_-]+):)\*\*'
+    r'^(\s*-\s*\[[ xX]\]\s+)\*\*((?:AC\d+|T\d+(?:\s+\[WAVE:[^\]]*\])?|C-[a-z0-9_-]+):)\*\*'
 )
 content_lines = [_label_bold_re.sub(r'\1\2', ln) for ln in content_lines]
 

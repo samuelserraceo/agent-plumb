@@ -13,7 +13,8 @@ ACTION="$ROOT/templates/.sdd/actions/acceptance-criteria.md"
 SCRATCH=$(mktemp -d)
 trap 'rm -rf "$SCRATCH"' EXIT
 
-# Fixture A: bold AC labels
+# Fixture A: bold list-item labels (AC + T + C- — full regex scope, plus an
+# uppercase [X]-checked row to exercise the [ xX] checkbox match).
 cat > "$SCRATCH/spec-bold.md" <<EOF
 ---
 title: bold-vs-plain-test
@@ -23,10 +24,12 @@ title: bold-vs-plain-test
 
 #### §11 ACs
 - [ ] **AC1:** form submission works
-- [ ] **AC2:** invalid input rejected
+- [X] **AC2:** invalid input rejected
+- [ ] **T01 [WAVE: 2]:** worker runs
+- [x] **C-auth-flow:** keep legacy path
 EOF
 
-# Fixture B: plain AC labels (semantically identical)
+# Fixture B: plain list-item labels (semantically identical to A).
 cat > "$SCRATCH/spec-plain.md" <<EOF
 ---
 title: bold-vs-plain-test
@@ -36,7 +39,9 @@ title: bold-vs-plain-test
 
 #### §11 ACs
 - [ ] AC1: form submission works
-- [ ] AC2: invalid input rejected
+- [X] AC2: invalid input rejected
+- [ ] T01 [WAVE: 2]: worker runs
+- [x] C-auth-flow: keep legacy path
 EOF
 
 H1=$(bash "$HASH" "$SCRATCH/spec-bold.md" "$ACTION")
