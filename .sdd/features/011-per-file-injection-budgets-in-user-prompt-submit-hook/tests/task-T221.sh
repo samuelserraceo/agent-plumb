@@ -77,7 +77,11 @@ python3 -c "print('Y' * 500, end='')" > "$tmp/.sdd/data-model.md"
 python3 -c "print('Z' * 500, end='')" > "$tmp/.sdd/patterns.md"
 
 # Run the hook with PROJECT_DIR pointed at the fixture.
-out=$(cd "$tmp" && PROJECT_DIR="$tmp" CLAUDE_PROJECT_DIR="$tmp" bash "$HOOK" 2>/dev/null || true)
+out=$(cd "$tmp" && PROJECT_DIR="$tmp" CLAUDE_PROJECT_DIR="$tmp" bash "$HOOK" 2>/dev/null); rc=$?
+if [ "$rc" -ne 0 ]; then
+  echo "FAIL: T221 — hook exited non-zero (rc=$rc)"
+  exit 1
+fi
 
 fails=()
 

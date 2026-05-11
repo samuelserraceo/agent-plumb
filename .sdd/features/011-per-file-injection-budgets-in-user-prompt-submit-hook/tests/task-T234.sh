@@ -39,7 +39,11 @@ parameters:
 ---
 CFG
 
-out=$(cd "$tmp" && PROJECT_DIR="$tmp" CLAUDE_PROJECT_DIR="$tmp" bash "$HOOK" 2>/dev/null || true)
+out=$(cd "$tmp" && PROJECT_DIR="$tmp" CLAUDE_PROJECT_DIR="$tmp" bash "$HOOK" 2>/dev/null); rc=$?
+if [ "$rc" -ne 0 ]; then
+  echo "FAIL: T234 — hook exited non-zero (rc=$rc)"
+  exit 1
+fi
 
 pat_sec=$(printf '%s' "$out" | awk '/--- .sdd\/patterns\.md ---/{f=1;next} f&&/^--- /{exit} f&&/^\[END/{exit} f')
 
