@@ -18,9 +18,14 @@ HOOK="$ROOT/templates/.claude/hooks/pre-commit-rules.sh"
 [ -f "$HOOK" ] || { echo "FAIL: $HOOK missing"; exit 1; }
 
 # Lenient-mode detection: the hook MUST check .git/MERGE_HEAD (and
-# REBASE_HEAD / CHERRY_PICK_HEAD per the spec).
+# REBASE_HEAD / CHERRY_PICK_HEAD per the spec). CR cycle 1 (#230 #3
+# Major): also assert the directory probes the rebase contract relies
+# on — git uses rebase-merge/ for the interactive flow and rebase-apply/
+# for the legacy am-flow; either should trigger lenient mode.
 grep -q "MERGE_HEAD" "$HOOK" || { echo "FAIL: hook does not detect .git/MERGE_HEAD"; exit 1; }
 grep -q "REBASE_HEAD" "$HOOK" || { echo "FAIL: hook does not detect .git/REBASE_HEAD"; exit 1; }
+grep -q "rebase-merge" "$HOOK" || { echo "FAIL: hook does not detect .git/rebase-merge/ (interactive rebase)"; exit 1; }
+grep -q "rebase-apply" "$HOOK" || { echo "FAIL: hook does not detect .git/rebase-apply/ (legacy am-flow rebase)"; exit 1; }
 grep -q "CHERRY_PICK_HEAD" "$HOOK" || { echo "FAIL: hook does not detect .git/CHERRY_PICK_HEAD"; exit 1; }
 
 # Lenient mode flag: the hook MUST declare LENIENT_MODE (or equivalent

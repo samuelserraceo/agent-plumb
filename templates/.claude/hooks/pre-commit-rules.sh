@@ -407,10 +407,16 @@ esac
 # commits span classes by nature (verification.json from one branch,
 # manifest.json + actions from another). The audit log line above
 # already recorded the lenient-mode entry; no extra log here.
+#
+# CR cycle 1 (#230 #7 Critical) — the lenient short-circuit MUST close
+# BEFORE the FILE_RULES section so `append_only` stays enforced in
+# lenient mode. We only short-circuit `class_block_result` (the value
+# the cofile-block case statement reads at line ~672 below); file_rules
+# runs unconditionally.
 if [ "$LENIENT_MODE" -eq 1 ]; then
   class_block_result="ALLOW"
 else
-class_block_result=$(STAGED="$staged" python3 - <<'PYEOF' 2>/dev/null || echo "ALLOW"
+  class_block_result=$(STAGED="$staged" python3 - <<'PYEOF' 2>/dev/null || echo "ALLOW"
 import os, re, sys
 try:
     import yaml
@@ -461,7 +467,8 @@ for pair in blocks:
         sys.exit(0)
 print("ALLOW")
 PYEOF
-)
+  )
+fi  # end LENIENT_MODE cofile-block short-circuit (closes #220, T02) — BEFORE file_rules so append_only stays enforced
 
 # === FILE_RULES enforcement (per-file append_only / size cap / etc.) ===
 # Read config.md `file_rules:` (path → rules map) and apply each rule
@@ -701,7 +708,6 @@ EOF
     exit 2
     ;;
 esac
-fi  # end LENIENT_MODE cofile-block skip (closes #220, T02)
 
 # === TOUCHES: enforcement (action-step gated) ===
 # Touches: enforcement only fires when an action's spec.md is staged.
