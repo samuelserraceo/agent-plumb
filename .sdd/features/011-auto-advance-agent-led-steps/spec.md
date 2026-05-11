@@ -234,7 +234,7 @@ Trade-offs:
             3-way decision tree section (full/most/checkpoint)
             describing when to auto-advance vs prompt
             — proves AC6
-- [ ] T306: .sdd/config.md (live + template) lists the destructive-
+- [x] T306: .sdd/config.md (live + template) lists the destructive-
             actions enumeration under parameters.automation.
             destructive_actions or sibling field
             — proves AC7
