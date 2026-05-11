@@ -1,15 +1,15 @@
 # SDD framework — INDEX
 
-**Active:** _(none)_
+**Active:** features/013-playwright-explore-ship-step-needs-first-class-skip-mechanism-closes-202
 **Playbook:** feature
-**Active blocker:** _(no active feature — v1.7.2 shipped 2026-05-11 via PR #237, closes #206 (promote-legacy-queued.sh migrator for pre-v1.5.2 PHASE state drift). Pick next from ## Ideas below or open issues.)_
+**Active blocker:** §1 (first action: brief-intake)
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
 
 ## In flight
+- features/013-playwright-explore-ship-step-needs-first-class-skip-mechanism-closes-202 — playwright-explore SHIP step needs first-class skip mechanism (closes #202) (PHASE: SPEC)
 
-(none)
 
 
 
