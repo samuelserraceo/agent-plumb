@@ -5,6 +5,34 @@ playbooks_available: [feature, project, bug, refactor]
 default_playbook: feature
 extensions: {}
 parameters:
+  injection:
+    # Total-output safety net. The user-prompt-submit hook applies this
+    # as a defensive floor on combined output AFTER per-file truncation
+    # runs — catches sum-overshoot edge cases when project per-file
+    # budgets total more than the cap (feature 011, AC10). Env var
+    # SDD_INJECTION_CAP_CHARS still overrides this value at runtime.
+    cap_total_chars: 16000
+    # Per-file budget map. The hook truncates each corpus file
+    # independently to its budget and appends a sentinel marker
+    # `[truncated to <N> bytes per per-file budget — re-read with
+    # the Read tool if you need the cut portion]` when truncation
+    # happens. Replaces the prior "concatenate then truncate from the
+    # end" behavior, which on mature projects silently cut patterns.md
+    # mid-paragraph (feature 011, AC2 / AC3 / AC11).
+    #
+    # Defaults sum to 20000 chars (AC1). Downstream projects override
+    # in their own config.md per-key; unspecified keys fall back to
+    # framework defaults (AC7). Unknown keys (e.g. a future
+    # corpus file) fall back to a documented default char count of
+    # 2000 (AC8). Negative values clamp to 0 with a stderr warning
+    # naming the key (AC17).
+    per_file_budget_chars:
+      INDEX: 3000
+      spec: 5000
+      principles: 2000
+      stack: 3000
+      data-model: 3000
+      patterns: 4000
   budget:
     max_minutes: 5
     max_tokens: 4000

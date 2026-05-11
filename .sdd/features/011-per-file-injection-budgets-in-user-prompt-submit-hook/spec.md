@@ -12,7 +12,7 @@ playbook: feature
 
 ### action: run-mode-chosen
 
-- [ ] mode: Choose autonomy level for BUILD — full-autonomous (recommended for Sam per memory feedback_full_autonomous_build), checkpoint-every-N, or interactive per-task.
+- [x] mode: full-autonomous. Sam picked 2026-05-11. Walk T220-T236 end-to-end without checkpoints, using F010 wave-execution for parallelism (sequential cores T220→T223→T221→T222+T224; W1=T225; W2=T226/T227/T228/T236; W3=T229/T230/T231/T232/T233/T234/T235). Each task lands its test (red) + code (green) in its own atomic commit. lint-no-theatre + verification.json moat check on every commit. Report back at SHIP entry.
 
 ### action: build-task
 
