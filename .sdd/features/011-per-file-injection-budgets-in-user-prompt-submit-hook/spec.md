@@ -38,9 +38,9 @@ Recap (3 bullets):
 2. **As** a downstream SDD user with a different project shape (e.g. patterns.md small, data-model.md huge), **I want** to override the default per-file budgets in my project's `config.md`, **so that** the budgets match what my project actually needs to see most.
 3. **As** the AI agent running the session, **I want** every corpus file to appear at least up to its budget in the injection (never dropped entirely), **so that** I don't silently propose something that contradicts patterns I can't see.
 
-### action: ux-brief
+### action: ux-brief [SKIPPED]
 
-- [ ] brief: infer the UX direction from problem, success, and user stories
+- ⏭ brief: skipped — non-UI feature (hook script + config schema change; no user-facing surface beyond config.md edits)
 
 ### action: proposed-approach
 
