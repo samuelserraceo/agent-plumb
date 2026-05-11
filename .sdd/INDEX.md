@@ -1,15 +1,14 @@
 # SDD framework — INDEX
 
-**Active:** features/010-parallel-wave-execution
+**Active:** features/010-hook-merge-commit-exception-closes-220
 **Playbook:** feature
-**Active blocker:** § (SHIP action: verify-ci-green)
+**Active blocker:** §14 BUILD T01-T04 all GREEN — pending SHIP (PR #230 in CR cycle 2)
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
 
 ## In flight
-
-- features/010-parallel-wave-execution — parallel wave execution (PHASE: SHIP)
+- features/010-hook-merge-commit-exception-closes-220 — hook merge-commit exception (closes #220) (PHASE: BUILD)
 
 
 ## Ideas

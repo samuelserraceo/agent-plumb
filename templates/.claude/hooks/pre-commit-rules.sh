@@ -64,6 +64,42 @@ git rev-parse --is-inside-work-tree >/dev/null 2>&1 || exit 0
 staged=$(git diff --cached --name-only 2>/dev/null || echo "")
 [ -z "$staged" ] && exit 0
 
+# === MERGE / REBASE / CHERRY-PICK detection (closes #220) ===
+# Legitimate parallel-stream merges that preserve HEAD's bytes as a strict
+# prefix of resolved content (e.g. decisions.md appends from both branches)
+# previously forced a `git commit-tree` plumbing bypass — see dae7758 on
+# F009's branch + #220 for the failure mode.
+#
+# In merge / rebase / cherry-pick modes, two rule paths relax:
+#   1. append_only (file_rules) — keep the byte-prefix check (the merge case
+#      already satisfies it); the audit log line below distinguishes
+#      legitimate-merge-allow from regular-commit-allow for forensic review.
+#   2. cofile-block (file_classes) — SKIP entirely. Merge commits span
+#      CLAIM + POLICY classes by nature (verification.json from one branch,
+#      manifest.json + actions from another).
+#
+# Gating on .git/<MODE>_HEAD is git-native; an attacker who can write
+# .git/ can already bypass via `git commit-tree` directly, so this adds
+# no new attack surface. The byte-prefix check in lenient mode still
+# refuses tampering merges that rewrite prior entries.
+GIT_DIR=$(git rev-parse --git-dir 2>/dev/null || echo ".git")
+LENIENT_MODE=0
+LENIENT_MODE_LABEL=""
+if [ -f "$GIT_DIR/MERGE_HEAD" ]; then
+  LENIENT_MODE=1
+  LENIENT_MODE_LABEL="merge"
+elif [ -f "$GIT_DIR/REBASE_HEAD" ] || [ -d "$GIT_DIR/rebase-merge" ] || [ -d "$GIT_DIR/rebase-apply" ]; then
+  LENIENT_MODE=1
+  LENIENT_MODE_LABEL="rebase"
+elif [ -f "$GIT_DIR/CHERRY_PICK_HEAD" ]; then
+  LENIENT_MODE=1
+  LENIENT_MODE_LABEL="cherry-pick"
+fi
+if [ "$LENIENT_MODE" -eq 1 ]; then
+  echo "[moat] $LENIENT_MODE_LABEL in progress — lenient mode (cofile-block skipped; append_only keeps byte-prefix check)" >&2
+fi
+export LENIENT_MODE
+
 # === STATE_RULES enforcement (refuse on state condition) ===
 # Read config.md `state_rules:` (list of { id, when, refuse, message } entries)
 # and apply each entry's condition recogniser. Today's only recogniser:
@@ -366,7 +402,21 @@ esac
 # Runs on EVERY commit with staged files (not gated on spec.md) — the
 # cofile-block defends the framework against tampered-policy + fabricated-
 # claim pairs regardless of whether the agent is doing action work.
-class_block_result=$(STAGED="$staged" python3 - <<'PYEOF' 2>/dev/null || echo "ALLOW"
+#
+# LENIENT_MODE skip (closes #220, T02): merge / rebase / cherry-pick
+# commits span classes by nature (verification.json from one branch,
+# manifest.json + actions from another). The audit log line above
+# already recorded the lenient-mode entry; no extra log here.
+#
+# CR cycle 1 (#230 #7 Critical) — the lenient short-circuit MUST close
+# BEFORE the FILE_RULES section so `append_only` stays enforced in
+# lenient mode. We only short-circuit `class_block_result` (the value
+# the cofile-block case statement reads at line ~672 below); file_rules
+# runs unconditionally.
+if [ "$LENIENT_MODE" -eq 1 ]; then
+  class_block_result="ALLOW"
+else
+  class_block_result=$(STAGED="$staged" python3 - <<'PYEOF' 2>/dev/null || echo "ALLOW"
 import os, re, sys
 try:
     import yaml
@@ -417,7 +467,8 @@ for pair in blocks:
         sys.exit(0)
 print("ALLOW")
 PYEOF
-)
+  )
+fi  # end LENIENT_MODE cofile-block short-circuit (closes #220, T02) — BEFORE file_rules so append_only stays enforced
 
 # === FILE_RULES enforcement (per-file append_only / size cap / etc.) ===
 # Read config.md `file_rules:` (path → rules map) and apply each rule
