@@ -198,7 +198,7 @@ Trade-offs:
 
 ### action: signoff-steps
 
-- [ ] manual-steps: What manual smoke tests do YOU need to do before SHIP, beyond the automated tests? 1-5 bullets.
+- [x] manual-steps: 4 manual checks before SHIP — (1) fresh-install smoke (AC1+AC2+AC4); (2) real-session Full-tier walk (AC9 PROD-ONLY); (3) Most-tier destructive gate at mark-shipped (AC10 PROD-ONLY); (4) AC8 named-eye matrix audit of `requires_user_approval` flag across all `.sdd/actions/*.md`.
 
 ### action: wireframe
 
