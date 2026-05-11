@@ -4,9 +4,9 @@ playbook: feature
 
 # auto-advance AGENT-LED steps
 
-[PHASE: SHIP]
+[PHASE: SHIPPED]
 
-**Active blocker:** SHIP action: verify-ci-green (PR #236)
+**Active blocker:** _(none — SHIPPED via PR #236, merge commit cbf660d, 2026-05-11)_
 
 ## PHASE: SPEC
 
@@ -315,13 +315,13 @@ PROD-ONLY AC9 + AC10 + best-effort AC8 = no T-task; verified at SHIP via §12 si
 
 ### action: verify-ci-green
 
-- [ ] ci: all CI checks GREEN on the PR
+- [x] ci: 5/5 CI checks GREEN on PR #236 (Browser tests, Framework tests, Claims audit, Scope guard, Graph integrity); 6 CR review cycles closed (~20 actionable findings + 1 declined per append-only contract on decisions.md MD022, same precedent as F009/F010)
 
 ### action: mark-shipped
 
-- [ ] shipped: INDEX.md updated, .shipped marker written, decisions.md appended
+- [x] shipped: PR #236 squash-merged to main at cbf660d, 2026-05-11; INDEX.md updated; .shipped marker written; decisions.md appended
 
 ### Exit checks
 
-- [ ] C-ship-pr-url: PR URL recorded in INDEX.md Shipped section {verify-by: verify-stage.sh}
-- [ ] C-ship-marked: .shipped marker file exists in feature folder {verify-by: verify-stage.sh}
+- [x] C-ship-pr-url: PR URL recorded in INDEX.md Shipped section {verify-by: verify-stage.sh}
+- [x] C-ship-marked: .shipped marker file exists in feature folder {verify-by: verify-stage.sh}

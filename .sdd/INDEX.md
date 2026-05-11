@@ -1,15 +1,15 @@
 # SDD framework — INDEX
 
-**Active:** features/011-auto-advance-agent-led-steps
+**Active:** _(none)_
 **Playbook:** feature
-**Active blocker:** SHIP action: verify-ci-green (PR #236)
+**Active blocker:** _(no active feature — v1.8.0 candidate F011 shipped 2026-05-11 via PR #236, closes the SPEC+SHIP auto-advance gap. Pairs with F008 (multi-model) + F010 (parallel waves) to deliver the drop-the-brief-walk-away shape. Pick next from ## Ideas below or open issues.)_
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
 
 ## In flight
 
-- features/011-auto-advance-agent-led-steps — auto-advance AGENT-LED steps (PHASE: SHIP)
+(none)
 
 
 ## Ideas
@@ -24,6 +24,13 @@
 
 
 ## Shipped
+
+- **[[011-auto-advance-agent-led-steps]]** — closes the SPEC+SHIP auto-advance gap. Adds `parameters.automation.level` (full/most/checkpoint, default checkpoint) + a destructive_actions enumeration in `.sdd/config.md`; ships an 008-automation-level setup brick; adds `/sdd-config automation <tier>` subcommand; ships a 3-way decision tree in `.claude/commands/next.md` describing when to auto-advance vs prompt. Documentation-shape feature — zero runtime daemons, zero new hooks; agent reads doctrine + config each turn. Backwards-compat: existing projects without the field keep today's checkpoint behaviour. Pairs with F008 (multi-model) + F010 (parallel waves) to deliver drop-the-brief-walk-away. Six CR review cycles closed (~20 actionable findings closed; 1 declined per append-only contract on decisions.md MD022 — same precedent as F009/F010). Single canonical rule per tier: Full reads only `requires_user_approval` flag (destructive list NOT consulted); Most reads only the §11 destructive_actions list (flag NOT consulted). Destructive actions happen to carry `requires_user_approval: true` already, so they prompt under both tiers via two distinct mechanisms. Bonus fix landed in same PR: pre-commit-test-first.sh merge-mode skip (mirrors v1.7.0 cofile-block fix; closes a #220 follow-up gap). 7 BUILD task-tests T300-T306 GREEN + 218/218 framework tests GREEN through every cycle.
+  - Shipped: 2026-05-11 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/236 · Tag: `v1.8.0` (candidate — Sam to tag)
+  - Data-model: (none — new config field + new framework concept `AutomationLevel`; no entity changes)
+  - Extends: (root); v1.8 minor — completes the v1.6+v1.7+v1.8 trio (F008 multi-model anchor + F010 parallel waves + F011 auto-advance = drop-the-brief shape)
+  - Patterns: 3 new entries in patterns.md — documentation-shape features ship as slash-command prose; resolve-parameters framework-defaults must handle empty-string AND unset; grep -F still parses leading-dash and leading-dot args as flags.
+  - Deferred: per-feature tier override (§9 #3); decision-tree audit logging (§9 #4 — observability sibling); misclassified `requires_user_approval` flag audit-and-fix sweep (§9 #5 — trust v1.6.0 PR-C matrix); decisions.md MD022 on the F011-cycle entries (append-only contract precedent); AC8 named-eye matrix audit + AC9/AC10 PROD-ONLY real-session walks (deferred to first SHIP under each tier in a future feature).
 
 - **[[013-playwright-explore-ship-step-needs-first-class-skip-mechanism-closes-202]]** — closes #202. `playwright-explore` action now ships a `skip_when:` frontmatter field naming the canonical MCP-missing condition + the canonical single-line skip log (`playwright-explore: SKIPPED — explorer not installed; install via \`bash .sdd/extensions/playwright-explorer/enable.sh\``). A new `## When to skip` body section (above `**What it looks like:**`) tells the agent to emit the canonical line verbatim — NOT improvise a 12-line justification block (the failure mode F01 SHIP at transcript line 30493 surfaced). Documentation-only fix; the frontmatter field is read by the agent (same shape as `requires_user_approval`, `prelude_refresh`, `trust` — all agent-honoured, no runtime evaluator). 3 BUILD task-tests T01-T03 GREEN (frontmatter shape + log-line content + body-section presence). Cycle-1 CR clean. Completes the v1.7 patch four-pack: v1.7.0 (#220) + v1.7.1 (#197p2) + v1.7.2 (#206) + v1.7.3 (#202).
   - Shipped: 2026-05-11 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/240 · Tag: `v1.7.3`
