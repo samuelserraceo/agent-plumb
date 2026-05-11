@@ -35,14 +35,155 @@ if [ ! -d .sdd ] || [ ! -f .sdd/INDEX.md ]; then
   exit 0
 fi
 
-# Theme 11 — global injection cap. ~4K tokens at 4 chars/token.
-# A USER-LED action's budget is 2K tokens; AGENT-LED is 8K;
-# BUILD-TASK is 16K. The hook caps at the AGENT-LED ceiling
-# globally — biggest actions get their full budget; smaller
-# ones effectively get more headroom than they need. Per-tag caps
-# require knowing the active action at injection time, which
-# is a Phase C refinement.
-: "${SDD_INJECTION_CAP_CHARS:=16000}"
+# Feature 011 — per-file injection budgets.
+#
+# Per-file budgets replace the prior single-cap end-truncate behavior.
+# Each corpus file (INDEX, spec, principles, stack, data-model,
+# patterns) gets its own char allocation; when a file exceeds its
+# budget, the hook truncates that file individually and appends a
+# sentinel marker pointing the agent at the Read tool to recover
+# the cut portion. cap_total_chars stays as a defensive safety-net
+# floor on combined output.
+#
+# Resolution: read all 6 budgets from .sdd/config.md ONCE per
+# invocation via inline python (single subprocess vs 6 helper calls).
+# Falls back to framework defaults if config block is missing/null.
+# Negative values clamp to 0 with stderr warning (AC17).
+#
+# The SDD_INJECTION_CAP_CHARS env var still overrides cap_total_chars
+# at runtime (backwards compat with pre-011 callers).
+
+# Framework defaults (centralised — also lives in
+# templates/.sdd/scripts/get-injection-budget.sh's FRAMEWORK_DEFAULTS).
+# Used when the project's config.md omits per_file_budget_chars (AC9).
+_DEFAULT_BUDGET_INDEX=3000
+_DEFAULT_BUDGET_SPEC=5000
+_DEFAULT_BUDGET_PRINCIPLES=2000
+_DEFAULT_BUDGET_STACK=3000
+_DEFAULT_BUDGET_DATAMODEL=3000
+_DEFAULT_BUDGET_PATTERNS=4000
+_DEFAULT_CAP_TOTAL=16000
+
+# Load resolved values into shell variables via one Python call.
+# The Python emits KEY=VALUE lines and any stderr warnings (AC17).
+# Eval-style sourcing of trusted output: Python's print is fully
+# controlled here — no shell metacharacters can leak in.
+_load_budgets() {
+  python3 <<'PYEOF' 2>/dev/null || true
+import os, re, sys
+
+config_path = os.path.join(os.environ.get("PROJECT_DIR", "."),
+                           ".sdd", "config.md")
+defaults = {
+    "INDEX": 3000,
+    "spec": 5000,
+    "principles": 2000,
+    "stack": 3000,
+    "data-model": 3000,
+    "patterns": 4000,
+}
+cap_default = 16000
+
+project_budgets = {}
+project_cap = None
+try:
+    with open(config_path, "rb") as f:
+        text = f.read().decode("utf-8", errors="replace")
+    m = re.match(r"^---\n(.*?)\n---", text, re.DOTALL)
+    if m:
+        try:
+            import yaml
+            fm = yaml.safe_load(m.group(1)) or {}
+            inj = fm.get("parameters", {}).get("injection") or {}
+            block = inj.get("per_file_budget_chars")
+            if isinstance(block, dict):
+                project_budgets = block
+            cap_v = inj.get("cap_total_chars")
+            if isinstance(cap_v, int) and not isinstance(cap_v, bool):
+                project_cap = cap_v
+        except ImportError:
+            pass
+        except Exception:
+            pass
+except OSError:
+    pass
+
+# Resolve per-file budgets with the same rules as
+# get-injection-budget.sh (AC4 / AC9 / AC17).
+def resolve(key, default):
+    if key in project_budgets:
+        v = project_budgets[key]
+        if isinstance(v, bool) or not isinstance(v, int):
+            print(f"user-prompt-submit: warning: per_file_budget_chars."
+                  f"{key} is not an integer (got: {v!r}); falling back "
+                  f"to framework default", file=sys.stderr)
+            return default
+        if v < 0:
+            print(f"user-prompt-submit: warning: per_file_budget_chars."
+                  f"{key} is negative ({v}); clamping to 0",
+                  file=sys.stderr)
+            return 0
+        return v
+    return default
+
+# Bash-safe var names — replace `-` with `_` for data-model.
+out = {
+    "INDEX":      resolve("INDEX", defaults["INDEX"]),
+    "SPEC":       resolve("spec", defaults["spec"]),
+    "PRINCIPLES": resolve("principles", defaults["principles"]),
+    "STACK":      resolve("stack", defaults["stack"]),
+    "DATAMODEL":  resolve("data-model", defaults["data-model"]),
+    "PATTERNS":   resolve("patterns", defaults["patterns"]),
+}
+for k, v in out.items():
+    print(f"_BUDGET_{k}={v}")
+
+# Resolved cap_total — project config takes precedence over default
+# (env var SDD_INJECTION_CAP_CHARS is layered on in bash after eval).
+print(f"_CAP_TOTAL={project_cap if project_cap is not None else cap_default}")
+PYEOF
+}
+
+# Execute the loader and eval its KEY=VALUE output. The function's
+# stderr (warnings) goes to the script's stderr, visible in hook logs.
+PROJECT_DIR="$PROJECT_DIR" eval "$(_load_budgets)"
+
+# Default fallbacks if Python failed entirely (e.g. python3 not on PATH).
+: "${_BUDGET_INDEX:=$_DEFAULT_BUDGET_INDEX}"
+: "${_BUDGET_SPEC:=$_DEFAULT_BUDGET_SPEC}"
+: "${_BUDGET_PRINCIPLES:=$_DEFAULT_BUDGET_PRINCIPLES}"
+: "${_BUDGET_STACK:=$_DEFAULT_BUDGET_STACK}"
+: "${_BUDGET_DATAMODEL:=$_DEFAULT_BUDGET_DATAMODEL}"
+: "${_BUDGET_PATTERNS:=$_DEFAULT_BUDGET_PATTERNS}"
+: "${_CAP_TOTAL:=$_DEFAULT_CAP_TOTAL}"
+
+# Env var override for the total cap (backwards compat with pre-011).
+# Per-file budgets do not have an env-var override path.
+: "${SDD_INJECTION_CAP_CHARS:=$_CAP_TOTAL}"
+
+# emit_with_budget: print $content truncated to $budget chars,
+# appending the per-file sentinel when truncation happens.
+# Pure-bash slicing (LC_ALL-locale dependent — see T235 for the
+# UTF-8 char-boundary backoff refinement).
+emit_with_budget() {
+  local budget="$1"
+  local content="$2"
+  local size=${#content}
+  if [ "$budget" -le 0 ]; then
+    # AC17 / AC11 — zero (or clamped-negative) budget: empty body +
+    # sentinel reporting the full file size as "truncated bytes".
+    printf '[truncated to %d bytes per per-file budget — re-read with the Read tool if you need the cut portion]\n' "$size"
+    return
+  fi
+  if [ "$size" -gt "$budget" ]; then
+    local truncated="${content:0:$budget}"
+    local cut=$((size - budget))
+    printf '%s\n' "$truncated"
+    printf '[truncated to %d bytes per per-file budget — re-read with the Read tool if you need the cut portion]\n' "$cut"
+  else
+    printf '%s\n' "$content"
+  fi
+}
 
 # Build the injected state in a function so it can be size-checked.
 emit_state() {
@@ -83,7 +224,8 @@ emit_state() {
   # blocks on per-file injection budgets — filed as follow-up. The
   # INDEX-live filter ships standalone because it's a strict win.
   echo "--- .sdd/INDEX.md (live sections — pre-## Shipped) ---"
-  awk '/^## Shipped/ {exit} {print}' .sdd/INDEX.md
+  _index_live=$(awk '/^## Shipped/ {exit} {print}' .sdd/INDEX.md)
+  emit_with_budget "$_BUDGET_INDEX" "$_index_live"
   echo ""
 
   # Active feature? Read the path generically from **Active:** <path> so
@@ -104,12 +246,15 @@ emit_state() {
     phase=$(grep -m1 -oE '\[PHASE: [A-Z]+\]' "$spec" | grep -oE '[A-Z]+' | tail -1 || echo "SPEC")
 
     echo "--- $spec (header + PHASE: $phase section) ---"
-    awk '/^## PHASE:/ {exit} {print}' "$spec"
-    awk -v ph="## PHASE: $phase" '
-      $0 ~ ph {found=1}
-      found && /^## PHASE:/ && $0 !~ ph {exit}
-      found {print}
-    ' "$spec"
+    _spec_active=$( {
+      awk '/^## PHASE:/ {exit} {print}' "$spec"
+      awk -v ph="## PHASE: $phase" '
+        $0 ~ ph {found=1}
+        found && /^## PHASE:/ && $0 !~ ph {exit}
+        found {print}
+      ' "$spec"
+    } )
+    emit_with_budget "$_BUDGET_SPEC" "$_spec_active"
     echo ""
   fi
 
@@ -119,7 +264,8 @@ emit_state() {
   # them in proposed approaches. ADR-style layer.
   if [ -f .sdd/principles.md ]; then
     echo "--- .sdd/principles.md ---"
-    cat .sdd/principles.md
+    _principles=$(cat .sdd/principles.md)
+    emit_with_budget "$_BUDGET_PRINCIPLES" "$_principles"
     echo ""
   fi
 
@@ -130,7 +276,8 @@ emit_state() {
   # it on every turn closes the gap.
   if [ -f .sdd/stack.md ]; then
     echo "--- .sdd/stack.md ---"
-    cat .sdd/stack.md
+    _stack=$(cat .sdd/stack.md)
+    emit_with_budget "$_BUDGET_STACK" "$_stack"
     echo ""
   fi
 
@@ -142,13 +289,15 @@ emit_state() {
   # an oversized data-model.md falls off rather than blowing the budget.
   if [ -f .sdd/data-model.md ]; then
     echo "--- .sdd/data-model.md ---"
-    cat .sdd/data-model.md
+    _datamodel=$(cat .sdd/data-model.md)
+    emit_with_budget "$_BUDGET_DATAMODEL" "$_datamodel"
     echo ""
   fi
 
   if [ -f .sdd/patterns.md ]; then
     echo "--- .sdd/patterns.md ---"
-    cat .sdd/patterns.md
+    _patterns=$(cat .sdd/patterns.md)
+    emit_with_budget "$_BUDGET_PATTERNS" "$_patterns"
     echo ""
   fi
 
