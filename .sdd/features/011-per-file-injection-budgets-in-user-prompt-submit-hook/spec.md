@@ -362,7 +362,39 @@ All 17 claim-rows have at least one covering AC. NF1 (latency), NF2 (no-regressi
 
 ### action: plan-decompose
 
-- [ ] tasks: convert acceptance criteria into ordered build tasks (one test file per task)
+- [x] tasks: 14 BUILD tasks (T220-T233), one per AC. Test-first per task. 5 sequential cores (T220 → T223 → T221 → T222 + T224) + 3 waves (W1 = T225 alone; W2 = T226/T227/T228 after T223; W3 = T229/T230/T231/T232/T233 after T221/T222/T224). Approved by Sam 2026-05-11.
+
+**BUILD tasks (14 total — one per AC):**
+
+| # | Task | AC | Depends on | Touches | Wave |
+|---|---|---|---|---|---|
+| T220 | Add `parameters.injection.per_file_budget_chars` map (6 entries) to `templates/.sdd/config.md`. Test: bash assertion sums values == 20000. | AC1 | — | `templates/.sdd/config.md`, `tests/feature-011/T220-config-shape.bats` | — |
+| T221 | Rewrite `templates/.claude/hooks/user-prompt-submit.sh` truncation block: per-file loop reading budgets via resolve-parameters.sh. Test: golden-injection fixture where 3 of 6 corpus files exceed their budgets; output asserts each file present up to its budget. | AC2 | T220, T223 | `templates/.claude/hooks/user-prompt-submit.sh`, `tests/feature-011/T221-hook-per-file.bats` | — |
+| T222 | Sentinel marker emitted on truncation with byte-count substitution. Test: fixture with patterns.md sized above the 4000-char budget; assert sentinel string `[truncated to <N> bytes per per-file budget — re-read with the Read tool if you need the cut portion]` with exact `<N>` byte count substituted. {verify-by: T222} | AC3 | T221 | `templates/.claude/hooks/user-prompt-submit.sh`, `tests/feature-011/T222-sentinel.bats` | — |
+| T223 | Extend `templates/.sdd/scripts/resolve-parameters.sh` to handle the new `per_file_budget_chars` map at the same YAML nesting depth as `parameters.mcp.tier3.*`. Test: override + default return paths. | AC4 | T220 | `templates/.sdd/scripts/resolve-parameters.sh`, `tests/feature-011/T223-resolver-basic.bats` | — |
+| T224 | Confirm `cap_total_chars: 16000` stays in `templates/.sdd/config.md` and the hook applies it as a defensive floor on combined output. Test: fixture where sum-of-per-file-truncated-output exceeds the cap; assert final output is bounded by `cap_total_chars`. {verify-by: T224} | AC5 | T220, T221 | `templates/.claude/hooks/user-prompt-submit.sh`, `tests/feature-011/T224-cap-floor.bats` | — |
+| T225 | Add `InjectionBudget` entity entry to `.sdd/data-model.md` describing `parameters.injection` block, its two fields, and its read-side caller. Test: grep entity heading + required field names in data-model.md. | AC6 | — | `.sdd/data-model.md`, `tests/feature-011/T225-data-model-entity.bats` | W1 |
+| T226 | Partial override test — project config.md declares only `per_file_budget_chars: {patterns: 2000}`; resolver returns 2000 for patterns + framework defaults for the other 5. | AC7 | T223 | `tests/feature-011/T226-partial-override.bats` | W2 |
+| T227 | Unknown key test — resolver asked for budget of a basename not in `per_file_budget_chars`; returns documented default char count. Documented default lives as a constant in resolve-parameters.sh. | AC8 | T223 | `templates/.sdd/scripts/resolve-parameters.sh`, `tests/feature-011/T227-unknown-key.bats` | W2 |
+| T228 | Missing-block test — project config.md omits `per_file_budget_chars` entirely (or sets it to `null`); resolver returns framework defaults for all 6 declared corpus files. No null-deref. | AC9 | T223 | `tests/feature-011/T228-missing-block.bats` | W2 |
+| T229 | Sum-overshoot test — project config.md sets per-file budgets summing above 16000; hook applies per-file truncation first, then total-cap clip on the tail. Final output length bounded by `cap_total_chars`. | AC10 | T221, T224 | `tests/feature-011/T229-sum-overshoot.bats` | W3 |
+| T230 | Multi-file overflow test — fixture where every corpus file exceeds its budget on disk; assert at least one byte of each corpus file in injection output, plus sentinel line for each truncated file. | AC11 | T221, T222 | `tests/feature-011/T230-multi-file-overflow.bats` | W3 |
+| T231 | Determinism test — run hook twice on identical corpus + config; `diff -q` returns success. No random ordering, no time-based sentinel fields. | AC12 | T221 | `tests/feature-011/T231-determinism.bats` | W3 |
+| T232 | Network-surface test — `git diff` of the new hook + resolver adds zero new matches for `curl|wget|http[s]?://|nc |socket`. | AC13 | T221, T223 | `tests/feature-011/T232-no-network.bats` | W3 |
+| T233 | Framing-preserved test — hook still emits `[PROJECT DATA]` framing marker around the concatenated output. Trust-boundary contract unchanged. | AC14 | T221 | `tests/feature-011/T233-framing-preserved.bats` | W3 |
+
+**Wave-mark notes (per F010 parallel-wave-execution doctrine):**
+- **W1** (1 task) — T225 (data-model.md edit) is fully independent; can run in parallel with the test-first cycle.
+- **W2** (3 tasks) — T226, T227, T228 are independent resolver-edge-case tests; depend only on T223. Can run in parallel after T223 lands green.
+- **W3** (5 tasks) — T229, T230, T231, T232, T233 are independent integration tests on the hook; depend on T221 (± T222/T224). Can run in parallel after T221+T222+T224 land green.
+
+Sequential cores (cannot wave):
+- T220 → T223 (config exists before resolver can read it)
+- T220 → T221 (config + resolver before hook)
+- T221 → T222 (hook truncates before sentinel is observable)
+- T224 needs T221 (hook applies cap after per-file truncation)
+
+Total: 14 tasks → 5 sequential cores (T220, T223, T221, T222, T224) + 3 waves (W1 = 1, W2 = 3, W3 = 5). Wave-marks give ~9 of 14 tasks the option to dispatch in parallel via the Agent tool.
 
 ### action: edge-case-sweep
 
