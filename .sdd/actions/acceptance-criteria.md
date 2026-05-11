@@ -22,7 +22,7 @@ requires_user_approval: true
 
 > **§173/§174 — Grill the user's answer.** AFTER the user answers below, BEFORE writing the answer into spec.md, apply the grill protocol per [`grill-protocol.md`](../skeletons/grill-protocol.md): cap 3 questions max, grill only on vague terms / hidden assumptions / under-specification / compound answers / implied trade-offs — skip clean answers (names, numbers, picked-from-list, binary yes/no). Every grill question is plain English with a concrete example or analogy (per #174); no SQL/code in inline prose; end with "or describe in your own words".
 
-**This is the central section the moat protects** (Codex finding #2). User-approved ACs are hash-locked; the agent cannot silently soften them later.
+**This is the section the framework guards hardest.** Once you `approve` the ACs, the framework takes a fingerprint of them — if the agent later tries to soften the wording (e.g. "loads fast" instead of "loads in under 2 seconds"), the framework spots the change and refuses the commit until you've reviewed and re-approved. This is how we stop scope from quietly drifting after you've signed off.
 
 Each AC is a **concrete, testable assertion**. Each AC maps to **one task** in `plan-decompose` — what we promise to test, we promise to build.
 
@@ -59,7 +59,7 @@ For new (post-PR-A) features, §2 doesn't exist by design — success metrics ar
 
 4-8 ACs is typical. Fewer = scope too narrow; more = scope too broad.
 
-**On approval (Theme 1.6 hook).** Hash recorded. Future edits to §11 require `/re-approve §11`.
+**What happens when you `approve`.** The framework takes a fingerprint of the AC list. If anyone edits §11 later, the next phase advance walks you through a quick "review the diff, reply `approve`" flow. The AC list cannot quietly change once you've signed off.
 
 **What it looks like:**
 

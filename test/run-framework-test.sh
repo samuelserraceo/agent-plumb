@@ -8131,6 +8131,72 @@ PY
 fi
 
 # ============================================================
+# T162 — /sdd-setup Q1 ships the "internal-now, SaaS-later" option
+#   (closes #163). PipeLogic V2 surfaced a real gap: a project that
+#   starts single-tenant but plans to externalise as multi-tenant SaaS
+#   doesn't fit option 4 ("internal tool — only your team uses it",
+#   which assumes the tool stays single-tenant) or option 1
+#   ("a website", which loses the "MVP scope is one customer" signal). The brick
+#   at templates/.sdd/setup/001-project-type.md must expose this as
+#   a first-class numbered option AND declare a `future_saas: true`
+#   record in the "What gets recorded" example block so downstream
+#   actions (and the agent's stack.md write) can read the flag back.
+#   RED case: shipping the option in prose but forgetting the
+#   `future_saas` record would let the agent silently drop the
+#   "multi-tenant from day 1" signal at /start time.
+# ============================================================
+note "T162: /sdd-setup Q1 ships 'internal-now, SaaS-later' option + future_saas record"
+q1_brick="$FRAMEWORK_ROOT/templates/.sdd/setup/001-project-type.md"
+ok_count=0
+[ -f "$q1_brick" ] && ok_count=$((ok_count + 1))
+# 1. The numbered option text appears in the brick body. The phrasing
+# can be either short form ("internal-now, SaaS-later") or plain
+# English long form ("internal tool today, SaaS later"). Both fit
+# the issue #163 intent; the contract is that an option distinct
+# from plain "internal tool" exists and pairs an internal-MVP
+# signal with a future-SaaS signal in a single numbered choice.
+# Require the line to start with a markdown numbered bold list
+# entry so a free-text hint paragraph (which the brick already had
+# pre-fix at line 33 of the original) is NOT counted as satisfying
+# the contract.
+grep -qiE '^[0-9]+\. \*\*[^*]*(internal[- ]now|internal tool today)[^*]*saas[- ]?later' "$q1_brick" 2>/dev/null && ok_count=$((ok_count + 1))
+# 2. The "What gets recorded" example carries a future_saas marker so
+# the recorded stack.md ## Project shape declares it explicitly. CR
+# cycle 1: scope the grep to the recorded-output block. A global grep
+# can pass on frontmatter `agent_infers` or table-prose mentions
+# alone — the RED case is "future_saas named in prose but never in
+# the recorded contract", which would let the agent silently drop
+# the flag at /start time. The recorded example uses
+# `**future_saas:** <true | false>` (placeholder so both option-4
+# and option-5 outcomes are visible); the contract is that the
+# `future_saas:` key appears inside the "## What gets recorded"
+# block, not that it carries a specific value. The awk is
+# fence-aware — the recorded example is wrapped in a ```markdown
+# fence that itself contains a `## Project shape` heading, so a
+# naive `/^## /` boundary check would exit early on that nested
+# heading. We toggle a `fence` flag on lines that start with ```
+# and only treat `## ` lines as section boundaries when fence==0.
+if awk '
+  /^## What gets recorded/ {in_block=1; next}
+  /^```/ && in_block {fence = 1 - fence; print; next}
+  /^## / && in_block && fence == 0 {exit}
+  in_block {print}
+' "$q1_brick" 2>/dev/null | grep -qE 'future_saas:'; then
+  ok_count=$((ok_count + 1))
+fi
+# 3. The "What the agent does with your answer" examples table mentions
+# the new option, so the agent's inference table is updated alongside
+# the question prose. We require future_saas to appear in a row
+# specifically — i.e. the table explains what the flag does, not
+# just that the new option exists.
+grep -qE '\| .*future_saas.* \|' "$q1_brick" 2>/dev/null && ok_count=$((ok_count + 1))
+if [ "$ok_count" -eq 4 ]; then
+  ok "T162 Q1 brick exposes 'internal-now, SaaS-later' + future_saas record (4/4)"
+else
+  bad "T162 Q1 'internal-now, SaaS-later' option missing or incomplete" "ok=$ok_count/4 brick=$q1_brick"
+fi
+
+# ============================================================
 # T141 — anti-theatre lint passes on the in-flight spec (closes #111,
 #   PR #003). Theatre tokens (numerical bounds, currency, enforcement
 #   verbs, quality absolutes) without an adjacent verifier annotation
@@ -8185,6 +8251,75 @@ else
   else
     bad "T141 anti-theatre lint failed" "$new_spec_violations spec(s) with un-annotated theatre"
   fi
+fi
+
+# ============================================================
+# T162 — plain-English sweep (idea 006) drops engineer-shape vocab on
+#   high-touchpoint action files. Sam reads these every SPEC walk;
+#   their body prose drifted toward jargon ("moat", "hash-locked",
+#   "verification.json", "F1 generic enforcer", "wiki-link emission",
+#   "MCP server backlinks", "tracer bullet"). This test pins the
+#   rewrite — if the count for any of the 4 swept files climbs back
+#   above its post-sweep budget, CI fails and forces a re-read.
+#   The check is per-file (not a sum) so a regression in one file
+#   can't be hidden by improvements in another. Budgets are set just
+#   above the rewritten value, leaving headroom for a small future
+#   edit while still catching reversion to the engineer-shape draft.
+# ============================================================
+note "T162: plain-English sweep keeps engineer-shape vocab off high-touchpoint actions (idea 006)"
+# Pattern matches the same jargon families surveyed in idea 006:
+# moat/hash/verification.json/F1 enforcer/wiki-link/MCP/manifest/tracer/etc.
+# Whole-file scan; case-insensitive; counts every line that contains
+# at least one match (grep -c counts matched LINES, not tokens — same
+# unit used for the baseline so the budgets are directly comparable).
+T162_PATTERN='moat|hash-locked|hash-pin|hash recorded|verification\.json|approved_sections|F1 generic enforcer|wiki-link emission|backlinks|repin|manifest|playbook|stop-hook|invariant 8|idempotent|frontmatter|graph layer|MCP server|theatre|deterministic|heuristic|denylist|tracer bullet|walking skeleton|horizontal building|prelude_refresh|stop-lint'
+T162_FAILS=0
+T162_REPORT=""
+# Per-file budgets — set just above the rewritten value so the test
+# locks in the win but doesn't tip on a single benign future edit.
+# Format: slug:max-mentions. Update both rows if the spec re-approves
+# a different vocabulary trade-off.
+for entry in \
+  "proposed-approach:1" \
+  "data-contract:1" \
+  "acceptance-criteria:2" \
+  "learn:1"
+do
+  slug="${entry%%:*}"
+  budget="${entry##*:}"
+  for tree in ".sdd/actions" "templates/.sdd/actions"; do
+    file="$FRAMEWORK_ROOT/$tree/${slug}.md"
+    if [ ! -f "$file" ]; then
+      T162_FAILS=$((T162_FAILS + 1))
+      T162_REPORT="$T162_REPORT\n  - $tree/${slug}.md missing"
+      continue
+    fi
+    # Fail-closed: distinguish "no matches" (exit 1) from real scan errors
+    # (exit ≥2 — bad regex, unreadable file, etc.). The previous `|| echo 0`
+    # treated every non-zero exit as 0 matches, so a corrupted regex or
+    # permission error would silently let the T162 gate pass. Now grep
+    # errors fail the gate explicitly.
+    count=$(grep -ciE "$T162_PATTERN" "$file" 2>/dev/null)
+    grep_ec=$?
+    if [ "$grep_ec" -eq 1 ]; then
+      count=0
+    elif [ "$grep_ec" -ne 0 ]; then
+      T162_FAILS=$((T162_FAILS + 1))
+      T162_REPORT="$T162_REPORT\n  - $tree/${slug}.md: scan failed (grep exit $grep_ec)"
+      continue
+    fi
+    # grep -c can occasionally print a trailing newline; sanitise.
+    count=$(printf '%s' "$count" | tr -d '\n')
+    if [ "$count" -gt "$budget" ]; then
+      T162_FAILS=$((T162_FAILS + 1))
+      T162_REPORT="$T162_REPORT\n  - $tree/${slug}.md: $count matches (budget $budget)"
+    fi
+  done
+done
+if [ "$T162_FAILS" -eq 0 ]; then
+  ok "T162 high-touchpoint action prose stays within plain-English jargon budgets"
+else
+  bad "T162 plain-English sweep regressed" "$(printf '%b' "$T162_REPORT")"
 fi
 
 # ============================================================
