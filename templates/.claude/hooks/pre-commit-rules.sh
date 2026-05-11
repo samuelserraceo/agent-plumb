@@ -64,6 +64,153 @@ git rev-parse --is-inside-work-tree >/dev/null 2>&1 || exit 0
 staged=$(git diff --cached --name-only 2>/dev/null || echo "")
 [ -z "$staged" ] && exit 0
 
+# === CROSS-BRANCH ID COLLISION detection (idea 007 final) ===
+# When merging a branch that introduces .sdd/<work_folder>/<NNN>-<slug>/
+# (i.e. a NEW directory in this commit) AND HEAD already has another
+# <NNN>-<otherslug>/ under the same work-folder, refuse the commit with
+# a plain-English message naming both folders + the rename helper.
+#
+# The /start scan (PR #231) already catches this at scaffold time when
+# the colliding branch is on origin. But two branches scaffolded in
+# parallel BEFORE either pushes can't be caught there — this hook is
+# the second line of defence at merge / commit time.
+#
+# Backwards-compat: the check fires only when a NEW folder is added
+# (status = A on a path-component count = 3 segment under .sdd/<wf>/).
+# Already-shipped collisions (e.g. the three F011-* folders + the two
+# F008-* + two F009-* coexistences on this repo's main) stay quiet —
+# we don't scan HEAD itself for collisions, only the diff-introduced
+# new folders against HEAD.
+collision_result=$(STAGED="$staged" python3 - <<'PYEOF' 2>/dev/null || echo "ALLOW"
+import os, re, subprocess, sys
+
+ID_RE = re.compile(r'^\.sdd/([a-z][a-z0-9_-]*)/(\d{3})-([A-Za-z0-9._-]+)/')
+
+# Identify NEW work-item folders introduced by THIS commit. A "new
+# folder" means: a staged file path under .sdd/<wf>/<NNN>-<slug>/
+# where THAT folder has status A (added) at HEAD — i.e. doesn't
+# exist on HEAD yet.
+try:
+    name_status = subprocess.run(
+        ["git", "diff", "--cached", "--name-status"],
+        capture_output=True, check=False, text=True,
+    )
+except Exception:
+    print("ALLOW"); sys.exit(0)
+if name_status.returncode != 0 or not name_status.stdout:
+    print("ALLOW"); sys.exit(0)
+
+# Set of (work_folder, id, slug) introduced as NEW in this commit.
+new_folders = {}  # (wf, id) -> (slug, sample_path)
+for line in name_status.stdout.splitlines():
+    parts = line.split("\t")
+    if len(parts) < 2:
+        continue
+    status, path = parts[0], parts[-1]
+    # We care about additions of files under .sdd/<wf>/<NNN>-<slug>/...
+    if not status.startswith("A"):
+        continue
+    m = ID_RE.match(path)
+    if not m:
+        continue
+    wf, nnn, slug = m.group(1), m.group(2), m.group(3)
+    # Confirm the FOLDER doesn't exist on HEAD (only the file being
+    # ADDED isn't enough — the whole folder might have existed and the
+    # file is just new inside it).
+    folder = f".sdd/{wf}/{nnn}-{slug}"
+    try:
+        ls = subprocess.run(
+            ["git", "ls-tree", "HEAD", folder],
+            capture_output=True, check=False, text=True,
+        )
+    except Exception:
+        continue
+    # If HEAD has anything at that path, it's not new — skip.
+    if ls.returncode == 0 and ls.stdout.strip():
+        continue
+    key = (wf, nnn)
+    if key not in new_folders:
+        new_folders[key] = (slug, path)
+
+if not new_folders:
+    print("ALLOW"); sys.exit(0)
+
+# For each new folder, ask: does HEAD already have another <NNN>-* in
+# the same work-folder? If yes -> collision.
+collisions = []
+for (wf, nnn), (new_slug, sample) in new_folders.items():
+    try:
+        ls = subprocess.run(
+            ["git", "ls-tree", "--name-only", f"HEAD:.sdd/{wf}"],
+            capture_output=True, check=False, text=True,
+        )
+    except Exception:
+        continue
+    if ls.returncode != 0:
+        continue
+    for entry in ls.stdout.splitlines():
+        entry = entry.strip().rstrip("/")
+        if not entry:
+            continue
+        # Skip files (only consider folder-named entries matching NNN-).
+        em = re.match(r'^(\d{3})-([A-Za-z0-9._-]+)$', entry)
+        if not em:
+            continue
+        existing_nnn, existing_slug = em.group(1), em.group(2)
+        if existing_nnn == nnn and existing_slug != new_slug:
+            collisions.append((wf, nnn, new_slug, existing_slug))
+
+if not collisions:
+    print("ALLOW"); sys.exit(0)
+
+print("BLOCK")
+for wf, nnn, new_slug, existing_slug in collisions:
+    print(f"COLLISION: .sdd/{wf}/{nnn}-{new_slug}  vs  .sdd/{wf}/{nnn}-{existing_slug}")
+sys.exit(0)
+PYEOF
+)
+
+case "$collision_result" in
+  ALLOW*) ;;
+  BLOCK*)
+    collision_lines=$(printf '%s\n' "$collision_result" | sed -n '2,$p')
+    cat >&2 <<EOF
+
+[SDD rules / cross-branch id collision] (idea 007 final)
+
+This commit introduces a new work-item folder whose 3-digit ID
+collides with another folder already on HEAD:
+
+$collision_lines
+
+Two branches scaffolded the same NNN- prefix in parallel before
+either pushed to origin. The /start scaffold-time scan can't catch
+this case — it only sees origin/main.
+
+Fix BEFORE merging (recommended):
+
+  bash .sdd/scripts/rename-collided-feature.sh <old-id-slug> <new-id-slug>
+
+  Pick a free ID by scanning .sdd/<work-folder>/ on both branches.
+  The script renames the folder, rewrites internal wiki-links, and
+  refuses if decisions.md already pins the slug (in which case both
+  folders coexist — see CLAUDE.md "Multi-feature parallel work").
+
+To bypass this hook on a one-off basis (e.g. you've decided the
+collision is acceptable), set environment variable
+SDD_ALLOW_ID_COLLISION=1 on the commit:
+
+  SDD_ALLOW_ID_COLLISION=1 git commit ...
+
+EOF
+    if [ "${SDD_ALLOW_ID_COLLISION:-}" = "1" ]; then
+      echo "[SDD rules / cross-branch id collision] SDD_ALLOW_ID_COLLISION=1 — proceeding under operator override." >&2
+    else
+      exit 2
+    fi
+    ;;
+esac
+
 # === MERGE / REBASE / CHERRY-PICK detection (closes #220) ===
 # Legitimate parallel-stream merges that preserve HEAD's bytes as a strict
 # prefix of resolved content (e.g. decisions.md appends from both branches)

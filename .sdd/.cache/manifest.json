@@ -127,6 +127,11 @@
       "expected_sha256": "52b2cbf0ff2d0fd34e28ee8007fc6356c5aef493891a8d82e36ec7bcaed10eb4",
       "path": ".sdd/scripts/promote-legacy-queued.sh",
       "trust": "framework"
+    },
+    "rename-collided-feature.sh": {
+      "expected_sha256": "c8cfb89cc2d34d324dc6cc0836a0c842bc6d83025c8dfbc961a712756654dca4",
+      "path": ".sdd/scripts/rename-collided-feature.sh",
+      "trust": "framework"
     }
   },
   "sdd_version": "1.0.0",
