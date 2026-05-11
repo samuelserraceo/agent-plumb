@@ -138,14 +138,30 @@ except OSError as e:
     print(f"[dispatch-wave] cannot read spec: {e}", file=sys.stderr)
     sys.exit(2)
 
+# Single-block wave namespace contract (§9 out-of-scope #3): scan the
+# FIRST `### action: plan-decompose` block only. Mirrors the same
+# early-exit logic in next-action.sh._find_next_wave() so both parsers
+# enforce the documented contract consistently.
 in_plan = False
+plan_block_seen = False
 tasks = []
 row_re = re.compile(r'^\s*-\s*\[ \]\s+(?:\*\*)?(T\d+)\s+\[WAVE:\s*(\d+)\s*\](?:\*\*)?\s*:')
 for ln in lines:
     if ln.startswith("### "):
-        in_plan = bool(re.match(r'^###\s+action:\s+plan-decompose\s*$', ln))
+        new_in_plan = bool(re.match(r'^###\s+action:\s+plan-decompose\s*$', ln))
+        if in_plan and not new_in_plan:
+            # Exiting the first plan-decompose via another ### action.
+            break
+        if new_in_plan:
+            if plan_block_seen:
+                # Second plan-decompose block — stop, do not merge.
+                break
+            plan_block_seen = True
+            in_plan = True
         continue
     if ln.startswith("## "):
+        if in_plan:
+            break  # Exiting the first plan-decompose via phase boundary.
         in_plan = False
         continue
     if not in_plan:
