@@ -2,7 +2,7 @@
 
 **Active:** _(none)_
 **Playbook:** feature
-**Active blocker:** _(no active feature — **v1.8.0 + v1.8.1 shipped 2026-05-11**: v1.8.0 = F011 auto-advance AGENT-LED steps (#236, idea 005); v1.8.1 = F014 MCP-doctrine sentinel (#243, closes #210 part 1). Pick next from ## Ideas below or open issues. Parallel agents still in flight on `feat/cache-friendly-corpus-reorder-003` + `feat/per-file-injection-budgets` + `fix/sdd-setup-q1-...-163`.)_
+**Active blocker:** _(no active feature — **v1.7.0-1.7.3 + v1.8.0-1.8.3 all shipped 2026-05-11**. Backlog audit confirms zero real-work-needed issues; the 3 still-open GitHub issues (#166 / #165 / #113) are explicitly deferred by Sam's own framing ("don't ship until N more reports"). v1.0 milestone 100% closed (17/17). 3 parallel-agent PRs still in flight (#239 per-file-budgets / #247 cross-branch-ID / #248 lego-model-tiers). Framework in audit-close territory — pick a feature only if it's worth a fresh /start ceremony.)_
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
