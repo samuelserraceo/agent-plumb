@@ -8217,7 +8217,20 @@ do
       T162_REPORT="$T162_REPORT\n  - $tree/${slug}.md missing"
       continue
     fi
-    count=$(grep -ciE "$T162_PATTERN" "$file" 2>/dev/null || echo 0)
+    # Fail-closed: distinguish "no matches" (exit 1) from real scan errors
+    # (exit ≥2 — bad regex, unreadable file, etc.). The previous `|| echo 0`
+    # treated every non-zero exit as 0 matches, so a corrupted regex or
+    # permission error would silently let the T162 gate pass. Now grep
+    # errors fail the gate explicitly.
+    count=$(grep -ciE "$T162_PATTERN" "$file" 2>/dev/null)
+    grep_ec=$?
+    if [ "$grep_ec" -eq 1 ]; then
+      count=0
+    elif [ "$grep_ec" -ne 0 ]; then
+      T162_FAILS=$((T162_FAILS + 1))
+      T162_REPORT="$T162_REPORT\n  - $tree/${slug}.md: scan failed (grep exit $grep_ec)"
+      continue
+    fi
     # grep -c can occasionally print a trailing newline; sanitise.
     count=$(printf '%s' "$count" | tr -d '\n')
     if [ "$count" -gt "$budget" ]; then
