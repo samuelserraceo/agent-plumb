@@ -183,6 +183,16 @@ PROJECT_DIR="$PROJECT_DIR" eval "$(_load_budgets)"
 # Per-file budgets do not have an env-var override path.
 : "${SDD_INJECTION_CAP_CHARS:=$_CAP_TOTAL}"
 
+# CR cycle 3 MAJ: validate cap_total_chars before using it in the bash
+# substring operation `${content:0:$SDD_INJECTION_CAP_CHARS}` below.
+# A non-numeric or zero/negative value would cause unpredictable
+# substring behavior. Defensive fallback to the bash-default
+# _DEFAULT_CAP_TOTAL if the resolved value isn't a positive integer.
+if ! printf '%s' "$SDD_INJECTION_CAP_CHARS" | grep -qE '^[0-9]+$' || [ "$SDD_INJECTION_CAP_CHARS" -lt 1 ]; then
+  echo "user-prompt-submit: warning: SDD_INJECTION_CAP_CHARS=${SDD_INJECTION_CAP_CHARS} is not a positive integer; falling back to default ${_DEFAULT_CAP_TOTAL}" >&2
+  SDD_INJECTION_CAP_CHARS="$_DEFAULT_CAP_TOTAL"
+fi
+
 # emit_with_budget: print the file at $path truncated to $budget BYTES,
 # appending the per-file sentinel when truncation happens.
 #

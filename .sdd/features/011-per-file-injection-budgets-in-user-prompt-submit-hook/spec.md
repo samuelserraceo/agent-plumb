@@ -78,7 +78,7 @@ Replace the hook's single-cap + truncate-from-end logic with a per-file budget m
    ```yaml
    parameters:
      injection:
-       cap_total_chars: 16000      # existing safety net, kept as a floor
+       cap_total_chars: 25000      # safety-net CEILING (raised from 16000 per CR cycle 1 #13 reconciliation — see commit history)
        per_file_budget_chars:
          INDEX: 3000
          spec: 5000
@@ -137,7 +137,7 @@ Replace the hook's single-cap + truncate-from-end logic with a per-file budget m
 
 **New framework entity** (to be added to `.sdd/data-model.md` during BUILD):
 
-> **InjectionBudget** — a config block under `parameters.injection` in `templates/.sdd/config.md`. Two fields: (1) `cap_total_chars` (existing) — defensive safety-net floor applied to combined hook output; (2) `per_file_budget_chars` (new) — a map keyed by corpus-file basename (INDEX, spec, principles, stack, data-model, patterns) to char-count budgets. Read by `templates/.claude/hooks/user-prompt-submit.sh` via `templates/.sdd/scripts/resolve-parameters.sh`. Unknown keys fall back to a documented default char count. Same shape pattern as Tier3Config (foundation 3 — framework defines the schema; downstream projects override in their own `config.md`). {verify-by: T-NNN resolver test returns project override for known key and documented default for unknown key}
+> **InjectionBudget** — a config block under `parameters.injection` in `templates/.sdd/config.md`. Two fields: (1) `cap_total_chars` (existing, default 25000 — raised from 16000 in cycle 1 reconciliation) — defensive safety-net CEILING applied to combined hook output; (2) `per_file_budget_chars` (new) — a map keyed by corpus-file basename (INDEX, spec, principles, stack, data-model, patterns) to BYTE-count budgets (historic key name `chars` kept for backwards compat per AC3 clarification; semantic is bytes with UTF-8 char-boundary backoff per AC16). Read by `templates/.claude/hooks/user-prompt-submit.sh` directly via inline Python (one subprocess per turn); the dedicated `get-injection-budget.sh` helper exposes the same resolution rules for external callers. Unknown keys fall back to a documented default of 2000 bytes. Same shape pattern as Tier3Config (foundation 3 — framework defines the schema; downstream projects override in their own `config.md`). {verify-by: T223 resolver test returns project override for known key and documented default for unknown key}
 
 **Wire-level shape:**
 
@@ -145,8 +145,8 @@ Replace the hook's single-cap + truncate-from-end logic with a per-file budget m
 # templates/.sdd/config.md
 parameters:
   injection:
-    cap_total_chars: 16000              # existing — safety-net floor
-    per_file_budget_chars:              # NEW
+    cap_total_chars: 25000              # safety-net ceiling (raised from 16000 in cycle 1)
+    per_file_budget_chars:              # NEW (byte budgets; historic name kept)
       INDEX: 3000
       spec: 5000
       principles: 2000

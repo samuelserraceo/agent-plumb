@@ -60,19 +60,26 @@ for f in stack data-model patterns; do
   python3 -c "print('Q' * 2000, end='')" > "$tmp/.sdd/$f.md"
 done
 
-out=$(cd "$tmp" && PROJECT_DIR="$tmp" CLAUDE_PROJECT_DIR="$tmp" bash "$HOOK" 2>/dev/null || true)
-size=${#out}
+# CR cycle 3 MAJ: fail fast on hook errors + use BYTE count (wc -c)
+# not ${#out} (chars under UTF-8 locale, bytes under C locale —
+# inconsistent across platforms). The cap is byte-based by contract.
+out=$(cd "$tmp" && PROJECT_DIR="$tmp" CLAUDE_PROJECT_DIR="$tmp" bash "$HOOK" 2>/dev/null); rc=$?
+if [ "$rc" -ne 0 ]; then
+  echo "FAIL: T224 — hook exited non-zero (rc=$rc); cannot validate cap floor"
+  exit 1
+fi
+size=$(printf '%s' "$out" | wc -c | tr -d ' ')
 
 # After cap clip, total output should be near cap_total_chars (2000)
 # plus the Theme 11 TRUNCATED sentinel + closing markers.
 # Allow generous headroom for the sentinel + closers.
 if [ "$size" -gt 2800 ]; then
-  echo "FAIL: T224 — combined output size ($size) exceeds expected post-cap envelope (~2800)"
-  echo "       cap_total_chars not applied as defensive floor"
+  echo "FAIL: T224 — combined output size ($size bytes) exceeds expected post-cap envelope (~2800 bytes)"
+  echo "       cap_total_chars not applied as defensive ceiling"
   exit 1
 fi
 if [ "$size" -lt 1500 ]; then
-  echo "FAIL: T224 — combined output suspiciously small ($size); cap may have clipped too aggressively"
+  echo "FAIL: T224 — combined output suspiciously small ($size bytes); cap may have clipped too aggressively"
   exit 1
 fi
 

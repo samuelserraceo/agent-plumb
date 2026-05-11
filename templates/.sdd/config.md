@@ -20,19 +20,27 @@ parameters:
     # (CR cycle 1 #13 reconciliation).
     cap_total_chars: 25000
     # Per-file budget map. The hook truncates each corpus file
-    # independently to its budget and appends a sentinel marker
+    # independently to its BYTE budget and appends a sentinel marker
     # `[truncated to <N> bytes per per-file budget — re-read with
     # the Read tool if you need the cut portion]` when truncation
     # happens. Replaces the prior "concatenate then truncate from the
     # end" behavior, which on mature projects silently cut patterns.md
     # mid-paragraph (feature 011, AC2 / AC3 / AC11).
     #
-    # Defaults sum to 20000 chars (AC1). Downstream projects override
+    # Historic note on the name `per_file_budget_chars`: the field
+    # name is kept for backwards compatibility, but the semantic is
+    # BYTES (not Unicode codepoints). The hook slices at the budget
+    # byte boundary, then backs off to a clean UTF-8 char boundary
+    # (≤3 trailing bytes dropped) so output stays valid UTF-8 (AC16).
+    # On a pure-ASCII corpus, byte ≈ char.
+    #
+    # Defaults sum to 20000 bytes (AC1). Downstream projects override
     # in their own config.md per-key; unspecified keys fall back to
     # framework defaults (AC7). Unknown keys (e.g. a future
-    # corpus file) fall back to a documented default char count of
-    # 2000 (AC8). Negative values clamp to 0 with a stderr warning
-    # naming the key (AC17).
+    # corpus file) fall back to a documented default of 2000 bytes
+    # (AC8). Negative values clamp to 0 with a stderr warning naming
+    # the key (AC17). Malformed YAML emits a parse-error warning
+    # before falling back (CR cycle 1 #12/#17).
     per_file_budget_chars:
       INDEX: 3000
       spec: 5000

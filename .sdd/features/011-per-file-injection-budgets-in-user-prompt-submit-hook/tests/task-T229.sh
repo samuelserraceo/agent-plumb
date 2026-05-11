@@ -43,8 +43,13 @@ for f in stack data-model patterns; do
   python3 -c "print('S' * 4000, end='')" > "$tmp/.sdd/$f.md"
 done
 
-out=$(cd "$tmp" && PROJECT_DIR="$tmp" CLAUDE_PROJECT_DIR="$tmp" bash "$HOOK" 2>/dev/null || true)
-size=${#out}
+# CR cycle 3 MAJ: fail fast on hook errors + byte count (not char).
+out=$(cd "$tmp" && PROJECT_DIR="$tmp" CLAUDE_PROJECT_DIR="$tmp" bash "$HOOK" 2>/dev/null); rc=$?
+if [ "$rc" -ne 0 ]; then
+  echo "FAIL: T229 — hook exited non-zero (rc=$rc); cannot validate sum-overshoot"
+  exit 1
+fi
+size=$(printf '%s' "$out" | wc -c | tr -d ' ')
 
 # After cap clip + Theme 11 closer markers, total output should be
 # near 5000 + closer overhead (~500). Allow generous headroom.

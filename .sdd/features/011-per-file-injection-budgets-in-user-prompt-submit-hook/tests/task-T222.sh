@@ -40,7 +40,14 @@ CFG
 # patterns.md = 3500 chars. Budget = 1000. Expected cut = 2500.
 python3 -c "print('P' * 3500, end='')" > "$tmp/.sdd/patterns.md"
 
-out=$(cd "$tmp" && PROJECT_DIR="$tmp" CLAUDE_PROJECT_DIR="$tmp" bash "$HOOK" 2>/dev/null || true)
+# CR cycle 3 MAJ: fail fast on hook errors rather than suppressing with
+# `|| true` (which would let an empty output silently "pass" the
+# sentinel-presence check below by returning no matches).
+out=$(cd "$tmp" && PROJECT_DIR="$tmp" CLAUDE_PROJECT_DIR="$tmp" bash "$HOOK" 2>/dev/null); rc=$?
+if [ "$rc" -ne 0 ]; then
+  echo "FAIL: T222 — hook exited non-zero (rc=$rc); cannot validate sentinel"
+  exit 1
+fi
 
 fails=()
 expected="[truncated to 2500 bytes per per-file budget — re-read with the Read tool if you need the cut portion]"
