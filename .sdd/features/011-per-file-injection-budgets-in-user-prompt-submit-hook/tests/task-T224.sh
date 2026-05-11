@@ -9,16 +9,20 @@ FRAMEWORK_ROOT="${FRAMEWORK_ROOT:-$(git rev-parse --show-toplevel 2>/dev/null ||
 CFG="$FRAMEWORK_ROOT/templates/.sdd/config.md"
 HOOK="$FRAMEWORK_ROOT/templates/.claude/hooks/user-prompt-submit.sh"
 
-# Part A: cap_total_chars present in framework defaults.
+# Part A: cap_total_chars present in framework defaults. Cap was
+# raised 16000 → 25000 (CR cycle 1 #13) so per-file truncation
+# (defaults summing to 20000) doesn't immediately trip the total
+# cap; cap_total_chars is a true safety net for sum-overshoot edges,
+# not a common-case truncation path.
 if ! python3 -c "
 import yaml, re
 text = open('$CFG').read()
 m = re.match(r'^---\n(.*?)\n---', text, re.DOTALL)
 fm = yaml.safe_load(m.group(1))
 cap = fm['parameters']['injection']['cap_total_chars']
-assert cap == 16000, f'expected 16000, got {cap}'
+assert cap == 25000, f'expected 25000, got {cap}'
 " 2>/dev/null; then
-  echo "FAIL: T224 — cap_total_chars not 16000 in framework config.md"
+  echo "FAIL: T224 — cap_total_chars not 25000 in framework config.md"
   exit 1
 fi
 

@@ -1967,15 +1967,17 @@ chars=${#out}
 cd - >/dev/null
 rm -rf "$d"
 # Assert: hook exits 0, output is bounded (per-file truncation kept
-# INDEX at ~3000 chars; total output ≤17000 for the cap-floor backstop),
-# and EITHER sentinel fired — the new per-file sentinel (preferred path
-# when per-file truncation runs first) OR the Theme 11 TRUNCATED
-# sentinel (defensive cap floor, for sum-overshoot edges).
+# INDEX at ~3000 chars; total output ≤26000 for the cap_total_chars
+# backstop now raised to 25000 + closer overhead), and the per-file
+# sentinel fired specifically. CR cycle 1 #19: require the per-file
+# sentinel (not just "either path") — for THIS fixture (oversized
+# INDEX), per-file is the correct truncation path. The cap path is
+# for sum-overshoot edges, not bloat.
 per_file_sentinel=$(echo "$out" | grep -c "per per-file budget")
 theme11_sentinel=$(echo "$out" | grep -c TRUNCATED)
 if [ "$ec" -eq 0 ] \
-   && [ "$chars" -le 17000 ] \
-   && { [ "$per_file_sentinel" -gt 0 ] || [ "$theme11_sentinel" -gt 0 ]; }; then
+   && [ "$chars" -le 26000 ] \
+   && [ "$per_file_sentinel" -gt 0 ]; then
   ok "T58 truncation enforced (output=${chars} chars, per-file=${per_file_sentinel}, theme11=${theme11_sentinel})"
 else
   bad "T58 truncation broken or missing" "exit=$ec; chars=$chars; per-file=$per_file_sentinel; theme11=$theme11_sentinel"

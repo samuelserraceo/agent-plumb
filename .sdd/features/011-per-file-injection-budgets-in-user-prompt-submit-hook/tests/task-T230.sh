@@ -48,31 +48,43 @@ out=$(cd "$tmp" && PROJECT_DIR="$tmp" CLAUDE_PROJECT_DIR="$tmp" bash "$HOOK" 2>/
 fails=()
 
 # Each corpus file should appear with at least 1 byte of content.
-# Principles is the only one that wasn't created as a spec.md
-# (because we set the active blocker but didn't make a full feature
-# scaffold — the hook still emits principles.md since the file exists).
-for hdr in ".sdd/INDEX.md" ".sdd/principles.md" ".sdd/stack.md" ".sdd/data-model.md" ".sdd/patterns.md"; do
+# CR cycle 1 #5: spec.md must be in the header check too — every
+# corpus file means EVERY, including the active spec.
+for hdr in ".sdd/INDEX.md" "/spec.md" ".sdd/principles.md" ".sdd/stack.md" ".sdd/data-model.md" ".sdd/patterns.md"; do
   if ! printf '%s' "$out" | grep -qF -- "$hdr"; then
     fails+=("missing header for $hdr (file dropped wholesale)")
   fi
 done
 
 # Count sentinels — should be one per truncated file.
-sentinel_count=$(printf '%s' "$out" | grep -c "per per-file budget")
-# Principles, stack, data-model, patterns all 1000 chars > 100 budget → 4 sentinels.
-# INDEX is small (tiny test fixture) → no sentinel.
-# spec is "$tmp/.sdd/features/001-test/spec.md" (1001 chars) > 100 → 1 sentinel.
-# Total expected: 5 sentinels (spec + principles + stack + data-model + patterns).
-if [ "$sentinel_count" -lt 4 ]; then
-  fails+=("expected ≥4 per-file sentinels (one per truncated file), got $sentinel_count")
+# Fixture: spec.md, principles.md, stack.md, data-model.md, patterns.md
+# are each 1000 chars > 100 budget = 5 truncations. INDEX.md is small
+# (tiny fixture) = no sentinel. CR cycle 1 #6: tighten the bound to
+# match the fixture (was ≥4 — weaker than the test's own setup).
+sentinel_count=$(printf '%s' "$out" | grep -c "per per-file budget" || true)
+if [ "$sentinel_count" -lt 5 ]; then
+  fails+=("expected ≥5 per-file sentinels (spec + principles + stack + data-model + patterns), got $sentinel_count")
 fi
 
-# Distinct sigils — each file's sigil should appear at least once.
+# CR cycle 1 #7: sigil assertions scoped to each file's section, not
+# whole-output greps (which could pass on unrelated text containing
+# the sigil — e.g. "Resolve" contains R, "Test" contains T, etc).
+extract_section() {
+  local hdr_pat="$1"
+  printf '%s' "$out" | awk -v pat="$hdr_pat" '
+    $0 ~ pat        { found=1; next }
+    found && /^--- / { exit }
+    found && /^\[END PROJECT DATA\]/ { exit }
+    found            { print }
+  '
+}
 for sigil_pair in "R:principles" "T:stack" "D:data-model" "P:patterns"; do
   sigil="${sigil_pair%%:*}"
   fname="${sigil_pair##*:}"
-  if ! printf '%s' "$out" | grep -q "$sigil"; then
-    fails+=("no '$sigil' chars found for $fname (file content invisible)")
+  sec=$(extract_section "--- .sdd/$fname.md")
+  count=$(printf '%s' "$sec" | tr -cd "$sigil" | wc -c | tr -d ' ')
+  if [ "$count" -lt 100 ]; then
+    fails+=("$fname section: expected ≥100 '$sigil' chars in its section, got $count")
   fi
 done
 

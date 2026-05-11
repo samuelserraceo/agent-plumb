@@ -23,7 +23,10 @@ fails=()
 # Exclusions: matches inside comments or string literals that
 # document network-related concepts (e.g. the "no network surface"
 # comment) are allowed; we look for actual command invocations.
-for pat in '^[[:space:]]*curl ' '^[[:space:]]*wget ' '\$\(curl' '\$\(wget' '^[[:space:]]*nc ' "socket\\." "socket("; do
+# CR cycle 1 #9: the original "socket(" regex was invalid ERE (unmatched
+# paren); grep -E returned exit 2 silently and the check never fired.
+# Escape the paren to match the literal char.
+for pat in '^[[:space:]]*curl ' '^[[:space:]]*wget ' '\$\(curl' '\$\(wget' '^[[:space:]]*nc ' "socket\\." 'socket\('; do
   hits=$(grep -E -c "$pat" "$HOOK" "$HELPER" 2>/dev/null | grep -v ':0$' | head -5)
   if [ -n "$hits" ]; then
     fails+=("new network surface match '$pat': $hits")

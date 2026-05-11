@@ -62,7 +62,12 @@ _DEFAULT_BUDGET_PRINCIPLES=2000
 _DEFAULT_BUDGET_STACK=3000
 _DEFAULT_BUDGET_DATAMODEL=3000
 _DEFAULT_BUDGET_PATTERNS=4000
-_DEFAULT_CAP_TOTAL=16000
+_DEFAULT_CAP_TOTAL=25000  # raised from 16000 (CR cycle 1 #13):
+# per-file defaults sum to 20000; cap must comfortably exceed sum +
+# 6 file headers (~50 chars each) + 4 framing markers (~200 chars)
+# so the per-file truncation path dominates and cap_total_chars
+# only fires on genuine sum-overshoot edges (e.g. project overrides
+# pushing per_file_budget_chars sum >> 24000).
 
 # Load resolved values into shell variables via one Python call.
 # The Python emits KEY=VALUE lines and any stderr warnings (AC17).
@@ -82,7 +87,7 @@ defaults = {
     "data-model": 3000,
     "patterns": 4000,
 }
-cap_default = 16000
+cap_default = 25000  # CR cycle 1 #13: see _DEFAULT_CAP_TOTAL bash comment
 
 project_budgets = {}
 project_cap = None
@@ -102,9 +107,21 @@ try:
             if isinstance(cap_v, int) and not isinstance(cap_v, bool):
                 project_cap = cap_v
         except ImportError:
+            # PyYAML absent — fall back to framework defaults silently
+            # (matches v0.8 minimal-Python pattern; pyyaml is optional).
             pass
-        except Exception:
-            pass
+        except Exception as e:
+            # CR cycle 1 #14/#17: warn on YAML parse failures (config
+            # is present but malformed) — invisible failures here would
+            # cause project overrides to be silently ignored, which is
+            # worse than a noisy fallback. Matches the
+            # get-injection-budget.sh warning pattern.
+            print(
+                f"user-prompt-submit: warning: failed to parse YAML "
+                f"frontmatter in {config_path}: {e}; falling back to "
+                f"framework defaults for parameters.injection",
+                file=sys.stderr,
+            )
 except OSError:
     pass
 
@@ -161,26 +178,53 @@ PROJECT_DIR="$PROJECT_DIR" eval "$(_load_budgets)"
 # Per-file budgets do not have an env-var override path.
 : "${SDD_INJECTION_CAP_CHARS:=$_CAP_TOTAL}"
 
-# emit_with_budget: print $content truncated to $budget BYTES,
+# emit_with_budget: print the file at $path truncated to $budget BYTES,
 # appending the per-file sentinel when truncation happens.
+#
+# Two callable shapes:
+#   emit_with_budget <budget> --content <inline-string>
+#   emit_with_budget <budget> --file <path>
+#
+# The --file form reads the file directly from Python (preserves
+# trailing newlines exactly; addresses CR cycle 1 #16: bash $(cat ...)
+# strips trailing newlines, which made the sentinel byte-count math
+# off-by-N where N = number of trailing newlines).
+#
+# The --content form remains for callers that compose content from
+# multiple awk/grep stages (active spec.md PHASE extraction).
 #
 # Uses Python for the slice so that:
 #   1. Behavior is locale-independent (bash ${var:0:N} is char vs byte
 #      depending on LC_ALL — Python explicit byte encoding is stable).
-#   2. UTF-8 char boundaries are respected — when the budget falls
-#      inside a multi-byte UTF-8 char, the slice backs off to the
-#      previous clean char boundary (at most 3 trailing bytes
-#      dropped). Output stays valid UTF-8 (AC16 — T235).
+#   2. UTF-8 char boundaries are respected — incomplete trailing chars
+#      get dropped via decode(errors="ignore"); complete chars stay
+#      (AC16 — T235; CR cycle 1 CRIT fix).
 #
 # Sentinel byte-count reflects bytes ACTUALLY cut (file_size - kept).
 emit_with_budget() {
   local budget="$1"
-  local content="$2"
-  CONTENT="$content" BUDGET="$budget" python3 <<'PYEOF'
+  local mode="$2"
+  local source="$3"
+  CONTENT_SOURCE="$source" CONTENT_MODE="$mode" BUDGET="$budget" python3 <<'PYEOF'
 import os, sys
 
 budget = int(os.environ["BUDGET"])
-content = os.environ.get("CONTENT", "")
+mode = os.environ.get("CONTENT_MODE", "--content")
+source = os.environ.get("CONTENT_SOURCE", "")
+
+if mode == "--file":
+    try:
+        with open(source, "rb") as f:
+            raw = f.read()
+        content = raw.decode("utf-8", errors="replace")
+    except OSError as e:
+        # Defensive — caller already checked [ -f "$path" ]; if the
+        # file vanished between check and read, emit empty + sentinel.
+        print(f"user-prompt-submit: warning: cannot read {source}: {e}",
+              file=sys.stderr)
+        content = ""
+else:
+    content = source
 
 # Encode to bytes for budget arithmetic — budget is bytes, not chars.
 data = content.encode("utf-8")
@@ -202,25 +246,26 @@ if total_bytes <= budget:
         sys.stdout.write("\n")
     sys.exit(0)
 
-# Over budget — slice at byte $budget, then back off to a clean UTF-8
-# char boundary if the slice lands mid-character (AC16).
+# Over budget — slice at byte $budget, then drop only any INCOMPLETE
+# trailing UTF-8 sequence by delegating to Python's UTF-8 decoder
+# with errors="ignore" (AC16). This handles all multi-byte edge cases
+# correctly: a complete leading byte with all its continuations in the
+# slice stays in the output; only a partial trailing char gets dropped.
+# Replaces the manual continuation-byte backoff that was a CR-cycle
+# finding (PR #239 CRIT #15): the prior version unconditionally dropped
+# leading-byte chars even when complete (e.g. "é" budget=2 → empty).
+#
+# Trade-off acknowledged: errors="ignore" silently drops invalid UTF-8
+# bytes ANYWHERE in the input, not just at the trailing edge. Corpus
+# files we ship are valid UTF-8 by construction; if a downstream
+# project has a corrupted corpus file, mid-content invalid bytes would
+# be silently dropped here. This matches the Theme 11 graceful-degrade
+# pattern (never crash on bad input) but the user-prompt-submit hook
+# is read-only — the corruption stays in the underlying file.
 sliced = data[:budget]
-# UTF-8 continuation bytes start with 10xxxxxx (0x80..0xBF). If the
-# byte at position $budget is a continuation byte, the char started
-# earlier — back off until we land on a leading byte (0xxxxxxx OR
-# 11xxxxxx). At most 3 bytes of backoff (UTF-8 chars are 1-4 bytes).
-backoff = 0
-while sliced and (sliced[-1] & 0xC0) == 0x80 and backoff < 3:
-    sliced = sliced[:-1]
-    backoff += 1
-# If the last byte is a leading byte of a multi-byte char (11xxxxxx)
-# but the expected continuation bytes were cut, drop it too — it's
-# an incomplete char.
-if sliced and (sliced[-1] & 0xC0) == 0xC0:
-    sliced = sliced[:-1]
-
-kept = sliced.decode("utf-8", errors="strict")
-cut = total_bytes - len(sliced)
+kept = sliced.decode("utf-8", errors="ignore")
+kept_bytes = kept.encode("utf-8")
+cut = total_bytes - len(kept_bytes)
 
 sys.stdout.write(kept)
 if not kept.endswith("\n"):
@@ -271,8 +316,10 @@ emit_state() {
   # blocks on per-file injection budgets — filed as follow-up. The
   # INDEX-live filter ships standalone because it's a strict win.
   echo "--- .sdd/INDEX.md (live sections — pre-## Shipped) ---"
+  # INDEX uses the live-filter via awk — composed content, not a raw
+  # file path. Use --content mode (the inline-string variant).
   _index_live=$(awk '/^## Shipped/ {exit} {print}' .sdd/INDEX.md)
-  emit_with_budget "$_BUDGET_INDEX" "$_index_live"
+  emit_with_budget "$_BUDGET_INDEX" --content "$_index_live"
   echo ""
 
   # Active feature? Read the path generically from **Active:** <path> so
@@ -293,6 +340,8 @@ emit_state() {
     phase=$(grep -m1 -oE '\[PHASE: [A-Z]+\]' "$spec" | grep -oE '[A-Z]+' | tail -1 || echo "SPEC")
 
     echo "--- $spec (header + PHASE: $phase section) ---"
+    # spec.md uses awk composition (header + active PHASE section).
+    # --content mode (composed string, not a single file).
     _spec_active=$( {
       awk '/^## PHASE:/ {exit} {print}' "$spec"
       awk -v ph="## PHASE: $phase" '
@@ -301,7 +350,7 @@ emit_state() {
         found {print}
       ' "$spec"
     } )
-    emit_with_budget "$_BUDGET_SPEC" "$_spec_active"
+    emit_with_budget "$_BUDGET_SPEC" --content "$_spec_active"
     echo ""
   fi
 
@@ -311,8 +360,7 @@ emit_state() {
   # them in proposed approaches. ADR-style layer.
   if [ -f .sdd/principles.md ]; then
     echo "--- .sdd/principles.md ---"
-    _principles=$(cat .sdd/principles.md)
-    emit_with_budget "$_BUDGET_PRINCIPLES" "$_principles"
+    emit_with_budget "$_BUDGET_PRINCIPLES" --file .sdd/principles.md
     echo ""
   fi
 
@@ -323,8 +371,7 @@ emit_state() {
   # it on every turn closes the gap.
   if [ -f .sdd/stack.md ]; then
     echo "--- .sdd/stack.md ---"
-    _stack=$(cat .sdd/stack.md)
-    emit_with_budget "$_BUDGET_STACK" "$_stack"
+    emit_with_budget "$_BUDGET_STACK" --file .sdd/stack.md
     echo ""
   fi
 
@@ -336,15 +383,13 @@ emit_state() {
   # an oversized data-model.md falls off rather than blowing the budget.
   if [ -f .sdd/data-model.md ]; then
     echo "--- .sdd/data-model.md ---"
-    _datamodel=$(cat .sdd/data-model.md)
-    emit_with_budget "$_BUDGET_DATAMODEL" "$_datamodel"
+    emit_with_budget "$_BUDGET_DATAMODEL" --file .sdd/data-model.md
     echo ""
   fi
 
   if [ -f .sdd/patterns.md ]; then
     echo "--- .sdd/patterns.md ---"
-    _patterns=$(cat .sdd/patterns.md)
-    emit_with_budget "$_BUDGET_PATTERNS" "$_patterns"
+    emit_with_budget "$_BUDGET_PATTERNS" --file .sdd/patterns.md
     echo ""
   fi
 

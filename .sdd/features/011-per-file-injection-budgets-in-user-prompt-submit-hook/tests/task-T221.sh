@@ -121,6 +121,10 @@ y_count=$(printf '%s' "$dm_sec" | tr -cd 'Y' | wc -c | tr -d ' ')
 if [ "$y_count" -ne 100 ]; then
   fails+=("data-model.md kept-bytes count: expected 100 Y's in section, got $y_count")
 fi
+# CR cycle 1 #3: also assert the sentinel fired for data-model.md.
+if ! printf '%s' "$dm_sec" | grep -q "truncated to 400 bytes per per-file budget"; then
+  fails+=("data-model.md sentinel missing or wrong byte count (expected 'truncated to 400')")
+fi
 
 # patterns.md section — expect 100 Z's plus sentinel. This is the
 # decisive AC2 assertion: patterns.md is 5th in injection order;
@@ -130,6 +134,10 @@ pat_sec=$(extract_section "--- .sdd/patterns.md")
 z_count=$(printf '%s' "$pat_sec" | tr -cd 'Z' | wc -c | tr -d ' ')
 if [ "$z_count" -ne 100 ]; then
   fails+=("patterns.md kept-bytes count: expected 100 Z's in section, got $z_count")
+fi
+# CR cycle 1 #3: also assert the sentinel fired for patterns.md.
+if ! printf '%s' "$pat_sec" | grep -q "truncated to 400 bytes per per-file budget"; then
+  fails+=("patterns.md sentinel missing or wrong byte count (expected 'truncated to 400')")
 fi
 
 if [ ${#fails[@]} -gt 0 ]; then

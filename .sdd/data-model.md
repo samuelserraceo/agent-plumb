@@ -76,7 +76,7 @@ Same shape pattern as v1.0 `parameters.mcp.semantic_search` and Playwright-explo
 
 A config block under `parameters.injection` in `templates/.sdd/config.md`. Two fields:
 
-1. `cap_total_chars` (integer, existing) — defensive safety-net floor applied to combined hook output AFTER per-file truncation runs. Catches sum-overshoot edge cases when the project's per-file budgets total more than the cap. The `SDD_INJECTION_CAP_CHARS` env var still overrides at runtime for backwards compatibility.
+1. `cap_total_chars` (integer, existing) — defensive safety-net **ceiling** (maximum) applied to combined hook output AFTER per-file truncation runs. Catches sum-overshoot edge cases when the project's per-file budgets total more than the cap. The `SDD_INJECTION_CAP_CHARS` env var still overrides at runtime for backwards compatibility. (CR cycle 1 #1 terminology fix — was incorrectly called "floor"; a cap is a maximum, i.e. a ceiling.)
 
 2. `per_file_budget_chars` (map, new in v1.7+ via feature 011) — keyed by corpus-file basename (`INDEX`, `spec`, `principles`, `stack`, `data-model`, `patterns`) to char-count budgets. The user-prompt-submit hook truncates each corpus file individually to its declared budget and appends a sentinel `[truncated to <N> bytes per per-file budget — re-read with the Read tool if you need the cut portion]` when truncation happens.
 

@@ -36,9 +36,20 @@ parameters:
 ---
 CFG
 
-# Two consecutive runs.
-out1=$(cd "$tmp" && PROJECT_DIR="$tmp" CLAUDE_PROJECT_DIR="$tmp" bash "$HOOK" 2>/dev/null)
-out2=$(cd "$tmp" && PROJECT_DIR="$tmp" CLAUDE_PROJECT_DIR="$tmp" bash "$HOOK" 2>/dev/null)
+# Two consecutive runs. CR cycle 1 #8: fail fast if either run errors
+# — a hook crash with empty stdout could spuriously "pass" the
+# byte-identical check below (both empty). Capture exit codes and
+# require both to be 0.
+out1=$(cd "$tmp" && PROJECT_DIR="$tmp" CLAUDE_PROJECT_DIR="$tmp" bash "$HOOK" 2>/dev/null); rc1=$?
+out2=$(cd "$tmp" && PROJECT_DIR="$tmp" CLAUDE_PROJECT_DIR="$tmp" bash "$HOOK" 2>/dev/null); rc2=$?
+if [ "$rc1" -ne 0 ] || [ "$rc2" -ne 0 ]; then
+  echo "FAIL: T231 — hook exited non-zero (rc1=$rc1, rc2=$rc2); cannot validate determinism on a broken run"
+  exit 1
+fi
+if [ -z "$out1" ] || [ -z "$out2" ]; then
+  echo "FAIL: T231 — hook produced empty output; cannot validate determinism"
+  exit 1
+fi
 
 if [ "$out1" != "$out2" ]; then
   echo "FAIL: T231 — AC12 determinism violation: two consecutive runs produced different output"

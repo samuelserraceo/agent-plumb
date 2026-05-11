@@ -106,7 +106,17 @@ if yaml is not None:
         block = inj.get("per_file_budget_chars")
         if isinstance(block, dict):
             project_budgets = block
-    except Exception:
+    except Exception as e:
+        # CR cycle 1 #12/#17: do not silently swallow YAML parse
+        # failures — emit warning naming the file + error before
+        # falling back to framework defaults. Otherwise override bugs
+        # are invisible to the user.
+        print(
+            f"get-injection-budget: warning: failed to parse YAML "
+            f"frontmatter in {config_path}: {e}; falling back to "
+            f"framework defaults",
+            file=sys.stderr,
+        )
         project_budgets = {}
 
 # Resolution order:

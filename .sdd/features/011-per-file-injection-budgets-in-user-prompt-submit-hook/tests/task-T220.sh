@@ -47,8 +47,11 @@ else:
     cap = inj.get("cap_total_chars")
     if not isinstance(cap, int):
         errs.append(f"parameters.injection.cap_total_chars must be an integer (got: {cap!r})")
-    elif cap != 16000:
-        errs.append(f"parameters.injection.cap_total_chars expected 16000, got {cap}")
+    # CR cycle 1 #13: cap raised from 16000 → 25000 so per-file
+    # defaults (sum=20000) + headers + framing fit comfortably under
+    # the cap on the common case (per-file path dominates).
+    elif cap != 25000:
+        errs.append(f"parameters.injection.cap_total_chars expected 25000, got {cap}")
 
     budgets = inj.get("per_file_budget_chars")
     if not isinstance(budgets, dict):

@@ -6,12 +6,19 @@ default_playbook: feature
 extensions: {}
 parameters:
   injection:
-    # Total-output safety net. The user-prompt-submit hook applies this
-    # as a defensive floor on combined output AFTER per-file truncation
-    # runs — catches sum-overshoot edge cases when project per-file
-    # budgets total more than the cap (feature 011, AC10). Env var
-    # SDD_INJECTION_CAP_CHARS still overrides this value at runtime.
-    cap_total_chars: 16000
+    # Total-output safety-net CEILING (maximum). The user-prompt-submit
+    # hook applies this as a defensive cap on combined output AFTER
+    # per-file truncation runs — catches sum-overshoot edge cases when
+    # a project's per_file_budget_chars sum exceeds this value
+    # (feature 011, AC10). Env var SDD_INJECTION_CAP_CHARS overrides
+    # at runtime.
+    #
+    # Set to 25000 so the per-file defaults (summing to 20000) plus
+    # headers + framing markers (~500 chars overhead) fit comfortably
+    # under the cap on the common case — the cap_total_chars path is
+    # the exceptional safety net, not the common truncation path
+    # (CR cycle 1 #13 reconciliation).
+    cap_total_chars: 25000
     # Per-file budget map. The hook truncates each corpus file
     # independently to its budget and appends a sentinel marker
     # `[truncated to <N> bytes per per-file budget — re-read with
