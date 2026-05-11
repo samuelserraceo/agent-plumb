@@ -222,7 +222,7 @@ User: git commit -m "[SDD] migration: pre-v1.5.2 queued PHASE retro-fix"
 
 - [x] T01: Write `promote-legacy-queued.sh` script body (bash + python3 parser) + ship template copy + repin both manifests. Test: `tests/task-001.sh` GREEN. AC1 mapped.
 - [x] T02: False-positive guard — INDEX row not-canonical → no flip. Test: `tests/task-002.sh` GREEN. AC2 mapped.
-- [ ] T03: Cold-feature skip — `.shipped` marker → no flip. Test: `tests/task-003.sh` GREEN. AC3 mapped.
+- [x] T03: Cold-feature skip — `.shipped` marker → no flip. Test: `tests/task-003.sh` GREEN. AC3 mapped.
 - [ ] T04: Partial-state guard — INDEX says queued but spec PHASE != SPEC → leave + warn. Test: `tests/task-004.sh` GREEN. AC4 mapped.
 - [ ] T05: Idempotence — second run is no-op. Test: `tests/task-005.sh` GREEN. AC5 mapped.
 - [ ] T06: Doc paragraph in CLAUDE.md (live + templates copy) "Multi-feature parallel work" section naming the migrator + when to run it. No test (doc-only). AC1-AC5 covered indirectly.
