@@ -27,6 +27,9 @@
 #
 # Exits 0 on success, 1 on usage error, 2 on append-only block.
 
+# Deliberately NO `-e` — the wiki-link rewrite loop (below) uses `python3 ... || continue`
+# so one unreadable file doesn't abort the whole rename mid-flight, leaving the .sdd folder
+# half-rewritten. Critical-path commands (`cd`, `mv`, `find`) carry their own `|| exit N`.
 set -uo pipefail
 
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(pwd)}"

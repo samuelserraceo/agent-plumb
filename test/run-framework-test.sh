@@ -8255,7 +8255,7 @@ fi
 note "T164: pre-commit-rules.sh detects NEW-folder cross-branch ID collision"
 d=$(mktemp -d)
 (
-  cd "$d"
+  cd "$d" || { echo "T164 setup failed: cannot cd into $d" >&2; exit 1; }
   git init -q
   git config user.email t@t.com
   git config user.name T
