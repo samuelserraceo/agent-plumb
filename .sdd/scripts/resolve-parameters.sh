@@ -196,10 +196,30 @@ def _framework_default(d, prov, dotted_key, value):
         cur[parts[-1]] = value
         prov[dotted_key] = "framework-default"
 
-# F011 AC1: parameters.automation.level defaults to "checkpoint" when
-# absent (backward-compat — existing projects opted in for unchanged
-# behaviour until adopter explicitly picks a tier).
-_framework_default(resolved, provenance, "automation.level", "checkpoint")
+# F011 AC1 + AC3: parameters.automation.level — apply default + validation.
+#   AC1: when absent / empty / null after the cascade, default to "checkpoint".
+#   AC3: when set to an unknown value (not full|most|checkpoint), emit a
+#        stderr warning naming the bad value + valid set, then fall back
+#        to "checkpoint" (safe backwards-compat).
+_VALID_AUTO_LEVELS = ("full", "most", "checkpoint")
+_auto = resolved.get("automation") if isinstance(resolved.get("automation"), dict) else None
+_cur_level = _auto.get("level") if _auto else None
+if _cur_level in (None, ""):
+    # Either the cascade returned no value, or it returned an empty
+    # string. Force-set checkpoint (overrides empty-string in place).
+    if not isinstance(resolved.get("automation"), dict):
+        resolved["automation"] = {}
+    resolved["automation"]["level"] = "checkpoint"
+    provenance["automation.level"] = "framework-default"
+elif _cur_level not in _VALID_AUTO_LEVELS:
+    sys.stderr.write(
+        f"[resolve-parameters] warning: parameters.automation.level=\"{_cur_level}\" "
+        f"is not one of {_VALID_AUTO_LEVELS} — falling back to \"checkpoint\".\n"
+    )
+    if not isinstance(resolved.get("automation"), dict):
+        resolved["automation"] = {}
+    resolved["automation"]["level"] = "checkpoint"
+    provenance["automation.level"] = "framework-default-on-invalid"
 
 # Emit.
 out = dict(resolved)
