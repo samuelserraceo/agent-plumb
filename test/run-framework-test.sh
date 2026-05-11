@@ -8117,8 +8117,8 @@ fi
 #   (closes #163). PipeLogic V2 surfaced a real gap: a project that
 #   starts single-tenant but plans to externalise as multi-tenant SaaS
 #   doesn't fit option 4 ("internal tool — only your team uses it",
-#   which assumes never-multi-tenant) or option 1 ("a website",
-#   which loses the "MVP scope is one customer" signal). The brick
+#   which assumes the tool stays single-tenant) or option 1
+#   ("a website", which loses the "MVP scope is one customer" signal). The brick
 #   at templates/.sdd/setup/001-project-type.md must expose this as
 #   a first-class numbered option AND declare a `future_saas: true`
 #   record in the "What gets recorded" example block so downstream
@@ -8131,16 +8131,26 @@ note "T162: /sdd-setup Q1 ships 'internal-now, SaaS-later' option + future_saas 
 q1_brick="$FRAMEWORK_ROOT/templates/.sdd/setup/001-project-type.md"
 ok_count=0
 [ -f "$q1_brick" ] && ok_count=$((ok_count + 1))
-# 1. The numbered option text appears in the brick body (case-insensitive
-# so "Internal-now" / "internal-now" / "Internal now" all pass).
-grep -qiE 'internal[- ]now.*saas[- ]later' "$q1_brick" 2>/dev/null && ok_count=$((ok_count + 1))
+# 1. The numbered option text appears in the brick body. The phrasing
+# can be either short form ("internal-now, SaaS-later") or plain
+# English long form ("internal tool today, SaaS later"). Both fit
+# the issue #163 intent; the contract is that an option distinct
+# from plain "internal tool" exists and pairs an internal-MVP
+# signal with a future-SaaS signal in a single numbered choice.
+# Require the line to start with a markdown numbered bold list
+# entry so a free-text hint paragraph (which the brick already had
+# pre-fix at line 33 of the original) is NOT counted as satisfying
+# the contract.
+grep -qiE '^[0-9]+\. \*\*[^*]*(internal[- ]now|internal tool today)[^*]*saas[- ]?later' "$q1_brick" 2>/dev/null && ok_count=$((ok_count + 1))
 # 2. The "What gets recorded" example carries a future_saas marker so
 # the recorded stack.md ## Project shape declares it explicitly.
 grep -q 'future_saas' "$q1_brick" 2>/dev/null && ok_count=$((ok_count + 1))
 # 3. The "What the agent does with your answer" examples table mentions
 # the new option, so the agent's inference table is updated alongside
-# the question prose.
-grep -qiE '(internal[- ]now.*saas[- ]later|saas[- ]later)' "$q1_brick" 2>/dev/null && ok_count=$((ok_count + 1))
+# the question prose. We require future_saas to appear in a row
+# specifically — i.e. the table explains what the flag does, not
+# just that the new option exists.
+grep -qE '\| .*future_saas.* \|' "$q1_brick" 2>/dev/null && ok_count=$((ok_count + 1))
 if [ "$ok_count" -eq 4 ]; then
   ok "T162 Q1 brick exposes 'internal-now, SaaS-later' + future_saas record (4/4)"
 else
