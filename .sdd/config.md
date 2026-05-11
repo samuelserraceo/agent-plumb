@@ -14,6 +14,32 @@ parameters:
     translate_jargon_on_first_use: true
   pace:
     halt_on_red_after_attempts: 3
+  automation:
+    # F011: automation level for AGENT-LED steps across SPEC + SHIP
+    # phases (BUILD already has its own Run mode).
+    # `checkpoint` — today's behaviour: every AGENT-LED step asks for
+    #                approve before committing (safe, slow).
+    # `most`       — auto-advance technical AGENT-LED steps; STILL prompt
+    #                on destructive actions (mark-shipped, manifest
+    #                repin commits, --delete-branch merges, .shipped
+    #                marker writes, decisions.md append edits).
+    # `full`       — auto-advance every AGENT-LED step where the action's
+    #                frontmatter has `requires_user_approval: false`
+    #                (read by /next's decision tree). Pairs with F008
+    #                (multi-model) + F010 (parallel waves) for the
+    #                drop-the-brief-walk-away shape.
+    level: checkpoint   # default: backwards-compat. Change via /sdd-config automation <tier>.
+    # `most` tier reads this list to decide which AGENT-LED actions
+    # still prompt even when their per-action `requires_user_approval`
+    # would auto-advance. The list is canonical — agents reading this
+    # config use it as the destructive-action source of truth.
+    destructive_actions:
+      - mark-shipped          # writes the .shipped-marker file
+      - manifest-repin        # `[SDD] manifest: repin` commits (tamper-pin change)
+      - --delete-branch       # `gh pr merge --delete-branch` (irreversible branch drop)
+      - decisions.md-append   # append-only audit-log writes (cannot be edited back)
+      - .shipped-marker       # direct .shipped marker file writes
+      - repin                 # pre-commit-stage-verified.sh repin commits
   ralph:
     max_iters: 50
     timeout_per_iter: 1800   # bumped 600 → 1800 (F010 BUILD) — framework dogfooding modifies sealed scripts so pre-commit-test-first.sh runs the full 218-test suite (~5min) per code commit; 30min/iter absorbs that + Claude's actual work + the manifest-repin dance. Revert to 600 for non-framework features.

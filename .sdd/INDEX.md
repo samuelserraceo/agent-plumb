@@ -1,18 +1,15 @@
 # SDD framework — INDEX
 
-**Active:** _(none)_
+**Active:** features/011-auto-advance-agent-led-steps
 **Playbook:** feature
-**Active blocker:** _(no active feature — v1.7.3 shipped 2026-05-11 via PR #240, closes #202 (playwright-explore SHIP step gets first-class skip mechanism). v1.7 patch line complete after the v1.7.0/.1/.2/.3 four-pack. Pick next from ## Ideas below or open issues.)_
+**Active blocker:** SHIP action: verify-ci-green (PR #236)
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
 
 ## In flight
 
-(none)
-
-
-
+- features/011-auto-advance-agent-led-steps — auto-advance AGENT-LED steps (PHASE: SHIP)
 
 
 ## Ideas
