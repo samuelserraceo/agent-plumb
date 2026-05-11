@@ -1,15 +1,16 @@
 # SDD framework — INDEX
 
-**Active:** _(none)_
+**Active:** features/011-per-file-injection-budgets-in-user-prompt-submit-hook
 **Playbook:** feature
-**Active blocker:** _(no active feature — **v1.7.0-1.7.3 + v1.8.0-1.8.3 all shipped 2026-05-11**. Backlog audit confirms zero real-work-needed issues; the 3 still-open GitHub issues (#166 / #165 / #113) are explicitly deferred by Sam's own framing ("don't ship until N more reports"). v1.0 milestone 100% closed (17/17). 3 parallel-agent PRs still in flight (#239 per-file-budgets / #247 cross-branch-ID / #248 lego-model-tiers). Framework in audit-close territory — pick a feature only if it's worth a fresh /start ceremony.)_
+**Active blocker:** § (SHIP action: verify-test-run)
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
 
 ## In flight
 
-(none)
+- features/011-per-file-injection-budgets-in-user-prompt-submit-hook — per-file injection budgets in user-prompt-submit hook (PHASE: SHIP)
+
 
 
 
