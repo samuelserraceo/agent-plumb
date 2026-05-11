@@ -4,9 +4,9 @@ playbook: feature
 
 # parallel wave execution
 
-[PHASE: SHIP]
+[PHASE: SHIPPED]
 
-**Active blocker:** § (SHIP action: verify-test-run)
+**Active blocker:** — (shipped)
 
 ## PHASE: SPEC
 
@@ -513,9 +513,9 @@ All §10 mechanical-shape claims have AC coverage. Compliance items (license, no
 
 ### action: mark-shipped
 
-- [ ] shipped: INDEX.md updated, .shipped marker written, decisions.md appended
+- [x] shipped: INDEX.md updated, .shipped marker written, decisions.md appended
 
 ### Exit checks
 
-- [ ] C-ship-pr-url: PR URL recorded in INDEX.md Shipped section {verify-by: verify-stage.sh}
-- [ ] C-ship-marked: .shipped marker file exists in feature folder {verify-by: verify-stage.sh}
+- [x] C-ship-pr-url: PR URL recorded in INDEX.md Shipped section {verify-by: verify-stage.sh}
+- [x] C-ship-marked: .shipped marker file exists in feature folder {verify-by: verify-stage.sh}
