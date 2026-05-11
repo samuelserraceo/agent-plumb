@@ -86,6 +86,12 @@ except OSError as e:
     sys.exit(2)
 
 text = raw.decode("utf-8", errors="replace")
+# CR cycle 2 #16: normalize CRLF (Windows) and lone CR (legacy Mac) line
+# endings before frontmatter matching. Without this, a CRLF-terminated
+# config.md (common on Windows downstream projects) would not match the
+# `^---\n(.*?)\n---` pattern and the resolver would silently fall back
+# to framework defaults — invisible to the user.
+text = text.replace("\r\n", "\n").replace("\r", "\n")
 m = re.match(r"^---\n(.*?)\n---", text, re.DOTALL)
 if not m:
     print(f"get-injection-budget: {config_path} has no YAML frontmatter", file=sys.stderr)

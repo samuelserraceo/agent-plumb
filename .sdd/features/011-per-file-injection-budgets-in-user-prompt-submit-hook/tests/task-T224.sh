@@ -82,4 +82,4 @@ if ! printf '%s' "$out" | grep -q "TRUNCATED"; then
   exit 1
 fi
 
-echo "PASS: T224 — AC5 cap_total_chars (16000 in framework, 2000 in fixture) applies as defensive floor; sum-overshoot ($size bytes) bounded near cap"
+echo "PASS: T224 — AC5 cap_total_chars (25000 in framework, 2000 in fixture) applies as defensive ceiling; sum-overshoot ($size bytes) bounded near cap"

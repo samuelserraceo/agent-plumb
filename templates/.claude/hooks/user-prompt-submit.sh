@@ -94,6 +94,11 @@ project_cap = None
 try:
     with open(config_path, "rb") as f:
         text = f.read().decode("utf-8", errors="replace")
+    # CR cycle 2 #17: normalize CRLF/CR line endings before frontmatter
+    # matching — Windows downstream projects with CRLF-terminated
+    # config.md would otherwise silently miss the regex and fall
+    # back to framework defaults.
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
     m = re.match(r"^---\n(.*?)\n---", text, re.DOTALL)
     if m:
         try:

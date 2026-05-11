@@ -303,7 +303,7 @@ parameters:
 
 - [ ] AC2: `templates/.claude/hooks/user-prompt-submit.sh` reads the per-file budget map via `resolve-parameters.sh` and applies each file's budget independently when concatenating corpus files for injection. {verify-by: T221}
 
-- [ ] AC3: When a corpus file's pre-budget content exceeds its budget, the hook keeps the first `<budget>` chars and appends the sentinel line `[truncated to <N> bytes per per-file budget — re-read with the Read tool if you need the cut portion]`, with `<N>` substituted with the truncation byte count. {verify-by: T222}
+- [ ] AC3: When a corpus file's pre-budget content exceeds its budget, the hook keeps the first `<budget>` BYTES of content (configured via the `per_file_budget_chars` map — the historic name kept for backwards compat; semantic is bytes with UTF-8 char-boundary backoff per AC16) and appends the sentinel line `[truncated to <N> bytes per per-file budget — re-read with the Read tool if you need the cut portion]`, with `<N>` substituted with the truncation byte count. {verify-by: T222} (CR cycle 2 #12 clarification: the config key `per_file_budget_chars` is byte-based; AC16's char-boundary backoff means kept bytes ≤ budget while keeping output valid UTF-8.)
 
 - [ ] AC4: `templates/.sdd/scripts/resolve-parameters.sh` returns the project's overriding value when `per_file_budget_chars.<key>` is set in the project's `config.md`, and returns the documented framework default when the key is absent. {verify-by: T223}
 
@@ -327,7 +327,7 @@ parameters:
 
 - [ ] AC14: `[PROJECT DATA]` framing preserved — the hook still emits the `[PROJECT DATA]` framing marker around the concatenated output, so the model's trust-boundary contract for project-supplied content is unchanged. {verify-by: T233}
 
-- [ ] AC15: One-byte-over boundary — when a corpus file has exactly `<budget> + 1` chars on disk, the hook truncates to `<budget>` chars and appends the sentinel line with `<N> = 1` substituted into the byte-count slot. {verify-by: T234}
+- [ ] AC15: One-byte-over boundary — when a corpus file has exactly `<budget> + 1` BYTES on disk, the hook truncates to `<budget>` bytes (config key name "chars" kept for backwards compat per AC3 clarification) and appends the sentinel line with `<N> = 1` substituted into the byte-count slot. {verify-by: T234}
 
 - [ ] AC16: UTF-8 char boundary backoff — when the budget falls inside a multi-byte UTF-8 character, the hook backs the truncation point off to the previous clean UTF-8 char boundary (up to 3 trailing bytes dropped). Output stays valid UTF-8; sentinel reflects the actual byte count after backoff. {verify-by: T235}
 

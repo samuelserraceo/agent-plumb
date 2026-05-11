@@ -76,5 +76,5 @@ if errs:
         print(f"  - {e}")
     sys.exit(1)
 
-print("PASS: T220 — AC1 config.md has parameters.injection.{cap_total_chars=16000, per_file_budget_chars={...}} summing to 20000 across 6 keys")
+print("PASS: T220 — AC1 config.md has parameters.injection.{cap_total_chars=25000, per_file_budget_chars={...}} summing to 20000 across 6 keys")
 PY
