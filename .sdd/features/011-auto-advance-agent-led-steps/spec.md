@@ -222,7 +222,7 @@ Trade-offs:
             parameters.automation: section with documented default
             (checkpoint) + plain-English description of each tier
             — proves AC7 groundwork + supports AC4/AC5
-- [ ] T303: /sdd-setup wizard adds an "Automation level" question
+- [x] T303: /sdd-setup wizard adds an "Automation level" question
             with Full/Most/Checkpoint options + plain-English
             descriptions; writes parameters.automation.level on user
             answer
