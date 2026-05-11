@@ -305,7 +305,7 @@ PROD-ONLY AC9 + AC10 + best-effort AC8 = no T-task; verified at SHIP via §12 si
 
 ### action: learn
 
-- [ ] summary: one-paragraph plain-English summary of what shipped, why
+- [x] summary: F011 adds `parameters.automation.level` (full/most/checkpoint, default checkpoint) + a destructive-actions enumeration in `.sdd/config.md`; the setup wizard's new 008-automation-level brick lets the user pick a tier at project start; `/sdd-config automation <tier>` changes the level post-setup; `/next`'s prose gains a 3-way decision tree describing when to auto-advance AGENT-LED steps vs prompt. F011 is documentation-shape — no runtime daemon; the agent reads the doctrine each turn from CLAUDE.md + the slash-command prose and applies it. Pairs with F008 (multi-model) + F010 (parallel waves) to deliver the drop-the-brief-walk-away shape Sam asked for. Backwards-compat: every existing project that has not picked a tier keeps today's checkpoint behaviour {verify-by: T300}.
 - [ ] lessons: append patterns to .sdd/patterns.md (lessons learned during SPEC/BUILD/SHIP)
 
 ### action: push-pr
