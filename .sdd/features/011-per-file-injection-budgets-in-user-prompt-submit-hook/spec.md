@@ -256,7 +256,26 @@ parameters:
 
 ### action: non-functional
 
-- [ ] constraints: draft performance, security, and compliance constraints
+- [x] constraints: 8 constraints across 3 categories — performance (NF1-3: latency budget, no-regression, determinism), security (NF4-6: no new network, framing preserved, read-only), compliance (NF7-8: no new PII surface, no new licensed code). Approved by Sam 2026-05-11.
+
+**Non-functional constraints:**
+
+### Performance
+
+- **NF1 — Hook latency budget.** The user-prompt-submit hook fires on every prompt the user types; per-turn overhead is felt directly. Per-file budget loop targets bounded wall-time per turn on the reference corpus (this repo at HEAD, where patterns.md is the largest at ~20KB). Char-counting + first-N-bytes truncation are O(N) per file with small constants. {verify-by: T-NNN micro-benchmark runs hook against a fixture matching this repo's corpus shape and asserts wall-time under a small bounded value documented in the test}
+- **NF2 — No regression vs today's hook.** Replacement of the single-cap end-truncate block with the per-file loop should not slow the hook in a measurable way compared to the pre-change version on the same corpus. {verify-by: T-NNN side-by-side timing test compares old hook (single-cap branch via env var or git checkout) vs new hook on identical fixture}
+- **NF3 — Determinism.** Given identical corpus + identical config, hook output is byte-identical across runs. No random ordering, no time-based fields in the sentinel. {verify-by: T-NNN runs the hook twice on the same fixture and asserts `diff` is empty}
+
+### Security
+
+- **NF4 — No new network surface.** The hook reads local files only — no `curl`, no `wget`, no API client. {verify-by: T-NNN greps the new hook diff for `curl|wget|http[s]?://` and asserts zero new matches}
+- **NF5 — No secrets exposure.** The hook injects corpus files as `[PROJECT DATA]`. Per the existing v0.8 trust-boundary doctrine, the model treats `[PROJECT DATA]` as data, not directive. Per-file budgets do not change this surface — they only change WHICH bytes of each file land in injection. {verify-by: T-NNN asserts the `[PROJECT DATA]` framing marker is still emitted around the concatenated output}
+- **NF6 — Read-only.** The hook only reads `.sdd/*` files. It does not write to the corpus, decisions.md, INDEX.md, or any spec.md. {verify-by: T-NNN runs the hook and asserts no file under `.sdd/` is modified after the run}
+
+### Compliance
+
+- **NF7 — No PII surface.** The hook injects corpus files that the user authored. The per-file budget loop does not introduce a new PII path; it only truncates content the user already chose to put in their corpus. {best-effort: Sam at SHIP — confirms no new corpus source is added by this feature}
+- **NF8 — License compatibility.** Reuses bash + python3 + awk + coreutils, all of which the framework already depends on. No new licensed code introduced. {verify-by: code review — there is no new third-party import added under templates/.claude/hooks/ or templates/.sdd/scripts/}
 
 ### action: acceptance-criteria
 
