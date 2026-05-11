@@ -4,9 +4,9 @@ playbook: feature
 
 # auto-advance AGENT-LED steps
 
-[PHASE: BUILD]
+[PHASE: SHIP]
 
-**Active blocker:** §14 (BUILD action: run-mode-chosen)
+**Active blocker:** SHIP action: verify-test-run
 
 ## PHASE: SPEC
 
@@ -295,7 +295,7 @@ PROD-ONLY AC9 + AC10 + best-effort AC8 = no T-task; verified at SHIP via §12 si
 
 ### Exit checks
 
-- [ ] C-build-tasks-green: T300-T306 all GREEN; framework tests pass {verify-by: verify-stage.sh}
+- [x] C-build-tasks-green: T300-T306 all GREEN; framework tests pass {verify-by: verify-stage.sh}
 
 ## PHASE: SHIP
 
