@@ -14,9 +14,24 @@ parameters:
     translate_jargon_on_first_use: true
   pace:
     halt_on_red_after_attempts: 3
+  automation:
+    # F011: automation level for AGENT-LED steps across SPEC + SHIP
+    # phases (BUILD already has its own Run mode).
+    # `checkpoint` — today's behaviour: every AGENT-LED step asks for
+    #                approve before committing (safe, slow).
+    # `most`       — auto-advance technical AGENT-LED steps; STILL prompt
+    #                on destructive actions (mark-shipped, manifest
+    #                repin commits, --delete-branch merges, .shipped
+    #                marker writes, decisions.md append edits).
+    # `full`       — auto-advance every AGENT-LED step where the action's
+    #                frontmatter has `requires_user_approval: false`
+    #                (read by /next's decision tree). Pairs with F008
+    #                (multi-model) + F010 (parallel waves) for the
+    #                drop-the-brief-walk-away shape.
+    level: checkpoint   # default: backwards-compat. Change via /sdd-config automation <tier>.
   ralph:
     max_iters: 50
-    timeout_per_iter: 600
+    timeout_per_iter: 1800   # bumped 600 → 1800 (F010 BUILD) — framework dogfooding modifies sealed scripts so pre-commit-test-first.sh runs the full 218-test suite (~5min) per code commit; 30min/iter absorbs that + Claude's actual work + the manifest-repin dance. Revert to 600 for non-framework features.
   review:
     bot: ""              # "coderabbit" | "sourcery" | "" (none)
     poll_interval: 180   # seconds; 180s × 5 polls = 15 min default for CodeRabbit
@@ -43,7 +58,7 @@ parameters:
       max_total_tokens_per_run: 100000   # exact — stops once running total crossed
       auth_header: ""                    # optional. To keep tokens OUT of tracked config, use ${ENV_VAR_NAME} indirection. Literal values still work. Empty = no auth header sent. NOTE: v1.1 default Ollama+Gemma local doesn't need this; load-bearing for v1.2+ paid providers.
       # Anti-theatre note (Sam's catch 2026-05-01): there is no `cost_limit_usd` field. The framework can't enforce dollar amounts without a per-provider pricing table or a live spending ledger — neither exists. Token caps above are the mechanical enforcement. Dollar guidance for picking a provider lives in the spec, not here.
-  test_runner: ""              # populated by /sdd-setup. Examples: "bash test/run-framework-test.sh", "npx vitest run", "pytest", "npm test". When set, the pre-commit-test-first.sh hook stashes code, runs this, restores, and gates the commit on the result (real test-first → allow; theatre → block). When empty, the hook falls back to a commit-order check (Approach B).
+  test_runner: "bash test/run-framework-test.sh"   # framework dogfoods its own test suite — pre-commit-test-first.sh runs this on commits that pair tests/task-NNN.* with code.
 file_classes:
   CLAIM:
     - '(^|/)verification\.json$'

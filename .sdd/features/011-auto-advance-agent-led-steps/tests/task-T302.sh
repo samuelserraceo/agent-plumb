@@ -31,7 +31,8 @@ if ! grep -qE "^[[:space:]]+automation:[[:space:]]*$" "$TEMPLATE"; then
 fi
 
 # --- B) parameters.automation.level: checkpoint as documented default ---
-if ! grep -qE "^\s*level:\s*[\"']?checkpoint[\"']?\s*$" "$TEMPLATE"; then
+# Allow trailing comments (the line typically has explanatory comment).
+if ! grep -qE "^[[:space:]]+level:[[:space:]]*[\"']?checkpoint[\"']?([[:space:]]|#|$)" "$TEMPLATE"; then
   fails+=("templates/.sdd/config.md missing 'level: checkpoint' as documented default")
 fi
 
