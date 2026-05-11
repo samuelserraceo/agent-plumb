@@ -4,9 +4,9 @@ playbook: feature
 
 # auto-advance AGENT-LED steps
 
-[PHASE: SPEC]
+[PHASE: BUILD]
 
-**Active blocker:** §1 (first action: brief-intake)
+**Active blocker:** §14 (BUILD action: run-mode-chosen)
 
 ## PHASE: SPEC
 
@@ -278,5 +278,47 @@ PROD-ONLY AC9 + AC10 + best-effort AC8 = no T-task; verified at SHIP via §12 si
 **Net effect:** 0 new ACs (§11 stays hash-locked). 4 folded into existing T-tasks (#2 → AC2; #3 → AC7; #5 → T301; #6 → AC9). 2 documented at SHIP (#1, #4). 1 already-covered (#7).
 
 ### Exit checks
-- [ ] C-spec-acs: ≥1 acceptance criterion exists in §11 {verify-by: C-spec-acs bash-grep} — grep -qE '^- \[[ x]\] AC[0-9]+' "$SECTION_FILE"
-- [ ] C-spec-tasks: ≥1 task in plan-decompose section {verify-by: C-spec-tasks bash-grep} — grep -qE '^- \[[ x]\] T[0-9]+' "$SECTION_FILE"
+- [x] C-spec-acs: ≥1 acceptance criterion exists in §11 {verify-by: C-spec-acs bash-grep} — grep -qE '^- \[[ x]\] AC[0-9]+' "$SECTION_FILE"
+- [x] C-spec-tasks: ≥1 task in plan-decompose section {verify-by: C-spec-tasks bash-grep} — grep -qE '^- \[[ x]\] T[0-9]+' "$SECTION_FILE"
+
+## PHASE: BUILD
+
+### action: run-mode-chosen
+
+- [ ] mode: pick run mode (Conversation / Checkpoint / Ralph headless / Full autonomous)
+
+### action: build-task
+
+(driven by §14 tasks T300-T306 — each task lands as one commit)
+
+### Exit checks
+
+- [ ] C-build-tasks-green: T300-T306 all GREEN; framework tests pass {verify-by: verify-stage.sh}
+
+## PHASE: SHIP
+
+### action: verify-test-run
+
+- [ ] run-tests: run-tests pass
+
+### action: learn
+
+- [ ] summary: one-paragraph plain-English summary of what shipped, why
+- [ ] lessons: append patterns to .sdd/patterns.md (lessons learned during SPEC/BUILD/SHIP)
+
+### action: push-pr
+
+- [ ] push-and-open: push the branch + open a PR
+
+### action: verify-ci-green
+
+- [ ] ci: all CI checks GREEN on the PR
+
+### action: mark-shipped
+
+- [ ] shipped: INDEX.md updated, .shipped marker written, decisions.md appended
+
+### Exit checks
+
+- [ ] C-ship-pr-url: PR URL recorded in INDEX.md Shipped section {verify-by: verify-stage.sh}
+- [ ] C-ship-marked: .shipped marker file exists in feature folder {verify-by: verify-stage.sh}

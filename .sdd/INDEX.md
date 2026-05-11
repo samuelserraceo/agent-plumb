@@ -2,7 +2,7 @@
 
 **Active:** features/011-auto-advance-agent-led-steps
 **Playbook:** feature
-**Active blocker:** §1 (first action: brief-intake)
+**Active blocker:** §14 (BUILD action: run-mode-chosen)
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
