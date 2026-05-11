@@ -95,3 +95,27 @@ Source: [[008-build-the-sdd-on-pi-extension-package]] §15 ec-pick + T210.
 The framework's own `/start` scaffold emitted exit-checks lines (`C-spec-acs: ≥1 acceptance criterion exists in §11`) that lacked the `{verify-by: verify-stage.sh}` annotation the anti-theatre lint expects. Result: every freshly-scaffolded feature traps on its first commit, until the user (or agent) hand-patches the missing annotation. The scaffold and the validators drift in lockstep — additions to one don't update the other. Lesson: the scaffold itself is a feature with its own AC, and its AC is "every line emitted passes every shipping lint and moat check." When you tighten a lint, run it against the scaffold's output. When you change the scaffold, re-run shipping lints against a freshly-scaffolded feature. Caught + filed as a separate fix-task during F008 SPEC.
 
 Source: [[008-build-the-sdd-on-pi-extension-package]] /start scaffold trip + spawn_task fix.
+
+### Framework-self-modification needs the four-step dance
+
+When SDD itself modifies its own sealed framework script (e.g. `.sdd/scripts/next-action.sh` during F010 to add WAVE-DISPATCH parsing), a single edit isn't enough. Four files must change atomically: (1) the live script `.sdd/scripts/<name>.sh`, (2) the template copy `templates/.sdd/scripts/<name>.sh`, (3) the live manifest pin `.sdd/.cache/manifest.json`, (4) the template manifest pin `templates/.sdd/.cache/manifest.json`. Plus the commit message MUST include `[SDD] manifest: repin — <reason>` so `pre-commit-stage-verified.sh` allows the hash change. Missing any of the four breaks something: missing (1)/(2) breaks T120 self-host drift; missing (3) blocks the commit itself; missing (4) breaks every framework test that builds a fixture via `mkproj_v08` (which copies from `templates/`); missing the commit marker blocks every commit going forward. When a feature like F010 modifies a framework script across multiple BUILD tasks, the dance fires N times. Worth a future shortcut: a `bash .sdd/scripts/repin.sh <path>` helper that performs all four steps + emits the marker for inclusion in the commit message.
+
+Source: [[010-parallel-wave-execution]] T200 + T201 + T205-T207 BUILD walk (F010 itself was the first feature to dogfood this at scale).
+
+### macOS bash 3.2 heredoc-with-single-quoted-delimiter still counts apostrophes
+
+The bash 3.2 that ships with macOS (and is the default `/bin/bash`) has a quirk: even when you open a heredoc with `<<'DELIM'` (single-quoted delimiter, which per POSIX should treat the body as literal with no expansion), bash 3.2's quote-state machine still counts apostrophes inside the body. A single `'` in a comment (e.g. `# subagent inherits orchestrator's model`) confuses the parser at file-load time, producing "unexpected EOF while looking for matching `''" at a line FAR from the actual heredoc. Caught during F010 T205 + T207 code commits. Workaround: avoid apostrophes in comments inside heredoc bodies (use "the X" not "X's"). Doesn't affect modern bash (4+) or the heredoc body's actual semantics — just bash 3.2's lexer pre-pass.
+
+Source: [[010-parallel-wave-execution]] T205 code commit syntax-error rabbit hole.
+
+### Wave-tasks must not touch spec.md — orchestrator owns spec.md edits
+
+Original §6 EC#9 of F010 claimed wave-task subagents could each flip their own row in spec.md, with adjacent row diff context handled by git's 3-way merge. T203 empirically refuted this: even when each wave-task changes a different `[ ] T-NNN` row, git's default 3-line diff context overlaps between adjacent task rows, so concurrent flips conflict. The cleaner model that landed: wave-task subagents commit ONLY their own test + code files (disjoint sets — no two subagents share a file). The orchestrator commits ONE spec.md edit after the wave returns that flips every wave-task row to GREEN at once. Git sees one spec.md edit per wave instead of N concurrent ones. No merge needed at the spec.md layer. Lesson: when claiming "row isolation," verify the claim empirically against the actual diff/merge tool. The architectural correction simplified the data contract too — no `Wave` entity, no special merge driver, just a discipline rule on what each layer is allowed to touch.
+
+Source: [[010-parallel-wave-execution]] T203 BUILD walk.
+
+### Slow project test_runner forces Ralph timeout bump for framework-self-mod features
+
+When a feature modifies sealed framework scripts (like F010 modifying next-action.sh + dispatch-wave.sh), every code commit triggers `pre-commit-test-first.sh` which stashes the code and runs the full project test_runner (`bash test/run-framework-test.sh` ≈ 5 minutes for 218 framework tests). Ralph's stock `timeout_per_iter: 600` (10 min) can't absorb 5 min pre-commit + Claude's actual work + the manifest-repin dance + potential template sync — the iteration times out before commit lands. Bump `parameters.ralph.timeout_per_iter` to `1800` (30 min) for the duration of framework-modifying features; revert to 600 for non-framework features. The pre-commit cost itself isn't fixable without a faster test_runner or hook scope tightening (e.g., only run tests that match staged paths), both of which are separate framework features. Caught during F010 BUILD when Ralph's iteration 1 timed out before T200 landed.
+
+Source: [[010-parallel-wave-execution]] BUILD timeout investigation + config.md bump.
