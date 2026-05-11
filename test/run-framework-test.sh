@@ -8120,6 +8120,72 @@ PY
 fi
 
 # ============================================================
+# T162 — /sdd-setup Q1 ships the "internal-now, SaaS-later" option
+#   (closes #163). PipeLogic V2 surfaced a real gap: a project that
+#   starts single-tenant but plans to externalise as multi-tenant SaaS
+#   doesn't fit option 4 ("internal tool — only your team uses it",
+#   which assumes the tool stays single-tenant) or option 1
+#   ("a website", which loses the "MVP scope is one customer" signal). The brick
+#   at templates/.sdd/setup/001-project-type.md must expose this as
+#   a first-class numbered option AND declare a `future_saas: true`
+#   record in the "What gets recorded" example block so downstream
+#   actions (and the agent's stack.md write) can read the flag back.
+#   RED case: shipping the option in prose but forgetting the
+#   `future_saas` record would let the agent silently drop the
+#   "multi-tenant from day 1" signal at /start time.
+# ============================================================
+note "T162: /sdd-setup Q1 ships 'internal-now, SaaS-later' option + future_saas record"
+q1_brick="$FRAMEWORK_ROOT/templates/.sdd/setup/001-project-type.md"
+ok_count=0
+[ -f "$q1_brick" ] && ok_count=$((ok_count + 1))
+# 1. The numbered option text appears in the brick body. The phrasing
+# can be either short form ("internal-now, SaaS-later") or plain
+# English long form ("internal tool today, SaaS later"). Both fit
+# the issue #163 intent; the contract is that an option distinct
+# from plain "internal tool" exists and pairs an internal-MVP
+# signal with a future-SaaS signal in a single numbered choice.
+# Require the line to start with a markdown numbered bold list
+# entry so a free-text hint paragraph (which the brick already had
+# pre-fix at line 33 of the original) is NOT counted as satisfying
+# the contract.
+grep -qiE '^[0-9]+\. \*\*[^*]*(internal[- ]now|internal tool today)[^*]*saas[- ]?later' "$q1_brick" 2>/dev/null && ok_count=$((ok_count + 1))
+# 2. The "What gets recorded" example carries a future_saas marker so
+# the recorded stack.md ## Project shape declares it explicitly. CR
+# cycle 1: scope the grep to the recorded-output block. A global grep
+# can pass on frontmatter `agent_infers` or table-prose mentions
+# alone — the RED case is "future_saas named in prose but never in
+# the recorded contract", which would let the agent silently drop
+# the flag at /start time. The recorded example uses
+# `**future_saas:** <true | false>` (placeholder so both option-4
+# and option-5 outcomes are visible); the contract is that the
+# `future_saas:` key appears inside the "## What gets recorded"
+# block, not that it carries a specific value. The awk is
+# fence-aware — the recorded example is wrapped in a ```markdown
+# fence that itself contains a `## Project shape` heading, so a
+# naive `/^## /` boundary check would exit early on that nested
+# heading. We toggle a `fence` flag on lines that start with ```
+# and only treat `## ` lines as section boundaries when fence==0.
+if awk '
+  /^## What gets recorded/ {in_block=1; next}
+  /^```/ && in_block {fence = 1 - fence; print; next}
+  /^## / && in_block && fence == 0 {exit}
+  in_block {print}
+' "$q1_brick" 2>/dev/null | grep -qE 'future_saas:'; then
+  ok_count=$((ok_count + 1))
+fi
+# 3. The "What the agent does with your answer" examples table mentions
+# the new option, so the agent's inference table is updated alongside
+# the question prose. We require future_saas to appear in a row
+# specifically — i.e. the table explains what the flag does, not
+# just that the new option exists.
+grep -qE '\| .*future_saas.* \|' "$q1_brick" 2>/dev/null && ok_count=$((ok_count + 1))
+if [ "$ok_count" -eq 4 ]; then
+  ok "T162 Q1 brick exposes 'internal-now, SaaS-later' + future_saas record (4/4)"
+else
+  bad "T162 Q1 'internal-now, SaaS-later' option missing or incomplete" "ok=$ok_count/4 brick=$q1_brick"
+fi
+
+# ============================================================
 # T141 — anti-theatre lint passes on the in-flight spec (closes #111,
 #   PR #003). Theatre tokens (numerical bounds, currency, enforcement
 #   verbs, quality absolutes) without an adjacent verifier annotation
