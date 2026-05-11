@@ -211,7 +211,10 @@ for line in spec_lines:
     # `<token>:` (with optional bold wrapping), and the colon is now
     # required. `TODO:` and `AC1foo:` both correctly fall through to
     # the generic step-row branch.
-    if re.match(r'^\s*-\s*\[ \]\s+(?:\*\*)?(?:AC\d+|T\d+|C-[a-z0-9_-]+)(?:\*\*)?\s*:', line):
+    if re.match(
+        r'^\s*-\s*\[ \]\s+(?:\*\*)?(?:AC\d+|T\d+(?:\s+\[WAVE:\s*\d+\s*\])?|C-[a-z0-9_-]+)(?:\*\*)?\s*:',
+        line,
+    ):
         continue
     if "[ ]" in line:
         first_open_line = line
