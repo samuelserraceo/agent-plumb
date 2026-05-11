@@ -119,3 +119,16 @@ Source: [[010-parallel-wave-execution]] T203 BUILD walk.
 When a feature modifies sealed framework scripts (like F010 modifying next-action.sh + dispatch-wave.sh), every code commit triggers `pre-commit-test-first.sh` which stashes the code and runs the full project test_runner (`bash test/run-framework-test.sh` ≈ 5 minutes for 218 framework tests). Ralph's stock `timeout_per_iter: 600` (10 min) can't absorb 5 min pre-commit + Claude's actual work + the manifest-repin dance + potential template sync — the iteration times out before commit lands. Bump `parameters.ralph.timeout_per_iter` to `1800` (30 min) for the duration of framework-modifying features; revert to 600 for non-framework features. The pre-commit cost itself isn't fixable without a faster test_runner or hook scope tightening (e.g., only run tests that match staged paths), both of which are separate framework features. Caught during F010 BUILD when Ralph's iteration 1 timed out before T200 landed.
 
 Source: [[010-parallel-wave-execution]] BUILD timeout investigation + config.md bump.
+
+## Cross-branch merge of v1.6.0 entries (2026-05-11 cleanup)
+
+The lessons below + preserved-artifact lines were appended to `.sdd/patterns.md` on origin/main between PRs #218 and #226 (v1.6.0 ship cycle). They re-appear at the bottom rather than in chronological position because the append-only contract on this file requires byte-prefix immutability for the F010 lessons committed at the top of this block. Same pattern Sam used for the decisions.md merge cleanup (see decisions.md L506 / feature/cleanup-residual-marker). The merge commit itself was constructed via `git commit-tree` plumbing (Sam-authorized) because the cofile-block hook lacks a merge-commit exemption (issue #220).
+
+claude/clever-herschel-af8c27
+### Behavioural triggers belong in CLAUDE.md doctrine, not in discrete loops
+
+When SDD ships a behavioural rule the agent should apply at certain moments (e.g. "after pushing, run background work"), the load-bearing trigger is the agent reading CLAUDE.md at session start and applying the doctrine — NOT a separate poll loop, hook, or daemon. Caught dogfooding feature 008 §5: I specified "the CR-poll loop calls background-while-waiting.sh" — but the framework has no CR-poll loop, because the agent itself is the poller (it's session-based, not long-running). The fix was to scope the behaviour to the agent's existing post-push pattern via CLAUDE.md doctrine + an idempotent emit script the agent calls — no new infrastructure. The lesson: when SPEC §5 names a "loop" or "service" inside the framework, ASK whether that primitive actually exists before designing on top of it. The brief-builder's terminology drill (e.g. "what does CR-poll loop mean concretely?") catches this earlier.
+
+Source: [[008-background-while-waiting]] §5 / §14 T4 re-scope during BUILD.
+=======
+main

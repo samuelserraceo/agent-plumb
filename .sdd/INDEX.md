@@ -2,18 +2,42 @@
 
 **Active:** features/010-parallel-wave-execution
 **Playbook:** feature
-**Active blocker:** § (SHIP action: verify-test-run)
+**Active blocker:** § (SHIP action: verify-ci-green)
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
 
 ## In flight
-- features/010-parallel-wave-execution — parallel wave execution (PHASE: SPEC)
+
+- features/010-parallel-wave-execution — parallel wave execution (PHASE: SHIP)
 
 
+## Ideas
+
+- ideas/001-brief-builder-prefills-spec — brief from `/write-brief` plugin pre-fills SPEC §0; SDD grills only the gaps + audits against project corpus — captured 2026-05-10
+- ideas/002-lego-style-model-right-sizing — each step declares thinking/routine/mechanical tier; framework picks model per tier; works for Claude-only + pi.dev — captured 2026-05-10
+- ideas/003-prompt-caching-across-turns — order prompt so stable corpus comes first, variable turn comes last; provider cache picks up the prefix — captured 2026-05-10
+- ideas/004-background-while-waiting — fill CR/CI deadtime with next-safe-thing (most isolated speed lever, lowest collision risk) — captured 2026-05-10
+- ideas/005-auto-advance-agent-led-steps — default `requires_user_approval` false; setup-time automation-level toggle; extends BUILD-autonomy across SPEC/SHIP — captured 2026-05-10
+- ideas/006-plain-english-sweep-sdd-prose — survey + rewrite SDD's user-facing prose to match brief-builder v0.4's plain-English bar (jargon → notes-from-a-colleague tone) — captured 2026-05-10
+- ideas/007-cross-branch-feature-id-collision — three SDD rules (append-only / cofile-block / wiki-link resolution) collide on git merges when two branches both scaffold the same feature ID — captured 2026-05-10
 
 
 ## Shipped
+
+- **[[009-feature-playbook-v2-brief-driven-spec-entry-replaces-3-question-pitch-shape]]** — closes the F01/pipelogic_v2 audit's SPEC-ceremony pain (4 failure modes — startup-pitch §1, redundant §2, lazy first-pass record, bundled-question turns) by replacing the 3-question Pitch (`who / why-now / what-breaks`) with a brief-paste flow as the feature playbook's first action. Ships new `brief-intake` action + `brief-summarise` skeleton (paste a brief / upload a doc / use the v2 template; agent grills, summarises, pre-fills §1, §3, §6, §7, §8, §10 — 6 sections instead of ~20 follow-up questions). `success.md` marked `deprecated: true` and removed from `feature.md` SPEC actions list (§2 Success folds into §11 ACs); `success.md` retained for backward-compat with in-flight features whose spec.md scaffolded pre-PR-A. `CLAUDE.md` gains "One question per turn" doctrine (closes #207 Part 3) + `lint-action-prose.sh` heuristic warning on bundled-question example blocks. `proposed-approach.md` updated as the representative AGENT-LED action with `<details>` foldable for technical detail (plain-English-first default). `data-contract.md` adds upload-invitation prose. **3 CR review cycles** (24 of 25 actionable findings closed; #11 declined per byte-prefix append-only contract on `decisions.md` — same precedent as F008 (#214) MD022 deferral; filed as #220 for v1.7 hook merge-commit exception). **4 cosmetic §-level re-approvals** preserving audit trail (§5 + §7 + §12 + §14, all logged in `decisions.md`). 6/6 CI checks GREEN; 11 BUILD tasks T01-T11 + integration smoke `tests/integration/v1.6-anchor.smoke.sh` GREEN.
+  - Shipped: 2026-05-10 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/219 · Tag: `v1.6-anchor-pr-a`
+  - Data-model: (none — framework-prose-only redesign; no entity changes)
+  - Extends: (root); first of 4 sub-PRs in v1.6 anchor (#207). PR-B (#222, §2 doctrine cleanup), PR-C (#223, `requires_user_approval` matrix regression-lock), PR-D (#224, plain-English-first doctrine + canonical `<details>` in `data-contract.md`) all shipped 2026-05-10/11; full v1.6 anchor tagged as `v1.6.0`.
+  - Patterns: cosmetic re-approval pattern proven (4 §-level hash bumps + decisions.md audit entries handled cleanly across 3 CR cycles); cofile-block CLAIM/POLICY split forced 2-commit cadence per CR cycle.
+  - Deferred: same MD022 blank-line cosmetic on F009's first cosmetic-fix entry (#220 v1.7 fix); CR cycle-3 #11 chronological misorder of decisions.md entries from the merge bypass in `dae7758` (Sam-authorized git-commit-tree plumbing — preserves byte-prefix append-only; reorder would break it).
+
+- **[[009-background-while-waiting]]** — closes the agent-idle gap during CR/CI wait windows. Ships `.sdd/scripts/background-while-waiting.sh` (emit + `--list-candidates` + `--update-last-action`) + `.sdd/scripts/background-metric.sh` helper + "Background while waiting" doctrine section in `templates/CLAUDE.md`. Agent reads doctrine post-push, picks from the safe-set (re-read corpus, pre-fetch next-feature context, draft PR description, draft commit msgs), declares the chosen action via `--update-last-action`. Marker log at `.sdd/.cache/background-emit.log` (JSONL, gitignored) is the §2 metric counter. Cross-process locking via mkdir-as-lockdir (portable, no flock dep). Originally scaffolded as feature 008; renamed to 009 mid-PR to resolve ID collision with merged 008-pi-adapter (PR #214). 9 CR review cycles (~17 unique findings closed; 2 hash-locked sections re-approved twice for AC + metric-consistency fixes). 218/218 framework + 7/7 per-feature tests GREEN.
+  - Shipped: 2026-05-10 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/218
+  - Data-model: (none — single new internal telemetry log, gitignored)
+  - Extends: (root); ships idea 004 from the speed-improvements brainstorm captured the same day
+  - Patterns: 1 lesson appended ("Behavioural triggers belong in CLAUDE.md doctrine, not in discrete loops" — from T4 re-scope during BUILD)
+  - Deferred: cross-branch ID-collision pattern (idea 007) — surfaced by this PR's two folder renames (008→009 mid-PR after collision with origin's pi-adapter, then 009 number collision with #219's brief-driven feature). Filed as idea 007 for future framework work.
 
 - **[[008-build-the-sdd-on-pi-extension-package]]** — closes SDD's "Claude Code only" lock by shipping `sdd-pi-adapter`, a pi.dev extension that brings SDD's spec-driven workflow to any model behind pi's harness (15+ providers: Anthropic, OpenAI, Google, Ollama, Bedrock, Groq, xAI, OpenRouter, etc.). Same `/sdd-start /sdd-next /sdd-ship` loop, same atomic-step-per-commit discipline, same anti-theatre lint, same trust-boundary state injection — running on whatever model the user picks via pi's `/model` command. Hand-written CommonJS extension at `extensions/sdd-pi-extension/dist/sdd-pi.js` registers three pi lifecycle handlers: `pi.on("context")` for state injection (AC3), `pi.on("session_start")` for HRN-01 install + worktree-config check (AC4), `pi.registerCommand("sdd-status")` for instant zero-LLM status (AC7). Validated by 2/2 single-turn discipline test (GPT-5.5 + Kimi K2) before BUILD, then by 13/13 mechanical AC tests (T200-T212) at SHIP. T212 added mid-SHIP after partial e2e surfaced that manifest declared `dist/sdd-pi.js` but no such file existed — closed via test → code → green. 3 CR review cycles (24/25 findings closed; C2-4 MD022 deferred — append-only contract on decisions.md blocks blank-line edits to historical entries). 218/218 framework + 13/13 per-feature GREEN.
   - Shipped: 2026-05-10 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/214

@@ -356,7 +356,6 @@ Non-technical users are paralyzed by blank-page questions. Whenever a USER-LED q
 
 Apply this everywhere it fits:
 
-- **§2 Success metrics** → "Common patterns: volume (signups, orders), speed (time to first action, response time), quality (NPS, error rate, support tickets), engagement (DAU, retention). Pick one or two — or describe your own."
 - **§3 User stories — persona** → "Common personas: new visitor, signed-up user, returning user, admin, billing manager, customer support. Which apply here? Or describe your own."
 - **§4 UX brief — tone** → already does this ("minimal, professional, playful, bold, elegant…"). Match this pattern elsewhere.
 - **§11 Acceptance criteria — test type** → "Common types: form submission produces…, invalid input returns…, user session persists…, mobile viewport renders…, link redirects to…. Pick which apply here, or describe what to assert."
@@ -495,7 +494,7 @@ Skip is handled inline by `/next` (not a separate `/skip` command). The user rep
 2. **Proactively offer to skip** before asking any question:
    > "§4 UX & Design brief is marked skippable for non-UI features. This feature is a backend cron job, so I think we should skip it. Reply `skip no UI surface — backend cron only` to skip, or tell me what UI considerations do apply."
 3. **Respect the user's skip.** When `skip <reason>` is invoked (as a reply during `/next`): replace every `[ ]` with `⏭ skipped — <reason>`, append `[SKIPPED]` to the heading, commit `[SDD:<id>] spec: skip §<N> — <reason>`, advance.
-4. **Never skip a non-skippable section.** §1, §2, §3, §5, §6, §7, §11, §12 are required always.
+4. **Never skip a non-skippable section.** §1, §3, §5, §6, §7, §11, §12 are required always. (§2 Success was removed from the feature playbook in v1.6 / PR-A of #207 — success metrics fold into §11 ACs by default; `success.md` retained with `deprecated: true` for backward-compat with in-flight features whose spec.md scaffolded pre-PR-A.)
 5. **Don't offer skip just because a question is hard** — the whole point of the rubric is to surface the hard questions.
 
 ---
@@ -700,6 +699,27 @@ Reading cold features bloats context for no reason. They are reference material,
 
 If a feature folder has no `.shipped` marker, treat it as in-flight and read normally.
 
+## Background while waiting
+
+When the agent is waiting on an external process (CodeRabbit review, CI run, deploy preview), don't sit idle — do the next safe thing. The framework's `.sdd/scripts/background-while-waiting.sh` script emits a marker line per wait window and prints safe-set candidates; the agent picks one, declares it via `--update-last-action`, then does the work.
+
+**Low-risk set** — the agent may pick any of these unattended:
+
+- Re-read `patterns.md`, `decisions.md`, `data-model.md` to refresh internal model
+- Pre-fetch the next in-flight feature's spec.md context
+- Draft the current feature's PR description (save to `.sdd/<feature>/pr-description.md`, gitignored)
+- Draft commit messages
+
+**Judgement-required set** — agent surfaces and asks before doing:
+
+- Speculative response drafts to likely CR concerns
+
+**Out-of-scope set** — these are not automated background work. Surface to the user when the situation arises; the user does them, not the agent:
+
+- Edits to files outside the current feature's scope
+- Force-push or any other destructive git operation (these stay manual even with user approval — surface and let the user run them)
+- Changes to shared corpus files (patterns.md, decisions.md, data-model.md, stack.md) — those go through normal SPEC walks, not background-mode
+
 ## Forbidden
 
 - ❌ Filling a `[ ]` from assumption in USER-LED sections
@@ -763,6 +783,51 @@ Hard cap exemptions (the user explicitly opted in): they typed `/explain`, `/sta
 > *"Approve §<N>? Reply `approve` or tell me what to change."*
 
 Do NOT emit a 6-step "what happens on approve" framework-mechanics block by default — non-technical users don't care HOW the framework records the approval (hash → verification.json → decisions.md → commit → advance.sh → INDEX). They care WHAT they're approving and how to react. **Print the ceremony details only when the user asks a free-form question** (e.g., *"what happens when I approve?"*, *"show me the steps"*, *"how do you record this?"*). There is no `approve --explain` flag; the trigger is the user's question, not a command-line switch. F01's spec ceremonies repeated the 6-step block ~9 times (~54 lines of pure framework-mechanics noise per spec) — every approval doubled in length without adding decision-relevant content.
+
+### One question per turn (closes #207 Part 3)
+
+**Every agent turn asks AT MOST ONE question; bundling multiple questions into one turn is forbidden.** Background: F01/pipelogic_v2 had repeated turns asking 2-4 sub-questions in one breath (e.g. *"what's the persona, and what's the success metric, and what's the timeline?"*). Non-technical users answer the first question and miss the rest; the framework then either re-asks (annoying) or fills from assumption (worse).
+
+The grill protocol from #173/#174 already documents this: fire Q1, wait for the answer, decide if Q2 is needed. **One question per turn is doctrine; bundling is the exception, allowed only when EITHER**:
+
+- All sub-questions are conceptually one decision (e.g. §1 problem's `who / why-now / what-breaks` are facets of the same problem statement — this is the same exception line 351 above describes).
+- The action's frontmatter declares `bundle_ok: true` (currently unused; reserved for future actions where bundling is genuinely the right shape).
+
+When in doubt: ask ONE thing, wait, then decide.
+
+The `lint-action-prose.sh` lint warns when an action's `**What it looks like:**` example block contains 2+ unrelated questions in a single turn — best-effort detection (heuristic: count distinct `?` tokens in adjacent prose).
+
+### Plain-English-first as default for AGENT-LED actions (closes #207 Part 4)
+
+**Every AGENT-LED draft starts with the plain-English version. Technical detail (architecture, libraries, file paths, version pins, format reliability tables, parsing behaviour) goes inside a `<details>` foldable block** so the user opts INTO the engineer-shape detail rather than wading through it by default. The convention:
+
+```markdown
+**What it looks like:**
+
+<plain-English first paragraph — what the agent will say in the user's words>
+
+<details>
+<summary>Show technical detail (X, Y, Z)</summary>
+
+<engineer-shape detail — architecture, libraries, version pins, parse behaviour, format support, etc.>
+
+</details>
+
+**End the turn with:** *"Reply `approve` ..."*
+```
+
+The `<summary>` line names what's behind the fold (helps the user decide whether to expand). The plain-English half is the DEFAULT view; the `<details>` half is hidden until the user clicks (or scrolls in chat-as-UX).
+
+**When does an action need this?** Only when there's genuine technical detail to fold. Many AGENT-LED actions (e.g. `flows`, `learn`, `mark-shipped`, `non-functional`, `bug-*`, `verify-*`) are already plain-English-by-content because they don't have heavy technical machinery to explain — adding an empty `<details>` would be ceremony for ceremony's sake. Use the foldable when:
+
+- The example mentions specific libraries / SDKs / version pins
+- The example mentions file paths / config keys / hashes / SQL / JSON shapes
+- The example has a format-support table or a "how the parser handles X" reliability tier
+- The example has architecture / sequencing / cross-component handshake detail
+
+`templates/.sdd/actions/proposed-approach.md` is the canonical example (architecture diagram + libraries + version pins inside the fold). `templates/.sdd/actions/data-contract.md` ships the second example (supported-formats reliability table + parse failure path inside the fold). Future AGENT-LED actions should follow this pattern when adding technical detail.
+
+The `claim_v16_plain_english_first_canonical_examples_have_details` claim in `test/run-claims-audit.sh` mechanically verifies that the two canonical examples (`proposed-approach.md` + `data-contract.md`) keep the foldable so a regression flipping them back to engineer-shape gets caught at CI time.
 
 <!-- SDD-MANAGED-END -->
 

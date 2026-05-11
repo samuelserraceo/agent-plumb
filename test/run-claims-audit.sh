@@ -519,6 +519,101 @@ sys.exit(0)
 }
 
 # ============================================================
+# CLAIM: v1.6 requires_user_approval matrix is correct (#207 PR-C / Part 3)
+# Source: issue #207 — v1.6 anchor, Part 3 ("One-question-at-a-time +
+# autonomous AGENT-LED where no judgement is needed")
+# Quote: "Re-audit each AGENT-LED action's requires_user_approval flag:
+#   - §13 wireframe + §15 edge-case-sweep — drop to false (technical/mechanical)
+#   - §5 proposed-approach + §6 data-contract + §11 ACs + §9 out-of-scope —
+#     keep true (product judgement)"
+# ============================================================
+claim_v16_requires_user_approval_matrix() {
+  python3 -c "
+import re, sys
+EXPECTED = {
+    'proposed-approach':   True,   # §5 — product judgement
+    'data-contract':       True,   # §6 — product judgement
+    'acceptance-criteria': True,   # §11 — product judgement
+    'out-of-scope':        True,   # §9 — product judgement
+    'wireframe':           False,  # §13 — mechanical
+    'edge-case-sweep':     False,  # §15 — mechanical
+}
+# CR cycle 1: scan ONLY the YAML frontmatter (between the first two '---'
+# fences) — not the full markdown body. Without this, a prose example
+# line like 'requires_user_approval: true' could satisfy the regex and
+# silently bypass the regression lock.
+FRONTMATTER_RE = re.compile(r'\A---\n(.*?)\n---', re.DOTALL)
+violations = []
+for slug, want in EXPECTED.items():
+    p = f'templates/.sdd/actions/{slug}.md'
+    try:
+        text = open(p).read()
+    except FileNotFoundError:
+        violations.append(f'{slug}: action file missing at {p}')
+        continue
+    fm_match = FRONTMATTER_RE.match(text)
+    if not fm_match:
+        violations.append(f'{slug}: no YAML frontmatter found at top of file')
+        continue
+    frontmatter = fm_match.group(1)
+    m = re.search(r'^requires_user_approval:[ \t]+(true|false)[ \t]*$',
+                  frontmatter, re.MULTILINE)
+    if not m:
+        violations.append(f'{slug}: no requires_user_approval flag in YAML frontmatter')
+        continue
+    got = m.group(1) == 'true'
+    if got != want:
+        violations.append(f'{slug}: requires_user_approval={got} (want {want}) — '
+                          f'matrix per #207 PR-C / Part 3')
+if violations:
+    print('v1.6 requires_user_approval matrix violations:', file=sys.stderr)
+    for v in violations:
+        print(f'  - {v}', file=sys.stderr)
+    sys.exit(1)
+sys.exit(0)
+"
+}
+
+# ============================================================
+# CLAIM: v1.6 plain-English-first — canonical examples keep the <details> fold
+# Source: issue #207 — v1.6 anchor, Part 4 ("Plain-English-first as DEFAULT
+# draft mode") + CLAUDE.md "Plain-English-first as default for AGENT-LED
+# actions" doctrine section
+# Quote: "every AGENT-LED draft starts with the plain-English version. Add
+# a [Show technical detail] foldable block (rendered as <details> in markdown)"
+# ============================================================
+claim_v16_plain_english_first_canonical_examples_have_details() {
+  python3 -c "
+import re, sys
+# These are the two canonical AGENT-LED examples that demonstrate the
+# foldable pattern; they MUST keep the <details>...<summary>Show technical
+# detail...</summary>...</details> structure inside their 'What it looks
+# like' block. Other AGENT-LED actions are exempt unless they add
+# heavy technical detail that warrants folding.
+CANONICAL = [
+    'templates/.sdd/actions/proposed-approach.md',
+    'templates/.sdd/actions/data-contract.md',
+]
+violations = []
+for path in CANONICAL:
+    try:
+        text = open(path).read()
+    except FileNotFoundError:
+        violations.append(f'{path}: file missing')
+        continue
+    if not re.search(r'<details>.*?<summary>Show technical detail.*?</summary>.*?</details>',
+                     text, flags=re.DOTALL):
+        violations.append(f'{path}: missing <details>+<summary>Show technical detail...</summary>+</details> structure')
+if violations:
+    print('Plain-English-first canonical examples violations (#207 PR-D / Part 4):', file=sys.stderr)
+    for v in violations:
+        print(f'  - {v}', file=sys.stderr)
+    sys.exit(1)
+sys.exit(0)
+"
+}
+
+# ============================================================
 # CLAIM: every playbook frontmatter declares stages with actions + exit_checks
 # Source: templates/CLAUDE.md — Canonical playbook section
 # Quote: "The frontmatter declares the stages (SPEC → BUILD → SHIP) and the action sequence per stage"
@@ -903,6 +998,8 @@ CLAIMS=(
   "161_mcp_tests_pass|161 MCP unit tests pass|walkthrough.html footer"
   "assumed_markers_lint_refuses_paren_assumed|Assumed-markers lint catches (assumed)/(TBD)/<TODO>|CLAUDE.md rule 1"
   "every_action_tag_in_closed_enum|Every action's tag is from the closed enum|load-playbook.sh VALID_TAGS"
+  "v16_requires_user_approval_matrix|v1.6 requires_user_approval matrix is correct (4 product-judgement true; 2 mechanical false)|#207 PR-C / Part 3"
+  "v16_plain_english_first_canonical_examples_have_details|v1.6 plain-English-first canonical examples keep the <details> fold|#207 PR-D / Part 4"
   "every_playbook_has_stages_actions_exit_checks|Every playbook frontmatter has stages + actions + exit_checks|CLAUDE.md Canonical playbook"
   "every_shipped_feature_has_marker|Every shipped feature has .shipped marker|CLAUDE.md Shipped features cold"
   "every_shipped_row_has_pr_link|Every shipped row in INDEX.md has a PR link|mark-shipped action format"
