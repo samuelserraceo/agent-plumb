@@ -33,6 +33,11 @@
       "path": ".sdd/scripts/check-setup-answer.sh",
       "trust": "framework"
     },
+    "dispatch-wave.sh": {
+      "expected_sha256": "98d73dc78d3c664dc38d3b0c0ca9fa717032a639038677a6eafdf6415c7e5399",
+      "path": ".sdd/scripts/dispatch-wave.sh",
+      "trust": "framework"
+    },
     "hash-section.sh": {
       "expected_sha256": "f042a987b7386d435b521d364a36603323edda611dc885ab9694d4ace95158ac",
       "path": ".sdd/scripts/hash-section.sh",
@@ -54,7 +59,7 @@
       "trust": "framework"
     },
     "next-action.sh": {
-      "expected_sha256": "a884cbd3fc36239f8367c662ca7c6cf1f5e7e19cd6fe600b51cd3cd1e85ba4e9",
+      "expected_sha256": "1aeea674436b329a264f4d290061856a04e0207ad863606404dbdd3a17b75192",
       "path": ".sdd/scripts/next-action.sh",
       "trust": "framework"
     },
