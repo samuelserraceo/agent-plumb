@@ -494,7 +494,7 @@ All §10 mechanical-shape claims have AC coverage. Compliance items (license, no
 
 ### action: verify-test-run
 
-- [ ] run-tests: run-tests pass
+- [x] run-tests: 218/218 framework tests + 12/12 per-feature tests (T200..T211) PASS locally. Two test-harness fixes landed alongside the BUILD walk: (a) template manifest synced (`templates/.sdd/.cache/manifest.json` now pins the new `next-action.sh` hash 1aeea674... and adds the new `dispatch-wave.sh` entry); (b) `mkproj_v08` in `test/run-framework-test.sh` now copies `templates/.sdd/scripts/dispatch-wave.sh` into fixtures so the moat's hash-pin check finds the file on disk. Pre-fix run reported 206/218 (T38/T39/T40/T41/T44/T65/T65b/T65c/T108/T143/T144/T145 all failing on "dispatch-wave.sh missing on disk"); post-fix run reports 218/218.
 
 ### action: learn
 
