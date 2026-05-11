@@ -121,6 +121,12 @@ level_b="$(get_level "$out_b")"
 if [ "$level_b" != "checkpoint" ]; then
   fails+=("AC3 uppercase FULL: expected fallback to 'checkpoint', got '$level_b'")
 fi
+# Stderr assertion (CR cycle-1 #5): uppercase variant is invalid, must warn.
+if [ ! -s "$err_b" ]; then
+  fails+=("AC3 uppercase FULL: expected stderr warning, got empty")
+elif ! grep -qi "invalid\|unknown\|warning\|fallback\|FULL" "$err_b"; then
+  fails+=("AC3 uppercase FULL: stderr present but no expected token (invalid/unknown/warning/fallback/FULL): $(cat "$err_b")")
+fi
 
 # --- C) Empty string falls back (re-assert from §15 #5) ---
 C="$WORK/empty"
@@ -130,6 +136,9 @@ level_c="$(get_level "$out_c")"
 if [ "$level_c" != "checkpoint" ]; then
   fails+=("§15 #5 empty string: expected fallback to 'checkpoint', got '$level_c'")
 fi
+# Stderr assertion (CR cycle-1 #5): empty string is treated as unset; the
+# framework-default path is silent (no warning needed). Either silent OR
+# a warning is acceptable — assert ONLY that the level is checkpoint (above).
 
 # --- D) Valid tiers still work (regression vs T300's A/B/C cases) ---
 D="$WORK/valid-most"
@@ -138,6 +147,12 @@ read -r out_d err_d <<<"$(run_resolver "$D")"
 level_d="$(get_level "$out_d")"
 if [ "$level_d" != "most" ]; then
   fails+=("AC2 regression: valid 'most' broke after AC3 changes, got '$level_d'")
+fi
+# Stderr assertion (CR cycle-1 #5): valid tiers must NOT emit a warning.
+# The resolver may still print unrelated stderr (e.g. PyYAML compatibility
+# notes), so check specifically for our own automation.level warning token.
+if grep -qi "parameters\.automation\.level.*invalid\|automation.*warning" "$err_d"; then
+  fails+=("AC2 regression: valid 'most' should not emit automation-level warning, got: $(cat "$err_d")")
 fi
 
 if [ ${#fails[@]} -gt 0 ]; then

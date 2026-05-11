@@ -58,4 +58,4 @@ if [ ${#fails[@]} -gt 0 ]; then
   exit 1
 fi
 
-echo "PASS: T303 — AC4 setup wizard ships automation-level brick (3 tiers + records_in config + README indexed)"
+echo "PASS: T303 — AC4 setup wizard ships automation-level brick (3 tiers + records_in config)"
