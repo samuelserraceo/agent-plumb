@@ -57,7 +57,41 @@ Future SDD adopters running the framework on bigger workloads hit the same pain 
 
 ### action: proposed-approach
 
-- [ ] approval: draft the approach with 2 alternatives and tradeoffs, iterate with the user, get approval
+- [x] approval: Approach A — leverage existing per-action `requires_user_approval` frontmatter; framework reads `parameters.automation.level` (Full / Most / Checkpoint, default Checkpoint) and applies a 3-way decision tree at /next time. Most-tier gates destructive actions; Checkpoint = today's behaviour. Builds on v1.6.0 PR-C's matrix lock + compounds F008 + F010. Sam approved 2026-05-11.
+
+**Approach A wins — Config-flag toggle (RECOMMENDED, locked):**
+
+Use the EXISTING per-action `requires_user_approval: true|false` frontmatter that every action already has. The framework reads `parameters.automation.level` once per `/next` call and applies one of three decision trees:
+
+- **`full`** → if action has `requires_user_approval: false` AND action slug NOT in destructive list → execute + commit + advance silently. Skip the CTA.
+- **`most`** → same as Full BUT destructive-list actions (`mark-shipped`, `manifest: repin` commits, `--delete-branch`, `decisions.md` append, `.shipped` marker, repin) still prompt.
+- **`checkpoint`** → today's behaviour (prompts at every AGENT-LED step regardless of frontmatter flag).
+
+Trade-offs:
+
+- ✅ Smallest change — leverages existing frontmatter; just changes `/next`'s decision tree.
+- ✅ Per-action flags already audited by their authors during v1.6.0 PR-C work (`requires_user_approval` matrix lock).
+- ✅ Backwards compatible — default `checkpoint` = today's behaviour, no change for existing projects.
+- ⚠️ One-time audit of every action's `requires_user_approval` flag to confirm correct classification (probably already correct from PR-C; should be cheap).
+
+**Approach B — Explicit `auto-advance: true|false` per-step (rejected).** Add a NEW frontmatter field to every action's step. Most explicit but doubles the frontmatter surface for the same decision. Bigger change for marginal benefit over A.
+
+**Approach C — Tier-driven auto-advance with explicit allowlists (rejected).** Two lists in config.md (allow + deny). Two sources of truth; A's "respect the frontmatter" is simpler and already partially audited.
+
+**Why Approach A wins:**
+
+1. **Pillar 1 (Simplicity).** Smallest delta to the framework: zero new frontmatter fields, just a new config flag + decision-tree in `/next`'s slash command prose.
+2. **Builds on PR-C's work.** v1.6.0's `requires_user_approval` matrix lock already audited every action's flag. We get a head start.
+3. **Reversible.** Removing the `automation.level` config flag reverts to today's behaviour with no other changes.
+4. **Killer compound with F008 + F010.** Full-tier means: SPEC sections auto-advance (technical drafts), F010 dispatches waves automatically, F008's multi-model picks cheap workers — the framework approaches drop-the-brief-walk-away.
+
+**Implementation surface (preview, fleshed out in §14 plan-decompose):**
+
+- **New config field** at `parameters.automation.level` (string: `full|most|checkpoint`, default `checkpoint`).
+- **Updated `/sdd-setup`** to ask the automation question + record the answer.
+- **Updated `/sdd-config`** to allow changing the tier post-setup.
+- **Updated `/next` slash command prose** with the 3-way decision tree (Full/Most/Checkpoint).
+- **§11 destructive-actions list** — enumerated in this spec, encoded in `.sdd/config.md` `file_classes` or a sibling allowlist.
 
 ### action: data-contract
 
