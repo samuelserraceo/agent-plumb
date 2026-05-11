@@ -6,7 +6,7 @@ playbook: feature
 
 [PHASE: BUILD]
 
-**Active blocker:** §14 T01 (add success-signal echo to session-start.sh)
+**Active blocker:** SHIP — T01 GREEN, ready to PR
 
 **Run mode:** full-autonomous
 
@@ -154,7 +154,7 @@ User: sees cue; runs /sdd-setup
 
 #### §14 Plan-Decompose
 
-- [ ] T01: Add first-install detection + success-signal echo to session-start.sh (templates + live mirror). Test: `tests/task-001.sh` GREEN. AC1 mapped.
+- [x] T01: Add first-install detection + success-signal echo to session-start.sh (templates + live mirror). Test: `tests/task-001.sh` GREEN. AC1 mapped.
 
 ### action: edge-case-sweep
 
