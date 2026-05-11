@@ -38,6 +38,10 @@ playbook: feature
 SPEC
 
 prompt="$(bash "$SCRIPT" --print-prompt 1 "$WORK/spec.md" 2>&1)"
+prompt_rc=$?
+if [ "$prompt_rc" -ne 0 ]; then
+  fails+=("--print-prompt exited $prompt_rc — invocation failed before shape assertions could run. out: $prompt")
+fi
 
 # (a) Framework brain reference. Either explicit "framework brain"
 # string or a `.sdd/CLAUDE.md` / `framework brain digest` phrase.

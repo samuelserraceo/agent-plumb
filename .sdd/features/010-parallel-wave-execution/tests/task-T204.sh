@@ -51,7 +51,7 @@ WORK="$(mktemp -d -t sdd-t204.XXXXXX)"
 trap 'rm -rf "$WORK"' EXIT
 
 mkdir -p "$WORK/repo"
-cd "$WORK/repo"
+cd "$WORK/repo" || { echo "FAIL: T204 — cannot cd to fixture repo $WORK/repo"; exit 1; }
 git init -q
 git config user.email "t204@test.local"
 git config user.name "T204 test"

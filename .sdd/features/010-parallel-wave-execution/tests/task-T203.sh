@@ -17,8 +17,9 @@
 #      Wave-tasks never touch spec.md.
 #   2. Orchestrator commits a single spec.md edit flipping all 3
 #      wave-task rows from `[ ]` to `[x]` (the "wave green" step).
-#   3. Final state: 3 × 2 wave-task commits + 1 orchestrator commit
-#      = 7 commits. No conflicts at any step.
+#   3. Final state: 1 base commit + 3 wave-task commits + 1 orchestrator
+#      commit = 5 commits total on the fixture branch. No conflicts at
+#      any step.
 
 set -uo pipefail
 
@@ -29,7 +30,7 @@ trap 'rm -rf "$WORK"' EXIT
 
 REPO="$WORK/repo"
 mkdir -p "$REPO"
-cd "$REPO"
+cd "$REPO" || { echo "FAIL: T203 — cannot cd to fixture repo $REPO"; exit 1; }
 
 git init -q
 git config user.email "t203@test.local"

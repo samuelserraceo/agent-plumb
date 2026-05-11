@@ -118,16 +118,18 @@ empty_rc=$?
 if [ "$empty_rc" -ne 0 ]; then
   fails+=("empty wave (wave=99 with 0 tasks) exited $empty_rc — expected 0 with no-op JSON. out: $empty_out")
 fi
-if [ -n "$empty_out" ]; then
-  if ! printf '%s' "$empty_out" | python3 -c '
+# Empty-wave MUST emit JSON on stdout (not silent-exit). Without this guard,
+# dispatch-wave.sh could return rc=0 with no output and still pass AC2.
+if [ -z "$empty_out" ]; then
+  fails+=("empty wave (wave=99) returned rc=0 but no stdout — AC2 requires structured JSON on every successful invocation")
+elif ! printf '%s' "$empty_out" | python3 -c '
 import json, sys
 try: obj = json.loads(sys.stdin.read())
 except Exception: sys.exit(2)
 sys.exit(0 if obj.get("tasks") == [] else 7)
 ' >/dev/null 2>&1
-  then
-    fails+=("empty wave didn't return empty tasks list. out: $empty_out")
-  fi
+then
+  fails+=("empty wave didn't return empty tasks list. out: $empty_out")
 fi
 
 # --- G) Bad args: non-positive wave-N rejected ------------------------
