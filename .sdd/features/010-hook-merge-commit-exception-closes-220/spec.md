@@ -4,9 +4,9 @@ playbook: feature
 
 # hook merge-commit exception (closes #220)
 
-[PHASE: SPEC]
+[PHASE: BUILD]
 
-**Active blocker:** §11 (last action: plan-decompose; AUTONOMOUS DRAFT — Sam re-approves on return)
+**Active blocker:** §14 T01 (lenient-mode in pre-commit-rules.sh)
 
 ## PHASE: SPEC
 
@@ -346,7 +346,9 @@ Total: 1×XS + 2×S + 1×M = ~feature-shaped, smallest of the v1.6 anchor cohort
 
 ### action: run-mode-chosen
 
-- [ ] mode: TBD — agent will pick at SPEC→BUILD transition
+- [x] mode: full-autonomous — Sam's pre-approved overnight directive ("non-stop progress until I wake up")
+
+**Run mode:** full-autonomous
 
 ### action: build-task
 
