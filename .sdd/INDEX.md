@@ -8,6 +8,7 @@
 
 
 ## In flight
+- features/012-promote-legacy-queued-sh-migrator-for-pre-v1-5-2-phase-state-drift-closes-206 — promote-legacy-queued.sh migrator for pre-v1.5.2 PHASE state drift (closes #206) (PHASE: SPEC)
 
 - features/011-auto-advance-agent-led-steps — auto-advance AGENT-LED steps (PHASE: SHIP)
 

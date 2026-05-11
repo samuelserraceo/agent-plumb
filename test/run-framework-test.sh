@@ -127,6 +127,13 @@ mkproj_v08() {
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/promote-to-active.sh"    "$d/.sdd/scripts/promote-to-active.sh" \
     || { echo "[mkproj_v08] failed to copy promote-to-active.sh from \$FRAMEWORK_ROOT — broken framework checkout?" >&2; return 1; }
   chmod +x "$d/.sdd/scripts/promote-to-active.sh"
+  # promote-legacy-queued.sh is manifest-tracked in v1.7.2+ (closes #206).
+  # Same fail-fast pattern: silently skipping the copy leaves the fixture
+  # missing a manifest-pinned file, breaking the moat hash-pin check on
+  # every test that uses mkproj_v08.
+  cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/promote-legacy-queued.sh" "$d/.sdd/scripts/promote-legacy-queued.sh" \
+    || { echo "[mkproj_v08] failed to copy promote-legacy-queued.sh from \$FRAMEWORK_ROOT — broken framework checkout?" >&2; return 1; }
+  chmod +x "$d/.sdd/scripts/promote-legacy-queued.sh"
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/scope-guard-config.sh"   "$d/.sdd/scripts/scope-guard-config.sh" 2>/dev/null || true
   chmod +x "$d/.sdd/scripts/scope-guard-config.sh" 2>/dev/null || true
   chmod +x "$d/.sdd/scripts/check-setup-answer.sh" 2>/dev/null || true
