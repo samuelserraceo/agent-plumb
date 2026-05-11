@@ -4,9 +4,11 @@ playbook: feature
 
 # promote-legacy-queued.sh migrator for pre-v1.5.2 PHASE state drift (closes #206)
 
-[PHASE: SPEC]
+[PHASE: BUILD]
 
-**Active blocker:** §11 acceptance-criteria (Sam approve to lock 5 ACs)
+**Active blocker:** §14 T01 (write promote-legacy-queued.sh + repin manifests)
+
+**Run mode:** full-autonomous
 
 ## PHASE: SPEC
 
@@ -189,7 +191,7 @@ User: git commit -m "[SDD] migration: pre-v1.5.2 queued PHASE retro-fix"
 
 ### action: acceptance-criteria
 
-- [ ] approval: 5 ACs (1-5)
+- [x] approval: APPROVED by Sam — 5 ACs (AC1-AC5) covering happy-path + 4 guards (false-positive / cold-skip / partial-state / idempotence).
 
 #### §11 Acceptance criteria
 
@@ -214,7 +216,7 @@ User: git commit -m "[SDD] migration: pre-v1.5.2 queued PHASE retro-fix"
 
 ### action: plan-decompose
 
-- [ ] tasks: 5 tasks T01-T05 mapped 1:1 to AC1-AC5
+- [x] tasks: APPROVED by Sam — 6 tasks T01-T06 (5 with tests mapped 1:1 to AC1-AC5, T06 doc-only)
 
 #### §14 Plan-Decompose
 
@@ -224,6 +226,8 @@ User: git commit -m "[SDD] migration: pre-v1.5.2 queued PHASE retro-fix"
 - [ ] T04: Partial-state guard — INDEX says queued but spec PHASE != SPEC → leave + warn. Test: `tests/task-004.sh` GREEN. AC4 mapped.
 - [ ] T05: Idempotence — second run is no-op. Test: `tests/task-005.sh` GREEN. AC5 mapped.
 - [ ] T06: Doc paragraph in CLAUDE.md (live + templates copy) "Multi-feature parallel work" section naming the migrator + when to run it. No test (doc-only). AC1-AC5 covered indirectly.
+
+**Status:** APPROVED by Sam (turn confirmation; will append decisions.md).
 
 ### action: edge-case-sweep
 
@@ -240,3 +244,19 @@ User: git commit -m "[SDD] migration: pre-v1.5.2 queued PHASE retro-fix"
 ### Exit checks
 - [ ] C-spec-acs: ≥1 acceptance criterion exists in §11 {verify-by: C-spec-acs bash-grep} — grep -qE '^- \[[ x]\] AC[0-9]+' "$SECTION_FILE"
 - [ ] C-spec-tasks: ≥1 task in plan-decompose section {verify-by: C-spec-tasks bash-grep} — grep -qE '^- \[[ x]\] T[0-9]+' "$SECTION_FILE"
+
+## PHASE: BUILD
+
+### action: run-mode-chosen
+
+- [x] mode: full-autonomous
+
+**Run mode:** full-autonomous
+
+### action: build-task
+
+(driven by §14 tasks T01-T06)
+
+### exit_checks
+
+- [ ] C-build-tasks-green: every task is GREEN — `grep -cE '^- \[x\] T[0-9]+' "$SECTION_FILE"` matches T-row count in §14
