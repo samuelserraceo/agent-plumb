@@ -72,6 +72,25 @@ A config block under `parameters.mcp.tier3` in `templates/.sdd/config.md`. Off b
 
 Same shape pattern as v1.0 `parameters.mcp.semantic_search` and Playwright-explorer config — foundation 3 ("never assume an external service"). v1.1 adds this when [[001-tier-3-llm-driven-synthesis]] ships.
 
+### InjectionBudget
+
+A config block under `parameters.injection` in `templates/.sdd/config.md`. Two fields:
+
+1. `cap_total_chars` (integer, existing) — defensive safety-net floor applied to combined hook output AFTER per-file truncation runs. Catches sum-overshoot edge cases when the project's per-file budgets total more than the cap. The `SDD_INJECTION_CAP_CHARS` env var still overrides at runtime for backwards compatibility.
+
+2. `per_file_budget_chars` (map, new in v1.7+ via feature 011) — keyed by corpus-file basename (`INDEX`, `spec`, `principles`, `stack`, `data-model`, `patterns`) to char-count budgets. The user-prompt-submit hook truncates each corpus file individually to its declared budget and appends a sentinel `[truncated to <N> bytes per per-file budget — re-read with the Read tool if you need the cut portion]` when truncation happens.
+
+Read at runtime by `templates/.claude/hooks/user-prompt-submit.sh` via inline Python (one subprocess per turn). The dedicated helper `templates/.sdd/scripts/get-injection-budget.sh` exposes the same resolution rules for external callers (tests, downstream tooling).
+
+Resolution rules:
+
+- **Project override declared:** project's `config.md` value wins.
+- **Negative value:** clamps to 0 + stderr warning naming the key (feature 011 AC17).
+- **Project block omitted / null:** falls back to framework defaults (INDEX 3000 / spec 5000 / principles 2000 / stack 3000 / data-model 3000 / patterns 4000, summing to 20000).
+- **Unknown basename key:** returns documented default of 2000 chars (so future corpus files added without an explicit budget entry get a sensible allocation).
+
+Same shape pattern as `Tier3Config` (foundation 3 — framework defines the schema; downstream projects override in their own `config.md`).
+
 ## Relationships
 
 - **Playbook → Action**: a playbook's `stages` array references action slugs in order.
@@ -80,6 +99,7 @@ Same shape pattern as v1.0 `parameters.mcp.semantic_search` and Playwright-explo
 - **Slash command → Script**: each slash command body invokes one or more scripts (e.g. `/start` runs `start.sh`; `/next` runs `next-action.sh`).
 - **Hook → Script**: hooks invoke scripts to validate state at commit time (e.g. `pre-commit-stage-verified.sh` runs `verify-stage.sh`).
 - **Tier3Config → SynthesisCache**: config gates when the cache gets read/written; cache obeys the cost ceiling declared in config.
+- **InjectionBudget → Hook (user-prompt-submit)**: the hook reads `parameters.injection.per_file_budget_chars` once per turn and applies each file's budget independently when concatenating corpus files for injection. `cap_total_chars` is then applied as a defensive floor on the concatenated output.
 - **SynthesisCache → Graph node**: every cached answer's `cite_chunks[*].slug` must resolve to a real graph node (feature / pattern / entity / decision). Cite-check enforces this on every read AND every write.
 
 ## How this differs from a downstream user's data-model.md
