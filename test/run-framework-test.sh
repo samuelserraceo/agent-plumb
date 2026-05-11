@@ -8143,8 +8143,29 @@ ok_count=0
 # the contract.
 grep -qiE '^[0-9]+\. \*\*[^*]*(internal[- ]now|internal tool today)[^*]*saas[- ]?later' "$q1_brick" 2>/dev/null && ok_count=$((ok_count + 1))
 # 2. The "What gets recorded" example carries a future_saas marker so
-# the recorded stack.md ## Project shape declares it explicitly.
-grep -q 'future_saas' "$q1_brick" 2>/dev/null && ok_count=$((ok_count + 1))
+# the recorded stack.md ## Project shape declares it explicitly. CR
+# cycle 1: scope the grep to the recorded-output block. A global grep
+# can pass on frontmatter `agent_infers` or table-prose mentions
+# alone — the RED case is "future_saas named in prose but never in
+# the recorded contract", which would let the agent silently drop
+# the flag at /start time. The recorded example uses
+# `**future_saas:** <true | false>` (placeholder so both option-4
+# and option-5 outcomes are visible); the contract is that the
+# `future_saas:` key appears inside the "## What gets recorded"
+# block, not that it carries a specific value. The awk is
+# fence-aware — the recorded example is wrapped in a ```markdown
+# fence that itself contains a `## Project shape` heading, so a
+# naive `/^## /` boundary check would exit early on that nested
+# heading. We toggle a `fence` flag on lines that start with ```
+# and only treat `## ` lines as section boundaries when fence==0.
+if awk '
+  /^## What gets recorded/ {in_block=1; next}
+  /^```/ && in_block {fence = 1 - fence; print; next}
+  /^## / && in_block && fence == 0 {exit}
+  in_block {print}
+' "$q1_brick" 2>/dev/null | grep -qE 'future_saas:'; then
+  ok_count=$((ok_count + 1))
+fi
 # 3. The "What the agent does with your answer" examples table mentions
 # the new option, so the agent's inference table is updated alongside
 # the question prose. We require future_saas to appear in a row
