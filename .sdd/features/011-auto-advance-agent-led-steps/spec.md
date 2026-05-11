@@ -107,7 +107,7 @@ Trade-offs:
 
 ### action: flows
 
-- [ ] flows: draft 1-3 critical flows, each referencing the user story it implements
+- [x] flows: 3 flows — Flow 1: User picks automation level at setup (`/sdd-setup` or `/sdd-config` → wizard → writes `parameters.automation.level`); Flow 2: Full-tier auto-advance (`/next` skips approve CTA when action `requires_user_approval: false` AND not destructive); Flow 3: Most-tier destructive gate (action on destructive list still prompts even at Most). Sam approved 2026-05-11.
 
 **Draft (pre-filled from brief; awaiting /next approval):** 3 flows.
 
