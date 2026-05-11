@@ -8243,6 +8243,41 @@ else
 fi
 
 # ============================================================
+# T163b — rename-collided-feature.sh: REFUSES when the same <old-id-slug>
+#   exists under more than one work-folder (e.g. features/ AND bugs/).
+#   Exit 1; both folders stay put; message names BOTH candidates.
+#   Idea 007 final — slug-ambiguity guard (CR cycle 2 MAJ).
+# ============================================================
+note "T163b: rename-collided-feature.sh refuses ambiguous slug across work-folders"
+d=$(mktemp -d)
+mkdir -p "$d/.sdd/features/011-foo" "$d/.sdd/bugs/011-foo"
+printf '# feature spec\n' > "$d/.sdd/features/011-foo/spec.md"
+printf '# bug spec\n' > "$d/.sdd/bugs/011-foo/spec.md"
+out=$(CLAUDE_PROJECT_DIR="$d" bash "$RENAME_SH" 011-foo 016-foo 2>&1)
+ec=$?
+feat_present=0; bug_present=0
+[ -d "$d/.sdd/features/011-foo" ] && feat_present=1
+[ -d "$d/.sdd/bugs/011-foo" ] && bug_present=1
+dest_present=0
+[ -d "$d/.sdd/features/016-foo" ] || [ -d "$d/.sdd/bugs/016-foo" ] && dest_present=1
+rm -rf "$d"
+if [ "$ec" -ne 1 ]; then
+  bad "T163b rename should exit 1 on ambiguous slug" "ec=$ec; out='$out'"
+elif [ "$feat_present" -ne 1 ] || [ "$bug_present" -ne 1 ]; then
+  bad "T163b folders moved despite refusal" "features=$feat_present bugs=$bug_present"
+elif [ "$dest_present" -eq 1 ]; then
+  bad "T163b destination created despite refusal" "016-foo exists"
+elif ! echo "$out" | grep -qi 'ambiguous'; then
+  bad "T163b refusal message missing 'ambiguous' word" "out='$out'"
+elif ! echo "$out" | grep -qF '.sdd/features/011-foo'; then
+  bad "T163b refusal message missing features candidate" "out='$out'"
+elif ! echo "$out" | grep -qF '.sdd/bugs/011-foo'; then
+  bad "T163b refusal message missing bugs candidate" "out='$out'"
+else
+  ok "T163b refused with exit 1; both folders preserved; message names both candidates"
+fi
+
+# ============================================================
 # T164 — pre-commit-rules.sh detects cross-branch ID collision when a
 #   commit introduces a NEW .sdd/<wf>/<NNN>-<slug>/ AND HEAD already
 #   has another <NNN>-<otherslug>/ in the same work-folder.
@@ -8293,24 +8328,38 @@ d=$(mktemp -d)
   ec_c=0
   echo "$hook_stdin" | bash "$RULES_HOOK" >/dev/null 2>&1 || ec_c=$?
 
+  # Case D — documented bypass: SDD_ALLOW_ID_COLLISION=1 allows the
+  # same collision Case A blocked. Reset state, re-stage the collision,
+  # then invoke the hook with the env var set and expect exit 0.
+  git restore --staged . >/dev/null 2>&1 || true
+  git checkout -- .sdd/features/011-existing/spec.md >/dev/null 2>&1 || true
+  mkdir .sdd/features/011-bypass
+  printf '# bypass\n' > .sdd/features/011-bypass/spec.md
+  git add .sdd/features/011-bypass/spec.md
+  ec_d=0
+  echo "$hook_stdin" | SDD_ALLOW_ID_COLLISION=1 bash "$RULES_HOOK" >/dev/null 2>&1 || ec_d=$?
+
   echo "EC_A=$ec_a"
   echo "EC_B=$ec_b"
   echo "EC_C=$ec_c"
+  echo "EC_D=$ec_d"
   echo "ERR_A_SAMPLE=$(echo "$err_a" | head -3 | tr '\n' '|')"
 ) > "$d/result.txt" 2>&1
 ec_a=$(grep '^EC_A=' "$d/result.txt" | cut -d= -f2)
 ec_b=$(grep '^EC_B=' "$d/result.txt" | cut -d= -f2)
 ec_c=$(grep '^EC_C=' "$d/result.txt" | cut -d= -f2)
+ec_d=$(grep '^EC_D=' "$d/result.txt" | cut -d= -f2)
 err_a_sample=$(grep '^ERR_A_SAMPLE=' "$d/result.txt" | cut -d= -f2-)
 rm -rf "$d"
 fails=""
 [ "$ec_a" = "2" ] || fails="$fails caseA-expected-exit-2-got-$ec_a"
 [ "$ec_b" = "0" ] || fails="$fails caseB-free-id-expected-0-got-$ec_b"
 [ "$ec_c" = "0" ] || fails="$fails caseC-edit-only-expected-0-got-$ec_c"
+[ "$ec_d" = "0" ] || fails="$fails caseD-bypass-expected-0-got-$ec_d"
 echo "$err_a_sample" | grep -qi 'collision' \
   || fails="$fails caseA-msg-missing-collision-word"
 if [ -z "$fails" ]; then
-  ok "T164 collision blocked (exit 2); free-id new-folder allowed; edit-only allowed"
+  ok "T164 collision blocked (exit 2); free-id new-folder allowed; edit-only allowed; SDD_ALLOW_ID_COLLISION=1 bypass works"
 else
   bad "T164 cross-branch id collision detection broke" "$fails sample='$err_a_sample'"
 fi

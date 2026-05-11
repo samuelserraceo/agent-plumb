@@ -23,13 +23,19 @@
 #
 # Both arguments MUST start with a 3-digit ID. The work-folder
 # (features / bugs / refactors / ideas / ...) is auto-detected by
-# scanning .sdd/*/<id>-*/ — the first match wins.
+# scanning .sdd/*/<id>-*/. The lookup REFUSES if the same <old-id-slug>
+# exists under more than one work-folder — naming both candidates so
+# the caller can disambiguate manually.
 #
 # Exits 0 on success, 1 on usage error, 2 on append-only block.
 
 # Deliberately NO `-e` — the wiki-link rewrite loop (below) uses `python3 ... || continue`
 # so one unreadable file doesn't abort the whole rename mid-flight, leaving the .sdd folder
-# half-rewritten. Critical-path commands (`cd`, `mv`, `find`) carry their own `|| exit N`.
+# half-rewritten. Critical-path commands `cd` and `mv` carry their own `|| exit N`; `find`
+# in the rewrite loop is wrapped with `2>/dev/null` so unreadable subtrees are skipped
+# without aborting (per-file failure is already handled by `python3 ... || continue` inside
+# the loop, and `files_touched` is incremented only when a post-write `grep` confirms the
+# replacement actually landed — so a silently-skipped file simply doesn't count).
 set -uo pipefail
 
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(pwd)}"
@@ -66,20 +72,50 @@ esac
 
 [ -d ".sdd" ] || { echo "[rename-collided-feature] no .sdd/ directory — not an SDD project" >&2; exit 1; }
 
-# Find the work-folder containing $OLD. First match wins.
+# Find the work-folder containing $OLD. Refuse ambiguous matches — if the
+# same slug exists under two work-folders (e.g. features/ AND bugs/), the
+# caller has to disambiguate manually because picking the wrong one would
+# move the wrong item silently.
 OLD_DIR=""
 WORK_FOLDER=""
+MATCH_COUNT=0
+MATCHES=""
 for wf_dir in .sdd/*/; do
   candidate="${wf_dir}${OLD}"
   if [ -d "$candidate" ]; then
     OLD_DIR="$candidate"
     WORK_FOLDER=$(basename "$wf_dir")
-    break
+    MATCH_COUNT=$((MATCH_COUNT + 1))
+    if [ -z "$MATCHES" ]; then
+      MATCHES="  - $candidate"
+    else
+      MATCHES="$MATCHES
+  - $candidate"
+    fi
   fi
 done
 
 if [ -z "$OLD_DIR" ]; then
   echo "[rename-collided-feature] no folder found at .sdd/*/$OLD — already renamed or never existed?" >&2
+  exit 1
+fi
+
+if [ "$MATCH_COUNT" -gt 1 ]; then
+  cat >&2 <<EOF
+[rename-collided-feature] REFUSED: ambiguous slug.
+
+  The slug '$OLD' resolves to more than one folder:
+
+$MATCHES
+
+  Refusing to guess which one you meant. Rename the intended folder
+  manually with:
+
+    git mv <matched-path-above> .sdd/<work-folder>/$NEW
+
+  Then update wiki-links by hand (the rewrite loop in this script is
+  only safe when the source folder is unambiguous).
+EOF
   exit 1
 fi
 

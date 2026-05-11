@@ -129,7 +129,7 @@
       "trust": "framework"
     },
     "rename-collided-feature.sh": {
-      "expected_sha256": "8af23026dc0cae39658be7fcd271bdfe267d719313632ce5f702f428c0143dcc",
+      "expected_sha256": "7f058ace9dabf002160abc67bcda54bd99cb4a703a13a9285f0b00413ec09584",
       "path": ".sdd/scripts/rename-collided-feature.sh",
       "trust": "framework"
     }
