@@ -285,7 +285,9 @@ PROD-ONLY AC9 + AC10 + best-effort AC8 = no T-task; verified at SHIP via §12 si
 
 ### action: run-mode-chosen
 
-- [ ] mode: pick run mode (Conversation / Checkpoint / Ralph headless / Full autonomous)
+- [x] mode: Full autonomous in this session — orchestrator (this Claude) cranks T300-T306 linearly with test → code (+ repin dance for framework-script mods) → green commits. Same shape as F010's mid-SHIP recovery, smaller scope. Sam approved "manual fast" 2026-05-11.
+
+**Run mode:** Full autonomous (this session, manual orchestration)
 
 ### action: build-task
 
