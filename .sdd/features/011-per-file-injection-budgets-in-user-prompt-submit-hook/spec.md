@@ -216,7 +216,28 @@ parameters:
 
 ### action: dependencies
 
-- [ ] deps: draft external services + pricing math scaled to success-volume targets
+- [x] deps: Zero new external services, zero new local dependencies, zero marginal cost. Reuses bash/python3/awk/head/wc already pulled in by existing SDD scripts. Approved by Sam 2026-05-11 with same anti-theatre constraint.
+
+**Dependencies:**
+
+**Zero new external services.** This is a local-only feature — the user-prompt-submit hook runs inside the Claude Code process before each prompt reaches the model. No network, no API calls, no paid SaaS.
+
+**Zero new local dependencies.** Everything the new code needs is already pulled in by existing scripts:
+
+| Dependency | Status | What it's used for here |
+|---|---|---|
+| `bash` (>= 3.2, mac default) | Already required by every SDD hook + script | Per-file truncation loop in `user-prompt-submit.sh` |
+| `python3` + standard library | Already required by `resolve-parameters.sh`, `hash-section.sh`, `pre-commit-stage-verified.sh`, etc. | YAML parsing for the new `per_file_budget_chars` map (via `resolve-parameters.sh`) |
+| `awk` (BSD or GNU) | Already used by the live-INDEX filter shipped in #228 | INDEX live-filter step is upstream of the per-file budget step in Flow 1 |
+| `head` / `wc` (coreutils) | Already used elsewhere in the hook | Char counting + first-N-bytes truncation |
+
+**Zero new optional dependencies.** No PyYAML, no `yq`, no `jq` upgrades — `resolve-parameters.sh` already implements its own YAML walking via inline Python (PyYAML if available, else a soft-fail per the v0.8 minimal-Python pattern). The per-file-budget map sits at the same nesting depth as existing `parameters.mcp.tier3.*` keys and uses the same walker.
+
+**Pricing math:** $0 marginal cost. Zero infra spend, zero per-turn cost — the hook reads local files, computes char counts, writes the concatenated output. No external billable surface. {verify-by: code review — there is no network call added by this feature} {best-effort: Sam at SHIP, confirms no `curl` / `wget` / API client added under templates/.claude/hooks/ or templates/.sdd/scripts/}
+
+**Success-volume scaling note:** the hook runs once per UserPromptSubmit event. The new per-file loop is O(6) (one pass per corpus file) with O(N) char-counting per file, where N = budget cap (≤ 5000 chars per declared default). Worst-case per-turn cost is bounded by the size of the corpus directory, which is bounded by the per-file budgets themselves. There is no fanout or recursion path. {verify-by: T-NNN micro-benchmark asserts hook completes in under a small bounded time for a corpus where every file maxes its budget}
+
+**External-service exposure summary:** none. This feature does not touch any of the existing parameters.mcp.* config blocks (Tier3, semantic_search, Playwright-explorer) or their cost ceilings. The `parameters.injection.*` block is the only block edited here, and it has no external-service dependency by construction.
 
 ### action: out-of-scope
 
