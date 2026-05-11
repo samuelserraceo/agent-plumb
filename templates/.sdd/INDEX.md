@@ -18,6 +18,13 @@ _(none yet)_
 
 _(empty)_
 
+## Ideas
+<!-- Cheap parking spots — captured via `/idea`. No commitment to build.
+     Promote via `/start` when one earns it. Format:
+       - [`ideas/<short-name>`](ideas/<short-name>.md) — <one-line summary> — captured YYYY-MM-DD -->
+
+_(empty)_
+
 ## Shipped
 <!-- Completed + merged. One line per feature, newest first.
      Format: features/<id>-<slug> — PR <#url> — merged <YYYY-MM-DD> — <one-line summary> -->

@@ -39,7 +39,7 @@
       "trust": "framework"
     },
     "hash-section.sh": {
-      "expected_sha256": "f042a987b7386d435b521d364a36603323edda611dc885ab9694d4ace95158ac",
+      "expected_sha256": "da1495a540bac32850e95b58e48564e3e9a94ed98de1164f1f6909b94efda220",
       "path": ".sdd/scripts/hash-section.sh",
       "trust": "framework"
     },
@@ -121,6 +121,11 @@
     "validate-sdd-path.sh": {
       "expected_sha256": "5035174640d824d171c1d551bf51794651069b1b362de910c7b51954256a7ec6",
       "path": ".sdd/scripts/validate-sdd-path.sh",
+      "trust": "framework"
+    },
+    "promote-legacy-queued.sh": {
+      "expected_sha256": "52b2cbf0ff2d0fd34e28ee8007fc6356c5aef493891a8d82e36ec7bcaed10eb4",
+      "path": ".sdd/scripts/promote-legacy-queued.sh",
       "trust": "framework"
     }
   },
