@@ -8243,6 +8243,75 @@ else
 fi
 
 # ============================================================
+# T162 — plain-English sweep (idea 006) drops engineer-shape vocab on
+#   high-touchpoint action files. Sam reads these every SPEC walk;
+#   their body prose drifted toward jargon ("moat", "hash-locked",
+#   "verification.json", "F1 generic enforcer", "wiki-link emission",
+#   "MCP server backlinks", "tracer bullet"). This test pins the
+#   rewrite — if the count for any of the 4 swept files climbs back
+#   above its post-sweep budget, CI fails and forces a re-read.
+#   The check is per-file (not a sum) so a regression in one file
+#   can't be hidden by improvements in another. Budgets are set just
+#   above the rewritten value, leaving headroom for a small future
+#   edit while still catching reversion to the engineer-shape draft.
+# ============================================================
+note "T162: plain-English sweep keeps engineer-shape vocab off high-touchpoint actions (idea 006)"
+# Pattern matches the same jargon families surveyed in idea 006:
+# moat/hash/verification.json/F1 enforcer/wiki-link/MCP/manifest/tracer/etc.
+# Whole-file scan; case-insensitive; counts every line that contains
+# at least one match (grep -c counts matched LINES, not tokens — same
+# unit used for the baseline so the budgets are directly comparable).
+T162_PATTERN='moat|hash-locked|hash-pin|hash recorded|verification\.json|approved_sections|F1 generic enforcer|wiki-link emission|backlinks|repin|manifest|playbook|stop-hook|invariant 8|idempotent|frontmatter|graph layer|MCP server|theatre|deterministic|heuristic|denylist|tracer bullet|walking skeleton|horizontal building|prelude_refresh|stop-lint'
+T162_FAILS=0
+T162_REPORT=""
+# Per-file budgets — set just above the rewritten value so the test
+# locks in the win but doesn't tip on a single benign future edit.
+# Format: slug:max-mentions. Update both rows if the spec re-approves
+# a different vocabulary trade-off.
+for entry in \
+  "proposed-approach:1" \
+  "data-contract:1" \
+  "acceptance-criteria:2" \
+  "learn:1"
+do
+  slug="${entry%%:*}"
+  budget="${entry##*:}"
+  for tree in ".sdd/actions" "templates/.sdd/actions"; do
+    file="$FRAMEWORK_ROOT/$tree/${slug}.md"
+    if [ ! -f "$file" ]; then
+      T162_FAILS=$((T162_FAILS + 1))
+      T162_REPORT="$T162_REPORT\n  - $tree/${slug}.md missing"
+      continue
+    fi
+    # Fail-closed: distinguish "no matches" (exit 1) from real scan errors
+    # (exit ≥2 — bad regex, unreadable file, etc.). The previous `|| echo 0`
+    # treated every non-zero exit as 0 matches, so a corrupted regex or
+    # permission error would silently let the T162 gate pass. Now grep
+    # errors fail the gate explicitly.
+    count=$(grep -ciE "$T162_PATTERN" "$file" 2>/dev/null)
+    grep_ec=$?
+    if [ "$grep_ec" -eq 1 ]; then
+      count=0
+    elif [ "$grep_ec" -ne 0 ]; then
+      T162_FAILS=$((T162_FAILS + 1))
+      T162_REPORT="$T162_REPORT\n  - $tree/${slug}.md: scan failed (grep exit $grep_ec)"
+      continue
+    fi
+    # grep -c can occasionally print a trailing newline; sanitise.
+    count=$(printf '%s' "$count" | tr -d '\n')
+    if [ "$count" -gt "$budget" ]; then
+      T162_FAILS=$((T162_FAILS + 1))
+      T162_REPORT="$T162_REPORT\n  - $tree/${slug}.md: $count matches (budget $budget)"
+    fi
+  done
+done
+if [ "$T162_FAILS" -eq 0 ]; then
+  ok "T162 high-touchpoint action prose stays within plain-English jargon budgets"
+else
+  bad "T162 plain-English sweep regressed" "$(printf '%b' "$T162_REPORT")"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
