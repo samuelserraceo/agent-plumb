@@ -141,6 +141,12 @@ mkproj_v08() {
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/promote-legacy-queued.sh" "$d/.sdd/scripts/promote-legacy-queued.sh" \
     || { echo "[mkproj_v08] failed to copy promote-legacy-queued.sh from \$FRAMEWORK_ROOT — broken framework checkout?" >&2; return 1; }
   chmod +x "$d/.sdd/scripts/promote-legacy-queued.sh"
+  # rename-collided-feature.sh is manifest-tracked in v1.8.0+ (idea 007 final).
+  # Same fail-fast pattern — silently skipping leaves a manifest-pinned file
+  # absent on disk, which the moat (T144 / T145) flags as drift.
+  cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/rename-collided-feature.sh" "$d/.sdd/scripts/rename-collided-feature.sh" \
+    || { echo "[mkproj_v08] failed to copy rename-collided-feature.sh from \$FRAMEWORK_ROOT — broken framework checkout?" >&2; return 1; }
+  chmod +x "$d/.sdd/scripts/rename-collided-feature.sh"
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/scope-guard-config.sh"   "$d/.sdd/scripts/scope-guard-config.sh" 2>/dev/null || true
   chmod +x "$d/.sdd/scripts/scope-guard-config.sh" 2>/dev/null || true
   chmod +x "$d/.sdd/scripts/check-setup-answer.sh" 2>/dev/null || true
@@ -8174,6 +8180,139 @@ else
   else
     bad "T141 anti-theatre lint failed" "$new_spec_violations spec(s) with un-annotated theatre"
   fi
+fi
+
+# ============================================================
+# T162 — rename-collided-feature.sh: happy path (no decisions.md entry)
+#   Renames .sdd/<wf>/<old> → .sdd/<wf>/<new>; rewrites internal
+#   wiki-links from [[old]] to [[new]]; exits 0; decisions.md untouched
+#   (because no prior reference to old slug).
+#   Idea 007 final — the post-collision-detection FIX.
+# ============================================================
+note "T162: rename-collided-feature.sh happy path renames folder + rewrites wiki-links"
+d=$(mktemp -d)
+RENAME_SH="$FRAMEWORK_ROOT/templates/.sdd/scripts/rename-collided-feature.sh"
+mkdir -p "$d/.sdd/features/011-foo"
+printf '# spec for [[011-foo]]\n' > "$d/.sdd/features/011-foo/spec.md"
+printf '# decisions log\n' > "$d/.sdd/decisions.md"
+CLAUDE_PROJECT_DIR="$d" bash "$RENAME_SH" 011-foo 016-foo >/dev/null 2>&1
+ec=$?
+if [ "$ec" -ne 0 ]; then
+  bad "T162 rename script exited non-zero" "ec=$ec"
+elif [ ! -d "$d/.sdd/features/016-foo" ]; then
+  bad "T162 destination folder missing" ".sdd/features/016-foo not found after rename"
+elif [ -d "$d/.sdd/features/011-foo" ]; then
+  bad "T162 source folder still exists" ".sdd/features/011-foo should be gone"
+elif ! grep -qF '[[016-foo]]' "$d/.sdd/features/016-foo/spec.md"; then
+  bad "T162 wiki-link not rewritten" "spec.md should reference [[016-foo]] after rename"
+elif grep -qF '[[011-foo]]' "$d/.sdd/features/016-foo/spec.md"; then
+  bad "T162 old wiki-link still present" "spec.md still references [[011-foo]] after rename"
+elif ! grep -qF 'decisions log' "$d/.sdd/decisions.md"; then
+  bad "T162 decisions.md tampered" "rename should never edit decisions.md"
+else
+  ok "T162 happy path renames folder + rewrites internal wiki-links"
+fi
+rm -rf "$d"
+
+# ============================================================
+# T163 — rename-collided-feature.sh: REFUSES when decisions.md has
+#   [[old-slug]] wiki-link (append-only doctrine). Exit 2; folder
+#   stays put; suggests coexistence in the message.
+#   Idea 007 final — append-only guard.
+# ============================================================
+note "T163: rename-collided-feature.sh refuses when decisions.md pins the old slug"
+d=$(mktemp -d)
+mkdir -p "$d/.sdd/features/011-foo"
+printf '# spec\n' > "$d/.sdd/features/011-foo/spec.md"
+printf '## 2026-05-11Z [[011-foo]] feature/scaffold\n' > "$d/.sdd/decisions.md"
+out=$(CLAUDE_PROJECT_DIR="$d" bash "$RENAME_SH" 011-foo 016-foo 2>&1)
+ec=$?
+folder_present=0
+[ -d "$d/.sdd/features/011-foo" ] && folder_present=1
+rm -rf "$d"
+if [ "$ec" -ne 2 ]; then
+  bad "T163 rename should exit 2 when decisions.md pins slug" "ec=$ec; out='$out'"
+elif [ "$folder_present" -ne 1 ]; then
+  bad "T163 folder was renamed despite refusal" "source folder gone after exit 2"
+elif ! echo "$out" | grep -qi 'append-only'; then
+  bad "T163 refusal message missing append-only context" "out='$out'"
+elif ! echo "$out" | grep -qi 'coexist'; then
+  bad "T163 refusal message missing coexistence suggestion" "out='$out'"
+else
+  ok "T163 refused with exit 2; folder preserved; message names append-only + coexistence"
+fi
+
+# ============================================================
+# T164 — pre-commit-rules.sh detects cross-branch ID collision when a
+#   commit introduces a NEW .sdd/<wf>/<NNN>-<slug>/ AND HEAD already
+#   has another <NNN>-<otherslug>/ in the same work-folder.
+#   Idea 007 final — second line of defence (the /start scan from
+#   PR #231 catches NEW collisions against origin/main, but two
+#   parallel branches scaffolded before either pushed slip past it).
+#   Backwards-compat: edit-only commits and new-folder commits with a
+#   FREE NNN don't false-trigger.
+# ============================================================
+note "T164: pre-commit-rules.sh detects NEW-folder cross-branch ID collision"
+d=$(mktemp -d)
+(
+  cd "$d"
+  git init -q
+  git config user.email t@t.com
+  git config user.name T
+  mkdir -p .sdd/features/011-existing
+  printf '# existing\n' > .sdd/features/011-existing/spec.md
+  git add -A
+  git commit -q -m "scaffold" >/dev/null 2>&1
+
+  # Case A — collision: new folder 011-newone introduced AND 011-existing on HEAD.
+  mkdir .sdd/features/011-newone
+  printf '# new\n' > .sdd/features/011-newone/spec.md
+  git add .sdd/features/011-newone/spec.md
+  hook_stdin='{"tool_input":{"command":"git commit -m phase: SPEC"}}'
+  ec_a=0
+  err_a=$(echo "$hook_stdin" | bash "$RULES_HOOK" 2>&1 1>/dev/null) || ec_a=$?
+
+  # Reset state for Case B.
+  git restore --staged . >/dev/null 2>&1 || true
+  rm -rf .sdd/features/011-newone
+
+  # Case B — free ID: new folder 012-newone introduced; HEAD has only 011-existing.
+  mkdir .sdd/features/012-newone
+  printf '# new\n' > .sdd/features/012-newone/spec.md
+  git add .sdd/features/012-newone/spec.md
+  ec_b=0
+  echo "$hook_stdin" | bash "$RULES_HOOK" >/dev/null 2>&1 || ec_b=$?
+
+  # Reset state for Case C.
+  git restore --staged . >/dev/null 2>&1 || true
+  rm -rf .sdd/features/012-newone
+
+  # Case C — edit-only: modify existing 011-existing/spec.md; no new folder.
+  printf '# edit\n' >> .sdd/features/011-existing/spec.md
+  git add .sdd/features/011-existing/spec.md
+  ec_c=0
+  echo "$hook_stdin" | bash "$RULES_HOOK" >/dev/null 2>&1 || ec_c=$?
+
+  echo "EC_A=$ec_a"
+  echo "EC_B=$ec_b"
+  echo "EC_C=$ec_c"
+  echo "ERR_A_SAMPLE=$(echo "$err_a" | head -3 | tr '\n' '|')"
+) > "$d/result.txt" 2>&1
+ec_a=$(grep '^EC_A=' "$d/result.txt" | cut -d= -f2)
+ec_b=$(grep '^EC_B=' "$d/result.txt" | cut -d= -f2)
+ec_c=$(grep '^EC_C=' "$d/result.txt" | cut -d= -f2)
+err_a_sample=$(grep '^ERR_A_SAMPLE=' "$d/result.txt" | cut -d= -f2-)
+rm -rf "$d"
+fails=""
+[ "$ec_a" = "2" ] || fails="$fails caseA-expected-exit-2-got-$ec_a"
+[ "$ec_b" = "0" ] || fails="$fails caseB-free-id-expected-0-got-$ec_b"
+[ "$ec_c" = "0" ] || fails="$fails caseC-edit-only-expected-0-got-$ec_c"
+echo "$err_a_sample" | grep -qi 'collision' \
+  || fails="$fails caseA-msg-missing-collision-word"
+if [ -z "$fails" ]; then
+  ok "T164 collision blocked (exit 2); free-id new-folder allowed; edit-only allowed"
+else
+  bad "T164 cross-branch id collision detection broke" "$fails sample='$err_a_sample'"
 fi
 
 # ============================================================
