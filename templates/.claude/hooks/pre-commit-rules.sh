@@ -402,6 +402,14 @@ esac
 # Runs on EVERY commit with staged files (not gated on spec.md) — the
 # cofile-block defends the framework against tampered-policy + fabricated-
 # claim pairs regardless of whether the agent is doing action work.
+#
+# LENIENT_MODE skip (closes #220, T02): merge / rebase / cherry-pick
+# commits span classes by nature (verification.json from one branch,
+# manifest.json + actions from another). The audit log line above
+# already recorded the lenient-mode entry; no extra log here.
+if [ "$LENIENT_MODE" -eq 1 ]; then
+  class_block_result="ALLOW"
+else
 class_block_result=$(STAGED="$staged" python3 - <<'PYEOF' 2>/dev/null || echo "ALLOW"
 import os, re, sys
 try:
@@ -693,6 +701,7 @@ EOF
     exit 2
     ;;
 esac
+fi  # end LENIENT_MODE cofile-block skip (closes #220, T02)
 
 # === TOUCHES: enforcement (action-step gated) ===
 # Touches: enforcement only fires when an action's spec.md is staged.
