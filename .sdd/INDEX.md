@@ -8,11 +8,8 @@
 
 
 ## In flight
+
 - features/011-auto-advance-agent-led-steps — auto-advance AGENT-LED steps (PHASE: SHIP)
-
-(none)
-
-
 
 ## Ideas
 
