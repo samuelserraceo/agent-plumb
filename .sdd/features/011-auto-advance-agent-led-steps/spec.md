@@ -230,7 +230,7 @@ Trade-offs:
 - [x] T304: /sdd-config supports `automation <tier>` subcommand to
             change parameters.automation.level post-setup
             — proves AC5
-- [ ] T305: .claude/commands/next.md (live + template) gains the
+- [x] T305: .claude/commands/next.md (live + template) gains the
             3-way decision tree section (full/most/checkpoint)
             describing when to auto-advance vs prompt
             — proves AC6
