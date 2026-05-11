@@ -2,6 +2,7 @@
 type: action
 slug: success
 tag: USER-LED
+model_tier: thinking
 prelude_refresh: true
 title: "§2 Success"
 short_label: "Success"

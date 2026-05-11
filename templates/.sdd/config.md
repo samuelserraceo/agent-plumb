@@ -70,6 +70,31 @@ parameters:
       auth_header: ""                    # optional. To keep tokens OUT of tracked config, use ${ENV_VAR_NAME} indirection. Literal values still work. Empty = no auth header sent. NOTE: v1.1 default Ollama+Gemma local doesn't need this; load-bearing for v1.2+ paid providers.
       # Anti-theatre note (Sam's catch 2026-05-01): there is no `cost_limit_usd` field. The framework can't enforce dollar amounts without a per-provider pricing table or a live spending ledger — neither exists. Token caps above are the mechanical enforcement. Dollar guidance for picking a provider lives in the spec, not here.
   test_runner: "bash test/run-framework-test.sh"   # framework dogfoods its own test suite — pre-commit-test-first.sh runs this on commits that pair tests/task-NNN.* with code.
+  models:
+    # Map a cognitive tier → the model identifier the framework should
+    # pick when an action declares that tier in its frontmatter
+    # (`model_tier: thinking | routine | mechanical`). Empty defaults =
+    # opt-in: the framework falls back to whatever Claude Code is
+    # already running. Downstream projects on pi.dev (or any other
+    # multi-provider host) override these with their own provider+model
+    # strings — the framework only sees the resolved string.
+    #
+    # Why three tiers (Sam's idea 002, 2026-05-10):
+    #   thinking    — high-reasoning work (proposed-approach,
+    #                 edge-case-sweep, adversarial-review). Opus / GPT-5.
+    #   routine     — structured drafting + decomposition (data-contract,
+    #                 flows, plan-decompose, build-task). Sonnet / Kimi.
+    #   mechanical  — file edits, record-keeping, verify-checks
+    #                 (mark-shipped, verify-test-run, push-pr).
+    #                 Haiku / GPT-5-nano / Llama-Maverick.
+    #
+    # See `templates/.sdd/scripts/get-model-for-tier.sh` for the resolver
+    # that reads an action's `model_tier:` + this map and returns the
+    # model string the agent should pick. Backwards-compat: an action
+    # without `model_tier:` falls back to `routine`.
+    thinking: ""    # e.g. "claude-opus-4-1" (Claude Code) or "openai/gpt-5-high" (pi.dev)
+    routine: ""     # e.g. "claude-sonnet-4-7"
+    mechanical: ""  # e.g. "claude-haiku-4-5" or "moonshot/kimi-k2-instruct"
 file_classes:
   CLAIM:
     - '(^|/)verification\.json$'
@@ -312,6 +337,7 @@ Each level only needs to declare the keys it changes — unspecified keys inheri
 - `pace:` — `halt_on_red_after_attempts: 3`. The agent stops trying to fix a failing test after this many attempts and asks the user.
 - `ralph:` — `max_iters: 50` (cap on total BUILD-task iterations the auto-loop runner can chew through before halting), `timeout_per_iter: 600` (seconds — the loop kills any single iteration that hangs past this). Read by `scripts/ralph.sh` (the headless BUILD run mode). Lower these if you want a tighter leash on autonomous runs; raise them if you've signed off on a long-running iteration shape and don't want the loop to stop early.
 - `review:` — populated by `/sdd-setup` step 3 (PR-reviewer choice). `bot` is the chosen reviewer (`"coderabbit"` / `"sourcery"` / empty for none). `poll_interval` (seconds) × `max_polls` is how long the agent waits for the bot's review on a PR before nudging or moving on (default 180 × 5 = 15 min for CodeRabbit). `nudge_command` is the exact comment the agent posts if no review has arrived (e.g., `"@coderabbitai full review"`). `manual: true` disables bot polling entirely — the agent waits for a human reviewer.
+- `models:` — three-tier model map (`thinking` / `routine` / `mechanical`). Each action's frontmatter declares a `model_tier:`; the resolver (`scripts/get-model-for-tier.sh`) reads the tier + this map and returns the model identifier the agent should pick for that action. Empty defaults are opt-in — leave them blank and the framework falls back to whatever Claude Code is already running. Set them when you want mechanical work (mark-shipped, verify-test-run, push-pr) on a cheaper model and thinking work (proposed-approach, edge-case-sweep, adversarial-review) on the high-reasoning tier. Downstream pi.dev users put any provider+model string here (e.g. `"openai/gpt-5-high"`); the framework just passes the string through.
 
 Add new sub-blocks as your project's needs grow — the resolver passes any keys through unmodified, so your action overrides can introduce custom keys (e.g., `approval_threshold: stricter` for high-stakes work items).
 

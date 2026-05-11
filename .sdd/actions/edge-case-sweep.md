@@ -2,6 +2,7 @@
 type: action
 slug: edge-case-sweep
 tag: AGENT-LED
+model_tier: thinking
 prelude_refresh: true
 title: "Edge-case sweep"
 short_label: "§11.5 Edge-case sweep"

@@ -2,6 +2,7 @@
 type: action
 slug: refactor-approach
 tag: AGENT-LED
+model_tier: thinking
 prelude_refresh: true
 title: "§3 Approach"
 short_label: "Approach"

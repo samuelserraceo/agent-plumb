@@ -2,6 +2,7 @@
 type: action
 slug: plan-decompose
 tag: AGENT-LED
+model_tier: routine
 prelude_refresh: true
 title: "plan-decompose"
 short_label: "Plan"

@@ -2,6 +2,7 @@
 type: action
 slug: playwright-explore
 tag: AGENT-LED
+model_tier: routine
 prelude_refresh: true
 title: "Playwright-driven exploration"
 short_label: "§14 Playwright exploration"

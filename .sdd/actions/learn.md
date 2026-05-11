@@ -2,6 +2,7 @@
 type: action
 slug: learn
 tag: AGENT-LED
+model_tier: routine
 prelude_refresh: true
 title: "learn"
 short_label: "Learn"

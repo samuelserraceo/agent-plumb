@@ -2,6 +2,7 @@
 type: action
 slug: regression-coverage
 tag: AGENT-LED
+model_tier: routine
 prelude_refresh: true
 title: "§2 Regression coverage"
 short_label: "Regression coverage"

@@ -2,6 +2,7 @@
 type: action
 slug: project-stakeholders
 tag: USER-LED
+model_tier: routine
 prelude_refresh: true
 title: "Project stakeholders"
 short_label: "§3 Stakeholders"

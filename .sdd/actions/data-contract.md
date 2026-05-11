@@ -2,6 +2,7 @@
 type: action
 slug: data-contract
 tag: AGENT-LED
+model_tier: thinking
 prelude_refresh: true
 title: "§6 Data contract"
 short_label: "Data contract"

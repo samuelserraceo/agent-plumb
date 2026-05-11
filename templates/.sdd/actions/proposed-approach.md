@@ -2,6 +2,7 @@
 type: action
 slug: proposed-approach
 tag: AGENT-LED
+model_tier: thinking
 prelude_refresh: true
 title: "§5 Proposed approach"
 short_label: "Approach"

@@ -2,6 +2,7 @@
 type: action
 slug: mark-shipped
 tag: AGENT-LED
+model_tier: mechanical
 title: "mark-shipped"
 short_label: "Shipped"
 steps:

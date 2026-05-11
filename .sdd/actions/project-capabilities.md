@@ -2,6 +2,7 @@
 type: action
 slug: project-capabilities
 tag: AGENT-LED
+model_tier: routine
 prelude_refresh: true
 title: "Project capabilities"
 short_label: "§4 Capabilities"

@@ -2,6 +2,7 @@
 type: action
 slug: bug-repro
 tag: USER-LED
+model_tier: routine
 prelude_refresh: true
 title: "§2 Repro"
 short_label: "Repro"
