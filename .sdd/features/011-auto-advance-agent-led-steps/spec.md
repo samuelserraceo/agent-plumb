@@ -95,7 +95,7 @@ Trade-offs:
 
 ### action: data-contract
 
-- [x] approval: 1 new config field (`parameters.automation.level`, string `full|most|checkpoint`, default `checkpoint`). 0 new project-state entities. 1 new framework-level concept (`AutomationLevel`, typed string — NOT a data-model.md entity, analogous to BUILD's `Run mode`). 0 new fields on existing entities. 3 edge cases at data layer: backward compat (no flag = checkpoint); downgrade mid-walk (subsequent /next respects new level, no persistent walk-state); mark-shipped keeps approve gate even at Full per §11 destructive-actions list. Sam approved 2026-05-11.
+- [x] approval: 1 new config field (`parameters.automation.level`, string `full|most|checkpoint`, default `checkpoint`). 0 new project-state entities. 1 new framework-level concept (`AutomationLevel`, typed string — NOT a data-model.md entity, analogous to BUILD's `Run mode`). 0 new fields on existing entities. 3 edge cases at data layer: backward compat (no flag = checkpoint); downgrade mid-walk (subsequent /next respects new level, no persistent walk-state); destructive actions (mark-shipped, manifest-repin, --delete-branch, decisions.md append, .shipped marker) retain the approve gate under `most` via the §11 destructive-actions list (under `full`, the same actions retain the gate via their per-action `requires_user_approval: true` frontmatter — two independent guards covering the same surface). Sam approved 2026-05-11.
 
 **Draft (pre-filled from brief; awaiting /next approval):** One new config field, no new entities.
 
@@ -103,7 +103,7 @@ Trade-offs:
 - **No new project-state entities** (spec.md, INDEX.md, decisions.md, patterns.md, etc. unchanged). The `requires_user_approval` frontmatter per-action already exists on every action file; this feature changes the DEFAULT BEHAVIOUR the framework applies when reading those flags based on the chosen tier.
 - **One new framework-level concept** (NOT an entity in `data-model.md`, just a typed string): `AutomationLevel` (`full | most | checkpoint`). Analogous to BUILD's `Run mode` (today's "Shell Ralph / Conversation / Checkpoint" choice) but applied to SPEC + SHIP too.
 - **Existing entities** (Action, Playbook, Hook, Setup brick, Pi extension package, Wave [F010]): no new fields.
-- **Edge cases at the data layer:** (1) backward compat — existing projects with no `parameters.automation.level` default to `checkpoint`; (2) downgrade — adopter switches `full → checkpoint` mid-walk; subsequent /next calls respect the new level (no persistent state for "this walk started at Full"); (3) `mark-shipped` keeps the approve gate even at Full (per the §11 destructive-action list).
+- **Edge cases at the data layer:** (1) backward compat — existing projects with no `parameters.automation.level` default to `checkpoint`; (2) downgrade — adopter switches `full → checkpoint` mid-walk; subsequent /next calls respect the new level (no persistent state for "this walk started at Full"); (3) destructive actions (`mark-shipped`, manifest-repin commits, `--delete-branch`, `decisions.md` append, `.shipped` marker) retain the approve gate under `most` via the §11 destructive-actions list — and ALSO retain it under `full` because each of those actions already has `requires_user_approval: true` in its action frontmatter (two independent guards covering the same surface; CR cycle-1 #1 correction).
 
 ### action: flows
 
