@@ -153,7 +153,7 @@ Trade-offs:
 
 ### action: non-functional
 
-- [ ] constraints: draft performance, security, and compliance constraints
+- [x] constraints: Performance — zero-cost runtime (one config flag read per /next, cached via resolve-parameters.sh; no new network/IO). Security — default stays Checkpoint (backwards compat); Most-tier destructive-action gate (mark-shipped, manifest-repin commits, --delete-branch, decisions.md append, .shipped marker, repin commits — all still prompt under Most); trust-boundary markers ([FRAMEWORK INSTRUCTIONS] / [PROJECT DATA]) unchanged; audit trail preserved via standard `[SDD:<id>] spec: <action>/<step>` commit shape. Compliance — MIT unchanged, no PII collected, no new telemetry, local-only config flag. Sam approved 2026-05-11.
 
 **Draft (pre-filled from brief; awaiting /next approval):**
 
