@@ -104,7 +104,7 @@
   <div class="chat mb-6">
     <p class="text-sm text-stone-500 mb-2">Story 2 — /next under Full skips the approve CTA on technical steps</p>
     <div class="user">/next</div>
-    <div class="agent"><em>(action's frontmatter says <code>requires_user_approval: false</code> + action slug not in §11 destructive list + tier=full)</em> Drafted §7 flows, committed `[SDD:011] spec: flows/approval`, advancing to §8 dependencies.</div>
+    <div class="agent"><em>(action's frontmatter says <code>requires_user_approval: false</code> + tier=full — Full reads only the frontmatter flag)</em> Drafted §7 flows, committed `[SDD:011] spec: flows/approval`, advancing to §8 dependencies.</div>
     <div class="agent">No approve CTA. The decision tree in <span class="cite">[[011-auto-advance-agent-led-steps]]</span>'s /next doctrine fired.</div>
   </div>
 
@@ -214,7 +214,7 @@
   </table>
 </section>
 
-<!-- TODO: Approved checkbox —————————————————————————————————————————— -->
+<!-- Approved checkbox —————————————————————————————————————————————————— -->
 <footer class="border-t border-stone-300 pt-6 text-stone-600">
   <label class="inline-flex items-center gap-2">
     <input type="checkbox" class="form-checkbox" />
@@ -224,21 +224,22 @@
 
 <script>
 (function() {
-  // Step + arch detail tables. Fill TODO entries; the click + keyboard
-  // handlers below populate the matching detail panel.
+  // Step + arch detail tables. The click + keyboard handlers below
+  // populate the matching detail panel.
   const STEP_DETAIL = {
     'step-1': { t: '1. Read tier from config.md', d: 'At the start of each /next, the agent reads parameters.automation.level from .sdd/config.md (via resolve-parameters.sh). The value is full, most, or checkpoint. If unset, missing, or invalid, the resolver falls back to checkpoint (the safest default) and writes a stderr warning naming the bad value.' },
     'step-2': { t: '2. Classify the active action', d: 'The agent identifies whether the next [ ] step is USER-LED (always ask the user), AGENT-LED (subject to the tier), or BUILD-TASK (governed by the recorded Run mode, not by automation.level). The classification comes from the action file under .sdd/actions/<slug>.md and its requires_user_approval frontmatter flag.' },
-    'step-3': { t: '3. Apply the tier rule', d: 'For AGENT-LED steps: under full, auto-advance if requires_user_approval=false AND the action is not in the destructive list; otherwise prompt. Under most, auto-advance unless the action slug is in §11 destructive_actions; otherwise prompt. Under checkpoint, always prompt. The commit shape stays the same in every tier — only the approve CTA is skipped under full/most.' },
+    'step-3': { t: '3. Apply the tier rule', d: 'For AGENT-LED steps: under full, auto-advance if requires_user_approval is false; otherwise prompt — the §11 destructive list is NOT consulted at Full. Under most, the §11 destructive_actions list IS the gate: prompt if the action slug is on the list, otherwise auto-advance (ignores per-action flag). Under checkpoint, always prompt. The commit shape stays the same in every tier — only the approve CTA is skipped under full/most.' },
   };
   const ARCH_DETAIL = {
     'user':       { t: 'User (Sam)', d: 'The non-technical SDD adopter. Picks the automation tier once at /sdd-setup (or via /sdd-config later) and otherwise interacts with the framework through /next + slash commands. Existing user — no change to who they are or what they bring; F011 only changes when /next asks for approval.' },
     'feature':    { t: 'F011 — config field + /next decision-tree prose', d: 'The new pieces: parameters.automation.level (and destructive_actions list) in .sdd/config.md; the 008-automation-level setup brick; the /sdd-config automation <tier> subcommand; the 3-way decision tree prose in .claude/commands/next.md that the agent reads each turn. Documentation-shape: no runtime daemon, no new hooks, no new MCP servers.' },
-    'downstream': { t: 'Existing actions + requires_user_approval frontmatter', d: 'The already-shipped (v1.6.0) per-action frontmatter flag classifying each action as requiring user approval or not. F011 leverages this matrix as-is — no flags change. The flag is the second guard on destructive actions under the full tier (the first guard being the destructive_actions list under most).' },
+    'downstream': { t: 'Existing actions + requires_user_approval frontmatter', d: 'The already-shipped (v1.6.0) per-action frontmatter flag classifying each action as requiring user approval or not. F011 leverages this matrix as-is — no flags change. Each tier uses a single source of truth: Full reads only this frontmatter flag; Most reads only the §11 destructive_actions list. Destructive actions happen to be classified requires_user_approval: true already, so they prompt under both tiers — but via two distinct mechanisms.' },
   };
 
   // Render via textContent (not innerHTML) so any user-supplied
-  // TODO content can't inject HTML. Build <p> elements explicitly.
+  // content (e.g. customised detail strings) can't inject HTML.
+  // Build <p> elements explicitly.
   function renderDetail(targetId, d) {
     const target = document.getElementById(targetId);
     if (!target) return; // CR cycle 2: null-guard so a customised
