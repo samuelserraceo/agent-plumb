@@ -21,7 +21,9 @@ fails=()
 # AC7 claim covers BOTH live + template config — iterate over both.
 for CFG in "$FRAMEWORK_ROOT/templates/.sdd/config.md" \
            "$FRAMEWORK_ROOT/.sdd/config.md"; do
-  REL="${CFG#$FRAMEWORK_ROOT/}"
+  # Quote prefix to prevent glob-expansion if FRAMEWORK_ROOT contains
+  # special chars (CR cycle-3 #3).
+  REL="${CFG#"$FRAMEWORK_ROOT"/}"
   if [ ! -f "$CFG" ]; then
     fails+=("$REL missing")
     continue

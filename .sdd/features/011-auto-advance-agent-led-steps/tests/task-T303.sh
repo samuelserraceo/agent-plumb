@@ -27,21 +27,34 @@ done
 if [ -z "$BRICK" ]; then
   fails+=("no setup brick in $BRICK_DIR/*.md mentions automation level")
 else
-  # Check brick frontmatter has expected shape.
-  if ! grep -qE "^records_in:" "$BRICK"; then
-    fails+=("setup brick $BRICK missing 'records_in:' frontmatter (where the answer is written)")
+  # Extract frontmatter (between leading '---' and the second '---').
+  # awk pattern: print between first and second '---' line.
+  FRONTMATTER=$(awk '/^---$/{c++; next} c==1 {print}' "$BRICK")
+  BODY=$(awk '/^---$/{c++; next} c==2 {print}' "$BRICK")
+
+  # Frontmatter must declare records_in.
+  if ! printf '%s\n' "$FRONTMATTER" | grep -qE "^records_in:"; then
+    fails+=("setup brick $BRICK frontmatter missing 'records_in:'")
   fi
-  if ! grep -qE "^when:" "$BRICK"; then
-    fails+=("setup brick $BRICK missing 'when:' frontmatter")
+  # CR cycle-3 #4: records_at (or records_in) must point at the canonical
+  # config field. The 008-automation-level brick splits the value across
+  # `records_in: '.sdd/config.md'` + `records_at: 'parameters.automation.level'` —
+  # accept either path-pair shape or a combined records_in value.
+  if ! printf '%s\n' "$FRONTMATTER" | grep -qE "parameters\.automation\.level|records_at:.*automation\.level"; then
+    fails+=("setup brick $BRICK frontmatter missing 'parameters.automation.level' target (records_in / records_at)")
   fi
-  # Body should mention all 3 tiers.
+  # Frontmatter must declare 'when' (start vs sub-stage).
+  if ! printf '%s\n' "$FRONTMATTER" | grep -qE "^when:"; then
+    fails+=("setup brick $BRICK frontmatter missing 'when:'")
+  fi
+  # Body must mention all 3 tiers (scoped to body, not frontmatter).
   for tier in Full Most Checkpoint; do
-    if ! grep -qiE "\b${tier}\b" "$BRICK"; then
+    if ! printf '%s\n' "$BODY" | grep -qiE "\b${tier}\b"; then
       fails+=("setup brick $BRICK body missing tier '${tier}' reference")
     fi
   done
-  # Body should reference the canonical config field.
-  if ! grep -qE "parameters\.automation\.level|automation\.level|parameters\.automation\b" "$BRICK"; then
+  # Body must reference the canonical config field somewhere as well.
+  if ! printf '%s\n' "$BODY" | grep -qE "parameters\.automation\.level|automation\.level|parameters\.automation\b"; then
     fails+=("setup brick $BRICK body missing reference to the config field (parameters.automation.level)")
   fi
 fi
