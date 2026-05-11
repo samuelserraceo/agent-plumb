@@ -108,7 +108,43 @@ Replace the hook's single-cap + truncate-from-end logic with a per-file budget m
 
 ### action: data-contract
 
-- [ ] approval: draft the data contract, iterate with the user, sync data-model.md, get approval
+- [x] approval: No new project-state entities. One new framework-level concept added to `.sdd/data-model.md` during BUILD: [[entity:InjectionBudget]] — a config block under `parameters.injection.per_file_budget_chars`, analogous to [[entity:Tier3Config]]. Existing `cap_total_chars` field stays as a sibling. No relations added or removed. Approved by Sam 2026-05-11 with the same anti-theatre constraint as §5.
+
+**Data contract:** No new project-state entities. Per-file budgets live in the framework's existing `parameters.injection` config block — a sibling of `cap_total_chars` rather than a new state file or table. This is pure framework-config plumbing: the brief's user stories (1-3) describe an injection-behavior change, not a project-data change.
+
+| Layer | Change | Why |
+|---|---|---|
+| **Project state** (spec.md, INDEX.md, decisions.md, patterns.md, principles.md, data-model.md, stack.md, .sdd/features/**, .sdd/bugs/**) | No changes | Per-file budgets are framework-level config, not project content |
+| **Framework data-model.md** | One addition: [[entity:InjectionBudget]] (analogous to [[entity:Tier3Config]]) | Distributable shape the framework should describe so future work knows it exists |
+| **Existing entities** ([[entity:Action]], [[entity:Hook]], [[entity:Tier3Config]]) | No new fields | The new entity is a peer, not an extension |
+| **Relations** | None added / removed | Reuses existing Hook → resolve-parameters.sh wiring |
+
+**New framework entity** (to be added to `.sdd/data-model.md` during BUILD):
+
+> **InjectionBudget** — a config block under `parameters.injection` in `templates/.sdd/config.md`. Two fields: (1) `cap_total_chars` (existing) — defensive safety-net floor applied to combined hook output; (2) `per_file_budget_chars` (new) — a map keyed by corpus-file basename (INDEX, spec, principles, stack, data-model, patterns) to char-count budgets. Read by `templates/.claude/hooks/user-prompt-submit.sh` via `templates/.sdd/scripts/resolve-parameters.sh`. Unknown keys fall back to a documented default char count. Same shape pattern as Tier3Config (foundation 3 — framework defines the schema; downstream projects override in their own `config.md`). {verify-by: T-NNN resolver test returns project override for known key and documented default for unknown key}
+
+**Wire-level shape:**
+
+```yaml
+# templates/.sdd/config.md
+parameters:
+  injection:
+    cap_total_chars: 16000              # existing — safety-net floor
+    per_file_budget_chars:              # NEW
+      INDEX: 3000
+      spec: 5000
+      principles: 2000
+      stack: 3000
+      data-model: 3000
+      patterns: 4000
+```
+
+**Edge cases at the data layer (asked-and-answered):**
+
+1. **Downstream project overrides only some keys.** Project `config.md` lists `per_file_budget_chars: {patterns: 10000}` only. Resolver merges: declared key wins, unspecified keys fall back to framework defaults — no partial-merge surprises. {verify-by: T-NNN partial-override fixture}
+2. **A future corpus file gets injected without a budget entry.** Resolver returns a documented default char count for unknown basename keys. The new file appears in injection within that default budget rather than being dropped or unbounded. {verify-by: T-NNN unknown-key default fixture}
+3. **Project sets `per_file_budget_chars: null` or omits the block entirely.** Resolver returns framework defaults for each corpus file (same as `templates/.sdd/config.md`'s declared defaults). No null-deref path. {verify-by: T-NNN missing-block fixture}
+4. **Sum of per-file budgets exceeds `cap_total_chars`.** Defensive floor still applies to combined output — per-file truncation runs first, then the total-cap clip handles sum-overshoot at the end. Documented as a behavior note on the [[entity:InjectionBudget]] description. {verify-by: T-NNN cap-overshoot AC asserts combined output ≤ cap_total_chars when sum-of-budgets > cap}
 
 ### action: flows
 
