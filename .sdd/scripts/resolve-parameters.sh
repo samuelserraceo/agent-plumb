@@ -180,6 +180,27 @@ for s in (action_fm.get("steps") or []):
 if step_over:
     resolved = deep_merge(resolved, step_over, f"step:{action}/{step}", provenance)
 
+# Framework defaults — applied AFTER the cascade for keys that any
+# project needs even when its config.md predates a framework feature
+# adding the key. New default-bearing keys go here, gated on
+# "wasn't set by the cascade." Each default also gets a provenance
+# entry marking the framework-default source.
+def _framework_default(d, prov, dotted_key, value):
+    parts = dotted_key.split(".")
+    cur = d
+    for p in parts[:-1]:
+        if not isinstance(cur.get(p), dict):
+            cur[p] = {}
+        cur = cur[p]
+    if cur.get(parts[-1]) is None:
+        cur[parts[-1]] = value
+        prov[dotted_key] = "framework-default"
+
+# F011 AC1: parameters.automation.level defaults to "checkpoint" when
+# absent (backward-compat — existing projects opted in for unchanged
+# behaviour until adopter explicitly picks a tier).
+_framework_default(resolved, provenance, "automation.level", "checkpoint")
+
 # Emit.
 out = dict(resolved)
 out["_provenance"] = provenance

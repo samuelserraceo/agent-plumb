@@ -89,7 +89,7 @@
       "trust": "framework"
     },
     "resolve-parameters.sh": {
-      "expected_sha256": "5ae0749cdad9dc9699f8b660db9444acdabe15ac845e8a0d091612c21672a04c",
+      "expected_sha256": "95ce31d46f62800ab77360115ee63c52602ba5036674304b658e0f51edb70e23",
       "path": ".sdd/scripts/resolve-parameters.sh",
       "trust": "framework"
     },
