@@ -202,24 +202,40 @@ def _framework_default(d, prov, dotted_key, value):
 #        stderr warning naming the bad value + valid set, then fall back
 #        to "checkpoint" (safe backwards-compat).
 _VALID_AUTO_LEVELS = ("full", "most", "checkpoint")
-_auto = resolved.get("automation") if isinstance(resolved.get("automation"), dict) else None
-_cur_level = _auto.get("level") if _auto else None
-if _cur_level in (None, ""):
-    # Either the cascade returned no value, or it returned an empty
-    # string. Force-set checkpoint (overrides empty-string in place).
-    if not isinstance(resolved.get("automation"), dict):
-        resolved["automation"] = {}
-    resolved["automation"]["level"] = "checkpoint"
-    provenance["automation.level"] = "framework-default"
-elif _cur_level not in _VALID_AUTO_LEVELS:
+_raw_auto = resolved.get("automation")
+# CR cycle-1 #10: detect invalid shape (automation present but not a dict).
+# Before the v1.7.2 fix this silently fell through to framework-default,
+# masking the YAML/config error. Now: emit a warning naming the bad
+# shape + coerce, and tag provenance as invalid-shape so /status surfaces it.
+if _raw_auto is not None and not isinstance(_raw_auto, dict):
     sys.stderr.write(
-        f"[resolve-parameters] warning: parameters.automation.level=\"{_cur_level}\" "
-        f"is not one of {_VALID_AUTO_LEVELS} — falling back to \"checkpoint\".\n"
+        f"[resolve-parameters] warning: parameters.automation has invalid shape "
+        f"(type={type(_raw_auto).__name__}, value={_raw_auto!r}) — expected a mapping. "
+        f"Coercing to {{level: checkpoint}}.\n"
     )
-    if not isinstance(resolved.get("automation"), dict):
-        resolved["automation"] = {}
-    resolved["automation"]["level"] = "checkpoint"
-    provenance["automation.level"] = "framework-default-on-invalid"
+    resolved["automation"] = {"level": "checkpoint"}
+    provenance["automation.level"] = "framework-default-on-invalid-shape"
+    _auto = resolved["automation"]
+    _cur_level = "checkpoint"
+else:
+    _auto = _raw_auto if isinstance(_raw_auto, dict) else None
+    _cur_level = _auto.get("level") if _auto else None
+    if _cur_level in (None, ""):
+        # Either the cascade returned no value, or it returned an empty
+        # string. Force-set checkpoint (overrides empty-string in place).
+        if not isinstance(resolved.get("automation"), dict):
+            resolved["automation"] = {}
+        resolved["automation"]["level"] = "checkpoint"
+        provenance["automation.level"] = "framework-default"
+    elif _cur_level not in _VALID_AUTO_LEVELS:
+        sys.stderr.write(
+            f"[resolve-parameters] warning: parameters.automation.level=\"{_cur_level}\" "
+            f"is not one of {_VALID_AUTO_LEVELS} — falling back to \"checkpoint\".\n"
+        )
+        if not isinstance(resolved.get("automation"), dict):
+            resolved["automation"] = {}
+        resolved["automation"]["level"] = "checkpoint"
+        provenance["automation.level"] = "framework-default-on-invalid"
 
 # Emit.
 out = dict(resolved)
