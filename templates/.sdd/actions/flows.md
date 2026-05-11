@@ -2,6 +2,7 @@
 type: action
 slug: flows
 tag: AGENT-LED
+model_tier: routine
 prelude_refresh: true
 title: "§7 Flows"
 short_label: "Flows"

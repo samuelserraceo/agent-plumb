@@ -2,6 +2,7 @@
 type: action
 slug: run-mode-chosen
 tag: USER-LED
+model_tier: routine
 prelude_refresh: true
 title: "Run mode chosen"
 short_label: "Run mode"

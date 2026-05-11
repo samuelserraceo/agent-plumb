@@ -56,6 +56,25 @@ case "$cmd" in
   *) exit 0 ;;
 esac
 
+# === MERGE / REBASE / CHERRY-PICK detection (mirror of pre-commit-rules.sh v1.7.0) ===
+# Legitimate parallel-stream merges bring in test files from already-shipped
+# features that pre-commit-test-first would otherwise refuse as multi-pair
+# commits. Same gating signal as pre-commit-rules.sh's lenient-mode skip:
+# detect .git/MERGE_HEAD / REBASE_HEAD / CHERRY_PICK_HEAD (+ rebase-merge/
+# and rebase-apply/ dir probes) and pass through. The atomic-step rule
+# applies to ORIGINATING commits on a branch — not to merge commits that
+# combine prior-task commits from two branches. v1.7.0 fixed cofile-block;
+# this closes the same gap for pre-commit-test-first.
+GIT_DIR=$(git rev-parse --git-dir 2>/dev/null || echo ".git")
+if [ -f "$GIT_DIR/MERGE_HEAD" ] || \
+   [ -f "$GIT_DIR/REBASE_HEAD" ] || \
+   [ -d "$GIT_DIR/rebase-merge" ] || \
+   [ -d "$GIT_DIR/rebase-apply" ] || \
+   [ -f "$GIT_DIR/CHERRY_PICK_HEAD" ]; then
+  echo "[pre-commit-test-first] merge/rebase/cherry-pick in progress — skipping multi-pair check" >&2
+  exit 0
+fi
+
 # T04: only gate BUILD-task commits.
 # Look for the [SDD:NNN][T<n>] shape in any visible message source —
 # -m / --message inline, OR -F / --file path (read from the file), OR

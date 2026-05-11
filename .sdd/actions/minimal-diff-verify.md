@@ -2,6 +2,7 @@
 type: action
 slug: minimal-diff-verify
 tag: AGENT-LED
+model_tier: mechanical
 title: "§4 Minimal-diff verify"
 short_label: "Minimal-diff"
 steps:

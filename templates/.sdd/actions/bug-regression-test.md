@@ -2,6 +2,7 @@
 type: action
 slug: bug-regression-test
 tag: AGENT-LED
+model_tier: routine
 prelude_refresh: true
 title: "§5 Regression test"
 short_label: "Regression test"

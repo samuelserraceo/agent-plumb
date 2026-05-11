@@ -2,6 +2,7 @@
 type: action
 slug: brief-intake
 tag: USER-LED
+model_tier: routine
 prelude_refresh: true
 title: "§0 Brief intake"
 short_label: "Brief"

@@ -2,6 +2,7 @@
 type: action
 slug: push-pr
 tag: AGENT-LED
+model_tier: mechanical
 title: "push-pr"
 short_label: "Push PR"
 steps:

@@ -2,6 +2,7 @@
 type: action
 slug: verify-prod-only-acs
 tag: USER-LED
+model_tier: mechanical
 prelude_refresh: true
 title: "verify-prod-only-acs"
 short_label: "PROD-ONLY check"

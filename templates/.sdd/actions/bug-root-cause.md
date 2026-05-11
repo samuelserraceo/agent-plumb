@@ -2,6 +2,7 @@
 type: action
 slug: bug-root-cause
 tag: AGENT-LED
+model_tier: thinking
 title: "§3 Root cause"
 short_label: "Root cause"
 steps:

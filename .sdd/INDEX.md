@@ -1,16 +1,15 @@
 # SDD framework — INDEX
 
-**Active:** _(none)_
+**Active:** features/011-per-file-injection-budgets-in-user-prompt-submit-hook
 **Playbook:** feature
-**Active blocker:** _(no active feature — v1.7.3 shipped 2026-05-11 via PR #240, closes #202 (playwright-explore SHIP step gets first-class skip mechanism). v1.7 patch line complete after the v1.7.0/.1/.2/.3 four-pack. Pick next from ## Ideas below or open issues.)_
+**Active blocker:** § (SHIP action: verify-test-run)
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
 
 ## In flight
 
-(none)
-
+- features/011-per-file-injection-budgets-in-user-prompt-submit-hook — per-file injection budgets in user-prompt-submit hook (PHASE: SHIP)
 
 
 
@@ -27,6 +26,27 @@
 
 
 ## Shipped
+
+- **[[019-session-start-hook-prints-bootstrap-success-signal-closes-164-bug-4]]** — closes #164 bug 4. Adds a first-install success cue to `templates/.claude/hooks/session-start.sh` (mirrored to live). When `.sdd/` exists but no `.shipped` markers anywhere under work-item folders, the hook echoes `[SDD bootstrap] ready — .sdd/ scaffold ready` — single line, suppresses for returning users. Closes the "did install actually work?" anxiety F01's 2026-05-05 install dance surfaced. Scope-trimmed to bug 4 only (bugs 1/2/3 deferred). 1 BUILD task-test T01 GREEN (fresh-install fires + returning-user suppresses). Cycle-0 CR (auto-merge no findings).
+  - Shipped: 2026-05-11 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/249 · Tag: `v1.8.2`
+  - Data-model: (none — single-hook addition)
+  - Extends: (root); v1.8 patch on top of v1.8.1
+  - Patterns: zero-state cue beats silence (one printed line at install resolves a class of "did it work?" support questions). Folded into existing UX-cue discipline.
+  - Deferred: #164 bug 1 (two-restart bootstrap UX); bug 2 (three cache locations on upgrade); bug 3 (v1.4 cascade — already fixed). Bugs 1+2+3 stay as separate follow-ups in same #164.
+
+- **[[014-user-prompt-submit-queries-mcp-for-context-slice-instead-of-full-notebook-inject]]** — closes #210 part 1. Adds an MCP-doctrine sentinel to `templates/.claude/hooks/user-prompt-submit.sh` (mirrored to live copy). When `.sdd/config.md` has `parameters.mcp.enabled: true` (flat OR nested YAML shape), the hook emits ONE extra line inside `[FRAMEWORK INSTRUCTIONS]` naming the 5 graph queries (`get_backlinks` / `get_neighbours` / `get_pattern` / `get_references` / `search_within`) the agent should prefer over re-reading patterns.md / data-model.md in full. When MCP disabled (default), the legacy `(no framework-trusted content injected this turn)` line stays. Doctrine half of the context-slice promise (per `/sdd-setup` brick 007 wording); the mechanical substitution half lands in the `feat/per-file-injection-budgets` worktree separately to avoid stomping its hook edits. 1 BUILD task-test T01 GREEN (sentinel-fires-when-enabled + 5-query-names-present + sentinel-inside-trust-block + no-false-positive-when-disabled). Cycle-0 CR (auto-merge no findings). Mid-flight rebase resolved INDEX.md conflict with F011's parallel ship.
+  - Shipped: 2026-05-11 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/243 · Tag: `v1.8.1` (the parallel F011 ship took v1.8.0 first on commit e39d78a; F014 is the immediately-following companion tag)
+  - Data-model: (none — single-hook edit + new conditional on `parameters.mcp.enabled`)
+  - Extends: (root); v1.8 — companion to F011's v1.8.0 ship; F014 ships as v1.8.1 (immediately following)
+  - Patterns: agent-runtime-cued doctrine wins over file-only doctrine (CLAUDE.md doctrine alone doesn't ensure the agent calls the queries; surfacing a one-line sentinel on every turn does). Folded into existing trust-boundary conventions; no new patterns.md entry needed.
+  - Deferred: actual substitution of full-file `cat`s with query slices (per-file injection budgets follow-up; separate worktree); auto-calling `get_backlinks(active-feature)` and folding the result into the inject block; measuring the claimed token drop end-to-end (depends on substitution above).
+
+- **[[011-auto-advance-agent-led-steps]]** — closes the SPEC+SHIP auto-advance gap. Adds `parameters.automation.level` (full/most/checkpoint, default checkpoint) + a destructive_actions enumeration in `.sdd/config.md`; ships an 008-automation-level setup brick; adds `/sdd-config automation <tier>` subcommand; ships a 3-way decision tree in `.claude/commands/next.md` describing when to auto-advance vs prompt. Documentation-shape feature — zero runtime daemons, zero new hooks; agent reads doctrine + config each turn. Backwards-compat: existing projects without the field keep today's checkpoint behaviour. Pairs with F008 (multi-model) + F010 (parallel waves) to deliver drop-the-brief-walk-away. Six CR review cycles closed (~20 actionable findings closed; 1 declined per append-only contract on decisions.md MD022 — same precedent as F009/F010). Single canonical rule per tier: Full reads only `requires_user_approval` flag (destructive list NOT consulted); Most reads only the §11 destructive_actions list (flag NOT consulted). Destructive actions happen to carry `requires_user_approval: true` already, so they prompt under both tiers via two distinct mechanisms. Bonus fix landed in same PR: pre-commit-test-first.sh merge-mode skip (mirrors v1.7.0 cofile-block fix; closes a #220 follow-up gap). 7 BUILD task-tests T300-T306 GREEN + 218/218 framework tests GREEN through every cycle.
+  - Shipped: 2026-05-11 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/236 · Tag: `v1.8.0` (on commit e39d78a — confirmed tagged)
+  - Data-model: (none — new config field + new framework concept `AutomationLevel`; no entity changes)
+  - Extends: (root); v1.8 minor — completes the v1.6+v1.7+v1.8 trio (F008 multi-model anchor + F010 parallel waves + F011 auto-advance = drop-the-brief shape)
+  - Patterns: 3 new entries in patterns.md — documentation-shape features ship as slash-command prose; resolve-parameters framework-defaults must handle empty-string AND unset; grep -F still parses leading-dash and leading-dot args as flags.
+  - Deferred: per-feature tier override (§9 #3); decision-tree audit logging (§9 #4 — observability sibling); misclassified `requires_user_approval` flag audit-and-fix sweep (§9 #5 — trust v1.6.0 PR-C matrix); decisions.md MD022 on the F011-cycle entries (append-only contract precedent); AC8 named-eye matrix audit + AC9/AC10 PROD-ONLY real-session walks (deferred to first SHIP under each tier in a future feature).
 
 - **[[013-playwright-explore-ship-step-needs-first-class-skip-mechanism-closes-202]]** — closes #202. `playwright-explore` action now ships a `skip_when:` frontmatter field naming the canonical MCP-missing condition + the canonical single-line skip log (`playwright-explore: SKIPPED — explorer not installed; install via \`bash .sdd/extensions/playwright-explorer/enable.sh\``). A new `## When to skip` body section (above `**What it looks like:**`) tells the agent to emit the canonical line verbatim — NOT improvise a 12-line justification block (the failure mode F01 SHIP at transcript line 30493 surfaced). Documentation-only fix; the frontmatter field is read by the agent (same shape as `requires_user_approval`, `prelude_refresh`, `trust` — all agent-honoured, no runtime evaluator). 3 BUILD task-tests T01-T03 GREEN (frontmatter shape + log-line content + body-section presence). Cycle-1 CR clean. Completes the v1.7 patch four-pack: v1.7.0 (#220) + v1.7.1 (#197p2) + v1.7.2 (#206) + v1.7.3 (#202).
   - Shipped: 2026-05-11 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/240 · Tag: `v1.7.3`

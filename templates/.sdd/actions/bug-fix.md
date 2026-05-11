@@ -2,6 +2,7 @@
 type: action
 slug: bug-fix
 tag: AGENT-LED
+model_tier: routine
 prelude_refresh: true
 title: "§4 Fix"
 short_label: "Fix"

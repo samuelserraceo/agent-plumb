@@ -5,6 +5,49 @@ playbooks_available: [feature, project, bug, refactor]
 default_playbook: feature
 extensions: {}
 parameters:
+  injection:
+    # Total-output safety-net CEILING (maximum). The user-prompt-submit
+    # hook applies this as a defensive cap on combined output AFTER
+    # per-file truncation runs — catches sum-overshoot edge cases when
+    # a project's per_file_budget_chars sum exceeds this value
+    # (feature 011, AC10). Env var SDD_INJECTION_CAP_CHARS overrides
+    # at runtime.
+    #
+    # Set to 25000 so the per-file defaults (summing to 20000) plus
+    # headers + framing markers (~500 chars overhead) fit comfortably
+    # under the cap on the common case — the cap_total_chars path is
+    # the exceptional safety net, not the common truncation path
+    # (CR cycle 1 #13 reconciliation).
+    cap_total_chars: 25000
+    # Per-file budget map. The hook truncates each corpus file
+    # independently to its BYTE budget and appends a sentinel marker
+    # `[truncated to <N> bytes per per-file budget — re-read with
+    # the Read tool if you need the cut portion]` when truncation
+    # happens. Replaces the prior "concatenate then truncate from the
+    # end" behavior, which on mature projects silently cut patterns.md
+    # mid-paragraph (feature 011, AC2 / AC3 / AC11).
+    #
+    # Historic note on the name `per_file_budget_chars`: the field
+    # name is kept for backwards compatibility, but the semantic is
+    # BYTES (not Unicode codepoints). The hook slices at the budget
+    # byte boundary, then backs off to a clean UTF-8 char boundary
+    # (≤3 trailing bytes dropped) so output stays valid UTF-8 (AC16).
+    # On a pure-ASCII corpus, byte ≈ char.
+    #
+    # Defaults sum to 20000 bytes (AC1). Downstream projects override
+    # in their own config.md per-key; unspecified keys fall back to
+    # framework defaults (AC7). Unknown keys (e.g. a future
+    # corpus file) fall back to a documented default of 2000 bytes
+    # (AC8). Negative values clamp to 0 with a stderr warning naming
+    # the key (AC17). Malformed YAML emits a parse-error warning
+    # before falling back (CR cycle 1 #12/#17).
+    per_file_budget_chars:
+      INDEX: 3000
+      spec: 5000
+      principles: 2000
+      stack: 3000
+      data-model: 3000
+      patterns: 4000
   budget:
     max_minutes: 5
     max_tokens: 4000
@@ -14,9 +57,35 @@ parameters:
     translate_jargon_on_first_use: true
   pace:
     halt_on_red_after_attempts: 3
+  automation:
+    # F011: automation level for AGENT-LED steps across SPEC + SHIP
+    # phases (BUILD already has its own Run mode).
+    # `checkpoint` — today's behaviour: every AGENT-LED step asks for
+    #                approve before committing (safe, slow).
+    # `most`       — auto-advance technical AGENT-LED steps; STILL prompt
+    #                on destructive actions (mark-shipped, manifest
+    #                repin commits, --delete-branch merges, .shipped
+    #                marker writes, decisions.md append edits).
+    # `full`       — auto-advance every AGENT-LED step where the action's
+    #                frontmatter has `requires_user_approval: false`
+    #                (read by /next's decision tree). Pairs with F008
+    #                (multi-model) + F010 (parallel waves) for the
+    #                drop-the-brief-walk-away shape.
+    level: checkpoint   # default: backwards-compat. Change via /sdd-config automation <tier>.
+    # `most` tier reads this list to decide which AGENT-LED actions
+    # still prompt even when their per-action `requires_user_approval`
+    # would auto-advance. The list is canonical — agents reading this
+    # config use it as the destructive-action source of truth.
+    destructive_actions:
+      - mark-shipped          # writes the .shipped-marker file
+      - manifest-repin        # `[SDD] manifest: repin` commits (tamper-pin change)
+      - --delete-branch       # `gh pr merge --delete-branch` (irreversible branch drop)
+      - decisions.md-append   # append-only audit-log writes (cannot be edited back)
+      - .shipped-marker       # direct .shipped marker file writes
+      - repin                 # pre-commit-stage-verified.sh repin commits
   ralph:
     max_iters: 50
-    timeout_per_iter: 600
+    timeout_per_iter: 1800   # bumped 600 → 1800 (F010 BUILD) — framework dogfooding modifies sealed scripts so pre-commit-test-first.sh runs the full 218-test suite (~5min) per code commit; 30min/iter absorbs that + Claude's actual work + the manifest-repin dance. Revert to 600 for non-framework features.
   review:
     bot: ""              # "coderabbit" | "sourcery" | "" (none)
     poll_interval: 180   # seconds; 180s × 5 polls = 15 min default for CodeRabbit
@@ -43,7 +112,32 @@ parameters:
       max_total_tokens_per_run: 100000   # exact — stops once running total crossed
       auth_header: ""                    # optional. To keep tokens OUT of tracked config, use ${ENV_VAR_NAME} indirection. Literal values still work. Empty = no auth header sent. NOTE: v1.1 default Ollama+Gemma local doesn't need this; load-bearing for v1.2+ paid providers.
       # Anti-theatre note (Sam's catch 2026-05-01): there is no `cost_limit_usd` field. The framework can't enforce dollar amounts without a per-provider pricing table or a live spending ledger — neither exists. Token caps above are the mechanical enforcement. Dollar guidance for picking a provider lives in the spec, not here.
-  test_runner: ""              # populated by /sdd-setup. Examples: "bash test/run-framework-test.sh", "npx vitest run", "pytest", "npm test". When set, the pre-commit-test-first.sh hook stashes code, runs this, restores, and gates the commit on the result (real test-first → allow; theatre → block). When empty, the hook falls back to a commit-order check (Approach B).
+  test_runner: "bash test/run-framework-test.sh"   # framework dogfoods its own test suite — pre-commit-test-first.sh runs this on commits that pair tests/task-NNN.* with code.
+  models:
+    # Map a cognitive tier → the model identifier the framework should
+    # pick when an action declares that tier in its frontmatter
+    # (`model_tier: thinking | routine | mechanical`). Empty defaults =
+    # opt-in: the framework falls back to whatever Claude Code is
+    # already running. Downstream projects on pi.dev (or any other
+    # multi-provider host) override these with their own provider+model
+    # strings — the framework only sees the resolved string.
+    #
+    # Why three tiers (Sam's idea 002, 2026-05-10):
+    #   thinking    — high-reasoning work (proposed-approach,
+    #                 edge-case-sweep, adversarial-review). Opus / GPT-5.
+    #   routine     — structured drafting + decomposition (data-contract,
+    #                 flows, plan-decompose, build-task). Sonnet / Kimi.
+    #   mechanical  — file edits, record-keeping, verify-checks
+    #                 (mark-shipped, verify-test-run, push-pr).
+    #                 Haiku / GPT-5-nano / Llama-Maverick.
+    #
+    # See `templates/.sdd/scripts/get-model-for-tier.sh` for the resolver
+    # that reads an action's `model_tier:` + this map and returns the
+    # model string the agent should pick. Backwards-compat: an action
+    # without `model_tier:` falls back to `routine`.
+    thinking: ""    # e.g. "claude-opus-4-1" (Claude Code) or "openai/gpt-5-high" (pi.dev)
+    routine: ""     # e.g. "claude-sonnet-4-7"
+    mechanical: ""  # e.g. "claude-haiku-4-5" or "moonshot/kimi-k2-instruct"
 file_classes:
   CLAIM:
     - '(^|/)verification\.json$'
@@ -286,6 +380,7 @@ Each level only needs to declare the keys it changes — unspecified keys inheri
 - `pace:` — `halt_on_red_after_attempts: 3`. The agent stops trying to fix a failing test after this many attempts and asks the user.
 - `ralph:` — `max_iters: 50` (cap on total BUILD-task iterations the auto-loop runner can chew through before halting), `timeout_per_iter: 600` (seconds — the loop kills any single iteration that hangs past this). Read by `scripts/ralph.sh` (the headless BUILD run mode). Lower these if you want a tighter leash on autonomous runs; raise them if you've signed off on a long-running iteration shape and don't want the loop to stop early.
 - `review:` — populated by `/sdd-setup` step 3 (PR-reviewer choice). `bot` is the chosen reviewer (`"coderabbit"` / `"sourcery"` / empty for none). `poll_interval` (seconds) × `max_polls` is how long the agent waits for the bot's review on a PR before nudging or moving on (default 180 × 5 = 15 min for CodeRabbit). `nudge_command` is the exact comment the agent posts if no review has arrived (e.g., `"@coderabbitai full review"`). `manual: true` disables bot polling entirely — the agent waits for a human reviewer.
+- `models:` — three-tier model map (`thinking` / `routine` / `mechanical`). Each action's frontmatter declares a `model_tier:`; the resolver (`scripts/get-model-for-tier.sh`) reads the tier + this map and returns the model identifier the agent should pick for that action. Empty defaults are opt-in — leave them blank and the framework falls back to whatever Claude Code is already running. Set them when you want mechanical work (mark-shipped, verify-test-run, push-pr) on a cheaper model and thinking work (proposed-approach, edge-case-sweep, adversarial-review) on the high-reasoning tier. Downstream pi.dev users put any provider+model string here (e.g. `"openai/gpt-5-high"`); the framework just passes the string through.
 
 Add new sub-blocks as your project's needs grow — the resolver passes any keys through unmodified, so your action overrides can introduce custom keys (e.g., `approval_threshold: stricter` for high-stakes work items).
 

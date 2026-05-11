@@ -66,11 +66,41 @@ Shape: JSON dict keyed by `<sha256(question)>:<corpus_signature>` → `{answer, 
 
 Invalidation: any corpus signature flip (any `.sdd/` markdown change) marks all entries from prior signatures stale; new keys use the new signature so old entries can stay readable until eviction. **Eviction policy:** LRU at 1000 entries (hardcoded for v1.1; configurable in v1.2+ if friction surfaces — added by §15 edge-case sweep on 2026-05-01). v1.1 adds this when [[001-tier-3-llm-driven-synthesis]] ships.
 
+### ModelTier
+
+A two-part declaration that lets the framework pick a different model per action's cognitive load (Sam's idea 002, 2026-05-10 — "lego-style model right-sizing"):
+
+1. **Per-action**: each `templates/.sdd/actions/<slug>.md` frontmatter declares `model_tier:` with one of three values — `thinking` (high-reasoning: proposed-approach, edge-case-sweep, adversarial-review), `routine` (structured drafting: data-contract, flows, plan-decompose, build-task), `mechanical` (file edits + record-keeping: mark-shipped, verify-test-run, push-pr).
+2. **Per-project**: `parameters.models:` in `templates/.sdd/config.md` maps each tier to a model identifier string (`thinking: "claude-opus-4-1"`, `routine: "claude-sonnet-4-7"`, `mechanical: "claude-haiku-4-5"`). Empty defaults = opt-in; the framework falls back to Claude Code's current model when a tier isn't mapped.
+
+Resolver: `templates/.sdd/scripts/get-model-for-tier.sh <action-slug>` reads the action's `model_tier:` + the project's `parameters.models.<tier>` and emits the model string. **Backwards-compat:** an action without `model_tier:` falls back to `routine` (safe middle). **Unknown tier values** (not in `{thinking, routine, mechanical}`) emit a stderr warning + fall back to `routine` — same shape as `resolve-parameters.sh`'s `automation.level` validation.
+
+Same provider-agnostic shape as [[entity:Tier3Config]] (foundation 3: the framework declares the *contract*, the project plugs in the *provider* — works for Claude Code's three-tier Opus/Sonnet/Haiku and for pi.dev's any-provider-of-your-choice). Today: **42 actions** declare a tier (16 thinking + 20 routine + 6 mechanical).
+
 ### Tier3Config
 
 A config block under `parameters.mcp.tier3` in `templates/.sdd/config.md`. Off by default; opt-in. Required when `enabled: true`: `provider`, `endpoint`, `model`, plus mechanically-enforced cost caps (`max_calls_per_run`, `max_input_tokens_per_call`, `max_total_tokens_per_run`) and optional `auth_header` with `${ENV_VAR}` indirection. **v1.1 wizard configures Ollama+Gemma only**; the schema is provider-agnostic (foundation 3) but other providers require a manual config edit until v1.2+ widens wizard scope. **No `cost_limit_usd` field** — the framework can't price external services (anti-theatre, post-2026-05-01 audit).
 
 Same shape pattern as v1.0 `parameters.mcp.semantic_search` and Playwright-explorer config — foundation 3 ("never assume an external service"). v1.1 adds this when [[001-tier-3-llm-driven-synthesis]] ships.
+
+### InjectionBudget
+
+A config block under `parameters.injection` in `templates/.sdd/config.md`. Two fields:
+
+1. `cap_total_chars` (integer, existing) — defensive safety-net **ceiling** (maximum) applied to combined hook output AFTER per-file truncation runs. Catches sum-overshoot edge cases when the project's per-file budgets total more than the cap. The `SDD_INJECTION_CAP_CHARS` env var still overrides at runtime for backwards compatibility. (CR cycle 1 #1 terminology fix — was incorrectly called "floor"; a cap is a maximum, i.e. a ceiling.)
+
+2. `per_file_budget_chars` (map, new in v1.7+ via feature 011) — keyed by corpus-file basename (`INDEX`, `spec`, `principles`, `stack`, `data-model`, `patterns`) to char-count budgets. The user-prompt-submit hook truncates each corpus file individually to its declared budget and appends a sentinel `[truncated to <N> bytes per per-file budget — re-read with the Read tool if you need the cut portion]` when truncation happens.
+
+Read at runtime by `templates/.claude/hooks/user-prompt-submit.sh` via inline Python (one subprocess per turn). The dedicated helper `templates/.sdd/scripts/get-injection-budget.sh` exposes the same resolution rules for external callers (tests, downstream tooling).
+
+Resolution rules:
+
+- **Project override declared:** project's `config.md` value wins.
+- **Negative value:** clamps to 0 + stderr warning naming the key (feature 011 AC17).
+- **Project block omitted / null:** falls back to framework defaults (INDEX 3000 / spec 5000 / principles 2000 / stack 3000 / data-model 3000 / patterns 4000, summing to 20000).
+- **Unknown basename key:** returns documented default of 2000 chars (so future corpus files added without an explicit budget entry get a sensible allocation).
+
+Same shape pattern as `Tier3Config` (foundation 3 — framework defines the schema; downstream projects override in their own `config.md`).
 
 ## Relationships
 
@@ -80,6 +110,7 @@ Same shape pattern as v1.0 `parameters.mcp.semantic_search` and Playwright-explo
 - **Slash command → Script**: each slash command body invokes one or more scripts (e.g. `/start` runs `start.sh`; `/next` runs `next-action.sh`).
 - **Hook → Script**: hooks invoke scripts to validate state at commit time (e.g. `pre-commit-stage-verified.sh` runs `verify-stage.sh`).
 - **Tier3Config → SynthesisCache**: config gates when the cache gets read/written; cache obeys the cost ceiling declared in config.
+- **InjectionBudget → Hook (user-prompt-submit)**: the hook reads `parameters.injection.per_file_budget_chars` once per turn and applies each file's budget independently when concatenating corpus files for injection. `cap_total_chars` is then applied as a defensive floor on the concatenated output.
 - **SynthesisCache → Graph node**: every cached answer's `cite_chunks[*].slug` must resolve to a real graph node (feature / pattern / entity / decision). Cite-check enforces this on every read AND every write.
 
 ## How this differs from a downstream user's data-model.md

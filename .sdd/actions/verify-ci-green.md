@@ -2,6 +2,7 @@
 type: action
 slug: verify-ci-green
 tag: AGENT-LED
+model_tier: mechanical
 title: "verify-ci-green"
 short_label: "CI green"
 steps:

@@ -2,6 +2,7 @@
 type: action
 slug: problem
 tag: USER-LED
+model_tier: thinking
 prelude_refresh: true
 title: "§1 Problem"
 short_label: "Problem"

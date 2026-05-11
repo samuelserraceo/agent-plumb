@@ -2,6 +2,7 @@
 type: action
 slug: project-start-first
 tag: AGENT-LED
+model_tier: routine
 title: "Start the first feature"
 short_label: "§7 Kickoff"
 steps:
