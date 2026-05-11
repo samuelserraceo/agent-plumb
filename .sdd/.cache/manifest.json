@@ -39,7 +39,7 @@
       "trust": "framework"
     },
     "hash-section.sh": {
-      "expected_sha256": "f042a987b7386d435b521d364a36603323edda611dc885ab9694d4ace95158ac",
+      "expected_sha256": "da1495a540bac32850e95b58e48564e3e9a94ed98de1164f1f6909b94efda220",
       "path": ".sdd/scripts/hash-section.sh",
       "trust": "framework"
     },

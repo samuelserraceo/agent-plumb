@@ -166,6 +166,16 @@ while content_lines and content_lines[0] == "":
 while content_lines and content_lines[-1] == "":
     content_lines.pop()
 
+# Bold-strip normalisation (closes #197): strip `**` markers around list-item
+# labels matching AC<N> / T<N> / C-<slug>. Cosmetic bold/plain edits on AC
+# labels no longer trip the section-approval moat. Scoped to LIST-ITEM LABELS
+# only — prose-emphasis `**Note:**` / `**TODO:**` inside the section is
+# unchanged (only labels matching the canonical pattern get stripped).
+_label_bold_re = re.compile(
+    r'^(\s*-\s*\[[ xX]\]\s+)\*\*((?:AC\d+|T\d+(?:\s+\[WAVE:[^\]]*\])?|C-[a-z0-9_-]+):)\*\*'
+)
+content_lines = [_label_bold_re.sub(r'\1\2', ln) for ln in content_lines]
+
 # Hash. UTF-8 bytes of LF-joined normalized content.
 normalized = "\n".join(content_lines)
 print(hashlib.sha256(normalized.encode("utf-8")).hexdigest())
