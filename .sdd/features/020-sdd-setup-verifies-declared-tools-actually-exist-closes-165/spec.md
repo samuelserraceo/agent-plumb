@@ -205,7 +205,7 @@ Run the 6 checks every session-open via `.claude/hooks/session-start.sh`. Pros: 
               script exits 0 with one line "no declared tools to verify"
               (walking-skeleton)
               — proves AC1
-- [ ] T501 RED: check 1 fires when parameters.review.bot=coderabbit and
+- [x] T501 GREEN: check 1 fires when parameters.review.bot=coderabbit and
               gh-api install probe reports installed/missing correctly
               — proves AC2
 - [ ] T502 RED: check 2 fires when parameters.review.bot=copilot and
