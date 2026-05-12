@@ -42,9 +42,9 @@ playbook: feature
 
 3. **Multi-machine adopter — catch per-machine gaps.** As an SDD adopter who works on laptop-A (with Ollama pulled) and later on laptop-B (without it), I want `/sdd-verify-stack` (or a session-start probe of the same shape) to surface missing per-machine deps so the agent does not blow up mid-walk on a machine that has not been fully set up yet.
 
-### action: ux-brief
+### action: ux-brief [SKIPPED]
 
-- [ ] brief: infer the UX direction from problem, success, and user stories
+- ⏭ brief: skipped — non-UI feature (post-wizard CLI step + new slash command `/sdd-verify-stack`; output is plain-English stderr / chat lines, not visual UI). Visualisation lives in §13 wireframe (flow + architecture + concrete example output) per the v1.2 wireframe-redesign rule, same pattern as F011 / F014.
 
 ### action: proposed-approach
 
