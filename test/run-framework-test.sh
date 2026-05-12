@@ -126,6 +126,12 @@ mkproj_v08() {
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/promote-legacy-queued.sh" "$d/.sdd/scripts/promote-legacy-queued.sh" \
     || { echo "[mkproj_v08] failed to copy promote-legacy-queued.sh from \$FRAMEWORK_ROOT — broken framework checkout?" >&2; return 1; }
   chmod +x "$d/.sdd/scripts/promote-legacy-queued.sh"
+  # verify-stack.sh is manifest-tracked in v1.9+ (closes #165). Same
+  # fail-fast pattern: silently skipping the copy leaves the fixture
+  # missing a manifest-pinned file, breaking the moat hash-pin check.
+  cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/verify-stack.sh"        "$d/.sdd/scripts/verify-stack.sh" \
+    || { echo "[mkproj_v08] failed to copy verify-stack.sh from \$FRAMEWORK_ROOT — broken framework checkout?" >&2; return 1; }
+  chmod +x "$d/.sdd/scripts/verify-stack.sh"
   # CR cycle 1 finding (#195): promote-to-active.sh is manifest-tracked
   # in v1.5.2+. Silently skipping the copy with `|| true` would leave the
   # mock project missing a tracked file, causing the moat hash-pin check
