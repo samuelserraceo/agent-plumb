@@ -235,8 +235,34 @@ Run the 6 checks every session-open via `.claude/hooks/session-start.sh`. Pros: 
 
 ### action: edge-case-sweep
 
-- [ ] ec-sweep: draft
-- [ ] ec-pick: ask
+- [x] ec-sweep: 8 edge cases identified across gh-api-shape, network, and platform dimensions.
+- [ ] ec-pick: Drafted disposition; awaiting Sam's `approve §15` (locks transition to BUILD).
+
+**§15 Edge-case sweep (8 cases):**
+
+| # | Edge case | Severity | Handling |
+|---|-----------|----------|----------|
+| 1 | CR App installed at owner-level only, not repo-level | Low | `gh api repos/.../installation` 200 means installed for the repo; if 404, surface "install on this repo via Marketplace". Owner-vs-repo distinction is gh-api's responsibility. |
+| 2 | Branch protection has MORE required-checks than declared | Low | Compare as set inclusion: declared ⊆ actual = pass. Extra protection beyond spec is fine; the verify is "are my declared things real?" not "exact match". |
+| 3 | CI workflow file exists but the job name inside it doesn't match declared | Medium | Check 4 greps `name: <declared-job>` inside `.github/workflows/*.yml`, not just filename. If workflow file present but job name not found, emits "workflow file present but no job named `<X>` — check YAML key names". |
+| 4 | Ollama running but model not pulled | Medium | `curl /api/tags` returns 200 with model list. After connectivity probe passes, optionally also probe for `parameters.mcp.tier3.model` in the returned list; if missing, emit hint `ollama pull <model>`. v1 can skip the model-presence probe; document as "connection only, model presence by hand". |
+| 5 | OpenAI key env var set but invalid | Low | Script cannot probe key validity without making a paid call. Just check presence — `[ -n "$OPENAI_API_KEY" ]`. Document the limitation. {best-effort: Sam at SHIP — eye-check that "key presence only" is clearly stated in the pass-line} |
+| 6 | Test runner dep present but version mismatch | Low | Out of scope per §9 #4 — verify-stack checks presence only. Version-mismatch is user's responsibility. |
+| 7 | Network probe slow (Tier 3 endpoint behind VPN) | Low | Per-check timeout: `curl --max-time 5` on Ollama probe, `gh api --request-timeout 10` on github calls. Failure emits "network probe timed out; re-run when reachable". |
+| 8 | User on Windows / WSL — localhost:11434 remap | Low | WSL2 has its own loopback; `localhost` may not reach Windows-side Ollama daemon. If check 5 fails AND `uname` contains `microsoft`, emit "WSL detected; try `host.docker.internal:11434` or run Ollama inside WSL". |
+
+**ec-pick disposition (awaiting Sam approval):**
+
+- **#1 CR owner-vs-repo** — Folded into AC2's pass/fail prose. No new AC.
+- **#2 protection-set inclusion** — Folded into AC4 logic. No new AC.
+- **#3 workflow-vs-job-name** — Folded into T504's fixture (test the grep includes `name:` not just filename). No new AC.
+- **#4 Ollama model-not-pulled** — Folded into AC6 documentation. v1 ships connectivity-only; document model-presence as user's responsibility.
+- **#5 OpenAI key-validity** — Documented limitation in AC6 pass-line prose. No mechanical fix.
+- **#6 test-runner version-mismatch** — Already in §9 #4 deferral.
+- **#7 slow network** — Folded into T501-T506 fixtures (each check has a timeout). No new AC.
+- **#8 WSL detection** — Folded into AC6 fail-path message. No new AC.
+
+**Net effect:** 0 new ACs (§11 stays hash-locked at 10 ACs). 4 folded into existing T-tasks (#3 → T504; #7 → T501-T506 timeout fixtures; #8 → AC6 fail-path). 4 documented at SHIP / in prose (#1, #2, #4, #5). 1 already-covered (#6 by §9 #4 deferral).
 
 ### Exit checks
 - [ ] C-spec-acs: ≥1 acceptance criterion exists in §11 {verify-by: C-spec-acs bash-grep} — grep -qE '^- \[[ x]\] AC[0-9]+' "$SECTION_FILE"
