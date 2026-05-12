@@ -48,7 +48,48 @@ playbook: feature
 
 ### action: proposed-approach
 
-- [ ] approval: draft the approach with 2 alternatives and tradeoffs, iterate with the user, get approval
+- [x] approval: Approach A — single post-wizard action `/sdd-verify-stack`. One shell script `templates/.sdd/scripts/verify-stack.sh` + action file + slash command. 6 checks (CR App, Copilot, branch protection, required CI workflows, Tier 3 LLM provider, test runner deps). Auto-fires at end of `/sdd-setup`; manual via slash command. Plain-English pass/fail per check, fail surfaces fix path. Each check is its own bash function (Lego). Backward-compat (no-op when relevant `parameters.*` is empty). Builds on existing `gh` + `curl` deps. Sam approved 2026-05-12.
+
+**Draft (awaiting Sam approval — pick A, B, or C):**
+
+**Approach A wins — Single post-wizard action `/sdd-verify-stack` (RECOMMENDED):**
+
+One new SDD action `verify-stack` runs the 6 issue-listed checks as a single sequenced batch. Plain shell script under `templates/.sdd/scripts/verify-stack.sh` invoked by the action prose. Each check returns one line of plain-English output: pass (`✓ CodeRabbit App installed`) or fail with fix path (`✗ CodeRabbit App not installed — install at https://github.com/marketplace/coderabbitai`). Action exits 0 if all checks pass; exits 1 if any check fails. Action runs:
+
+- (auto) at the tail of `/sdd-setup`'s last brick — wizard completes, verify-stack fires, surfaces any gaps before the user runs their first `/start`
+- (manual) standalone via new slash command `/sdd-verify-stack` whenever the user re-runs `/sdd-config` or changes machines
+- (referenced) the action is also called out in `session-start.sh` doctrine as the right thing to run when the user reports "agent waited forever" or "MCP call failed"
+
+The 6 checks (all from #165):
+1. **CodeRabbit App** — `gh api repos/<owner>/<repo>/installation` if config says `review.bot=coderabbit`
+2. **GitHub Copilot review** — `gh api ...` settings probe if `review.bot=copilot`
+3. **Branch protection** — `gh api repos/<owner>/<repo>/branches/main/protection` against declared required-checks
+4. **Required CI workflow files** — grep `.github/workflows/*.yml` for declared job names
+5. **Tier 3 LLM provider** — Ollama: `curl localhost:11434/api/tags`; OpenAI: `[ -n "$OPENAI_API_KEY" ]`
+6. **Test runner deps** — `package.json` (or pyproject.toml) contains declared test-runner package
+
+**Trade-offs:**
+
+- ✅ Smallest delta — one new shell script + one action file + one slash command + one auto-run hook into `/sdd-setup` finale. No new daemons, no MCP, no `node_modules`.
+- ✅ Composable — each of the 6 checks is its own bash function in the script; users with custom stack additions can extend by adding their own functions later.
+- ✅ Auto + manual — the same script powers both the post-wizard auto-run and the standalone slash command (no logic duplication).
+- ✅ Plain-English failures — every check's stderr is a one-liner the user can act on without reading source.
+- ⚠️ One-time audit of which stack questions need which check (probably already correct from issue body; cheap).
+
+**Approach B — Inline verify after each wizard question (rejected):**
+
+As the wizard answers Q3 reviewer, immediately probe `gh api .../installation`. Pros: catches the gap at the moment of answering. Cons: heavier touch to the wizard flow; multiplies network probes by N questions; harder to skip when user is offline at install time; couples each brick's prose to its own verifier logic (Lego foundation violation). Defer to v2 if Approach A's batch-at-end shape feels too late.
+
+**Approach C — Session-start probe (rejected):**
+
+Run the 6 checks every session-open via `.claude/hooks/session-start.sh`. Pros: continuous reality-check. Cons: noisy (fires on every session even after a clean install); blocks session-start on network probes (slow Tier 3 ping = slow session-open); over-engineered when a one-shot post-wizard run + manual re-run cover the actual use cases.
+
+**Why Approach A wins:**
+
+1. **Pillar 1 (Simplicity).** Smallest delta to the framework: one shell script + one action file + one slash command. No new daemons, no new MCP servers, no new entities.
+2. **Pillar 2 (Lego).** Each of the 6 checks is its own bash function — composable; extensible by future stack additions slotting in another function without changing the dispatcher.
+3. **Backwards compatible.** No-op on projects where the relevant stack answer is `none` (e.g. `review.bot=""` skips check 1+2; no Tier 3 = skip check 5). The script reads `parameters.*` from config.md and gates each check accordingly.
+4. **Reversible.** Removing the action prose + slash command + the post-wizard hook reverts to today's behaviour with no other changes.
 
 ### action: data-contract
 
