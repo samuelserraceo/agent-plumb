@@ -374,8 +374,10 @@ claim_v1_0_ships_4_playbooks() {
 claim_9_slash_commands_ship() {
   local count
   count=$(find templates/.claude/commands -maxdepth 1 -name "*.md" -type f | wc -l)
-  # Allow ±1 for natural growth (claim is a snapshot count).
-  [ "$count" -ge 9 ] && [ "$count" -le 12 ]
+  # Allow natural growth above the v1.0 baseline of 9 (claim is a
+  # snapshot count). Upper bound widened 2026-05-12 to cover
+  # sdd-verify-stack.md (v1.9 / F027) — current count 13.
+  [ "$count" -ge 9 ] && [ "$count" -le 15 ]
 }
 
 # ============================================================
