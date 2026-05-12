@@ -33,6 +33,11 @@
       "path": ".sdd/scripts/check-setup-answer.sh",
       "trust": "framework"
     },
+    "corpus-signature-lock.sh": {
+      "expected_sha256": "9653551a8d183c8c3c13c9797aa6b2d19cbf684db3f22f140df7043124b55461",
+      "path": ".sdd/scripts/corpus-signature-lock.sh",
+      "trust": "framework"
+    },
     "dispatch-wave.sh": {
       "expected_sha256": "499e1c2067a80832be429890c1168c337aa6157eba942121bfc3af7959dac960",
       "path": ".sdd/scripts/dispatch-wave.sh",
@@ -68,6 +73,11 @@
       "path": ".claude/hooks/post-stop-lint.sh",
       "trust": "framework"
     },
+    "promote-legacy-queued.sh": {
+      "expected_sha256": "52b2cbf0ff2d0fd34e28ee8007fc6356c5aef493891a8d82e36ec7bcaed10eb4",
+      "path": ".sdd/scripts/promote-legacy-queued.sh",
+      "trust": "framework"
+    },
     "promote-to-active": {
       "expected_sha256": "6a48a5c438cc5b652a59b7bc49da1059b1c2e1740eeedcdc8996c0ecaa0795f5",
       "path": ".sdd/scripts/promote-to-active.sh",
@@ -81,6 +91,11 @@
     "reapprove.sh": {
       "expected_sha256": "ba510f673de549638ed8eaaa2985c28f44600d0f18be794e9fc138b2c5444d9a",
       "path": ".sdd/scripts/reapprove.sh",
+      "trust": "framework"
+    },
+    "rename-collided-feature.sh": {
+      "expected_sha256": "c8cfb89cc2d34d324dc6cc0836a0c842bc6d83025c8dfbc961a712756654dca4",
+      "path": ".sdd/scripts/rename-collided-feature.sh",
       "trust": "framework"
     },
     "resolve-active.sh": {
@@ -121,16 +136,6 @@
     "validate-sdd-path.sh": {
       "expected_sha256": "5035174640d824d171c1d551bf51794651069b1b362de910c7b51954256a7ec6",
       "path": ".sdd/scripts/validate-sdd-path.sh",
-      "trust": "framework"
-    },
-    "promote-legacy-queued.sh": {
-      "expected_sha256": "52b2cbf0ff2d0fd34e28ee8007fc6356c5aef493891a8d82e36ec7bcaed10eb4",
-      "path": ".sdd/scripts/promote-legacy-queued.sh",
-      "trust": "framework"
-    },
-    "rename-collided-feature.sh": {
-      "expected_sha256": "c8cfb89cc2d34d324dc6cc0836a0c842bc6d83025c8dfbc961a712756654dca4",
-      "path": ".sdd/scripts/rename-collided-feature.sh",
       "trust": "framework"
     }
   },
