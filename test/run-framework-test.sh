@@ -157,6 +157,15 @@ mkproj_v08() {
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/get-model-for-tier.sh"   "$d/.sdd/scripts/get-model-for-tier.sh" \
     || { echo "[mkproj_v08] failed to copy get-model-for-tier.sh from \$FRAMEWORK_ROOT — broken framework checkout?" >&2; return 1; }
   chmod +x "$d/.sdd/scripts/get-model-for-tier.sh"
+  # check-cr-convergence.sh is manifest-tracked in v1.9+ (F026 closes #166 —
+  # /ship gate that refuses mark-shipped when CR review state is
+  # CHANGES_REQUESTED on HEAD's SHA). Same fail-fast pattern as
+  # get-model-for-tier.sh / dispatch-wave.sh: silently skipping the copy
+  # leaves the fixture missing a manifest-pinned file, which T143 / T144 /
+  # T145 then flag as moat drift.
+  cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/check-cr-convergence.sh"  "$d/.sdd/scripts/check-cr-convergence.sh" \
+    || { echo "[mkproj_v08] failed to copy check-cr-convergence.sh from \$FRAMEWORK_ROOT — broken framework checkout?" >&2; return 1; }
+  chmod +x "$d/.sdd/scripts/check-cr-convergence.sh"
   chmod +x "$d/.sdd/scripts/check-setup-answer.sh" 2>/dev/null || true
   cp "$FRAMEWORK_ROOT/templates/.sdd/decisions.md"                    "$d/.sdd/decisions.md"
   cp "$VERIFY_STAGE" "$d/.sdd/scripts/verify-stage.sh" 2>/dev/null || true
