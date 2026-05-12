@@ -504,8 +504,23 @@ Skip is handled inline by `/next` (not a separate `/skip` command). The user rep
 2. **Proactively offer to skip** before asking any question:
    > "§4 UX & Design brief is marked skippable for non-UI features. This feature is a backend cron job, so I think we should skip it. Reply `skip no UI surface — backend cron only` to skip, or tell me what UI considerations do apply."
 3. **Respect the user's skip.** When `skip <reason>` is invoked (as a reply during `/next`): replace every `[ ]` with `⏭ skipped — <reason>`, append `[SKIPPED]` to the heading, commit `[SDD:<id>] spec: skip §<N> — <reason>`, advance.
-4. **Never skip a non-skippable section.** §1, §3, §5, §6, §7, §11, §12 are required always. (§2 Success was removed from the feature playbook in v1.6 / PR-A of #207 — success metrics fold into §11 ACs by default; `success.md` retained with `deprecated: true` for backward-compat with in-flight features whose spec.md scaffolded pre-PR-A.)
+4. **Never skip a non-skippable section.** §1, §3, §5, §6, §7, §11, §12 are required always. (§2 Success was removed from the feature playbook in v1.6 / PR-A of #207 — see "Feature playbook: §2 Success is deprecated" below.)
 5. **Don't offer skip just because a question is hard** — the whole point of the rubric is to surface the hard questions.
+
+---
+
+## Feature playbook: §2 Success is deprecated (idea 004, F021)
+
+§2 Success is removed from the feature playbook. The `success` action does **not** appear in `templates/.sdd/playbooks/feature.md`'s SPEC `actions:` list; new feature scaffolds skip §2 entirely. The framework verifies success mechanically via §11 Acceptance Criteria (each AC carries `{verify-by: T-NNN}` pointing at a real test) — that's the AI-verifiable success layer. §2 Success was market-shape prose the framework couldn't check, so it was retired as theatre. Idea 004 captured the intent (2026-05-08); F009 / PR #219 did the playbook + frontmatter removal in v1.6 anchor PR-A; F021 closed the loop with a body deprecation pointer on `success.md` and this doctrine paragraph.
+
+**What the framework agent does:**
+- On a freshly-scaffolded feature (post-v1.6) — `success` is not in the SPEC actions list, so `/next` never lands on §2. Walk straight from §1 (problem) to §3 (user-stories).
+- On an in-flight feature scaffolded before v1.6 (spec.md still has `### action: success`) — `success.md` body's top blockquote tells the agent to fold the metric into §11 ACs. Treat §2 as a skippable section; capture any metric as `AC<N>: <behaviour> ... {verify-by: T-NNN}` in §11 instead.
+- Existing in-flight features keep their §2 prose (append-only contract on spec.md; `decisions.md` carries the audit trail).
+
+**Regression-lock:** tests T260-T263 in `test/run-framework-test.sh` pin (1) `success.md` frontmatter retains `deprecated: true`, (2) `feature.md` SPEC actions does NOT list `success`, (3) `success.md` body names "Acceptance Criteria" / "§11" as the canonical alternative, (4) the full framework test sweep stays GREEN. Future contributors can't silently re-add `success` to the playbook — CI fails.
+
+The `success.md` file is retained on disk with `deprecated: true` in frontmatter (backward-compat for in-flight features). Deletion would break the moat (framework-file deletion check, T135b).
 
 ---
 
