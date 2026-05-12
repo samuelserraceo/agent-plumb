@@ -2,7 +2,7 @@
   "extensions": {},
   "playbooks": {
     "feature": {
-      "expected_sha256": "0570555ab8519068ecdcacb4bc2e5a7998e4af3e9e1126cd45ef69d837a7006f",
+      "expected_sha256": "fd4385f0f896a4730e697864ab4ba5b4540b201991783beca35f4d0915b42ed9",
       "path": ".sdd/playbooks/feature.md",
       "trust": "framework"
     },
@@ -131,6 +131,16 @@
     "get-model-for-tier.sh": {
       "expected_sha256": "8085a0d9a0e90df5a110e92839c714da896f1698c65fab04fb04932a36e48a14",
       "path": ".sdd/scripts/get-model-for-tier.sh",
+      "trust": "framework"
+    },
+    "check-cr-convergence.sh": {
+      "path": ".sdd/scripts/check-cr-convergence.sh",
+      "trust": "framework",
+      "expected_sha256": "92a368fd771251247cc44eec228eac02d5d5ce1977491d2736854a721e0f723e"
+    },
+    "verify-stack.sh": {
+      "expected_sha256": "d65deefe1fdd611f92c6124759d0f6800f13a2df1c0fa5cc395099f34a74b1c7",
+      "path": "templates/.sdd/scripts/verify-stack.sh",
       "trust": "framework"
     }
   },
@@ -343,6 +353,16 @@
     "wireframe": {
       "expected_sha256": "7adef67a5a77488b61821af8b538604d1376993e1fe00f8e982584c6016d14af",
       "path": ".sdd/actions/wireframe.md",
+      "trust": "framework"
+    },
+    "verify-cr-convergence": {
+      "path": ".sdd/actions/verify-cr-convergence.md",
+      "trust": "framework",
+      "expected_sha256": "9d6db5fafdb9eafd1bb3e373d0806fd07232f33752cdb8410c764839efe1ceb3"
+    },
+    "verify-stack": {
+      "expected_sha256": "581701ff27dee0f4c26358a6fe26a6c25af64e22c05ac34fe9e41af13d3dccff",
+      "path": "templates/.sdd/actions/verify-stack.md",
       "trust": "framework"
     }
   }
