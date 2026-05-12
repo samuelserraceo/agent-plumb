@@ -9377,6 +9377,108 @@ fi
 rm -rf "$t285_dir"
 
 # ============================================================
+# Followup to F027 — extra checks added on top of F027's verify-stack.sh.
+# T286 OpenAI key env-var presence (when Tier 3 provider is openai*).
+# T287 Test runner deps in package.json / pyproject.toml (issue #165 step 6).
+# ============================================================
+
+note "T286: verify-stack OpenAI key check fails when OPENAI_API_KEY unset (followup)"
+t286_dir=$(mktemp -d)
+mkdir -p "$t286_dir/.sdd"
+cat > "$t286_dir/.sdd/config.md" <<'CFG'
+---
+parameters:
+  mcp:
+    tier3:
+      enabled: true
+      provider: openai
+---
+CFG
+out=$(env -u OPENAI_API_KEY CLAUDE_PROJECT_DIR="$t286_dir" bash "$SVS_SH" 2>&1); ec=$?
+t286_fails=()
+if ! printf '%s' "$out" | grep -qE "openai-key: fail"; then
+  t286_fails+=("OpenAI key check did NOT return fail when env-var unset")
+fi
+if ! printf '%s' "$out" | grep -qiF "OPENAI_API_KEY"; then
+  t286_fails+=("fail message does NOT name OPENAI_API_KEY env-var")
+fi
+if [ "$ec" -ne 1 ]; then
+  t286_fails+=("script exit code should be 1 with a fail present, got $ec")
+fi
+out_ok=$(OPENAI_API_KEY=test-key CLAUDE_PROJECT_DIR="$t286_dir" bash "$SVS_SH" 2>&1)
+if ! printf '%s' "$out_ok" | grep -qE "openai-key: ok"; then
+  t286_fails+=("with OPENAI_API_KEY set: expected openai-key ok, got: $out_ok")
+fi
+cat > "$t286_dir/.sdd/config.md" <<'CFG'
+---
+parameters:
+  mcp:
+    tier3:
+      enabled: true
+      provider: ollama-chat
+      endpoint: http://localhost:11434
+---
+CFG
+out_skip=$(CLAUDE_PROJECT_DIR="$t286_dir" bash "$SVS_SH" 2>&1)
+if printf '%s' "$out_skip" | grep -qE "openai-key:"; then
+  t286_fails+=("OpenAI key check fired when provider is ollama (should skip)")
+fi
+if [ ${#t286_fails[@]} -gt 0 ]; then
+  bad "T286 OpenAI key check violations" "$(IFS=';'; echo "${t286_fails[*]}")"
+else
+  ok "T286 OpenAI key check: fail when unset / ok when set / skip when not openai"
+fi
+rm -rf "$t286_dir"
+
+note "T287: verify-stack test-runner-deps check matches declared runner in package.json (followup, #165 step 6)"
+t287_dir=$(mktemp -d)
+mkdir -p "$t287_dir/.sdd"
+cat > "$t287_dir/.sdd/config.md" <<'CFG'
+---
+parameters: {}
+---
+CFG
+cat > "$t287_dir/.sdd/stack.md" <<'STK'
+# stack
+Test runner: Vitest
+STK
+cat > "$t287_dir/package.json" <<'PKG'
+{ "devDependencies": { "vitest": "^1.0.0" } }
+PKG
+out_a=$(CLAUDE_PROJECT_DIR="$t287_dir" bash "$SVS_SH" 2>&1)
+cat > "$t287_dir/package.json" <<'PKG'
+{ "devDependencies": { "mocha": "^10.0.0" } }
+PKG
+out_b=$(CLAUDE_PROJECT_DIR="$t287_dir" bash "$SVS_SH" 2>&1); ec_b=$?
+cat > "$t287_dir/.sdd/stack.md" <<'STK'
+# stack
+nothing about a test runner here
+STK
+out_c=$(CLAUDE_PROJECT_DIR="$t287_dir" bash "$SVS_SH" 2>&1)
+t287_fails=()
+if ! printf '%s' "$out_a" | grep -qE "test-runner-deps: ok"; then
+  t287_fails+=("case A (Vitest declared + present): expected ok, got: $out_a")
+fi
+if ! printf '%s' "$out_b" | grep -qE "test-runner-deps: fail"; then
+  t287_fails+=("case B (Vitest declared, missing): expected fail")
+fi
+if ! printf '%s' "$out_b" | grep -qiF "npm install"; then
+  t287_fails+=("case B fail message does NOT include npm install hint")
+fi
+if [ "$ec_b" -ne 1 ]; then
+  t287_fails+=("case B script exit should be 1 with fail present, got $ec_b")
+fi
+if printf '%s' "$out_c" | grep -qE "test-runner-deps:"; then
+  t287_fails+=("case C (no declaration): check fired when it should skip")
+fi
+if [ ${#t287_fails[@]} -gt 0 ]; then
+  bad "T287 test-runner-deps violations" "$(IFS=';'; echo "${t287_fails[*]}")"
+else
+  ok "T287 test-runner-deps check: ok when present / fail when missing / skip when not declared"
+fi
+rm -rf "$t287_dir"
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
