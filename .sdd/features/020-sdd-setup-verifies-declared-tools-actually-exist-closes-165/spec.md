@@ -115,7 +115,15 @@ Run the 6 checks every session-open via `.claude/hooks/session-start.sh`. Pros: 
 
 ### action: flows
 
-- [ ] flows: draft 1-3 critical flows, each referencing the user story it implements
+- [x] flows: 3 flows — Flow 1: Auto-fire at end of `/sdd-setup` (wizard tail invokes verify-stack.sh; surfaces gaps before first `/start`); Flow 2: Manual `/sdd-verify-stack` (standalone slash command; same script, same output); Flow 3: Re-verify after `/sdd-config` change (slash command tail invokes verify-stack for the just-changed parameter). Implements user stories #1 (first-installer), #2 (returning-adopter), #3 (multi-machine).
+
+**§7 Flows (3 critical):**
+
+1. **Flow 1 — Auto-fire at end of `/sdd-setup`** (user story #1 first-installer). Wizard walks through all bricks (existing behaviour). After the last brick records its answer, the wizard's prose calls out: "Setup answers recorded. Running `/sdd-verify-stack` to check declared tools exist..." → invokes `verify-stack.sh` → script reads `parameters.*` + stack.md, runs the 6 checks in sequence. Each check emits one line (✓ pass or ✗ fail + fix path). All-pass → wizard ends with "Ready to run `/start <feature-name>`." Any-fail → wizard ends with "Some declared tools are missing — fix the items above, then re-run `/sdd-verify-stack`." Same chat-as-UX shape as F011's automation-level brick + F014's models setup brick.
+
+2. **Flow 2 — Manual `/sdd-verify-stack`** (user story #3 multi-machine). User on laptop-B types `/sdd-verify-stack`. Slash command body invokes the same `verify-stack.sh`. Same 6 checks, same output. Exit code 0 = all-pass; exit 1 = at least one fail. No state changes — purely a probe + report.
+
+3. **Flow 3 — Re-verify after `/sdd-config` change** (user story #2 returning-adopter). User types `/sdd-config review-bot coderabbit` (or similar single-question re-answer via existing `/sdd-config` mechanism). The slash command body, at the tail of its existing flow, invokes the targeted check from verify-stack.sh — e.g. just check 1 (CR App installed) because that's the parameter that just changed. If fail, surfaces the fix path inline before the user runs their next `/ship`. Lighter touch than running all 6 checks every time `/sdd-config` is touched.
 
 ### action: dependencies
 
