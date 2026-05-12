@@ -127,7 +127,28 @@ Run the 6 checks every session-open via `.claude/hooks/session-start.sh`. Pros: 
 
 ### action: dependencies
 
-- [ ] deps: draft external services + pricing math scaled to success-volume targets
+- [x] deps: three buckets. Hard deps — existing `gh` CLI (checks 1/2/3; framework already requires it for `/ship` push-pr); existing `curl` or `wget` (check 5 Ollama probe; one of the two typically present on macOS+Linux); existing `python3` / `bash` (script runtime); existing `parameters:` config structure in `.sdd/config.md` (script reads `review.bot` + `mcp.tier3.*`); existing `.sdd/stack.md` (script parses declared required-checks and test runner from it); existing `/sdd-setup` wizard tail (Flow 1 auto-runs verify-stack from there); existing `/sdd-config` slash command body (Flow 3 invokes targeted re-verify after a parameter change). Soft deps — `jq` (for richer gh-api JSON parsing; v1 can use plain grep + sed if jq isn't on PATH). Explicitly NOT depending on — no new MCP servers, no new npm packages, no new `data-model.md` entities, no new harness API (works identically on Claude Code + pi.dev), no commit-shape changes (verify-stack does not commit anything — purely a probe+report).
+
+**§8 Dependencies (three buckets):**
+
+**Hard deps (must exist for F020 to function):**
+- **`gh` CLI** (already a framework dep for `/ship` push-pr) — checks 1 (CR App installation), 2 (Copilot review settings), 3 (branch protection rules). Surfaced install hint if missing.
+- **`curl` OR `wget`** (one typically present on macOS+Linux out of box) — check 5 Ollama daemon probe `localhost:11434/api/tags`. Script tries curl first, falls back to wget, skips with `network probe tool missing` if both absent.
+- **`python3` + `bash`** (framework's existing runtime requirements per CLAUDE.md "files you can `cat`" doctrine).
+- **`parameters:` config block in `.sdd/config.md`** — script reads `review.bot`, `mcp.tier3.enabled`, `mcp.tier3.provider` to know which checks to run.
+- **`.sdd/stack.md`** — script parses declared required-checks (check 4) and declared test runner (check 6) from this file.
+- **`/sdd-setup` wizard tail** — Flow 1 auto-invokes verify-stack here.
+- **`/sdd-config` slash command body** — Flow 3 invokes targeted re-verify after a parameter change.
+
+**Soft deps (would help but not required):**
+- **`jq`** — richer JSON parsing of `gh api` output. v1 falls back to plain grep + sed when jq isn't on PATH; nicer output when it is.
+
+**Explicitly NOT depending on:**
+- No new MCP servers (verify-stack is plain shell, no framework-runtime additions).
+- No new npm packages (`node_modules` stays out; Pillar 1 simplicity).
+- No new `data-model.md` entities (StackCheck is a typed string, per F011's AutomationLevel + F014's Tier precedent).
+- No new harness API — works identically on Claude Code + pi.dev port; the script invokes the same `gh` / `curl` calls regardless of which harness drove `/sdd-setup`.
+- No commit-shape changes — verify-stack does not commit anything; it's a probe + stderr/stdout report.
 
 ### action: out-of-scope
 
