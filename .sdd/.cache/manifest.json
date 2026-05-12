@@ -344,6 +344,11 @@
       "expected_sha256": "7adef67a5a77488b61821af8b538604d1376993e1fe00f8e982584c6016d14af",
       "path": ".sdd/actions/wireframe.md",
       "trust": "framework"
+    },
+    "verify-cr-convergence": {
+      "path": ".sdd/actions/verify-cr-convergence.md",
+      "trust": "framework",
+      "expected_sha256": "9d6db5fafdb9eafd1bb3e373d0806fd07232f33752cdb8410c764839efe1ceb3"
     }
   }
 }
