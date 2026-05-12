@@ -16,7 +16,7 @@ playbook: feature
 
 ### action: problem
 
-- [ ] who: Who specifically has this problem? (real persona, not 'users')
+- [x] who: First-time SDD installers running `/sdd-setup` on a fresh project. Sam felt it during the PipeLogic V2 install (2026-05-05) when he answered "CodeRabbit" for reviewer but had not actually installed the GitHub App — agent then waited silently for reviews on subsequent PRs. Future adopters hit the same shape across Ollama / branch-protection / required CI checks / Tier 3 provider / test-runner deps.
 - [ ] why-now: Why is it worth solving now?
 - [ ] what-breaks: What breaks (concretely) if it isn't solved?
 
