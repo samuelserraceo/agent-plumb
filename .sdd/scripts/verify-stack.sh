@@ -84,6 +84,26 @@ check_copilot() {
   fi
 }
 
+# --- check 3 — Branch protection on main ------------------------------
+# Fires when stack.md prose mentions "branch protection" + "main"
+# (declared intent), then probes gh api branches/main/protection.
+check_branch_protection() {
+  local declared
+  declared=$(grep -iE "branch.protection" .sdd/stack.md 2>/dev/null | grep -i "main" | head -1)
+  [ -n "$declared" ] || return 2  # skip if stack.md does not declare it
+  if ! command -v gh >/dev/null 2>&1; then
+    echo "✗ check 3 branch protection — gh CLI not on PATH" >&2
+    return 1
+  fi
+  if gh api repos/_/_/branches/main/protection >/dev/null 2>&1; then
+    echo "✓ branch protection on main reachable via gh api"
+    return 0
+  else
+    echo "✗ branch protection on main NOT reachable — configure at repo Settings > Branches" >&2
+    return 1
+  fi
+}
+
 # --- Runner -----------------------------------------------------------
 fired=0
 overall_rc=0
@@ -100,6 +120,7 @@ run_check() {
 
 run_check check_cr_app
 run_check check_copilot
+run_check check_branch_protection
 
 if [ "$fired" -eq 0 ]; then
   echo "no declared tools to verify"
