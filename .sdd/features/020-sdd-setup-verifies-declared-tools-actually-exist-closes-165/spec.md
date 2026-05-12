@@ -32,7 +32,15 @@ playbook: feature
 
 ### action: user-stories
 
-- [ ] stories: Which personas matter? For each: 'As <persona>, I want <action>, so that <outcome>.' 1-5 stories total.
+- [x] stories: 3 stories — first-time installer (verify what I declared actually works before depending on it), returning adopter changing stack (re-verify after `/sdd-config` flip), multi-machine adopter (catch per-machine gaps like Ollama on laptop-B).
+
+**User stories (3 total):**
+
+1. **First-time installer — verify before depending.** As a fresh SDD installer running `/sdd-setup` for the first time, I want a follow-up `/sdd-verify-stack` step that probes each declared answer against reality (CR App installed, Ollama reachable, branch protection in place, required CI files exist), so my first `/start` does not silently misbehave because of a setup gap.
+
+2. **Returning adopter changing stack — re-verify after a flip.** As Sam re-answering one wizard question via `/sdd-config <question-id>` (e.g. flipping reviewer from `none` to `coderabbit`), I want the same verify-stack run automatically on the changed answer, so the new declaration is paired with a reality-check at the moment I commit to it.
+
+3. **Multi-machine adopter — catch per-machine gaps.** As an SDD adopter who works on laptop-A (with Ollama pulled) and later on laptop-B (without it), I want `/sdd-verify-stack` (or a session-start probe of the same shape) to surface missing per-machine deps so the agent does not blow up mid-walk on a machine that has not been fully set up yet.
 
 ### action: ux-brief
 
