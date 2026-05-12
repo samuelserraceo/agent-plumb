@@ -265,5 +265,49 @@ Run the 6 checks every session-open via `.claude/hooks/session-start.sh`. Pros: 
 **Net effect:** 0 new ACs (§11 stays hash-locked at 10 ACs). 4 folded into existing T-tasks (#3 → T504; #7 → T501-T506 timeout fixtures; #8 → AC6 fail-path). 4 documented at SHIP / in prose (#1, #2, #4, #5). 1 already-covered (#6 by §9 #4 deferral).
 
 ### Exit checks
-- [ ] C-spec-acs: ≥1 acceptance criterion exists in §11 {verify-by: C-spec-acs bash-grep} — grep -qE '^- \[[ x]\] AC[0-9]+' "$SECTION_FILE"
-- [ ] C-spec-tasks: ≥1 task in plan-decompose section {verify-by: C-spec-tasks bash-grep} — grep -qE '^- \[[ x]\] T[0-9]+' "$SECTION_FILE"
+- [x] C-spec-acs: ≥1 acceptance criterion exists in §11 {verify-by: C-spec-acs bash-grep} — grep -qE '^- \[[ x]\] AC[0-9]+' "$SECTION_FILE"
+- [x] C-spec-tasks: ≥1 task in plan-decompose section {verify-by: C-spec-tasks bash-grep} — grep -qE '^- \[[ x]\] T[0-9]+' "$SECTION_FILE"
+
+## PHASE: BUILD
+
+### action: run-mode-chosen
+
+- [x] mode: Shell Ralph headless mode — Sam runs `cd <repo-root> && ./scripts/ralph.sh` in a fresh terminal session. Ralph iterates autonomously through T500-T506. Per F010/F014 lessons: ralph.timeout_per_iter is already 1800s (handles the 5-min pre-commit test suite + manifest repin on T500). Sam picked Shell Ralph 2026-05-12.
+
+**Run mode:** Shell Ralph (headless, new terminal)
+
+### action: build-task
+
+(driven by §14 tasks T500-T506 — each task lands as one commit per atomic step: test (RED) / code / green-flip. Canonical task list lives in §14 plan-decompose above.)
+
+### Exit checks
+
+- [ ] C-build-tasks-green: T500-T506 all GREEN; framework tests pass {verify-by: verify-stage.sh}
+
+## PHASE: SHIP
+
+### action: verify-test-run
+
+- [ ] run-tests: run-tests pass
+
+### action: learn
+
+- [ ] summary: one-paragraph plain-English summary of what shipped, why
+- [ ] lessons: append patterns to .sdd/patterns.md
+
+### action: push-pr
+
+- [ ] push-and-open: push the branch + open a PR
+
+### action: verify-ci-green
+
+- [ ] ci: all CI checks GREEN on the PR
+
+### action: mark-shipped
+
+- [ ] shipped: INDEX.md updated, .shipped marker written, decisions.md appended
+
+### Exit checks
+
+- [ ] C-ship-pr-url: PR URL recorded in INDEX.md Shipped section {verify-by: verify-stage.sh}
+- [ ] C-ship-marked: .shipped marker file exists in feature folder {verify-by: verify-stage.sh}
