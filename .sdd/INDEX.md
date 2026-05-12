@@ -1,25 +1,59 @@
 # SDD framework — INDEX
 
-**Active:** features/026-ship-hard-enforce-coderabbit-convergence-closes-166
+**Active:** _(none)_
 **Playbook:** feature
-**Active blocker:** §1 (first action: brief-intake)
+**Active blocker:** _(no active feature — **2026-05-12 backlog book closed**: 5 PRs landed end-to-end (F027 verify-stack #258 / F021 remove-success #254 / F024 corpus-lock #255 / F025 subagents #256 / F026 CR convergence #257). All 3 GH issues that the 2026-05-11 audit-close listed as "open by design" now closed: #113 (F024), #165 (F027), #166 (F026). Walkthrough at `docs/walkthrough.html` updated to v1.9 (commit ce74cd2). Framework test sweep 218/218 GREEN. Outstanding: ideas captured here as they come up.)_
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
 
 ## In flight
-- features/026-ship-hard-enforce-coderabbit-convergence-closes-166 — ship hard-enforce CodeRabbit convergence closes 166 (PHASE: SPEC)
+_(none — backlog book closed 2026-05-12)_
 
 
 
 
 ## Ideas
 
-- [`ideas/003-specialized-subagents`](ideas/003-specialized-subagents.md) — small set of role-specialised subagents (researcher / executor / verifier); cleaner role-specific prompts, pairs with F008 (multi-model) for tier-routing + F010 (parallel waves) for executor dispatch — captured 2026-05-07, Sam to-build
-- 004-remove-success-from-feature-playbook — drop §2 Success from feature playbook, lean on §11 Acceptance Criteria as the AI-verifiable success layer (§2 is market-shape metric the framework can't verify; §11's `{verify-by: T-NNN}` is the real check) — captured 2026-05-08 mid-F008
+_(none — 2026-05-10 brainstorm + ideas 003 / 004 100% shipped; future ideas captured here as they come up)_
 
 
 ## Shipped
+
+- **[[026-ship-hard-enforce-coderabbit-convergence-closes-166]]** — closes #166. SHIP stage now runs `verify-cr-convergence` between `verify-ci-green` and `mark-shipped`. The action calls `bash .sdd/scripts/check-cr-convergence.sh`, which reads `parameters.review.bot` + `parameters.review.bypass_cr_convergence` from `config.md`, queries `gh api repos/<r>/pulls/<n>/reviews` filtering by the CR bot login at the latest SHA, and exits 1 unless the latest review is APPROVED or COMMENTED (no findings). Bypass via `bypass_cr_convergence: true` for legitimate emergencies. Closes the gap PRs #158/#161 surfaced (CI green ≠ CR clean; admin-merge bypassed CR feedback). 8 BUILD task-tests T270-T277 GREEN. Cycle-0 CR.
+  - Shipped: 2026-05-12 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/257
+  - Data-model: (none — new script + new SHIP-stage action; no entity changes)
+  - Extends: (root); v1.9 — third of the 5 backlog-close ships
+  - Patterns: agent-honoured frontmatter `requires_user_approval=false` lets the mechanical check slot into SHIP without prompting. Folded into existing playbook-step conventions.
+  - Deferred: per-PR `bypass_cr_convergence` annotation (today the flag is global on `.sdd/config.md`).
+
+- **[[025-specialized-subagents-researcher-executor-verifier]]** — closes idea 003 (captured 2026-05-07). Declarative-shape split of today's monolithic agent into 3 role-specialised subagents: `researcher` (codebase exploration, WebFetch, synthesis; returns prose; does NOT write code; `model_tier_default: mechanical`), `executor` (runs one BUILD task end-to-end test→code→green→commit; returns commit SHA; `model_tier_default: routine`), `verifier` (reads §11 ACs + `git diff`; returns AC-coverage report; `model_tier_default: routine`). Each subagent gets its own `.claude/agents/<name>.md` with tuned system prompt + tool-allowlist; existing actions remain orchestrator-led but can dispatch to a subagent via the new `delegate_to:` frontmatter field. Pairs with F008 (multi-model adapter) for tier-routing and F010 (parallel waves) for executor dispatch. 1 CR cycle (changes-requested addressed).
+  - Shipped: 2026-05-12 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/256
+  - Data-model: (none — new `.claude/agents/*.md` declarative files + new `delegate_to:` frontmatter on actions)
+  - Extends: (root); v1.9 — fourth of the 5 backlog-close ships; pairs with F015 (model-tier-per-action) for full per-step routing
+  - Patterns: declarative-shape feature (no runtime code; agent reads agent-file at dispatch time). Folded into existing `.claude/agents/*` conventions.
+  - Deferred: per-feature subagent override (today subagent choice is per-action via `delegate_to:`); auto-dispatch heuristics (today the orchestrator decides explicitly).
+
+- **[[024-corpus-signature-lock-for-synthesise-race]]** — closes #113 (defensive, Tier-3-gated). Tier 3 is FALSE on this project today; the lock helper + doctrine ship NOW so they're already in place when Tier 3 enables on a downstream project. New 40-line `corpus-signature-lock.sh` (mkdir-as-lockdir, bash 3.2 / macOS compatible — same F009 pattern). Two subcommands: `acquire <path>` (exit 0 on success, 1 on ~5s timeout) and `release <path>` (exit 0, idempotent). Doctrine paragraph in `templates/CLAUDE.md` names the helper + the acquire-before-read / release-after-cache discipline so the future `synthesise()` integration point uses it. 1 CR cycle.
+  - Shipped: 2026-05-12 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/255
+  - Data-model: (none — single-script addition + doctrine paragraph)
+  - Extends: (root); v1.9 — second of the 5 backlog-close ships; defensive Tier-3 prep
+  - Patterns: mkdir-as-lockdir (atomic, bash-3.2 compatible). Folded into existing F009 cofile-block lock precedent.
+  - Deferred: `synthesise()` integration itself (Tier-3 gated; ships only when Tier-3 enables on a downstream project).
+
+- **[[021-remove-2-success-from-feature-playbook]]** — closes idea 004 (captured 2026-05-08 mid-F008): drop §2 Success from the feature playbook, lean on §11 Acceptance Criteria as the AI-verifiable success layer. §2 was market-shape prose the framework couldn't verify mechanically; §11 ACs with `{verify-by: T-NNN}` are the real check. F009 / PR #219 (v1.6 anchor PR-A) had already removed `success` from `feature.md` SPEC actions list AND added `deprecated: true` to `success.md` frontmatter — what was missing was a body deprecation paragraph in `success.md`, a doctrine paragraph in `templates/CLAUDE.md`, and regression-lock tests. This PR ships those three pieces. Cycle-0 CR (no findings).
+  - Shipped: 2026-05-12 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/254
+  - Data-model: (none — doctrine prose + frontmatter deprecation)
+  - Extends: (root); v1.9 — fifth of the 5 backlog-close ships
+  - Patterns: anti-theatre alignment (§2 was the canonical theatre surface in feature playbook; replacing it with §11 ACs closes the loop). Folded into existing acceptance-criteria conventions.
+  - Deferred: none — full close.
+
+- **[[027-sdd-setup-verifies-declared-tools-closes-165]]** — closes #165. `/sdd-verify-stack` is the post-wizard reality check — after `/sdd-setup` records the user's tool answers in `config.md`/`stack.md`, the verify command probes each declared tool against actual state. Four checks: CodeRabbit App via `gh api repos/<r>/installation` (surface install URL on 404); Ollama endpoint via `curl --head --max-time 2` (surface "start ollama serve" on unreachable); CI workflow files via `.github/workflows/*.yml` count (warn on zero); branch protection via `gh api repos/<r>/branches/main/protection` (warn when missing). Each check gracefully skips when its precondition isn't set; all `gh` calls degrade if `gh` not on PATH. New `templates/.sdd/scripts/verify-stack.sh` (~150 lines) + `templates/.sdd/actions/verify-stack.md` (`model_tier=mechanical`, `requires_user_approval=false`) + `templates/.claude/commands/sdd-verify-stack.md` slash command. Exit 0 if no FAIL (warnings allowed); 1 if any FAIL. 6 BUILD task-tests T280-T285 GREEN. Cycle-0 CR.
+  - Shipped: 2026-05-12 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/258
+  - Data-model: (none — new script + new action + new slash command; no entity changes)
+  - Extends: (root); v1.9 — first of the 5 backlog-close ships; closes the silent-wait failure mode Sam hit during PipeLogic V2 setup (2026-05-05)
+  - Patterns: post-wizard mechanical verification (probe-after-record). Folded into existing setup-help conventions.
+  - Deferred: deep CodeRabbit config validation (PR-level review settings); auto-install (script suggests URL, doesn't install); full per-tool probe matrix (Slack webhook, custom CI providers).
 
 - **[[019-session-start-hook-prints-bootstrap-success-signal-closes-164-bug-4]]** — closes #164 bug 4. Adds a first-install success cue to `templates/.claude/hooks/session-start.sh` (mirrored to live). When `.sdd/` exists but no `.shipped` markers anywhere under work-item folders, the hook echoes `[SDD bootstrap] ready — .sdd/ scaffold ready` — single line, suppresses for returning users. Closes the "did install actually work?" anxiety F01's 2026-05-05 install dance surfaced. Scope-trimmed to bug 4 only (bugs 1/2/3 deferred). 1 BUILD task-test T01 GREEN (fresh-install fires + returning-user suppresses). Cycle-0 CR (auto-merge no findings).
   - Shipped: 2026-05-11 · PR: https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/249 · Tag: `v1.8.2`
