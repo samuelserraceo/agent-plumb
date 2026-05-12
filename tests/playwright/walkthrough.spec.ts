@@ -18,13 +18,13 @@ test.describe("walkthrough.html — marketplace landing page", () => {
     await page.goto("/docs/walkthrough.html");
   });
 
-  test("page loads with the v1.0→v1.6.0 shipped pill", async ({ page }) => {
+  test("page loads with the v1.0→v1.9 shipped pill", async ({ page }) => {
     // Assert: header pill says all shipped sweeps are live, not "v1.0.0
     // shipped" alone (which was the pre-#131 drift state) and not stuck
-    // on v1.2 (which was the pre-#229 stale state).
+    // on v1.2 (pre-#229) or v1.6.0 (pre-ce74cd2 / v1.7-v1.9 sweep).
     const pill = page.locator(".pill-v10").first();
     await expect(pill).toBeVisible();
-    await expect(pill).toContainText("v1.0 → v1.6.0 shipped");
+    await expect(pill).toContainText("v1.0 → v1.9 shipped");
   });
 
   test("hero headline reads the framework's plain-English claim", async ({
