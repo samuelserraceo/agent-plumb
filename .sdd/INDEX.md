@@ -1,6 +1,6 @@
 # SDD framework — INDEX
 
-**Active:** features/024-corpus-signature-lock-for-synthesise-race
+**Active:** features/026-ship-hard-enforce-coderabbit-convergence-closes-166
 **Playbook:** feature
 **Active blocker:** §1 (first action: brief-intake)
 
@@ -8,7 +8,7 @@
 
 
 ## In flight
-- features/024-corpus-signature-lock-for-synthesise-race — corpus signature lock for synthesise race (PHASE: SPEC)
+- features/026-ship-hard-enforce-coderabbit-convergence-closes-166 — ship hard-enforce CodeRabbit convergence closes 166 (PHASE: SPEC)
 
 
 
