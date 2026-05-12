@@ -220,7 +220,7 @@ Run the 6 checks every session-open via `.claude/hooks/session-start.sh`. Pros: 
 - [x] T505 GREEN: check 5 Tier 3 — Ollama via curl localhost:11434/api/tags
               + OpenAI key env-var presence
               — proves AC6
-- [ ] T506 RED: check 6 — declared test-runner dep in package.json
+- [x] T506 GREEN: check 6 — declared test-runner dep in package.json
               (or pyproject.toml fallback)
               — proves AC7
 ```
