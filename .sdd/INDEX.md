@@ -1,6 +1,6 @@
 # SDD framework — INDEX
 
-**Active:** features/025-specialized-subagents-researcher-executor-verifier
+**Active:** features/026-ship-hard-enforce-coderabbit-convergence-closes-166
 **Playbook:** feature
 **Active blocker:** §1 (first action: brief-intake)
 
@@ -8,7 +8,7 @@
 
 
 ## In flight
-- features/025-specialized-subagents-researcher-executor-verifier — specialized subagents researcher executor verifier (PHASE: SHIP)
+- features/026-ship-hard-enforce-coderabbit-convergence-closes-166 — ship hard-enforce CodeRabbit convergence closes 166 (PHASE: SPEC)
 
 
 
