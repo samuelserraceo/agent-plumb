@@ -8707,6 +8707,134 @@ else
 fi
 
 # ============================================================
+# T260 — F021 / idea 004 close-out: success.md frontmatter retains
+#   `deprecated: true`. Regression-lock for the v1.6 deprecation
+#   (F009 / PR #219) so a future framework edit can't silently strip
+#   the flag and re-arm the §2 prompt.
+#   RED: someone removes `deprecated: true` from the frontmatter.
+#   GREEN: line `deprecated: true` is present inside the frontmatter
+#          (first --- ... --- block) of both templates/ and live copies.
+# ============================================================
+note "T260: success.md frontmatter has deprecated: true (F021 / idea 004)"
+T260_FAILS=0
+T260_REPORT=""
+for tree in ".sdd/actions" "templates/.sdd/actions"; do
+  file="$FRAMEWORK_ROOT/$tree/success.md"
+  if [ ! -f "$file" ]; then
+    T260_FAILS=$((T260_FAILS + 1))
+    T260_REPORT="$T260_REPORT\n  - $tree/success.md missing"
+    continue
+  fi
+  # Extract frontmatter (between first two --- lines) and grep for the flag.
+  # awk: print lines between --- markers; only the first frontmatter block.
+  fm_block=$(awk '/^---$/{c++; next} c==1{print} c>=2{exit}' "$file")
+  if printf '%s\n' "$fm_block" | grep -qE '^deprecated:[[:space:]]*true[[:space:]]*$'; then
+    :
+  else
+    T260_FAILS=$((T260_FAILS + 1))
+    T260_REPORT="$T260_REPORT\n  - $tree/success.md: 'deprecated: true' not found in frontmatter"
+  fi
+done
+if [ "$T260_FAILS" -eq 0 ]; then
+  ok "T260 success.md frontmatter retains deprecated: true (both copies)"
+else
+  bad "T260 deprecation flag missing or drifted" "$(printf '%b' "$T260_REPORT")"
+fi
+
+# ============================================================
+# T261 — F021 / idea 004 close-out: feature.md playbook's SPEC stage
+#   `actions:` list does NOT contain a bare `- success` entry.
+#   Regression-lock for the v1.6 removal (F009 / PR #219) so a future
+#   framework edit can't silently re-add `success` to the SPEC actions.
+#   RED: someone adds `- success` back to the SPEC `actions:` list.
+#   GREEN: between `id: SPEC` and the next `id: ...` (or `exit_checks:`
+#          for that stage), no line matches `^[[:space:]]*-[[:space:]]*success[[:space:]]*$`.
+# ============================================================
+note "T261: feature.md SPEC actions does NOT list success (F021 / idea 004)"
+T261_FAILS=0
+T261_REPORT=""
+for tree in ".sdd/playbooks" "templates/.sdd/playbooks"; do
+  file="$FRAMEWORK_ROOT/$tree/feature.md"
+  if [ ! -f "$file" ]; then
+    T261_FAILS=$((T261_FAILS + 1))
+    T261_REPORT="$T261_REPORT\n  - $tree/feature.md missing"
+    continue
+  fi
+  # Extract the SPEC stage's `actions:` list. Scope: from `id: SPEC` to
+  # the next `id:` or `exit_checks:` (whichever comes first). Whole-line
+  # match on `- success` (bare slug; tolerates leading whitespace).
+  spec_block=$(awk '
+    /^[[:space:]]*-[[:space:]]*id:[[:space:]]*SPEC[[:space:]]*$/ {in_spec=1; next}
+    in_spec && /^[[:space:]]*-[[:space:]]*id:/ {exit}
+    in_spec && /^[[:space:]]*exit_checks:/ {exit}
+    in_spec {print}
+  ' "$file")
+  if printf '%s\n' "$spec_block" | grep -qE '^[[:space:]]*-[[:space:]]*success[[:space:]]*$'; then
+    T261_FAILS=$((T261_FAILS + 1))
+    T261_REPORT="$T261_REPORT\n  - $tree/feature.md: 'success' found in SPEC actions list"
+  fi
+done
+if [ "$T261_FAILS" -eq 0 ]; then
+  ok "T261 feature.md SPEC stage does not list 'success' (both copies)"
+else
+  bad "T261 'success' re-introduced to SPEC actions" "$(printf '%b' "$T261_REPORT")"
+fi
+
+# ============================================================
+# T262 — F021 / idea 004 close-out: success.md body (post-frontmatter)
+#   mentions "Acceptance Criteria" or "§11" so any agent that lands on
+#   the file sees the canonical alternative (§11 ACs with verify-by).
+#   RED: body deprecation pointer rewritten and the alternative
+#        reference dropped.
+#   GREEN: post-frontmatter content contains at least one match for
+#          "Acceptance Criteria" OR "§11" (case-sensitive; both are
+#          framework-canonical phrasings).
+# ============================================================
+note "T262: success.md body points to §11 Acceptance Criteria (F021 / idea 004)"
+T262_FAILS=0
+T262_REPORT=""
+for tree in ".sdd/actions" "templates/.sdd/actions"; do
+  file="$FRAMEWORK_ROOT/$tree/success.md"
+  if [ ! -f "$file" ]; then
+    T262_FAILS=$((T262_FAILS + 1))
+    T262_REPORT="$T262_REPORT\n  - $tree/success.md missing"
+    continue
+  fi
+  # Body = lines after the second --- marker (end of frontmatter).
+  body=$(awk '/^---$/{c++; next} c>=2{print}' "$file")
+  if printf '%s\n' "$body" | grep -qE 'Acceptance Criteria|§11'; then
+    :
+  else
+    T262_FAILS=$((T262_FAILS + 1))
+    T262_REPORT="$T262_REPORT\n  - $tree/success.md: body missing 'Acceptance Criteria' / '§11' pointer"
+  fi
+done
+if [ "$T262_FAILS" -eq 0 ]; then
+  ok "T262 success.md body names the §11 / Acceptance Criteria alternative (both copies)"
+else
+  bad "T262 deprecation alternative pointer missing" "$(printf '%b' "$T262_REPORT")"
+fi
+
+# ============================================================
+# T263 — F021 / idea 004 close-out: framework test sweep stays GREEN
+#   after the deprecation close-out. This is a meta-assertion: by the
+#   time T263 runs, T001..T262 have all reported into $PASS / $FAIL.
+#   If anything earlier failed, $FAIL is non-zero and T263 fails too,
+#   which is what we want — T263's contract is "the sweep still passes
+#   with the new tests in it". Detecting non-zero $FAIL at this point
+#   is equivalent to checking the final exit code, but inside the same
+#   process so the count is authoritative.
+#   RED: T260/T261/T262 (or any prior assertion) failed.
+#   GREEN: $FAIL is 0 at this point in the run.
+# ============================================================
+note "T263: framework test sweep stays GREEN with T260-T262 added (F021 / idea 004)"
+if [ "$FAIL" -eq 0 ]; then
+  ok "T263 no regression: $PASS prior assertions GREEN before final report"
+else
+  bad "T263 sweep regression detected" "FAIL=$FAIL prior assertions before T263"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
