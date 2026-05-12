@@ -93,7 +93,25 @@ Run the 6 checks every session-open via `.claude/hooks/session-start.sh`. Pros: 
 
 ### action: data-contract
 
-- [ ] approval: draft the data contract, iterate with the user, sync data-model.md, get approval
+- [x] approval: 3 new artefacts (`verify-stack.sh` script manifest-pinned + `verify-stack.md` action + `sdd-verify-stack` slash command, each live + template). 0 new config fields. 0 new project-state entities. 1 new framework-level concept (`StackCheck`, typed string — NOT a data-model.md entity, analogous to F011's AutomationLevel + F014's Tier). 7 edge cases asked-and-answered (empty reviewer / Tier 3 off / no package.json / gh missing / curl missing / not-SDD-project / network unreachable). Sam approved 2026-05-12.
+
+**Draft (awaiting Sam approval):**
+
+- **New artefacts (3):** `templates/.sdd/scripts/verify-stack.sh` (the 6-check runner, mirrored live), `templates/.sdd/actions/verify-stack.md` (action prose, mirrored live), `templates/.claude/commands/sdd-verify-stack.md` (slash command body, mirrored live but the live `.claude/` is gitignored — only template is tracked).
+- **Manifest pin:** verify-stack.sh joins the manifest-pinned scripts (same shape as advance.sh / hash-section.sh / resolve-parameters.sh / dispatch-wave.sh / promote-legacy-queued.sh). New entry in `.sdd/.cache/manifest.json` + template copy.
+- **No new config field.** Script reads existing fields: `parameters.review.bot` (checks 1+2), `parameters.mcp.tier3.*` (check 5), declared required-checks from stack.md (checks 3+4), test runner from stack.md (check 6).
+- **No new project-state entity** (spec.md / INDEX.md / decisions.md / patterns.md / data-model.md unchanged per-run; verify-stack outputs to stderr/stdout, does not write to any tracked file).
+- **One new framework-level concept** (typed string, NOT a data-model.md entity): `StackCheck` — values `cr-app | copilot | branch-protection | ci-workflows | tier3-provider | test-runner`. Analogous to F011's `AutomationLevel` and F014's `Tier`.
+- **Existing entities** (Playbook, Hook, Setup brick, Wave): no new fields. The `Action` ENTITY gains nothing — verify-stack is just a new action file slotting into the existing action shape (post-#248 with `tier:` frontmatter, this one classifies as `mechanical`).
+- **Edge cases at the data layer:**
+  1. `parameters.review.bot` empty — checks 1+2 skip silently (pass with no output line).
+  2. Tier 3 disabled (`parameters.mcp.tier3.enabled: false`) — check 5 skips.
+  3. No `package.json` (Python project, etc.) — check 6 looks at `pyproject.toml`; if neither, surface "no test-runner manifest found in this project — verify by hand" and continue.
+  4. `gh` CLI not installed — checks 1/2/3 emit `gh not on PATH — install from cli.github.com` and continue with other checks.
+  5. `curl` not on PATH — check 5 falls back to `wget`; if both absent, emit `curl/wget missing — Ollama probe skipped` and continue.
+  6. User runs `/sdd-verify-stack` outside an SDD project (no `.sdd/`) — surface `not an SDD project — run /sdd-setup first` and exit 1.
+  7. Network unreachable — checks 1/2/3/5 emit `network unreachable — re-run when online` and continue with local-only checks 4+6.
+- **data-model.md sync:** none — StackCheck is a typed string, not an entity (per F011's `AutomationLevel` and F014's `Tier` precedent).
 
 ### action: flows
 
