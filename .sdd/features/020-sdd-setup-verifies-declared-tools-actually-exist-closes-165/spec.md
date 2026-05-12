@@ -208,7 +208,7 @@ Run the 6 checks every session-open via `.claude/hooks/session-start.sh`. Pros: 
 - [x] T501 GREEN: check 1 fires when parameters.review.bot=coderabbit and
               gh-api install probe reports installed/missing correctly
               — proves AC2
-- [ ] T502 RED: check 2 fires when parameters.review.bot=copilot and
+- [x] T502 GREEN: check 2 fires when parameters.review.bot=copilot and
               probes Copilot review settings via gh-api
               — proves AC3
 - [ ] T503 RED: check 3 compares declared required-checks from stack.md
