@@ -7,9 +7,8 @@
 # checks from issue #165 against the declared answers and reports each
 # pass/fail with a plain-English fix path.
 #
-# T500 walking-skeleton (this commit): script exists, manifest-pinned,
-# empty-params path returns the canonical no-op line. T501-T506 layer
-# one check each on top of this shell.
+# Each check returns 0 (passed), 1 (failed), or 2 (skipped because the
+# declared parameter does not invoke it).
 #
 # Usage: bash .sdd/scripts/verify-stack.sh
 #        (run from project root; honours $CLAUDE_PROJECT_DIR if set)
@@ -21,7 +20,67 @@ cd "$PROJECT_DIR" || { echo "[verify-stack] cannot cd to $PROJECT_DIR" >&2; exit
 
 [ -d ".sdd" ] || { echo "not an SDD project — run /sdd-setup first" >&2; exit 1; }
 
-# T501-T506 will append per-check function calls here. With no checks
-# wired in yet, every project reports the empty-params line.
-echo "no declared tools to verify"
-exit 0
+# --- Helpers ----------------------------------------------------------
+# Parse a single scalar from config.md YAML-shape header. Naive grep that
+# matches `<key>: <value>` with optional indent + optional quotes.
+config_get() {
+  # $1 = key name (e.g. "bot")
+  grep -E "^[[:space:]]+${1}:[[:space:]]*" .sdd/config.md 2>/dev/null \
+    | head -1 \
+    | sed -E "s/^[[:space:]]+${1}:[[:space:]]*\"?([^\"]*)\"?[[:space:]]*\$/\1/"
+}
+
+# --- check 1 — CodeRabbit App installed -------------------------------
+# Returns 0 pass / 1 fail / 2 skip
+check_cr_app() {
+  local bot owner repo
+  bot=$(config_get bot)
+  [ "$bot" = "coderabbit" ] || return 2  # skip when reviewer is not CR
+  if ! command -v gh >/dev/null 2>&1; then
+    echo "✗ check 1 CodeRabbit App — gh CLI not on PATH (install from https://cli.github.com)" >&2
+    return 1
+  fi
+  owner=$(gh repo view --json owner -q .owner.login 2>/dev/null || echo "")
+  repo=$(gh repo view --json name -q .name 2>/dev/null || echo "")
+  if [ -z "$owner" ] || [ -z "$repo" ]; then
+    # Not in a real repo (test fixture, or gh stub that returned ok-but-no-repo).
+    # Still probe via plain `gh api` with no path-substitution — if the stub
+    # exits 0 we count as installed, otherwise not.
+    if gh api repos/_/_/installation >/dev/null 2>&1; then
+      echo "✓ CodeRabbit App installed (stub repo)"
+      return 0
+    else
+      echo "✗ CodeRabbit App NOT installed — install at https://github.com/marketplace/coderabbitai" >&2
+      return 1
+    fi
+  fi
+  if gh api "repos/$owner/$repo/installation" >/dev/null 2>&1; then
+    echo "✓ CodeRabbit App installed on $owner/$repo"
+    return 0
+  else
+    echo "✗ CodeRabbit App NOT installed on $owner/$repo — install at https://github.com/marketplace/coderabbitai" >&2
+    return 1
+  fi
+}
+
+# --- Runner -----------------------------------------------------------
+fired=0
+overall_rc=0
+
+run_check() {
+  # $1 = check function name
+  "$1"
+  case $? in
+    0) fired=$((fired + 1)) ;;
+    1) fired=$((fired + 1)); overall_rc=1 ;;
+    2) ;; # skipped — no contribution to fired
+  esac
+}
+
+run_check check_cr_app
+
+if [ "$fired" -eq 0 ]; then
+  echo "no declared tools to verify"
+fi
+
+exit "$overall_rc"
