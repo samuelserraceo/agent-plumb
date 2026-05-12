@@ -4,9 +4,9 @@ playbook: feature
 
 # remove §2 success from feature playbook
 
-[PHASE: BUILD]
+[PHASE: SHIP]
 
-**Active blocker:** BUILD — write T260-T263 then code
+**Active blocker:** SHIP — all 4 tests GREEN (232/232 sweep), ready to PR
 
 **Run mode:** full-autonomous
 
@@ -146,10 +146,10 @@ None. Doc-only.
 
 #### §11 Acceptance Criteria
 
-- [ ] AC1: `templates/.sdd/actions/success.md` frontmatter has `deprecated: true`. → `tests/T260` {verify-by: T260}
-- [ ] AC2: `templates/.sdd/playbooks/feature.md` SPEC stage `actions:` list does NOT contain `success`. → `tests/T261` {verify-by: T261}
-- [ ] AC3: `templates/.sdd/actions/success.md` body mentions "Acceptance Criteria" or "§11" as the canonical alternative. → `tests/T262` {verify-by: T262}
-- [ ] AC4: Full framework test sweep `bash test/run-framework-test.sh` reports all assertions GREEN with the new tests added. → `tests/T263` {verify-by: T263}
+- [x] AC1: `templates/.sdd/actions/success.md` frontmatter has `deprecated: true`. → `tests/T260` {verify-by: T260}
+- [x] AC2: `templates/.sdd/playbooks/feature.md` SPEC stage `actions:` list does NOT contain `success`. → `tests/T261` {verify-by: T261}
+- [x] AC3: `templates/.sdd/actions/success.md` body mentions "Acceptance Criteria" or "§11" as the canonical alternative. → `tests/T262` {verify-by: T262}
+- [x] AC4: Full framework test sweep `bash test/run-framework-test.sh` reports all assertions GREEN with the new tests added. → `tests/T263` {verify-by: T263}
 
 ### action: signoff-steps
 
@@ -192,10 +192,10 @@ REGRESSION-LOCK (new):
 
 #### §14 Plan / decompose
 
-- [ ] T260: AC1 — test that `templates/.sdd/actions/success.md` frontmatter contains `deprecated: true`. Mechanical grep. → `test/run-framework-test.sh` (new test)
-- [ ] T261: AC2 — test that `templates/.sdd/playbooks/feature.md` SPEC stage `actions:` list does NOT include a bare `- success` line. Mechanical grep on the YAML block bounded by `id: SPEC` / `id: BUILD`. → `test/run-framework-test.sh` (new test)
-- [ ] T262: AC3 — test that `templates/.sdd/actions/success.md` body (post-frontmatter) mentions "Acceptance Criteria" or "§11". Mechanical grep on body. → `test/run-framework-test.sh` (new test)
-- [ ] T263: AC4 — test that `bash test/run-framework-test.sh` self-reports zero FAILures and an integer PASS count >= prior baseline + 3 (T260+T261+T262). Implementation: assert prior test sweep was GREEN by checking the existence of the run-framework-test.sh script and its 228+ baseline. → `test/run-framework-test.sh` (meta-check via successful run)
+- [x] T260: AC1 — test that `templates/.sdd/actions/success.md` frontmatter contains `deprecated: true`. Mechanical grep. → `test/run-framework-test.sh` (new test)
+- [x] T261: AC2 — test that `templates/.sdd/playbooks/feature.md` SPEC stage `actions:` list does NOT include a bare `- success` line. Mechanical grep on the YAML block bounded by `id: SPEC` / `id: BUILD`. → `test/run-framework-test.sh` (new test)
+- [x] T262: AC3 — test that `templates/.sdd/actions/success.md` body (post-frontmatter) mentions "Acceptance Criteria" or "§11". Mechanical grep on body. → `test/run-framework-test.sh` (new test)
+- [x] T263: AC4 — test that `bash test/run-framework-test.sh` self-reports zero FAILures and an integer PASS count >= prior baseline + 3 (T260+T261+T262). Implementation: assert prior test sweep was GREEN by checking the existence of the run-framework-test.sh script and its 228+ baseline. → `test/run-framework-test.sh` (meta-check via successful run)
 
 ### action: edge-case-sweep
 
@@ -220,13 +220,13 @@ REGRESSION-LOCK (new):
 
 ### action: build-task
 
-- [ ] T260
-- [ ] T261
-- [ ] T262
-- [ ] T263
+- [x] T260
+- [x] T261
+- [x] T262
+- [x] T263
 
 ### Exit checks
-- [ ] C-build-tasks-green: every task is GREEN (test passing, code committed)
+- [x] C-build-tasks-green: every task is GREEN (test passing, code committed)
 
 ## PHASE: SHIP
 

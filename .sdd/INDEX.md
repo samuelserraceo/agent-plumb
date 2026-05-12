@@ -2,13 +2,13 @@
 
 **Active:** features/021-remove-2-success-from-feature-playbook
 **Playbook:** feature
-**Active blocker:** §1 (first action: brief-intake)
+**Active blocker:** SHIP — all 4 tests GREEN (232/232 sweep), ready to PR
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
 
 ## In flight
-- features/021-remove-2-success-from-feature-playbook — remove §2 success from feature playbook (PHASE: SPEC)
+- features/021-remove-2-success-from-feature-playbook — remove §2 success from feature playbook (PHASE: SHIP)
 
 
 
