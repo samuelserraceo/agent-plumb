@@ -104,6 +104,40 @@ check_branch_protection() {
   fi
 }
 
+# --- check 4 — CI workflow files present ------------------------------
+# Fires when stack.md declares "required CI checks" or "required check"
+# with at least one named job. Greps `.github/workflows/*.yml` for the
+# declared job names.
+check_ci_workflows() {
+  local declared missing job
+  declared=$(grep -iE "required.{0,5}(CI )?check" .sdd/stack.md 2>/dev/null | head -1)
+  [ -n "$declared" ] || return 2  # skip if not declared
+  if ! ls .github/workflows/*.yml >/dev/null 2>&1 && ! ls .github/workflows/*.yaml >/dev/null 2>&1; then
+    echo "✗ check 4 CI workflow missing — no .github/workflows/*.yml files found; declared required CI checks have nowhere to live" >&2
+    return 1
+  fi
+  # Extract candidate job names from the declared line (after the colon)
+  local joblist
+  joblist=$(printf '%s\n' "$declared" | sed -E 's/^[^:]*:[[:space:]]*//' | tr ',' '\n' | tr -d ' ')
+  missing=""
+  for job in $joblist; do
+    [ -z "$job" ] && continue
+    # Strip leading list markers / whitespace
+    job=$(printf '%s' "$job" | sed -E 's/^[-*[:space:]]+//')
+    [ -z "$job" ] && continue
+    if ! grep -rqE "^[[:space:]]*${job}:" .github/workflows/ 2>/dev/null; then
+      missing="${missing}${missing:+, }${job}"
+    fi
+  done
+  if [ -z "$missing" ]; then
+    echo "✓ required CI workflow jobs present in .github/workflows/"
+    return 0
+  else
+    echo "✗ required CI workflow jobs missing: $missing — add to .github/workflows/*.yml" >&2
+    return 1
+  fi
+}
+
 # --- Runner -----------------------------------------------------------
 fired=0
 overall_rc=0
@@ -121,6 +155,7 @@ run_check() {
 run_check check_cr_app
 run_check check_copilot
 run_check check_branch_protection
+run_check check_ci_workflows
 
 if [ "$fired" -eq 0 ]; then
   echo "no declared tools to verify"
