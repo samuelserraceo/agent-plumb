@@ -195,7 +195,43 @@ Run the 6 checks every session-open via `.claude/hooks/session-start.sh`. Pros: 
 
 ### action: plan-decompose
 
-- [ ] tasks: convert acceptance criteria into ordered build tasks (one test file per task)
+- [x] tasks: 7 ordered T-tasks T500-T506, one per mechanical AC. T500 walking-skeleton (script exists + manifest pin + empty-params no-op). T501-T506 layer one check each onto the same script (single-file BUILD, framework-self-mod dance applies only to T500). AC8 named-eye + AC9/AC10 PROD-ONLY at SHIP — no T-task. Sam approved 2026-05-12.
+
+**§14 Plan-decompose (7 BUILD tasks, one per mechanical AC):**
+
+```
+- [ ] T500 RED: verify-stack.sh exists at templates path; manifest-pinned;
+              with empty parameters.* + no stack.md declarations, the
+              script exits 0 with one line "no declared tools to verify"
+              (walking-skeleton)
+              — proves AC1
+- [ ] T501 RED: check 1 fires when parameters.review.bot=coderabbit and
+              gh-api install probe reports installed/missing correctly
+              — proves AC2
+- [ ] T502 RED: check 2 fires when parameters.review.bot=copilot and
+              probes Copilot review settings via gh-api
+              — proves AC3
+- [ ] T503 RED: check 3 compares declared required-checks from stack.md
+              against `gh api .../branches/main/protection` response
+              — proves AC4
+- [ ] T504 RED: check 4 greps .github/workflows/*.yml for declared job
+              names; reports missing
+              — proves AC5
+- [ ] T505 RED: check 5 Tier 3 — Ollama via curl localhost:11434/api/tags
+              + OpenAI key env-var presence
+              — proves AC6
+- [ ] T506 RED: check 6 — declared test-runner dep in package.json
+              (or pyproject.toml fallback)
+              — proves AC7
+```
+
+**Order rationale:** T500 first (walking-skeleton — script exists + manifest pin + empty-params path). T501-T506 layer one check each on top; each independent (different `gh api` or filesystem probe). Per the F011/F014 pattern: framework-self-mod manifest dance applies to T500 only (script first lands in manifest); T501-T506 only add bash functions to the existing script (no manifest changes after T500).
+
+**Walking-skeleton check:** T500 is the smallest end-to-end slice — script exists, can be invoked, returns the empty-params case. All subsequent tasks layer functionality without breaking T500's invariant.
+
+**Wave dispatch (F010 unlock):** T501-T506 are independent functions in the same script — could theoretically `[WAVE: 1]` but they share `verify-stack.sh`, so wave-dispatch would have to handle in-file merge conflicts. v1: linear; per-task framework-self-mod dance is minimal (single-file script).
+
+**No T-task for** AC8 named-eye prose audit (best-effort at SHIP), AC9 PROD-ONLY auto-fire-on-/sdd-setup-tail (live agent session), AC10 PROD-ONLY standalone slash command (live dispatch) — all 3 verified at SHIP via §12 sign-off steps.
 
 ### action: edge-case-sweep
 
