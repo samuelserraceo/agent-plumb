@@ -4,9 +4,9 @@ playbook: feature
 
 # sdd-setup verifies declared tools actually exist (closes #165)
 
-[PHASE: BUILD]
+[PHASE: SHIP]
 
-**Active blocker:** §14 (BUILD action: run-mode-chosen)
+**Active blocker:** SHIP action: verify-test-run
 
 ## PHASE: SPEC
 
@@ -282,7 +282,7 @@ Run the 6 checks every session-open via `.claude/hooks/session-start.sh`. Pros: 
 
 ### Exit checks
 
-- [ ] C-build-tasks-green: T500-T506 all GREEN; framework tests pass {verify-by: verify-stage.sh}
+- [x] C-build-tasks-green: T500-T506 all GREEN; framework tests pass {verify-by: verify-stage.sh}
 
 ## PHASE: SHIP
 

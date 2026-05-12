@@ -8,7 +8,7 @@
 
 
 ## In flight
-- features/020-sdd-setup-verifies-declared-tools-actually-exist-closes-165 — sdd-setup verifies declared tools actually exist (closes #165) (PHASE: BUILD)
+- features/020-sdd-setup-verifies-declared-tools-actually-exist-closes-165 — sdd-setup verifies declared tools actually exist (closes #165) (PHASE: SHIP)
 
 
 
