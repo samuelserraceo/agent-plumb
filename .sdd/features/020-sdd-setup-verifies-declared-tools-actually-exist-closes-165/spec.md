@@ -200,7 +200,7 @@ Run the 6 checks every session-open via `.claude/hooks/session-start.sh`. Pros: 
 **§14 Plan-decompose (7 BUILD tasks, one per mechanical AC):**
 
 ```
-- [ ] T500 RED: verify-stack.sh exists at templates path; manifest-pinned;
+- [x] T500 GREEN: verify-stack.sh exists at templates path; manifest-pinned;
               with empty parameters.* + no stack.md declarations, the
               script exits 0 with one line "no declared tools to verify"
               (walking-skeleton)
