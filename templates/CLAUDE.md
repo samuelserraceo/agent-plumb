@@ -120,6 +120,22 @@ INDEX.md's `## In flight` section can hold multiple work items at once — one p
 
 Run the rename helper BEFORE the first decisions.md entry references the colliding feature. After that, accept coexistence — the slugs disambiguate.
 
+## Specialised subagents — when to dispatch a role (v1.9 — F025)
+
+Three role files ship at `.sdd/agents/`: `researcher.md`, `executor.md`, `verifier.md`. Each declares its own model_tier_default + tools_allowed in frontmatter and carries a system-prompt-style body. Dispatch via `/dispatch <role> <task>` — the slash command parses the role argument, reads the role file, and spawns a fresh-context Agent-tool subagent with the body as the system prompt.
+
+**When to reach for which role:**
+
+- **researcher** — codebase exploration, WebFetch, third-party API discovery, OSS-package shopping (anti-NIH check before writing custom logic). Returns a tight written synthesis; does NOT write code. Use when the main agent's context is heavy and you need fresh-context reading without burning the main budget.
+
+- **executor** — runs one BUILD task end-to-end (test → code → green → commit), returns the commit SHA. Use during BUILD when the main agent's context is heavy with prior tasks. Pairs with F010 parallel waves: each wave-task is one executor dispatch.
+
+- **verifier** — reads §11 ACs + `git diff`, returns an AC-coverage report. Use before pushing the SHIP-phase PR. Catches gaps the main agent rationalised away (the same agent that drafted §11 and wrote the code has a conflict of interest verifying its own work).
+
+Decision shortcut: *is this READ work, WRITE work, or CHECK work?* Researcher = READ; executor = WRITE; verifier = CHECK.
+
+**Opt-in, backwards-compat:** existing `/next` flow walks every step in the main context — unchanged. `/dispatch` is the new opt-in surface. Projects without `.sdd/agents/` keep current behaviour. Custom roles drop in by adding `<custom>.md` with the same frontmatter shape (`role` / `model_tier_default` / `tools_allowed`); resist forest-of-subagents temptation per Pillar 1 (Simplicity) — add a fourth role only when the pattern is unmistakable.
+
 ## Slash commands available to the user
 
 | Command | Purpose | Branch | Phases |

@@ -102,6 +102,14 @@ Resolution rules:
 
 Same shape pattern as `Tier3Config` (foundation 3 — framework defines the schema; downstream projects override in their own `config.md`).
 
+### Subagent
+
+A declarative role file plus a system-prompt body. Lives at `.sdd/agents/<role>.md` (mirrored to `templates/.sdd/agents/<role>.md` for framework-managed distribution). Frontmatter declares `role` (slug matching the filename basename), `model_tier_default` (one of `thinking` / `routine` / `mechanical`, falling back to `routine` per F015 convention), and `tools_allowed` (array of Claude Code tool names — advisory in v1; no mechanical filter). Body is plain-English system-prompt prose the main agent reads verbatim when dispatching a fresh-context subagent via `/dispatch <role> <task>`.
+
+Today: **3 subagents** ship — `researcher` (codebase exploration + WebFetch + synthesis; `model_tier_default: mechanical`), `executor` (one BUILD task end-to-end → commit SHA; `model_tier_default: routine`), `verifier` (read §11 ACs + diff → coverage report; `model_tier_default: mechanical`).
+
+Agent-honoured frontmatter convention (same shape as Action's `requires_user_approval` / `prelude_refresh` / `trust`) — no runtime evaluator; the dispatching agent honours the contract. Custom roles drop in by adding a new file with the same frontmatter shape. Resist forest-of-subagents temptation per Pillar 1 (Simplicity) — add a fourth role only when the pattern is unmistakable. F025 (declarative shipping). Pairs with F008 (multi-model, the tier values), F010 (parallel waves, the executor-dispatch substrate), F015 (per-action `model_tier:`, the per-step tier-resolution complement).
+
 ## Relationships
 
 - **Playbook → Action**: a playbook's `stages` array references action slugs in order.
@@ -112,6 +120,8 @@ Same shape pattern as `Tier3Config` (foundation 3 — framework defines the sche
 - **Tier3Config → SynthesisCache**: config gates when the cache gets read/written; cache obeys the cost ceiling declared in config.
 - **InjectionBudget → Hook (user-prompt-submit)**: the hook reads `parameters.injection.per_file_budget_chars` once per turn and applies each file's budget independently when concatenating corpus files for injection. `cap_total_chars` is then applied as a defensive floor on the concatenated output.
 - **SynthesisCache → Graph node**: every cached answer's `cite_chunks[*].slug` must resolve to a real graph node (feature / pattern / entity / decision). Cite-check enforces this on every read AND every write.
+- **Subagent → Slash command (`/dispatch`)**: each Subagent role file is invoked via `/dispatch <role> <task>` — the slash command body parses the role argument, reads `.sdd/agents/<role>.md`, and uses the body as the system prompt for a fresh-context Agent-tool subagent. No runtime evaluator; agent-honoured convention.
+- **Subagent → ModelTier**: each Subagent's `model_tier_default:` resolves through the same `parameters.models.<tier>` mapping in `config.md` that F015's per-action `model_tier:` uses. Researcher/verifier default to `mechanical`; executor defaults to `routine`. Per-dispatch overrides are deferred (v1 ships defaults only).
 
 ## How this differs from a downstream user's data-model.md
 
