@@ -8,7 +8,7 @@
 
 
 ## In flight
-- features/025-specialized-subagents-researcher-executor-verifier — specialized subagents researcher executor verifier (PHASE: SPEC)
+- features/025-specialized-subagents-researcher-executor-verifier — specialized subagents researcher executor verifier (PHASE: SHIP)
 
 
 

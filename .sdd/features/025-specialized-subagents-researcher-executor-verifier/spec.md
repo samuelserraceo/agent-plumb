@@ -4,9 +4,9 @@ playbook: feature
 
 # specialized subagents (researcher / executor / verifier) — closes idea 003
 
-[PHASE: BUILD]
+[PHASE: SHIP]
 
-**Active blocker:** BUILD — T01-T03 to ship
+**Active blocker:** SHIP — T01-T03 GREEN, ready to PR
 
 **Run mode:** full-autonomous
 
@@ -163,11 +163,11 @@ Main agent: relays subagent report to user
 
 #### §11 Acceptance criteria
 
-- [ ] AC1: The 3 agent role files exist at `templates/.sdd/agents/{researcher,executor,verifier}.md` AND mirrored at `.sdd/agents/{researcher,executor,verifier}.md`. Each file has frontmatter declaring `role`, `model_tier_default`, and `tools_allowed`. `role` matches filename basename; `model_tier_default` is one of `thinking` / `routine` / `mechanical`. {verify-by: T-01} — `tests/task-001.sh`
+- [x] AC1: The 3 agent role files exist at `templates/.sdd/agents/{researcher,executor,verifier}.md` AND mirrored at `.sdd/agents/{researcher,executor,verifier}.md`. Each file has frontmatter declaring `role`, `model_tier_default`, and `tools_allowed`. `role` matches filename basename; `model_tier_default` is one of `thinking` / `routine` / `mechanical`. {verify-by: T-01} — `tests/task-001.sh`
 
-- [ ] AC2: The `/dispatch` slash command file exists at `templates/.claude/commands/dispatch.md` and names the 3 roles (researcher / executor / verifier) in its body. (No `.claude/commands/` live mirror in this framework repo — same shape as `templates/.claude/hooks/` per F019; downstream projects get the live copy at install time.) {verify-by: T-02} — `tests/task-002.sh`
+- [x] AC2: The `/dispatch` slash command file exists at `templates/.claude/commands/dispatch.md` and names the 3 roles (researcher / executor / verifier) in its body. (No `.claude/commands/` live mirror in this framework repo — same shape as `templates/.claude/hooks/` per F019; downstream projects get the live copy at install time.) {verify-by: T-02} — `tests/task-002.sh`
 
-- [ ] AC3: `.sdd/data-model.md` contains an `### Subagent` entity heading with a body that names the 3 roles AND declares the 3 frontmatter fields (`role`, `model_tier_default`, `tools_allowed`). {verify-by: T-03} — `tests/task-003.sh`
+- [x] AC3: `.sdd/data-model.md` contains an `### Subagent` entity heading with a body that names the 3 roles AND declares the 3 frontmatter fields (`role`, `model_tier_default`, `tools_allowed`). Also adds a doctrine paragraph in `templates/CLAUDE.md` naming `/dispatch` + the 3 roles. {verify-by: T-03} — `tests/task-003.sh`
 
 ### action: signoff-steps
 
@@ -187,9 +187,9 @@ Main agent: relays subagent report to user
 
 #### §14 Plan-Decompose
 
-- [ ] T01: Create 3 agent role files in both `templates/.sdd/agents/` and `.sdd/agents/` (researcher.md / executor.md / verifier.md) with the required frontmatter + system-prompt body. Test: `tests/task-001.sh` GREEN. AC1 mapped.
-- [ ] T02: Create `/dispatch` slash command in both `templates/.claude/commands/` and `.claude/commands/` documenting `<role> <task>` invocation. Test: `tests/task-002.sh` GREEN. AC2 mapped.
-- [ ] T03: Add `Subagent` entity section to `.sdd/data-model.md` + doctrine paragraph to `templates/CLAUDE.md` (mirrored to live `CLAUDE.md`). Test: `tests/task-003.sh` GREEN. AC3 mapped.
+- [x] T01: Create 3 agent role files in both `templates/.sdd/agents/` and `.sdd/agents/` (researcher.md / executor.md / verifier.md) with the required frontmatter + system-prompt body. Test: `tests/task-001.sh` GREEN. AC1 mapped.
+- [x] T02: Create `/dispatch` slash command at `templates/.claude/commands/dispatch.md` documenting `<role> <task>` invocation. Test: `tests/task-002.sh` GREEN. AC2 mapped.
+- [x] T03: Add `Subagent` entity section to `.sdd/data-model.md` + doctrine paragraph to `templates/CLAUDE.md`. Test: `tests/task-003.sh` GREEN. AC3 mapped.
 
 ### action: edge-case-sweep
 
@@ -220,4 +220,4 @@ Main agent: relays subagent report to user
 
 ### exit_checks
 
-- [ ] C-build-tasks-green: every task is GREEN — `grep -cE '^- \[x\] T[0-9]+' "$SECTION_FILE"` matches T-row count in §14
+- [x] C-build-tasks-green: every task is GREEN — `grep -cE '^- \[x\] T[0-9]+' "$SECTION_FILE"` matches T-row count in §14 (3/3 GREEN)
