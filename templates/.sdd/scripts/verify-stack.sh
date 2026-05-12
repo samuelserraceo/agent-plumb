@@ -138,6 +138,44 @@ check_ci_workflows() {
   fi
 }
 
+# --- check 5 — Tier 3 LLM provider reachable --------------------------
+# Fires when parameters.mcp.tier3.enabled=true. Ollama: curl probe.
+# OpenAI: env-var presence.
+check_tier3_provider() {
+  local enabled provider
+  enabled=$(config_get enabled)
+  [ "$enabled" = "true" ] || return 2  # skip when tier3 disabled
+  provider=$(config_get provider)
+  case "$provider" in
+    ollama)
+      if ! command -v curl >/dev/null 2>&1; then
+        echo "✗ check 5 Tier 3 — curl not on PATH (Ollama probe needs it)" >&2
+        return 1
+      fi
+      if curl --max-time 5 -s http://localhost:11434/api/tags >/dev/null 2>&1; then
+        echo "✓ Tier 3 Ollama reachable on localhost:11434"
+        return 0
+      else
+        echo "✗ Tier 3 Ollama NOT reachable on localhost:11434 — install + start at https://ollama.com" >&2
+        return 1
+      fi
+      ;;
+    openai)
+      if [ -n "${OPENAI_API_KEY:-}" ]; then
+        echo "✓ Tier 3 OpenAI key (OPENAI_API_KEY) present (key-validity not probed — eye-check)"
+        return 0
+      else
+        echo "✗ Tier 3 OpenAI key (OPENAI_API_KEY) NOT set — export it in your shell rc" >&2
+        return 1
+      fi
+      ;;
+    *)
+      echo "✗ Tier 3 enabled but provider='$provider' not recognised (expected ollama|openai)" >&2
+      return 1
+      ;;
+  esac
+}
+
 # --- Runner -----------------------------------------------------------
 fired=0
 overall_rc=0
@@ -156,6 +194,7 @@ run_check check_cr_app
 run_check check_copilot
 run_check check_branch_protection
 run_check check_ci_workflows
+run_check check_tier3_provider
 
 if [ "$fired" -eq 0 ]; then
   echo "no declared tools to verify"
