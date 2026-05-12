@@ -18,7 +18,17 @@ playbook: feature
 
 - [x] who: First-time SDD installers running `/sdd-setup` on a fresh project. Sam felt it during the PipeLogic V2 install (2026-05-05) when he answered "CodeRabbit" for reviewer but had not actually installed the GitHub App — agent then waited silently for reviews on subsequent PRs. Future adopters hit the same shape across Ollama / branch-protection / required CI checks / Tier 3 provider / test-runner deps.
 - [x] why-now: Existing `feedback_setup_help_v12.md` memo flagged the Ollama-install gap a week ago. Issue #165 generalises that to 6 concrete tool classes (CR app, Copilot, branch protection, CI checks, Tier 3 provider, test runner). The plugin install-experience just got documented in PR #251 (cache cleanup README section) — natural pairing to add post-wizard verification on top of clean install. Without it, first-time installers silently misconfigure and discover the gap later when the agent's behaviour is mysterious.
-- [ ] what-breaks: What breaks (concretely) if it isn't solved?
+- [x] what-breaks: Three concrete failure modes lived during PipeLogic V2 install. (1) User answered "CodeRabbit" for reviewer but had not installed the GitHub App; agent waited silently on every PR for reviews that did not arrive. (2) User said "Ollama for Tier 3" but had not pulled the model; agent's first MCP call failed with a cryptic upstream error. (3) Brief committed to "required CI checks: typecheck/test/build" but the repo had no matching workflow files; branch protection later refused merges with no plain-English path forward. Pattern across all six issue-listed checks: declared answer + no-real-thing = silent agent confusion.
+
+**Who has this problem:** First-time SDD installers running `/sdd-setup`. Lived by Sam on PipeLogic V2 (2026-05-05). Future adopters following the published install path hit the same shape because the wizard records intent without verifying reality.
+
+**Why now:** The plugin install path itself just got tightened in PR #251 (cache cleanup section). The wizard works for the happy path; the gap that remains is post-wizard reality-check. The `feedback_setup_help_v12.md` memo (one-week-old) flagged the Ollama case; issue #165 generalises to 6 tool classes. No new dependency needed — `gh api` and `curl` already in stack.
+
+**What breaks if we do not solve it:**
+
+1. **CodeRabbit answered but not installed.** Agent runs `/ship`, waits 15 min for review, nudges with `@coderabbitai full review`, times out, falls through to "no reviewer, proceeding" path. Sam's the one who pays — gets a merged PR with zero review, then a confused-looking commit history weeks later when someone asks "why no CR comments on this one?".
+2. **Ollama answered but model not pulled.** Agent makes first MCP tier 3 call, gets `model not found`, surfaces a cryptic error. New adopter doesn't know whether their config is wrong or the framework is broken.
+3. **Branch protection declared but unconfigured.** Agent commits to "required checks: X/Y/Z" but main has no protection rule. First admin-merge by Sam goes through without complaint; second one too. By the time someone notices, decisions.md has rows that say "branch-protected on main" but the actual repo has nothing.
 
 ### action: user-stories
 
