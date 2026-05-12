@@ -144,7 +144,7 @@
       "expected_sha256": "92a368fd771251247cc44eec228eac02d5d5ce1977491d2736854a721e0f723e"
     },
     "verify-stack.sh": {
-      "expected_sha256": "17a329ef8f1663f48d1c4fe09944a270ecb359fd3eb7ffc459d6599bb0dac97c",
+      "expected_sha256": "a9d518f2b377f0d0a4c266bf6265b7f404b27099073c988c0e53177d32ad8139",
       "path": ".sdd/scripts/verify-stack.sh",
       "trust": "framework"
     }

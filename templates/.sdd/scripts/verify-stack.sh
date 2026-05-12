@@ -190,11 +190,11 @@ if [ -f "$stack_file" ]; then
     | tr '[:upper:]' '[:lower:]')
   if [ -n "$runner" ]; then
     found=0
-    if [ -f "$PROJECT_DIR/package.json" ] && grep -qi "\"$runner\"" "$PROJECT_DIR/package.json"; then
+    if [ -f "$PROJECT_DIR/package.json" ] && grep -Fqi "\"$runner\"" "$PROJECT_DIR/package.json"; then
       emit "test-runner-deps" "ok" "test runner '$runner' declared in package.json"
       found=1
     fi
-    if [ "$found" -eq 0 ] && [ -f "$PROJECT_DIR/pyproject.toml" ] && grep -qi "$runner" "$PROJECT_DIR/pyproject.toml"; then
+    if [ "$found" -eq 0 ] && [ -f "$PROJECT_DIR/pyproject.toml" ] && grep -Fqi "$runner" "$PROJECT_DIR/pyproject.toml"; then
       emit "test-runner-deps" "ok" "test runner '$runner' declared in pyproject.toml"
       found=1
     fi
