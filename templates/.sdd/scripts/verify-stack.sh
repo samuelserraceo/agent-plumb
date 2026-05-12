@@ -182,7 +182,7 @@ stack_file="$PROJECT_DIR/.sdd/stack.md"
 if [ -f "$stack_file" ]; then
   # Strict match: requires a colon AND a non-empty value (e.g. "Test runner: Vitest").
   # Plain prose mentions like "nothing about a test runner here" do not match.
-  runner=$(grep -iE "[Tt]est[[:space:]]+runner[[:space:]]*:[[:space:]]+\S" "$stack_file" 2>/dev/null \
+  runner=$(grep -iE "[Tt]est[[:space:]]+runner[[:space:]]*:[[:space:]]+[^[:space:]]" "$stack_file" 2>/dev/null \
     | head -1 \
     | sed -E 's/.*[Tt]est[[:space:]]+runner[[:space:]]*:[[:space:]]*//' \
     | awk '{print $1}' \
