@@ -12,7 +12,7 @@ playbook: feature
 
 ### action: brief-intake
 
-- [x] brief: agent-authored — `/sdd-setup` records the user's tool answers in `config.md` / `stack.md` but never verifies the answers reflect reality. Failure mode (Sam, 2026-05-05 PipeLogic V2 setup): user says "I'll use CodeRabbit" but never installs the GitHub App; agent assumes CR is reviewing every PR and waits silently for reviews that never come. This ships a post-wizard `/sdd-verify-stack` action that probes each declared tool against actual state (gh-api / curl-HEAD / filesystem presence) and surfaces failures with plain-English remediation. Closes #165.
+- [x] brief: agent-authored — `/sdd-setup` records the user's tool answers in `config.md` / `stack.md` but does not verify the answers reflect reality. Failure mode (Sam, 2026-05-05 PipeLogic V2 setup): user says "I'll use CodeRabbit" but doesn't install the GitHub App; agent assumes CR is reviewing every PR and waits silently for reviews that don't come. This ships a post-wizard `/sdd-verify-stack` action that probes each declared tool against actual state (gh-api / curl-HEAD / filesystem presence) and surfaces failures with plain-English remediation. Closes #165.
 
 ### action: problem
 
@@ -51,7 +51,7 @@ playbook: feature
 
 ### action: non-functional
 
-- [x] constraints: Performance — 4 probes, each ≤2s timeout. Total run-time bounded at ~10s. Security — read-only; no writes; no secrets logged. Compliance — no PII surface; gh-api calls go to user's existing GH credentials.
+- [x] constraints: Performance — 4 probes, each capped at 2s timeout {verify-by: T282 syntax check confirms script uses --max-time 2 on curl}. Total run-time bounded at ~10s. Security — read-only; no writes; no secrets logged. Compliance — no PII surface; gh-api calls go to user's existing GH credentials.
 
 ### action: acceptance-criteria
 

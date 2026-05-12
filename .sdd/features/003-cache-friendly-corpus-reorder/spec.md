@@ -8,4 +8,4 @@ playbook: feature
 
 This is a graph-integrity slug-stub created to resolve the wiki-link to `[[003-cache-friendly-corpus-reorder]]` in `.sdd/decisions.md`. The audit-close commit on 2026-05-12 referenced this slug; the actual implementation shipped on main via the corresponding squash-merge PR. See `.sdd/decisions.md` for the canonical record + PR link.
 
-The append-only contract on decisions.md prevents editing the original entry to use a different slug; creating this stub folder makes the link resolve in the graph cache without violating append-only.
+The append-only contract on decisions.md blocks editing the original entry to use a different slug; creating this stub folder makes the link resolve in the graph cache without violating append-only.

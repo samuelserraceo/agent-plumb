@@ -37,3 +37,16 @@ Background: `/sdd-setup` is a question-only wizard — it records answers to `.s
 **Closes:** [#165](https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/165) — the "I said I'd use CodeRabbit but never installed the App" failure mode.
 
 **Anti-theatre note:** every check is mechanical (real API call or file presence). No judgement-based claims. The goal is to MAKE the setup gap visible, not to over-claim correctness.
+
+**What it looks like:**
+
+After the user runs `/sdd-setup` and answers "I'll use CodeRabbit" + "Tier 3 with Ollama" + "main branch protected", the wizard records those answers. Then `/sdd-verify-stack` actually probes each:
+
+```
+[verify-stack] coderabbit-app: ok — CodeRabbit App installed on samserra/myproject
+[verify-stack] ollama-endpoint: fail — Ollama NOT reachable at http://localhost:11434 — start ollama (`ollama serve`) or update endpoint
+[verify-stack] ci-workflows: ok — 3 workflow file(s) in .github/workflows/
+[verify-stack] branch-protection: warn — main branch protection NOT configured on samserra/myproject — consider enabling required checks
+```
+
+Plain-English remediation per failed check — the user sees the gap and the fix path in one line. Exit code `1` because one FAIL is present; the user fixes Ollama (or unsets Tier 3) and re-runs.

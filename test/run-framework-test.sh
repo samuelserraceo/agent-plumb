@@ -172,6 +172,15 @@ mkproj_v08() {
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/check-cr-convergence.sh"  "$d/.sdd/scripts/check-cr-convergence.sh" \
     || { echo "[mkproj_v08] failed to copy check-cr-convergence.sh from \$FRAMEWORK_ROOT — broken framework checkout?" >&2; return 1; }
   chmod +x "$d/.sdd/scripts/check-cr-convergence.sh"
+  # verify-stack.sh is manifest-tracked in v1.9+ (F027 closes #165 — post-
+  # wizard reality check). Same fail-fast pattern as check-cr-convergence:
+  # skipping the copy leaves T143/T144/T145 flagging the file as missing.
+  cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/verify-stack.sh"  "$d/.sdd/scripts/verify-stack.sh" \
+    || { echo "[mkproj_v08] failed to copy verify-stack.sh from \$FRAMEWORK_ROOT — broken framework checkout?" >&2; return 1; }
+  chmod +x "$d/.sdd/scripts/verify-stack.sh"
+  # verify-stack.md action (F027) is manifest-tracked in the actions block.
+  mkdir -p "$d/.sdd/actions"
+  cp "$FRAMEWORK_ROOT/templates/.sdd/actions/verify-stack.md" "$d/.sdd/actions/verify-stack.md" 2>/dev/null || true
   chmod +x "$d/.sdd/scripts/check-setup-answer.sh" 2>/dev/null || true
   cp "$FRAMEWORK_ROOT/templates/.sdd/decisions.md"                    "$d/.sdd/decisions.md"
   cp "$VERIFY_STAGE" "$d/.sdd/scripts/verify-stage.sh" 2>/dev/null || true
