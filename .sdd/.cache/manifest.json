@@ -132,6 +132,11 @@
       "expected_sha256": "c8cfb89cc2d34d324dc6cc0836a0c842bc6d83025c8dfbc961a712756654dca4",
       "path": ".sdd/scripts/rename-collided-feature.sh",
       "trust": "framework"
+    },
+    "verify-stack.sh": {
+      "expected_sha256": "9ea9ddb286bda68d48562e182b833df581c4f160dc7906f24de535692506c749",
+      "path": ".sdd/scripts/verify-stack.sh",
+      "trust": "framework"
     }
   },
   "sdd_version": "1.0.0",

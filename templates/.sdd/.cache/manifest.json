@@ -132,6 +132,11 @@
       "expected_sha256": "8085a0d9a0e90df5a110e92839c714da896f1698c65fab04fb04932a36e48a14",
       "path": ".sdd/scripts/get-model-for-tier.sh",
       "trust": "framework"
+    },
+    "verify-stack.sh": {
+      "expected_sha256": "9ea9ddb286bda68d48562e182b833df581c4f160dc7906f24de535692506c749",
+      "path": ".sdd/scripts/verify-stack.sh",
+      "trust": "framework"
     }
   },
   "sdd_version": "1.0.0",
