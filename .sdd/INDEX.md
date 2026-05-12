@@ -1,14 +1,14 @@
 # SDD framework — INDEX
 
-**Active:** features/021-remove-2-success-from-feature-playbook
+**Active:** features/026-ship-hard-enforce-coderabbit-convergence-closes-166
 **Playbook:** feature
-**Active blocker:** SHIP — all 4 tests GREEN (232/232 sweep), ready to PR
+**Active blocker:** §1 (first action: brief-intake)
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
 
 ## In flight
-- features/021-remove-2-success-from-feature-playbook — remove §2 success from feature playbook (PHASE: SHIP)
+- features/026-ship-hard-enforce-coderabbit-convergence-closes-166 — ship hard-enforce CodeRabbit convergence closes 166 (PHASE: SPEC)
 
 
 
