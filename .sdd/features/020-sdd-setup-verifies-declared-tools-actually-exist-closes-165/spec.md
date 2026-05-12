@@ -153,7 +153,7 @@ Run the 6 checks every session-open via `.claude/hooks/session-start.sh`. Pros: 
 ### action: out-of-scope
 
 - [x] list: 6 explicit deferrals — (1) auto-fix mode; (2) CR-convergence check (#166 deferred per Sam's own gate); (3) periodic re-check; (4) user-defined check extensions; (5) currency-denominated Tier 3 budget validation; (6) multi-machine config sync.
-- [ ] approval: Drafted; awaiting Sam's `approve §9` or change request.
+- [x] approval: 6 deferrals locked (auto-fix mode, #166 CR-convergence, periodic re-check, user-defined extensions, currency-denominated Tier 3 budget, multi-machine config sync). Sam approved 2026-05-12.
 
 **§9 Out-of-scope for F020 v1 (6 explicit deferrals):**
 
@@ -166,7 +166,7 @@ Run the 6 checks every session-open via `.claude/hooks/session-start.sh`. Pros: 
 
 ### action: non-functional
 
-- [ ] constraints: draft performance, security, and compliance constraints
+- [x] constraints: Performance — verify-stack run is bounded: 6 sequential checks, each one network probe (CR App, Copilot, branch-protection, Ollama) or local file probe (CI workflows, test-runner). Total wall-clock under 30s in the happy path {best-effort: Sam at SHIP — measure on a fresh-install fixture}; gracefully degrades on slow networks via per-check timeouts. No new compute beyond what `gh` / `curl` already do. Security — no secrets leaked (script reads only `parameters.*` from config.md, never logs env vars or auth tokens beyond pass/fail booleans); read-only by design (no writes to tracked files; only stderr/stdout output); same trust-boundary as existing slash commands. Compliance — MIT unchanged, no PII collected, no new telemetry; runs locally, talks to GitHub API and (optionally) localhost Ollama. No external service dependency beyond what the project already declared.
 
 ### action: acceptance-criteria
 
