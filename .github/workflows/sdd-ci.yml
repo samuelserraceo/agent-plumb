@@ -313,13 +313,19 @@ jobs:
     # post-stop-lint.sh invariant 8 check at merge boundary, so even a
     # `git commit --no-verify` bypass that lands a broken `[[slug]]` in a
     # local commit gets caught here before merge.
+    #
+    # 2026-05-12 — removed `if: github.event_name == 'pull_request'`. The
+    # PR-only gate let a broken wiki-link land on main via direct push
+    # (commit 5d9fb60's audit-close entry referenced `[[2026-05-12-backlog-
+    # book-close]]` before its stub folder existed). The check has no
+    # diff-against-base assumption — it just scans `.sdd/` end-to-end —
+    # so running it on push too is strictly safer.
     name: Graph integrity (wiki-links resolve)
     runs-on: ubuntu-latest
     # CR cycle-6 — explicit timeout. The job depends on a networked pip
     # install + a graph build over .sdd/; in the rare case of a hung
     # runner, the per-job timeout keeps PR flow unblocked.
     timeout-minutes: 5
-    if: github.event_name == 'pull_request'
     steps:
       # SHA-pinned for supply-chain hygiene — this job gates merge into main,
       # so a poisoned upstream tag would let bad code land. Bump the SHAs
