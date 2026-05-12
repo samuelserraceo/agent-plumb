@@ -152,8 +152,17 @@ Run the 6 checks every session-open via `.claude/hooks/session-start.sh`. Pros: 
 
 ### action: out-of-scope
 
-- [ ] list: What are we explicitly NOT building this round? 1-5 bullets, each: name + reason. Empty is fine.
-- [ ] approval: user_approves
+- [x] list: 6 explicit deferrals — (1) auto-fix mode; (2) CR-convergence check (#166 deferred per Sam's own gate); (3) periodic re-check; (4) user-defined check extensions; (5) currency-denominated Tier 3 budget validation; (6) multi-machine config sync.
+- [ ] approval: Drafted; awaiting Sam's `approve §9` or change request.
+
+**§9 Out-of-scope for F020 v1 (6 explicit deferrals):**
+
+1. **Auto-fix mode** — script offers to install missing deps inline (e.g. "CR App not installed; install now? [y/N]"). Too invasive for v1; surface the install URL instead and let the user install themselves. Defer to v2 if friction surfaces.
+2. **CR-convergence check** (issue #166) — deferred per Sam's own "Don't ship until 2-3 more failure modes" gate on #166. F020 is the wizard-side reality check; #166 is the SHIP-side enforcement. Different scope.
+3. **Periodic re-check** (cron / timer running verify-stack every N hours) — ad-hoc manual `/sdd-verify-stack` covers the use case; periodic adds noise + complexity for marginal benefit.
+4. **User-defined check extensions** (custom functions appended to `verify-stack.sh`) — v1 ships the 6 built-in checks from #165. Defer to v2 once we see what custom adopters actually need to verify; premature extensibility = Pillar 1 violation.
+5. **Currency-denominated Tier 3 budget validation** — same anti-theatre constraint as F008's cost-ledger and F014's cost-ceiling deferral. Framework can probe "is Ollama reachable?" but cannot probe "does the OpenAI key have enough credit?" without per-provider pricing data the framework does not ship with {best-effort: Sam at SHIP — same constraint documented at F001 / F008 / F014}.
+6. **Multi-machine config sync** — auto-port answers between laptop-A and laptop-B. Out of scope; manual sync via `git pull` on `.sdd/config.md` covers the case. v1 just probes each machine independently.
 
 ### action: non-functional
 
