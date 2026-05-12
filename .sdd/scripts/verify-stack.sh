@@ -63,6 +63,27 @@ check_cr_app() {
   fi
 }
 
+# --- check 2 — Copilot review configured ------------------------------
+check_copilot() {
+  local bot
+  bot=$(config_get bot)
+  [ "$bot" = "copilot" ] || return 2  # skip when reviewer is not Copilot
+  if ! command -v gh >/dev/null 2>&1; then
+    echo "✗ check 2 Copilot review — gh CLI not on PATH (install from https://cli.github.com)" >&2
+    return 1
+  fi
+  # Probe repo via gh; we cannot reliably query a "is Copilot review on?" endpoint
+  # without GitHub's gated API surface, so we treat a successful gh repo view as
+  # "credentials work; reality of Copilot review setting still requires eye-check".
+  if gh repo view >/dev/null 2>&1; then
+    echo "✓ Copilot review reachable (eye-check enabled at repo Settings > Code review)"
+    return 0
+  else
+    echo "✗ Copilot review NOT reachable — enable at repo Settings > Code review" >&2
+    return 1
+  fi
+}
+
 # --- Runner -----------------------------------------------------------
 fired=0
 overall_rc=0
@@ -78,6 +99,7 @@ run_check() {
 }
 
 run_check check_cr_app
+run_check check_copilot
 
 if [ "$fired" -eq 0 ]; then
   echo "no declared tools to verify"
