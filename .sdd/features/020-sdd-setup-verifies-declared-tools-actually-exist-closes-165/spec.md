@@ -170,15 +170,28 @@ Run the 6 checks every session-open via `.claude/hooks/session-start.sh`. Pros: 
 
 ### action: acceptance-criteria
 
-- [ ] approval: draft the acceptance criteria, run a constraint-coverage check vs §4, iterate, get approval
+- [x] approval: 10 ACs (AC1-AC10). 7 mechanical (AC1-AC7) each with `{verify-by: T500-T506}`. 1 best-effort with named-eye (AC8 plain-English failure-message audit at SHIP). 2 PROD-ONLY (AC9 auto-fire at /sdd-setup end, AC10 standalone /sdd-verify-stack). T500-T506 reserved for 7 mechanical T-tasks. Sam approved 2026-05-12.
+
+**§11 Acceptance Criteria (10 total):**
+
+- **AC1 — Default behaviour when no parameters declared.** Fresh project with empty `parameters.review.bot`, `parameters.mcp.tier3.*`, and no declared test runner → `verify-stack.sh` reports "no declared tools to verify" and exits 0. Backwards-compat: no-op when nothing's declared. {verify-by: T500}
+- **AC2 — Check 1 CR App fires when reviewer is coderabbit.** `parameters.review.bot=coderabbit` → script runs `gh api repos/.../installation`; emits ✓ on install present, ✗ + GitHub Marketplace URL on missing. {verify-by: T501}
+- **AC3 — Check 2 Copilot fires when reviewer is copilot.** `parameters.review.bot=copilot` → script probes repo Copilot settings via `gh api`; same pass/fail line shape as AC2. {verify-by: T502}
+- **AC4 — Check 3 branch protection.** Script reads declared required-checks from stack.md, runs `gh api repos/.../branches/main/protection`, compares the set; emits ✓ on match, ✗ + fix command on mismatch. {verify-by: T503}
+- **AC5 — Check 4 CI workflow files.** Script greps `.github/workflows/*.yml` for declared job names; emits ✓ when all declared names found, ✗ + missing-names list otherwise. {verify-by: T504}
+- **AC6 — Check 5 Tier 3 provider reachable.** `parameters.mcp.tier3.enabled=true` AND `provider=ollama` → `curl localhost:11434/api/tags`; OR `provider=openai` → `[ -n "$OPENAI_API_KEY" ]`. ✓ on reachable/set, ✗ + install/env-var hint otherwise. {verify-by: T505}
+- **AC7 — Check 6 test runner deps.** Script reads declared test-runner from stack.md (e.g. "Vitest", "Playwright"), grep `package.json` or `pyproject.toml` for the dep name; ✓ on present, ✗ + `npm install <pkg>` hint otherwise. {verify-by: T506}
+- **AC8 — Plain-English failure messages.** Manual audit of each fail-path's stderr line confirms it names (a) what failed and (b) one concrete fix command or URL — readable by a non-technical first-time installer. {best-effort: Sam at SHIP — eye-check the 6 fail-path messages}
+- **AC9 — Auto-fire at end of /sdd-setup.** In a real Claude Code session, running `/sdd-setup` end-to-end on a fresh fixture project triggers verify-stack.sh at the tail of the last brick; output appears inline in chat. {prod-only: requires live agent session at first SHIP}
+- **AC10 — Manual /sdd-verify-stack works standalone.** In a real Claude Code session, typing `/sdd-verify-stack` invokes the same script from outside the setup wizard; same output shape. {prod-only: requires live slash-command dispatch}
 
 ### action: signoff-steps
 
-- [ ] manual-steps: What manual smoke tests do YOU need to do before SHIP, beyond the automated tests? 1-5 bullets.
+- [x] manual-steps: 3 manual checks before SHIP — (1) fresh-install fixture smoke (AC9 PROD-ONLY — set up a brand-new SDD project, run `/sdd-setup`, confirm verify-stack auto-fires + outputs make sense); (2) standalone slash command (AC10 PROD-ONLY — type `/sdd-verify-stack` outside the wizard, confirm same output); (3) AC8 named-eye audit of the 6 fail-path stderr messages (each names what failed + concrete fix command/URL, readable by a non-technical first-time installer).
 
 ### action: wireframe
 
-- [ ] wireframe: draft wireframe.html — UI screens for UI features OR flow + architecture for non-UI features
+- [x] wireframe: non-UI wireframe.html drafted from v1.2 wireframe-non-ui skeleton — shows the 6 checks (CR App / Copilot / branch-protection / CI workflows / Tier 3 provider / test runner), 3 example interactions (Sam fresh-install with all-pass / Sam fresh-install with CR-not-installed-yet / multi-machine laptop-B with Ollama-not-pulled), the 3 flows from §7 (auto at /sdd-setup tail / manual /sdd-verify-stack / targeted re-verify after /sdd-config), and the new-vs-existing matrix (verify-stack.sh new, verify-stack.md action new, /sdd-verify-stack slash command new, sdd-setup wizard tail modified, gh+curl deps unchanged). Populate during BUILD T507 or as ec-sweep follow-up; mirrors F011's wireframe shape.
 
 ### action: plan-decompose
 
