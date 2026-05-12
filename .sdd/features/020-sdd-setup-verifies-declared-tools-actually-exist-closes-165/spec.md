@@ -211,7 +211,7 @@ Run the 6 checks every session-open via `.claude/hooks/session-start.sh`. Pros: 
 - [x] T502 GREEN: check 2 fires when parameters.review.bot=copilot and
               probes Copilot review settings via gh-api
               — proves AC3
-- [ ] T503 RED: check 3 compares declared required-checks from stack.md
+- [x] T503 GREEN: check 3 compares declared required-checks from stack.md
               against `gh api .../branches/main/protection` response
               — proves AC4
 - [ ] T504 RED: check 4 greps .github/workflows/*.yml for declared job
