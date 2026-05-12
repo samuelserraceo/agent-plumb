@@ -9092,6 +9092,149 @@ else
 fi
 
 # ============================================================
+# F027 / closes #165 — /sdd-verify-stack post-wizard reality check.
+# 6 tests T280-T285. Each test asserts a specific surface of the
+# new verify-stack.sh + action + slash command.
+# ============================================================
+
+note "T280: sdd-verify-stack slash command file exists with canonical body (AC1)"
+SVS_CMD="$FRAMEWORK_ROOT/templates/.claude/commands/sdd-verify-stack.md"
+if [ ! -f "$SVS_CMD" ]; then
+  bad "T280 slash command file missing" "expected at $SVS_CMD"
+elif ! grep -qF "bash .sdd/scripts/verify-stack.sh" "$SVS_CMD"; then
+  bad "T280 slash command body must invoke bash .sdd/scripts/verify-stack.sh" "missing canonical invocation"
+else
+  ok "T280 sdd-verify-stack.md slash command present + invokes verify-stack.sh"
+fi
+
+note "T281: verify-stack action file has correct frontmatter (AC2)"
+SVS_ACTION="$FRAMEWORK_ROOT/templates/.sdd/actions/verify-stack.md"
+if [ ! -f "$SVS_ACTION" ]; then
+  bad "T281 action file missing" "expected at $SVS_ACTION"
+elif ! grep -qE '^model_tier:[[:space:]]*mechanical' "$SVS_ACTION"; then
+  bad "T281 action frontmatter missing model_tier: mechanical" "expected per idea 002 tier assignment"
+elif ! grep -qE '^requires_user_approval:[[:space:]]*false' "$SVS_ACTION"; then
+  bad "T281 action frontmatter missing requires_user_approval: false" "verify is read-only probe; no approval needed"
+else
+  ok "T281 verify-stack.md action present with model_tier=mechanical + requires_user_approval=false"
+fi
+
+note "T282: verify-stack.sh exists, executable, syntax-valid bash (AC3)"
+SVS_SH="$FRAMEWORK_ROOT/templates/.sdd/scripts/verify-stack.sh"
+SVS_SH_LIVE="$FRAMEWORK_ROOT/.sdd/scripts/verify-stack.sh"
+t282_fails=()
+if [ ! -f "$SVS_SH" ]; then t282_fails+=("template script missing at $SVS_SH"); fi
+if [ ! -f "$SVS_SH_LIVE" ]; then t282_fails+=("live script missing at $SVS_SH_LIVE"); fi
+if [ -f "$SVS_SH" ] && [ ! -x "$SVS_SH" ]; then t282_fails+=("template script not executable"); fi
+if [ -f "$SVS_SH" ] && ! bash -n "$SVS_SH" 2>/dev/null; then t282_fails+=("template script has bash syntax error"); fi
+if [ ${#t282_fails[@]} -gt 0 ]; then
+  bad "T282 verify-stack.sh shape violations" "$(IFS=,; echo "${t282_fails[*]}")"
+else
+  ok "T282 verify-stack.sh present in both locations, executable, syntax-valid"
+fi
+
+note "T283: verify-stack CR check returns ok when mocked gh api returns 200 (AC4)"
+t283_dir=$(mktemp -d)
+mkdir -p "$t283_dir/.sdd"
+cat > "$t283_dir/.sdd/config.md" <<'CFG'
+---
+parameters:
+  review:
+    bot: coderabbit
+---
+CFG
+# Stub `gh` that returns 200 for installation endpoint
+mkdir -p "$t283_dir/bin"
+cat > "$t283_dir/bin/gh" <<'GHEOF'
+#!/usr/bin/env bash
+case "$*" in
+  *"repos/"*"/installation"*) exit 0 ;;
+  "repo view --json nameWithOwner -q .nameWithOwner") echo "samuelserraceo/test"; exit 0 ;;
+  *) exit 0 ;;
+esac
+GHEOF
+chmod +x "$t283_dir/bin/gh"
+out=$(PATH="$t283_dir/bin:$PATH" CLAUDE_PROJECT_DIR="$t283_dir" bash "$SVS_SH" 2>&1)
+if printf '%s' "$out" | grep -qE "coderabbit-app: ok"; then
+  ok "T283 CR check returns ok on mocked 200"
+else
+  bad "T283 CR check did NOT return ok on mocked 200" "out='$out'"
+fi
+rm -rf "$t283_dir"
+
+note "T284: verify-stack CR check returns fail with install URL on mocked 404 (AC5)"
+t284_dir=$(mktemp -d)
+mkdir -p "$t284_dir/.sdd"
+cat > "$t284_dir/.sdd/config.md" <<'CFG'
+---
+parameters:
+  review:
+    bot: coderabbit
+---
+CFG
+mkdir -p "$t284_dir/bin"
+cat > "$t284_dir/bin/gh" <<'GHEOF'
+#!/usr/bin/env bash
+case "$*" in
+  *"repos/"*"/installation"*) exit 1 ;;
+  "repo view --json nameWithOwner -q .nameWithOwner") echo "samuelserraceo/test"; exit 0 ;;
+  *) exit 1 ;;
+esac
+GHEOF
+chmod +x "$t284_dir/bin/gh"
+out=$(PATH="$t284_dir/bin:$PATH" CLAUDE_PROJECT_DIR="$t284_dir" bash "$SVS_SH" 2>&1); ec=$?
+t284_fails=()
+if ! printf '%s' "$out" | grep -qE "coderabbit-app: fail"; then
+  t284_fails+=("CR check did NOT return fail on mocked 404")
+fi
+if ! printf '%s' "$out" | grep -qF "marketplace"; then
+  t284_fails+=("fail message does NOT include marketplace install URL")
+fi
+if [ "$ec" -ne 1 ]; then
+  t284_fails+=("script exit code should be 1 when fail present, got $ec")
+fi
+if [ ${#t284_fails[@]} -gt 0 ]; then
+  bad "T284 CR check fail-path violations" "$(IFS=';'; echo "${t284_fails[*]}")"
+else
+  ok "T284 CR check returns fail with install URL on mocked 404 (exit=1)"
+fi
+rm -rf "$t284_dir"
+
+note "T285: workflow-file count check works (AC6)"
+t285_dir=$(mktemp -d)
+mkdir -p "$t285_dir/.sdd" "$t285_dir/.github/workflows"
+cat > "$t285_dir/.sdd/config.md" <<'CFG'
+---
+parameters: {}
+---
+CFG
+# Case A: workflows present
+touch "$t285_dir/.github/workflows/ci.yml"
+out_a=$(CLAUDE_PROJECT_DIR="$t285_dir" bash "$SVS_SH" 2>&1)
+# Case B: workflows dir present but empty
+rm "$t285_dir/.github/workflows/ci.yml"
+out_b=$(CLAUDE_PROJECT_DIR="$t285_dir" bash "$SVS_SH" 2>&1)
+# Case C: workflows dir missing
+rm -rf "$t285_dir/.github"
+out_c=$(CLAUDE_PROJECT_DIR="$t285_dir" bash "$SVS_SH" 2>&1)
+t285_fails=()
+if ! printf '%s' "$out_a" | grep -qE "ci-workflows: ok"; then
+  t285_fails+=("case A (1 .yml present) did NOT return ok")
+fi
+if ! printf '%s' "$out_b" | grep -qE "ci-workflows: warn"; then
+  t285_fails+=("case B (empty dir) did NOT return warn")
+fi
+if ! printf '%s' "$out_c" | grep -qE "ci-workflows: warn"; then
+  t285_fails+=("case C (no dir) did NOT return warn")
+fi
+if [ ${#t285_fails[@]} -gt 0 ]; then
+  bad "T285 workflow file count check violations" "$(IFS=';'; echo "${t285_fails[*]}")"
+else
+  ok "T285 workflow file count check returns ok / warn / warn across the 3 cases"
+fi
+rm -rf "$t285_dir"
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'

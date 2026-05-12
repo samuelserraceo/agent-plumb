@@ -137,6 +137,14 @@
       "path": ".sdd/scripts/check-cr-convergence.sh",
       "trust": "framework",
       "expected_sha256": "92a368fd771251247cc44eec228eac02d5d5ce1977491d2736854a721e0f723e"
+<<<<<<< HEAD
+=======
+    },
+    "verify-stack.sh": {
+      "expected_sha256": "d65deefe1fdd611f92c6124759d0f6800f13a2df1c0fa5cc395099f34a74b1c7",
+      "path": ".sdd/scripts/verify-stack.sh",
+      "trust": "framework"
+>>>>>>> origin/main
     }
   },
   "sdd_version": "1.0.0",
@@ -354,6 +362,14 @@
       "path": ".sdd/actions/verify-cr-convergence.md",
       "trust": "framework",
       "expected_sha256": "9d6db5fafdb9eafd1bb3e373d0806fd07232f33752cdb8410c764839efe1ceb3"
+<<<<<<< HEAD
+=======
+    },
+    "verify-stack": {
+      "expected_sha256": "581701ff27dee0f4c26358a6fe26a6c25af64e22c05ac34fe9e41af13d3dccff",
+      "path": ".sdd/actions/verify-stack.md",
+      "trust": "framework"
+>>>>>>> origin/main
     }
   }
 }
