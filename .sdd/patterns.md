@@ -158,3 +158,23 @@ Source: [[011-auto-advance-agent-led-steps]] T306 test refinement.
 When two parallel feature branches both append to shared notebooks (`decisions.md`, `INDEX.md`, `patterns.md`) and one branch needs to pull `main` forward to integrate the other branch's ship, the SDD pre-commit hooks (`pre-commit-rules.sh`) refuse the merge commit on two grounds: (a) `append_only` false-positives on the merge's byte-prefix-preserving content because the implementation didn't differentiate "regular commit rewrote prior bytes" from "merge commit appended parallel-stream bytes after HEAD"; (b) `cofile-block` refused mixing CLAIM (`verification.json`) + POLICY (`manifest.json` + actions) which a cross-feature merge spans by nature. Workaround on **pre-v1.7 framework versions**: use `git commit-tree` plumbing to construct the merge commit directly, bypassing the hook chain entirely. Sam authorized this exactly once for F009's merge of `origin/main` into `sdd/009-feature-playbook-v2-brief-driven-spec-entry` (commit `dae7758`), recording the rationale in the commit message + filing #220 as the v1.7 fix. **v1.7 and later** (closes #220): pre-commit-rules.sh detects merge / rebase / cherry-pick state via `.git/MERGE_HEAD` / `REBASE_HEAD` / `CHERRY_PICK_HEAD` and applies a lenient-mode skip on cofile-block + emits an audit-log stderr line `[moat] merge in progress — lenient mode`. The byte-prefix check on `append_only` stays in both modes (rewriting prior entries still fails regardless of merge state), so the contract holds. After v1.7 the `git commit-tree` workaround should not be needed; if you see yourself reaching for it, the merge-mode detection is misfiring and that's the bug to file.
 
 Source: [[010-hook-merge-commit-exception-closes-220]] feature ship + #220 issue.
+
+## F020 — /sdd-setup tool verification (2026-05-12)
+
+### Skip-pass-fail tri-state for optional checks
+
+When a runner script has N optional checks (each fires only if a specific declaration is present in stack.md or config.md), the cleanest control flow is a tri-state return: 0=pass, 1=fail, 2=skip. The runner counts how many checks fired (pass + fail, not skip) and decides whether to print a "no checks fired" closer. This pattern beats the alternatives — boolean pass/fail forces ambiguity between "check passed because conditions matched" and "check passed because it never ran", and global-counter state threads complexity through every helper.
+
+Source: [[020-sdd-setup-verifies-declared-tools-actually-exist-closes-165]] verify-stack.sh design; six checks share the same shape (check_cr_app, check_copilot, check_branch_protection, check_ci_workflows, check_tier3_provider, check_test_runner_deps).
+
+### PATH-shadow stub binaries make external-tool tests deterministic
+
+For tests that need to assert "the script calls `gh` with certain arguments", PATH-shadow a tiny stub `gh` binary at the head of `$PATH`. Each stub is 2 lines: an `echo` of the canned stdout response + an `exit <code>`. The test sets `PATH="$STUB_DIR:$PATH"` for the duration of the invocation, then deletes the stub on teardown. Avoids network dependency, GitHub auth state, and rate-limit flakiness. Same pattern works for `curl`, `jq`, any external binary. Applied across T501-T505; portable across macOS + Linux.
+
+Source: [[020-sdd-setup-verifies-declared-tools-actually-exist-closes-165]] tests/task-501.sh through task-505.sh.
+
+### Test-output-message strings must match test regex expectations
+
+When a check's ✗ message is the only way the test knows the check fired, the script's output wording becomes load-bearing for the test. T504 first iteration emitted `"no .github/workflows/*.yml files found"` — test regex was `no workflow|missing` and didn't match. Fix: tweaked output to `"check 4 CI workflow missing — no .github/workflows..."` so both the human-readable message and the test regex aligned. Lesson: pick output keywords that satisfy the test regex AND read naturally to a non-technical user; don't leave the relationship implicit.
+
+Source: [[020-sdd-setup-verifies-declared-tools-actually-exist-closes-165]] T504 code+test alignment.

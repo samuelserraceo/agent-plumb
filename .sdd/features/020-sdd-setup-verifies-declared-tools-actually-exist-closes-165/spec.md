@@ -293,7 +293,7 @@ Run the 6 checks every session-open via `.claude/hooks/session-start.sh`. Pros: 
 ### action: learn
 
 - [x] summary: F020 adds `bash .sdd/scripts/verify-stack.sh` — a single shell script + manifest-pinned action + `/sdd-verify-stack` slash command body — that runs 6 post-wizard checks against the user's declared stack answers. CR App installation, Copilot review reachability, branch protection presence, required-CI-workflow job names, Tier 3 LLM provider reachability (Ollama curl + OpenAI env-var), and test-runner deps in package.json/pyproject.toml. Each check returns 0 pass / 1 fail / 2 skip; the runner counts fired checks and falls back to "no declared tools to verify" when nothing applies. Each fail emits a plain-English ✗ line with the concrete fix path (install URL / env command / config file location). PATH-shadow gh/curl stubs make tests deterministic without network. Closes #165 (Sam's PipeLogic V2 2026-05-05 install gap). Backwards-compat: empty `parameters.*` + empty stack.md = no-op + exit 0.
-- [ ] lessons: append patterns to .sdd/patterns.md
+- [x] lessons: 3 patterns appended to .sdd/patterns.md — skip-pass-fail tri-state for optional checks; PATH-shadow stub binaries make external-tool tests deterministic; test-output-message strings must match test regex expectations.
 
 ### action: push-pr
 
