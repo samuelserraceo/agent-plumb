@@ -214,7 +214,7 @@ Run the 6 checks every session-open via `.claude/hooks/session-start.sh`. Pros: 
 - [x] T503 GREEN: check 3 compares declared required-checks from stack.md
               against `gh api .../branches/main/protection` response
               — proves AC4
-- [ ] T504 RED: check 4 greps .github/workflows/*.yml for declared job
+- [x] T504 GREEN: check 4 greps .github/workflows/*.yml for declared job
               names; reports missing
               — proves AC5
 - [ ] T505 RED: check 5 Tier 3 — Ollama via curl localhost:11434/api/tags
