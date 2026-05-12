@@ -49,6 +49,7 @@ parameters:
     max_polls: 5
     nudge_command: ""    # e.g. "@coderabbitai full review" — comment posted if no review after max_polls
     manual: false        # true = wait for human review only; agent doesn't poll for bots
+    bypass_cr_convergence: false  # F026 (closes #166) — when `bot` is non-empty, /ship runs `verify-cr-convergence` between `verify-ci-green` and `mark-shipped`. The action calls `.sdd/scripts/check-cr-convergence.sh` which queries gh-api for the latest CR review on HEAD's SHA. Set to `true` only as a one-off legitimate bypass (stale finding, append-only constraint, intentional trade-off) AND append a row to `.sdd/decisions.md` explaining why. Default `false` so the gate fires whenever a bot is configured.
   mcp:
     enabled: false       # populated by /sdd-setup brick 007 — true if user wants the SDD MCP server (40-60% across-session token saving)
     semantic_search:     # opt-in semantic search over .sdd/ — embeds notebooks once, ranks chunks by cosine similarity. See extensions/sdd-mcp-server/README.md.

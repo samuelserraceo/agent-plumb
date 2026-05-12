@@ -132,6 +132,11 @@
       "expected_sha256": "c8cfb89cc2d34d324dc6cc0836a0c842bc6d83025c8dfbc961a712756654dca4",
       "path": ".sdd/scripts/rename-collided-feature.sh",
       "trust": "framework"
+    },
+    "check-cr-convergence.sh": {
+      "path": ".sdd/scripts/check-cr-convergence.sh",
+      "trust": "framework",
+      "expected_sha256": "92a368fd771251247cc44eec228eac02d5d5ce1977491d2736854a721e0f723e"
     }
   },
   "sdd_version": "1.0.0",

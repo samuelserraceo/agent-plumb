@@ -132,6 +132,11 @@
       "expected_sha256": "8085a0d9a0e90df5a110e92839c714da896f1698c65fab04fb04932a36e48a14",
       "path": ".sdd/scripts/get-model-for-tier.sh",
       "trust": "framework"
+    },
+    "check-cr-convergence.sh": {
+      "path": ".sdd/scripts/check-cr-convergence.sh",
+      "trust": "framework",
+      "expected_sha256": "92a368fd771251247cc44eec228eac02d5d5ce1977491d2736854a721e0f723e"
     }
   },
   "sdd_version": "1.0.0",
