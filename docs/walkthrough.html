@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>SDD v1.6.0 — feature playbook v2 + plain-English doctrine + 33-claim audit (live)</title>
+<title>SDD v1.9 — per-file injection budgets · model tiers · specialized subagents · CR convergence (live)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
   :root {
@@ -88,7 +88,7 @@
   <div class="max-w-6xl mx-auto px-6 py-3 flex items-center gap-4 flex-wrap">
     <a href="#top" class="flex items-center gap-3">
       <span class="text-base font-bold tracking-tight">SDD</span>
-      <span class="pill pill-v10">v1.0 → v1.6.0 shipped</span>
+      <span class="pill pill-v10">v1.0 → v1.9 shipped</span>
     </a>
     <nav class="flex items-center gap-3 text-sm text-stone-600 ml-2">
       <a href="#loop" class="hover:text-stone-900">The loop</a>
@@ -96,6 +96,7 @@
       <a href="#validation" class="hover:text-stone-900">Validate</a>
       <a href="#shipped" class="hover:text-stone-900">v1.0</a>
       <a href="#planned" class="hover:text-stone-900">v1.1 → v1.6</a>
+      <a href="#post-v16" class="hover:text-stone-900">v1.7 → v1.9</a>
       <a href="#roadmap" class="hover:text-stone-900">Roadmap</a>
       <a href="#try" class="hover:text-stone-900">Try it</a>
       <a href="#reference" class="hover:text-stone-900">Reference</a>
@@ -104,7 +105,7 @@
       <span class="text-xs text-stone-500 mr-1">Show:</span>
       <button type="button" class="filter-btn px-2 py-1 text-xs rounded border border-stone-300" data-set="all">All</button>
       <button type="button" class="filter-btn px-2 py-1 text-xs rounded border border-stone-300" data-set="v10">v1.0 only</button>
-      <button type="button" class="filter-btn px-2 py-1 text-xs rounded border border-stone-300" data-set="v11">v1.1 → v1.6 only</button>
+      <button type="button" class="filter-btn px-2 py-1 text-xs rounded border border-stone-300" data-set="v11">v1.1 → v1.9 only</button>
       <span class="mx-2 w-px h-5 bg-stone-300"></span>
       <label class="flex items-center gap-2 text-xs cursor-pointer select-none">
         <input id="reviewToggle" type="checkbox" class="accent-indigo-600">
@@ -123,7 +124,7 @@
   <h1 class="text-4xl md:text-5xl font-bold leading-tight tracking-tight max-w-4xl">A way to build software with AI without the AI making stuff up.</h1>
   <div class="mt-6 max-w-3xl text-stone-600 text-lg leading-relaxed space-y-3">
     <p>You bring the <em>what</em> in plain English. The agent proposes the <em>how</em> with tradeoffs you can react to. Every decision lands in markdown files you can read, share with a future engineer, or rebuild on a different stack.</p>
-    <p>Pre-commit hooks make drift mechanically impossible — the agent literally cannot commit code that wanders from its spec. v1.0 shipped 4 playbooks, a knowledge graph layer, and a CI gate that blocks broken refs at PR time. v1.6.0 adds a brief-paste SPEC entry, plain-English-first <code class="mono text-xs bg-stone-100 px-1 rounded">&lt;details&gt;</code> doctrine, and a pi.dev adapter that runs SDD on 15+ providers.</p>
+    <p>Pre-commit hooks make drift mechanically impossible — the agent literally cannot commit code that wanders from its spec. v1.0 shipped 4 playbooks, a knowledge graph layer, and a CI gate that blocks broken refs at PR time. v1.6 added a brief-paste SPEC entry, plain-English-first <code class="mono text-xs bg-stone-100 px-1 rounded">&lt;details&gt;</code> doctrine, and a pi.dev adapter that runs SDD on 15+ providers. <strong>v1.7 → v1.9 (2026-05-11 → 12)</strong> added per-file injection budgets (patterns.md no longer cut mid-paragraph), cache-friendly corpus reorder, auto-advance AGENT-LED steps, lego-style model-tier-per-action, specialized subagents (researcher/executor/verifier), cross-branch ID collision detection + rename helper, /ship verify-cr-convergence (mechanical CR gate), and /sdd-verify-stack (post-wizard reality check).</p>
   </div>
   <div class="mt-8 flex gap-3 flex-wrap">
     <a href="#try" class="px-5 py-3 rounded-lg bg-stone-900 text-white text-sm font-semibold hover:bg-stone-700">Try SDD now →</a>
@@ -759,6 +760,142 @@ search_within(slug)   bounded semantic search
   </details>
 
   <textarea class="review-note review-only" placeholder="Notes on what shipped post-v1.0…" data-note="planned"></textarea>
+</section>
+
+<!-- ═══════════════════════════════════════════ POST-v1.6: v1.7 → v1.9 ═══════════════════════════════════════════ -->
+<section id="post-v16" class="max-w-6xl mx-auto px-6 py-10 reviewable" data-section="post-v16">
+  <div class="review-tools review-only"><button type="button" class="rb" data-flag="ok">✓</button><button type="button" class="rb" data-flag="unclear">?</button><button type="button" class="rb" data-flag="problem">✗</button></div>
+  <div class="mb-3">
+    <h2 class="text-2xl font-bold">v1.7 → v1.9 (2026-05-11 to 2026-05-12) — context, autonomy, multi-model, CR enforcement.</h2>
+    <p class="text-stone-600 mt-1">Twelve features over two ship-days. Theme: <strong>the framework dogfooded itself across more brainstorming, ID-collision recovery, and runtime-context plumbing</strong>. v1.7 closed four maintenance gaps (hook merge exception, hash bold-strip, legacy-queued migrator, playwright skip). v1.8 added auto-advance AGENT-LED steps + MCP-doctrine sentinel + per-file injection budgets. v1.9 added model-tier-per-action, specialized subagents, cross-branch ID collision detection, /ship CR convergence, /sdd-verify-stack, cache-friendly corpus reorder, plain-English prose sweep, and remove-§2-success from the playbook.</p>
+    <span class="pill pill-v11">v1.7 → v1.9 — shipped</span>
+  </div>
+
+  <!-- v1.7 maintenance trio + quartet -->
+  <h3 class="text-lg font-semibold mt-6 mb-3">v1.7.x — maintenance four-pack (2026-05-11 AM)</h3>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+    <div class="card card-v11 p-4">
+      <h4 class="font-semibold mb-1">F010 · Hook merge-commit exception <span class="pill pill-v11 ml-2">v1.7.0</span></h4>
+      <p class="text-sm text-stone-600">Pre-commit hooks now detect merge / rebase / cherry-pick state via <code class="mono text-xs bg-stone-100 px-1 rounded">.git/MERGE_HEAD</code>, <code class="mono text-xs bg-stone-100 px-1 rounded">REBASE_HEAD</code>, <code class="mono text-xs bg-stone-100 px-1 rounded">CHERRY_PICK_HEAD</code> + apply lenient-mode skip on <code class="mono text-xs">cofile-block</code>. <code class="mono text-xs">append_only</code> stays enforced. Closes the F009/dae7758 friction that needed <code class="mono text-xs">git commit-tree</code> bypass.</p>
+      <p class="text-xs text-stone-500 mt-2">Shipped <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/230" target="_blank" rel="noopener noreferrer">PR #230</a> · closes #220</p>
+    </div>
+    <div class="card card-v11 p-4">
+      <h4 class="font-semibold mb-1">F011 · hash-section.sh bold-strip <span class="pill pill-v11 ml-2">v1.7.1</span></h4>
+      <p class="text-sm text-stone-600">Cosmetic bold/plain edits on AC/T/C-* list labels no longer trip the section-approval moat. Regex strips wrapping <code class="mono text-xs">**</code> markers from list-item LABEL prefixes before SHA-256. Prose-emphasis <code class="mono text-xs">**Note:**</code> preserved.</p>
+      <p class="text-xs text-stone-500 mt-2">Shipped <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/233" target="_blank" rel="noopener noreferrer">PR #233</a> · closes #197 part 2</p>
+    </div>
+    <div class="card card-v11 p-4">
+      <h4 class="font-semibold mb-1">F012 · promote-legacy-queued migrator <span class="pill pill-v11 ml-2">v1.7.2</span></h4>
+      <p class="text-sm text-stone-600">One-shot opt-in <code class="mono text-xs">bash .sdd/scripts/promote-legacy-queued.sh</code> for pre-v1.5.2 projects with PHASE state drift. Walks work-item folders, flips <code class="mono text-xs">[PHASE: SPEC]</code>→<code class="mono text-xs">[PHASE: QUEUED]</code> when INDEX row says queued. Idempotent; staged but not auto-committed.</p>
+      <p class="text-xs text-stone-500 mt-2">Shipped <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/237" target="_blank" rel="noopener noreferrer">PR #237</a> · closes #206</p>
+    </div>
+    <div class="card card-v11 p-4">
+      <h4 class="font-semibold mb-1">F013 · playwright-explore first-class skip <span class="pill pill-v11 ml-2">v1.7.3</span></h4>
+      <p class="text-sm text-stone-600">When MCP missing, <code class="mono text-xs">playwright-explore.md</code> now emits a canonical single-line skip log via <code class="mono text-xs">skip_when:</code> frontmatter — no more 12-line improvised justification. Audit-trail-friendly + agent-honoured.</p>
+      <p class="text-xs text-stone-500 mt-2">Shipped <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/240" target="_blank" rel="noopener noreferrer">PR #240</a> · closes #202</p>
+    </div>
+  </div>
+
+  <!-- v1.8: marquee context features -->
+  <h3 class="text-lg font-semibold mt-8 mb-3">v1.8.x — marquee: autonomy + context (2026-05-11 PM)</h3>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+    <div class="card card-v11 p-4">
+      <h4 class="font-semibold mb-1">F011 · Per-file injection budgets <span class="pill pill-v11 ml-2">v1.8.0 · marquee</span></h4>
+      <p class="text-sm text-stone-600">Each corpus file (INDEX/spec/principles/stack/data-model/patterns) gets its own char allocation in <code class="mono text-xs">config.md</code> under <code class="mono text-xs">parameters.injection.per_file_budget_chars</code>. Truncated individually with a sentinel <code class="mono text-xs">[truncated to &lt;N&gt; bytes per per-file budget — re-read with the Read tool ...]</code>. Replaces the single-cap end-truncate that silently cut <code class="mono text-xs">patterns.md</code> mid-paragraph on mature projects.</p>
+      <p class="text-sm text-stone-600 mt-1">Defaults sum to 20000 bytes; <code class="mono text-xs">cap_total_chars</code> raised to 25000 as a defensive safety-net ceiling. UTF-8 char-boundary backoff so output stays valid (≤3 trailing bytes dropped). Negative values clamp to 0 with stderr warning. CRLF frontmatter normalised.</p>
+      <p class="text-xs text-stone-500 mt-2">Shipped <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/239" target="_blank" rel="noopener noreferrer">PR #239</a> · 7 CR review cycles · 17 ACs / 17 BUILD tests T220-T236</p>
+    </div>
+    <div class="card card-v11 p-4">
+      <h4 class="font-semibold mb-1">F011 · Auto-advance AGENT-LED steps <span class="pill pill-v11 ml-2">v1.8.0 · marquee</span></h4>
+      <p class="text-sm text-stone-600">New <code class="mono text-xs">parameters.automation.level</code> (full / most / checkpoint, default checkpoint). Full reads only <code class="mono text-xs">requires_user_approval</code>; Most reads only the §11 destructive_actions list. Pairs with F008 (multi-model) + F010 (parallel waves) → drop-the-brief-walk-away.</p>
+      <p class="text-xs text-stone-500 mt-2">Shipped <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/236" target="_blank" rel="noopener noreferrer">PR #236</a> · closes idea 005</p>
+    </div>
+    <div class="card card-v11 p-4">
+      <h4 class="font-semibold mb-1">F014 · MCP-doctrine sentinel <span class="pill pill-v11 ml-2">v1.8.1</span></h4>
+      <p class="text-sm text-stone-600">When <code class="mono text-xs">parameters.mcp.enabled: true</code>, the user-prompt-submit hook emits ONE line inside <code class="mono text-xs">[FRAMEWORK INSTRUCTIONS]</code> naming the 5 graph queries (<code class="mono text-xs">get_backlinks</code> / <code class="mono text-xs">get_neighbours</code> / <code class="mono text-xs">get_pattern</code> / <code class="mono text-xs">get_references</code> / <code class="mono text-xs">search_within</code>) the agent should prefer over re-reading patterns.md/data-model.md in full.</p>
+      <p class="text-xs text-stone-500 mt-2">Shipped <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/243" target="_blank" rel="noopener noreferrer">PR #243</a> · closes #210 part 1</p>
+    </div>
+    <div class="card card-v11 p-4">
+      <h4 class="font-semibold mb-1">F019 · Session-start bootstrap-ready signal <span class="pill pill-v11 ml-2">v1.8.2</span></h4>
+      <p class="text-sm text-stone-600">First-install success cue: when <code class="mono text-xs">.sdd/</code> exists but zero <code class="mono text-xs">.shipped</code> markers, the hook echoes <code class="mono text-xs">[SDD bootstrap] ready — .sdd/ scaffold ready</code>. Single line; suppresses for returning users. Closes the "did install actually work?" anxiety.</p>
+      <p class="text-xs text-stone-500 mt-2">Shipped <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/249" target="_blank" rel="noopener noreferrer">PR #249</a> · closes #164 bug 4</p>
+    </div>
+  </div>
+
+  <!-- v1.9: backlog close-out -->
+  <h3 class="text-lg font-semibold mt-8 mb-3">v1.9 — backlog close-out (2026-05-11 → 12)</h3>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+    <div class="card card-v11 p-4">
+      <h4 class="font-semibold mb-1">Idea 003 · Cache-friendly corpus reorder <span class="pill pill-v11 ml-2">v1.9</span></h4>
+      <p class="text-sm text-stone-600">Reorders corpus injection so stable files come first (principles → stack → patterns → data-model → INDEX → spec). Prompt-cache prefix stays identical across turns; cache hit rate goes up materially. Unblocked by F011's per-file budgets — pre-F011 this would have dropped INDEX+spec off the 16K end-cap.</p>
+      <p class="text-xs text-stone-500 mt-2">Shipped <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/253" target="_blank" rel="noopener noreferrer">PR #253</a></p>
+    </div>
+    <div class="card card-v11 p-4">
+      <h4 class="font-semibold mb-1">F015 · Lego-style model tier per action <span class="pill pill-v11 ml-2">v1.9</span></h4>
+      <p class="text-sm text-stone-600">All 42 <code class="mono text-xs">.sdd/actions/*.md</code> gain a <code class="mono text-xs">model_tier:</code> frontmatter field (<code class="mono text-xs">thinking</code> / <code class="mono text-xs">routine</code> / <code class="mono text-xs">mechanical</code>). New <code class="mono text-xs">parameters.models.{thinking,routine,mechanical}</code> config block. Helper <code class="mono text-xs">get-model-for-tier.sh</code> resolves the right model per action. Pairs with F008 to route per-action.</p>
+      <p class="text-xs text-stone-500 mt-2">Shipped <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/248" target="_blank" rel="noopener noreferrer">PR #248</a> · closes idea 002 · 16 thinking + 20 routine + 6 mechanical</p>
+    </div>
+    <div class="card card-v11 p-4">
+      <h4 class="font-semibold mb-1">F025 · Specialized subagents <span class="pill pill-v11 ml-2">v1.9</span></h4>
+      <p class="text-sm text-stone-600">Three role-specific subagents under <code class="mono text-xs">templates/.sdd/agents/</code>: <strong>researcher</strong> (gathers context, doesn't write), <strong>executor</strong> (writes code+tests per spec), <strong>verifier</strong> (runs tests, checks §11 ACs). Slash command <code class="mono text-xs">/dispatch &lt;role&gt; &lt;task&gt;</code>. Pairs with F008 multi-model + F010 parallel waves.</p>
+      <p class="text-xs text-stone-500 mt-2">Shipped <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/256" target="_blank" rel="noopener noreferrer">PR #256</a> · closes idea 003 (older brainstorm)</p>
+    </div>
+    <div class="card card-v11 p-4">
+      <h4 class="font-semibold mb-1">F016 · Cross-branch ID collision detection <span class="pill pill-v11 ml-2">v1.9</span></h4>
+      <p class="text-sm text-stone-600">New <code class="mono text-xs">rename-collided-feature.sh</code> renames <code class="mono text-xs">&lt;NNN&gt;-&lt;slug&gt;/</code> folder + rewrites internal <code class="mono text-xs">[[old]]</code> wiki-links to <code class="mono text-xs">[[new]]</code>; refuses (exit 2) if decisions.md pins the old slug. Pre-commit detects when a new <code class="mono text-xs">.sdd/&lt;wf&gt;/&lt;NNN&gt;-&lt;slug&gt;/</code> directory collides with an existing folder at the same ID. <code class="mono text-xs">SDD_ALLOW_ID_COLLISION=1</code> env-var bypass for legitimate cases.</p>
+      <p class="text-xs text-stone-500 mt-2">Shipped <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/247" target="_blank" rel="noopener noreferrer">PR #247</a> · closes idea 007 final</p>
+    </div>
+    <div class="card card-v11 p-4">
+      <h4 class="font-semibold mb-1">F026 · /ship verify-cr-convergence <span class="pill pill-v11 ml-2">v1.9</span></h4>
+      <p class="text-sm text-stone-600">New SHIP-stage action between <code class="mono text-xs">verify-ci-green</code> and <code class="mono text-xs">mark-shipped</code>. <code class="mono text-xs">check-cr-convergence.sh</code> probes <code class="mono text-xs">gh api</code> for the latest CR review state on HEAD SHA; refuses if CHANGES_REQUESTED. Closes the "CI ≠ CR" gap (PRs #158/#161 admin-merged with CR pending). Bypass flag <code class="mono text-xs">parameters.review.bypass_cr_convergence</code> for edge cases.</p>
+      <p class="text-xs text-stone-500 mt-2">Shipped <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/257" target="_blank" rel="noopener noreferrer">PR #257</a> · closes #166</p>
+    </div>
+    <div class="card card-v11 p-4">
+      <h4 class="font-semibold mb-1">F027 · /sdd-verify-stack <span class="pill pill-v11 ml-2">v1.9</span></h4>
+      <p class="text-sm text-stone-600">Post-wizard reality check — runs after <code class="mono text-xs">/sdd-setup</code>. Probes 4 declared tools: CodeRabbit App (gh-api install check), Ollama endpoint (curl HEAD 2s timeout), CI workflow files (yml count), main branch protection (gh-api). Emits <code class="mono text-xs">[verify-stack] &lt;check&gt;: &lt;ok|warn|fail&gt; — &lt;message&gt;</code>. Each check gracefully skips if its precondition isn't set.</p>
+      <p class="text-xs text-stone-500 mt-2">Shipped <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/258" target="_blank" rel="noopener noreferrer">PR #258</a> · closes #165</p>
+    </div>
+    <div class="card card-v11 p-4">
+      <h4 class="font-semibold mb-1">F021 · Remove §2 Success from feature playbook <span class="pill pill-v11 ml-2">v1.9</span></h4>
+      <p class="text-sm text-stone-600">§2 Success was theater (market-shape claim the framework can't verify mechanically). §11 Acceptance Criteria with <code class="mono text-xs">{verify-by: T-NNN}</code> is the real check. <code class="mono text-xs">success</code> dropped from feature playbook SPEC stage; <code class="mono text-xs">success.md</code> kept with <code class="mono text-xs">deprecated: true</code> for back-compat.</p>
+      <p class="text-xs text-stone-500 mt-2">Shipped <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/254" target="_blank" rel="noopener noreferrer">PR #254</a> · closes idea 004</p>
+    </div>
+    <div class="card card-v11 p-4">
+      <h4 class="font-semibold mb-1">F024 · Corpus-signature lock helper <span class="pill pill-v11 ml-2">v1.9</span></h4>
+      <p class="text-sm text-stone-600">Defensive ship for the Tier-3 race condition. <code class="mono text-xs">corpus-signature-lock.sh</code> uses mkdir-as-lockdir (bash 3.2 / macOS portable). Doctrine in CLAUDE.md: acquire lock before reading corpus signature; release after caching. Activates only when Tier 3 enabled.</p>
+      <p class="text-xs text-stone-500 mt-2">Shipped <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/255" target="_blank" rel="noopener noreferrer">PR #255</a> · closes #113</p>
+    </div>
+    <div class="card card-v11 p-4">
+      <h4 class="font-semibold mb-1">Idea 006 · Plain-English prose sweep <span class="pill pill-v11 ml-2">v1.9</span></h4>
+      <p class="text-sm text-stone-600">Rewrote engineer-shape body prose in 4 high-touchpoint action files (proposed-approach / data-contract / acceptance-criteria / learn) to match brief-builder v0.4's plain-English bar. Per-file jargon-density budgets pinned by T162 so regressions fail CI.</p>
+      <p class="text-xs text-stone-500 mt-2">Shipped <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/245" target="_blank" rel="noopener noreferrer">PR #245</a> · closes idea 006 part</p>
+    </div>
+    <div class="card card-v11 p-4">
+      <h4 class="font-semibold mb-1">#163 · /sdd-setup Q1 "SaaS-later" option <span class="pill pill-v11 ml-2">v1.9</span></h4>
+      <p class="text-sm text-stone-600">5th option on /sdd-setup Q1: "An internal tool today, SaaS later". Single-tenant MVP shape with multi-tenant endgame. Records <code class="mono text-xs">future_saas: true</code> in stack.md "Project shape"; downstream actions read it.</p>
+      <p class="text-xs text-stone-500 mt-2">Shipped <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/242" target="_blank" rel="noopener noreferrer">PR #242</a> · closes #163</p>
+    </div>
+  </div>
+
+  <!-- v1.9 validation -->
+  <div class="mt-8 card card-v11 p-5">
+    <h4 class="font-semibold mb-2">Validation sweep — what's actually verified</h4>
+    <p class="text-sm text-stone-600 mb-3">Live smoke-test battery run on 2026-05-12 against shipped main:</p>
+    <ul class="text-sm text-stone-600 space-y-1 leading-relaxed">
+      <li>✅ <strong>F011 per-file budgets:</strong> patterns.md=5000 bytes / budget=500 → fixture asserts kept=500 + <code class="mono text-xs">truncated to 4500 bytes</code> sentinel</li>
+      <li>✅ <strong>F027 verify-stack:</strong> ran on this repo, emitted ci-workflows check (ok)</li>
+      <li>✅ <strong>F026 cr-convergence:</strong> mocked CR=CHANGES_REQUESTED → script refuses with exit 2</li>
+      <li>✅ <strong>F015 model_tier:</strong> 44/44 actions declare a valid tier</li>
+      <li>✅ <strong>F025 specialized subagents:</strong> all 4 files present (researcher/executor/verifier + dispatch.md)</li>
+      <li>✅ <strong>F021 remove-success:</strong> <code class="mono text-xs">success</code> not in feature.md SPEC stage</li>
+      <li>✅ <strong>F024 corpus-signature lock:</strong> concurrent acquire correctly refused</li>
+      <li>✅ <strong>F010 wave markers:</strong> doctrine in CLAUDE.md + dispatch.md + executor/verifier agent files</li>
+      <li>✅ <strong>Idea 006 plain-english:</strong> 4 swept actions under jargon-density budget</li>
+    </ul>
+    <p class="text-xs text-stone-500 mt-3">Framework test sweep: <strong>244 / 246 passing</strong> on main. The 2 remaining are a pre-existing theatre violation in <code class="mono text-xs">001-tier-3-llm-driven-synthesis/spec.md</code> from before this session, plus its T263 cascade.</p>
+  </div>
+
+  <textarea class="review-note review-only" placeholder="Notes on what shipped post-v1.6.0…" data-note="post-v16"></textarea>
 </section>
 
 <!-- ═══════════════════════════════════════════ ROADMAP ═══════════════════════════════════════════ -->
