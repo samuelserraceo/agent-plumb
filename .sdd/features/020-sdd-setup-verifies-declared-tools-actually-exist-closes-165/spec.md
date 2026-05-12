@@ -4,9 +4,9 @@ playbook: feature
 
 # sdd-setup verifies declared tools actually exist (closes #165)
 
-[PHASE: SPEC]
+[PHASE: BUILD]
 
-**Active blocker:** §1 (first action: brief-intake)
+**Active blocker:** §14 (BUILD action: run-mode-chosen)
 
 ## PHASE: SPEC
 
@@ -236,7 +236,7 @@ Run the 6 checks every session-open via `.claude/hooks/session-start.sh`. Pros: 
 ### action: edge-case-sweep
 
 - [x] ec-sweep: 8 edge cases identified across gh-api-shape, network, and platform dimensions.
-- [ ] ec-pick: Drafted disposition; awaiting Sam's `approve §15` (locks transition to BUILD).
+- [x] ec-pick: 8 ECs, 0 new ACs (§11 stays hash-locked at 10). 4 folded into T-tasks (#3 → T504, #7 → T501-T506 timeouts, #8 → AC6 fail-path). 4 documented at SHIP / in prose (#1 owner-vs-repo, #2 set-inclusion, #4 Ollama model-not-pulled, #5 OpenAI key-validity limitation). 1 already-covered (#6 by §9 #4 deferral). Sam approved 2026-05-12.
 
 **§15 Edge-case sweep (8 cases):**
 
