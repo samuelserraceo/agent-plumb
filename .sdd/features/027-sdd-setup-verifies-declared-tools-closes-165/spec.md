@@ -89,8 +89,8 @@ playbook: feature
 - [x] ec-pick: All 4 addressed inline in verify-stack.sh (no new ACs needed — defensive paths in the script body).
 
 ### Exit checks
-- [x] C-spec-acs: ≥1 acceptance criterion exists in §11
-- [x] C-spec-tasks: ≥1 task in plan-decompose section
+- [x] C-spec-acs: ≥1 acceptance criterion exists in §11 {verify-by: verify-stage.sh C-spec-acs bash-grep}
+- [x] C-spec-tasks: ≥1 task in plan-decompose section {verify-by: verify-stage.sh C-spec-tasks bash-grep}
 
 ## PHASE: BUILD
 
