@@ -1,15 +1,15 @@
 # SDD framework — INDEX
 
-**Active:** _(none)_
+**Active:** features/026-ship-hard-enforce-coderabbit-convergence-closes-166
 **Playbook:** feature
-**Active blocker:** _(no active feature — **2026-05-11 ship day complete**: 6 PRs landed end-to-end (F011 per-file budgets #239 / wizard option #242 / plain-english sweep #245 / cross-branch ID collision #247 / model tier #248 / cache-friendly reorder #253). 2026-05-10 brainstorm 100% closed. Outstanding: idea 003-specialized-subagents (captured 2026-05-07, Sam to-build), idea 004-remove-success (captured 2026-05-08, Sam to-decide). 3 GH issues still open by design: #166 /ship CR-convergence (mechanical enforcement; "rely on agent memory" today), #165 /sdd-setup tool verification (post-wizard reality check), #113 corpus-edit race (Tier 3-gated).)_
+**Active blocker:** §1 (first action: brief-intake)
 
 > The SDD framework dogfooding itself. Every v1.0 item below is a real GitHub issue tracked under [milestone v1.0](https://github.com/samuelserraceo/spec-driven-dev-workflow/milestone/8). When an item is in flight, it gets a `.sdd/features/<NNN>-<slug>/spec.md` walked through the SPEC → BUILD → SHIP loop.
 
 
 ## In flight
+- features/026-ship-hard-enforce-coderabbit-convergence-closes-166 — ship hard-enforce CodeRabbit convergence closes 166 (PHASE: SPEC)
 
-(none)
 
 
 
