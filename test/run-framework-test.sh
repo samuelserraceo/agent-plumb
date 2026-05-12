@@ -8707,6 +8707,300 @@ else
 fi
 
 # ============================================================
+# T270-T275 — F026 /ship verify-cr-convergence gate (closes #166)
+#
+# The /ship pipeline's verify-ci-green check passes regardless of
+# CodeRabbit's review state — CI ≠ CR. Two v1.4.x PRs (#158, #161)
+# merged with CR showing CHANGES_REQUESTED. T270-T275 lock the new
+# gate (action + playbook insertion + script behaviour on the four
+# real review-state paths) so that admin-merge past a CR red is the
+# explicit-bypass path, never the silent default.
+# ============================================================
+CR_ACTION_LIVE="$FRAMEWORK_ROOT/.sdd/actions/verify-cr-convergence.md"
+CR_ACTION_TMPL="$FRAMEWORK_ROOT/templates/.sdd/actions/verify-cr-convergence.md"
+CR_SCRIPT_LIVE="$FRAMEWORK_ROOT/.sdd/scripts/check-cr-convergence.sh"
+CR_SCRIPT_TMPL="$FRAMEWORK_ROOT/templates/.sdd/scripts/check-cr-convergence.sh"
+CR_PLAYBOOK_LIVE="$FRAMEWORK_ROOT/.sdd/playbooks/feature.md"
+CR_PLAYBOOK_TMPL="$FRAMEWORK_ROOT/templates/.sdd/playbooks/feature.md"
+
+# Helper: scaffold a tiny project that the script can run against.
+# Caller fills:
+#   - $1: target directory
+#   - bot_value          (value for parameters.review.bot, may be empty)
+#   - bypass_value       (value for parameters.review.bypass_cr_convergence — "true" or "false")
+#   - sha_value          (the SHA git rev-parse HEAD should return)
+#   - reviews_json       (the JSON the stubbed `gh api .../reviews` should print)
+mk_cr_project() {
+  local d="$1"
+  local bot_value="$2"
+  local bypass_value="$3"
+  local sha_value="$4"
+  local reviews_json="$5"
+  local feat_dir="$d/.sdd/features/001-fake"
+  mkdir -p "$feat_dir" "$d/.sdd/scripts" "$d/stub_bin"
+  cp "$CR_SCRIPT_TMPL" "$d/.sdd/scripts/check-cr-convergence.sh" 2>/dev/null || true
+  chmod +x "$d/.sdd/scripts/check-cr-convergence.sh" 2>/dev/null || true
+  cat > "$d/.sdd/config.md" <<CFG
+---
+type: config
+parameters:
+  review:
+    bot: "${bot_value}"
+    bypass_cr_convergence: ${bypass_value}
+---
+CFG
+  cat > "$d/.sdd/INDEX.md" <<INDEX
+# SDD INDEX
+**Active:** features/001-fake
+**Playbook:** feature
+INDEX
+  # .pr-number lives in the feature folder per push-pr action
+  echo "12345" > "$feat_dir/.pr-number"
+  # Stub git: only the rev-parse HEAD path matters; pass everything
+  # else to the real git so any incidental calls don't blow up.
+  local real_git
+  real_git=$(command -v git)
+  cat > "$d/stub_bin/git" <<GITSTUB
+#!/usr/bin/env bash
+if [ "\$1" = "rev-parse" ] && [ "\$2" = "HEAD" ]; then
+  echo "${sha_value}"
+  exit 0
+fi
+exec "${real_git}" "\$@"
+GITSTUB
+  chmod +x "$d/stub_bin/git"
+  # Stub gh: respond to `gh api repos/.../pulls/.../reviews` with the
+  # caller-supplied JSON. `gh repo view --json owner,name -q ...` is
+  # used for owner/repo inference; return a known pair.
+  cat > "$d/stub_bin/gh" <<GHSTUB
+#!/usr/bin/env bash
+if [ "\$1" = "repo" ] && [ "\$2" = "view" ]; then
+  echo "samuelserraceo/spec-driven-dev-workflow"
+  exit 0
+fi
+if [ "\$1" = "api" ]; then
+  cat <<'JSON'
+${reviews_json}
+JSON
+  exit 0
+fi
+echo ""
+exit 0
+GHSTUB
+  chmod +x "$d/stub_bin/gh"
+}
+
+# ────────────────────────────────────────────────────────────
+# T270 — action file exists with required frontmatter
+# RED case: the action file is missing or frontmatter is empty.
+# Locks the action's identity (slug, tag, model_tier, trust, stage) so
+# refactors that accidentally drop the verify-cr-convergence frontmatter
+# break visibly here instead of letting /ship silently skip the gate.
+# ────────────────────────────────────────────────────────────
+note "T270: F026 verify-cr-convergence action file exists with required frontmatter (live + template)"
+T270_FAILS=0
+T270_REPORT=""
+for f in "$CR_ACTION_LIVE" "$CR_ACTION_TMPL"; do
+  if [ ! -f "$f" ]; then
+    T270_FAILS=$((T270_FAILS + 1))
+    T270_REPORT="$T270_REPORT\n  - missing: $f"
+    continue
+  fi
+  # frontmatter keys (each must appear within the first 30 lines)
+  for key in "type: action" "slug: verify-cr-convergence" "tag: AGENT-LED" "model_tier: mechanical" "trust: framework"; do
+    if ! head -30 "$f" | grep -qF "$key"; then
+      T270_FAILS=$((T270_FAILS + 1))
+      T270_REPORT="$T270_REPORT\n  - $f missing frontmatter key: $key"
+    fi
+  done
+done
+if [ "$T270_FAILS" -eq 0 ]; then
+  ok "T270 verify-cr-convergence action exists with required frontmatter"
+else
+  bad "T270 verify-cr-convergence action missing or wrong frontmatter" "$(printf '%b' "$T270_REPORT")"
+fi
+
+# ────────────────────────────────────────────────────────────
+# T271 — playbook lists verify-cr-convergence in SHIP between
+# verify-ci-green and mark-shipped (live + template).
+# RED case: position drifts. Order matters — `mark-shipped` flips the
+# `.shipped` marker so the gate has to come immediately before it. Any
+# reorder that moves the gate to a different position breaks the
+# contract the F026 spec locks.
+# ────────────────────────────────────────────────────────────
+note "T271: feature.md playbook lists verify-cr-convergence between verify-ci-green and mark-shipped (SHIP stage)"
+T271_FAILS=0
+T271_REPORT=""
+for f in "$CR_PLAYBOOK_LIVE" "$CR_PLAYBOOK_TMPL"; do
+  if [ ! -f "$f" ]; then
+    T271_FAILS=$((T271_FAILS + 1))
+    T271_REPORT="$T271_REPORT\n  - missing: $f"
+    continue
+  fi
+  # Walk frontmatter, pick the SHIP stage's `actions:` list (the
+  # frontmatter is the load-bearing form — the playbook's body prose
+  # is documentation, not a contract).
+  ship_actions=$(awk '
+    /^  - id: SHIP/        { in_ship=1; next }
+    in_ship && /^  - id:/  { in_ship=0 }
+    in_ship && /^    actions:/ { in_actions=1; next }
+    in_ship && in_actions && /^      - / {
+      line=$0
+      sub(/^      - /, "", line)
+      print line
+      next
+    }
+    in_ship && in_actions && !/^      - / { in_actions=0 }
+  ' "$f")
+  # Pull positions (line numbers within the SHIP actions block)
+  pos_ci=$(echo "$ship_actions" | grep -nF "verify-ci-green" | head -1 | cut -d: -f1)
+  pos_cr=$(echo "$ship_actions" | grep -nF "verify-cr-convergence" | head -1 | cut -d: -f1)
+  pos_ms=$(echo "$ship_actions" | grep -nF "mark-shipped" | head -1 | cut -d: -f1)
+  if [ -z "$pos_ci" ] || [ -z "$pos_cr" ] || [ -z "$pos_ms" ]; then
+    T271_FAILS=$((T271_FAILS + 1))
+    T271_REPORT="$T271_REPORT\n  - $f missing one of: verify-ci-green/verify-cr-convergence/mark-shipped in SHIP actions"
+    continue
+  fi
+  if [ "$pos_ci" -lt "$pos_cr" ] && [ "$pos_cr" -lt "$pos_ms" ]; then
+    : # ordering correct
+  else
+    T271_FAILS=$((T271_FAILS + 1))
+    T271_REPORT="$T271_REPORT\n  - $f SHIP order wrong: ci=$pos_ci cr=$pos_cr mark=$pos_ms (need ci<cr<mark)"
+  fi
+done
+if [ "$T271_FAILS" -eq 0 ]; then
+  ok "T271 playbook SHIP stage orders verify-cr-convergence between verify-ci-green and mark-shipped"
+else
+  bad "T271 playbook SHIP-stage ordering wrong" "$(printf '%b' "$T271_REPORT")"
+fi
+
+# ────────────────────────────────────────────────────────────
+# T272 — check-cr-convergence.sh exits 1 when mocked CR review is
+# CHANGES_REQUESTED on the latest SHA.
+# RED case: the script exits 0 (silently ships past CR red — the v1.4.x
+# admin-merge failure mode #158/#161 the issue documents).
+# Uses PATH-prepended gh/git stubs (no real GitHub call).
+# ────────────────────────────────────────────────────────────
+note "T272: check-cr-convergence.sh exits 1 on CHANGES_REQUESTED at latest SHA (CR refused)"
+d=$(mktemp -d)
+SHA="aaaaaa1111deadbeef"
+REVIEWS=$(cat <<JSON
+[
+  {"id":1,"user":{"login":"coderabbitai[bot]"},"state":"CHANGES_REQUESTED","commit_id":"${SHA}","submitted_at":"2026-05-12T10:00:00Z"}
+]
+JSON
+)
+mk_cr_project "$d" "coderabbit" "false" "$SHA" "$REVIEWS"
+(
+  cd "$d" || exit 99
+  export PATH="$d/stub_bin:$PATH"
+  bash "$d/.sdd/scripts/check-cr-convergence.sh" >"$d/out.txt" 2>"$d/err.txt"
+  echo "EC=$?" >>"$d/out.txt"
+) || true
+ec=$(grep '^EC=' "$d/out.txt" | cut -d= -f2)
+err=$(cat "$d/err.txt" 2>/dev/null)
+rm -rf "$d"
+if [ "$ec" = "1" ]; then
+  ok "T272 check-cr-convergence.sh exits 1 on CHANGES_REQUESTED at latest SHA"
+else
+  bad "T272 check-cr-convergence.sh did NOT refuse on CHANGES_REQUESTED" "exit=$ec  err='$err'"
+fi
+
+# ────────────────────────────────────────────────────────────
+# T273 — APPROVED at latest SHA → exit 0.
+# Locks the happy path. Bot login is coderabbitai[bot] (the real CR
+# login form) so the script's bot-name matcher is exercised against the
+# canonical wire shape (the case Sam's spec EC#(d) documents).
+# ────────────────────────────────────────────────────────────
+note "T273: check-cr-convergence.sh exits 0 on APPROVED at latest SHA (CR converged)"
+d=$(mktemp -d)
+SHA="bbbbbb2222deadbeef"
+REVIEWS=$(cat <<JSON
+[
+  {"id":1,"user":{"login":"coderabbitai[bot]"},"state":"CHANGES_REQUESTED","commit_id":"oldsha","submitted_at":"2026-05-11T10:00:00Z"},
+  {"id":2,"user":{"login":"coderabbitai[bot]"},"state":"APPROVED","commit_id":"${SHA}","submitted_at":"2026-05-12T10:00:00Z"}
+]
+JSON
+)
+mk_cr_project "$d" "coderabbit" "false" "$SHA" "$REVIEWS"
+(
+  cd "$d" || exit 99
+  export PATH="$d/stub_bin:$PATH"
+  bash "$d/.sdd/scripts/check-cr-convergence.sh" >"$d/out.txt" 2>"$d/err.txt"
+  echo "EC=$?" >>"$d/out.txt"
+) || true
+ec=$(grep '^EC=' "$d/out.txt" | cut -d= -f2)
+err=$(cat "$d/err.txt" 2>/dev/null)
+rm -rf "$d"
+if [ "$ec" = "0" ]; then
+  ok "T273 check-cr-convergence.sh exits 0 on APPROVED at latest SHA"
+else
+  bad "T273 check-cr-convergence.sh did NOT pass on APPROVED" "exit=$ec  err='$err'"
+fi
+
+# ────────────────────────────────────────────────────────────
+# T274 — empty parameters.review.bot → skip path → exit 0.
+# Downstream projects that haven't configured a CR bot must keep
+# shipping. The script must never call gh-api in this branch.
+# ────────────────────────────────────────────────────────────
+note "T274: check-cr-convergence.sh exits 0 (skip) when parameters.review.bot is empty"
+d=$(mktemp -d)
+mk_cr_project "$d" "" "false" "doesnt-matter" "[]"
+# Sabotage the gh stub — if the script reaches it in the skip path,
+# the test must fail. The skip path comes BEFORE any gh call.
+cat > "$d/stub_bin/gh" <<'GHSTUB'
+#!/usr/bin/env bash
+echo "[T274] gh was called — skip path leaked through!" >&2
+exit 99
+GHSTUB
+chmod +x "$d/stub_bin/gh"
+(
+  cd "$d" || exit 99
+  export PATH="$d/stub_bin:$PATH"
+  bash "$d/.sdd/scripts/check-cr-convergence.sh" >"$d/out.txt" 2>"$d/err.txt"
+  echo "EC=$?" >>"$d/out.txt"
+) || true
+ec=$(grep '^EC=' "$d/out.txt" | cut -d= -f2)
+err=$(cat "$d/err.txt" 2>/dev/null)
+gh_called=$(echo "$err" | grep -c 'gh was called' || true)
+rm -rf "$d"
+if [ "$ec" = "0" ] && [ "$gh_called" = "0" ]; then
+  ok "T274 check-cr-convergence.sh skips cleanly when parameters.review.bot is empty (no gh call)"
+else
+  bad "T274 skip path broken" "exit=$ec  gh_called=$gh_called  err='$err'"
+fi
+
+# ────────────────────────────────────────────────────────────
+# T275 — bypass_cr_convergence: true → exit 0.
+# Operator-opt-out lever. Script must also NOT call gh in this branch
+# (the operator already decided to skip — no point hitting the API).
+# ────────────────────────────────────────────────────────────
+note "T275: check-cr-convergence.sh exits 0 when parameters.review.bypass_cr_convergence is true (no gh call)"
+d=$(mktemp -d)
+mk_cr_project "$d" "coderabbit" "true" "doesnt-matter" "[]"
+cat > "$d/stub_bin/gh" <<'GHSTUB'
+#!/usr/bin/env bash
+echo "[T275] gh was called — bypass path leaked through!" >&2
+exit 99
+GHSTUB
+chmod +x "$d/stub_bin/gh"
+(
+  cd "$d" || exit 99
+  export PATH="$d/stub_bin:$PATH"
+  bash "$d/.sdd/scripts/check-cr-convergence.sh" >"$d/out.txt" 2>"$d/err.txt"
+  echo "EC=$?" >>"$d/out.txt"
+) || true
+ec=$(grep '^EC=' "$d/out.txt" | cut -d= -f2)
+err=$(cat "$d/err.txt" 2>/dev/null)
+gh_called=$(echo "$err" | grep -c 'gh was called' || true)
+rm -rf "$d"
+if [ "$ec" = "0" ] && [ "$gh_called" = "0" ]; then
+  ok "T275 check-cr-convergence.sh bypasses cleanly when bypass_cr_convergence is true (no gh call)"
+else
+  bad "T275 bypass path broken" "exit=$ec  gh_called=$gh_called  err='$err'"
+fi
+
+# ============================================================
 # Report
 # ============================================================
 printf '\n----------------------------------------\n'
