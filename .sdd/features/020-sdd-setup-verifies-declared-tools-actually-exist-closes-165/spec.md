@@ -297,7 +297,7 @@ Run the 6 checks every session-open via `.claude/hooks/session-start.sh`. Pros: 
 
 ### action: push-pr
 
-- [ ] push-and-open: push the branch + open a PR
+- [x] push-and-open: PR #259 opened — https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/259
 
 ### action: verify-ci-green
 
