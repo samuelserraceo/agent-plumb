@@ -42,6 +42,7 @@ stages:
       - learn
       - push-pr
       - verify-ci-green
+      - verify-cr-convergence
       - mark-shipped
     exit_checks:
       - { id: C-ship-pr-url, check: "PR URL recorded in INDEX.md Shipped section" }
