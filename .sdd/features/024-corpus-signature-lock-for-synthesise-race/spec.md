@@ -4,9 +4,9 @@ playbook: feature
 
 # corpus signature lock for synthesise race
 
-[PHASE: BUILD]
+[PHASE: SHIP]
 
-**Active blocker:** _(none — SPEC approved, BUILD in progress)_
+**Active blocker:** _(none — SPEC approved, BUILD done with T290-T292 all GREEN, ready to SHIP)_ {verify-by: T290 / T291 / T292}
 
 ## PHASE: SPEC
 
@@ -161,9 +161,9 @@ synthesise() caller        corpus-signature-lock.sh        filesystem (.sdd/.cac
 
 [APPROVED]
 
-- [ ] T290: `corpus-signature-lock.sh` exists in BOTH locations + is executable + has bash 3.2-compatible shebang
-- [ ] T291: `acquire` exits 1 when another process holds the lock (test via background subshell holding the lock + foreground second acquire)
-- [ ] T292: `acquire` exits 0 + creates lockdir on first call; `release` exits 0 + removes lockdir; second `release` (idempotent) also exits 0
+- [x] T290: `corpus-signature-lock.sh` exists in BOTH locations + is executable + has bash 3.2-compatible shebang
+- [x] T291: `acquire` exits 1 when another process holds the lock (test via background subshell holding the lock + foreground second acquire)
+- [x] T292: `acquire` exits 0 + creates lockdir on first call; `release` exits 0 + removes lockdir; second `release` (idempotent) also exits 0
 
 ### 15. edge-case-sweep
 
