@@ -33,9 +33,19 @@
       "path": ".sdd/scripts/check-setup-answer.sh",
       "trust": "framework"
     },
+    "corpus-signature-lock.sh": {
+      "expected_sha256": "9653551a8d183c8c3c13c9797aa6b2d19cbf684db3f22f140df7043124b55461",
+      "path": ".sdd/scripts/corpus-signature-lock.sh",
+      "trust": "framework"
+    },
     "dispatch-wave.sh": {
       "expected_sha256": "499e1c2067a80832be429890c1168c337aa6157eba942121bfc3af7959dac960",
       "path": ".sdd/scripts/dispatch-wave.sh",
+      "trust": "framework"
+    },
+    "get-model-for-tier.sh": {
+      "expected_sha256": "8085a0d9a0e90df5a110e92839c714da896f1698c65fab04fb04932a36e48a14",
+      "path": ".sdd/scripts/get-model-for-tier.sh",
       "trust": "framework"
     },
     "hash-section.sh": {
@@ -66,6 +76,11 @@
     "post-stop-lint.sh": {
       "expected_sha256": "a2c51375714d1e38453566f2d2da66b5beb4c0a79b346fd6c3262e0131d4ab00",
       "path": ".claude/hooks/post-stop-lint.sh",
+      "trust": "framework"
+    },
+    "promote-legacy-queued.sh": {
+      "expected_sha256": "52b2cbf0ff2d0fd34e28ee8007fc6356c5aef493891a8d82e36ec7bcaed10eb4",
+      "path": ".sdd/scripts/promote-legacy-queued.sh",
       "trust": "framework"
     },
     "promote-to-active": {
@@ -121,16 +136,6 @@
     "validate-sdd-path.sh": {
       "expected_sha256": "5035174640d824d171c1d551bf51794651069b1b362de910c7b51954256a7ec6",
       "path": ".sdd/scripts/validate-sdd-path.sh",
-      "trust": "framework"
-    },
-    "promote-legacy-queued.sh": {
-      "expected_sha256": "52b2cbf0ff2d0fd34e28ee8007fc6356c5aef493891a8d82e36ec7bcaed10eb4",
-      "path": ".sdd/scripts/promote-legacy-queued.sh",
-      "trust": "framework"
-    },
-    "get-model-for-tier.sh": {
-      "expected_sha256": "8085a0d9a0e90df5a110e92839c714da896f1698c65fab04fb04932a36e48a14",
-      "path": ".sdd/scripts/get-model-for-tier.sh",
       "trust": "framework"
     },
     "check-cr-convergence.sh": {

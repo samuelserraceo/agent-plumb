@@ -147,6 +147,12 @@ mkproj_v08() {
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/rename-collided-feature.sh" "$d/.sdd/scripts/rename-collided-feature.sh" \
     || { echo "[mkproj_v08] failed to copy rename-collided-feature.sh from \$FRAMEWORK_ROOT — broken framework checkout?" >&2; return 1; }
   chmod +x "$d/.sdd/scripts/rename-collided-feature.sh"
+  # corpus-signature-lock.sh is manifest-tracked in v1.9.0+ (F024, closes #113).
+  # Same fail-fast pattern — silently skipping leaves a manifest-pinned file
+  # absent on disk, which the moat (T144 / T145) flags as drift.
+  cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/corpus-signature-lock.sh" "$d/.sdd/scripts/corpus-signature-lock.sh" \
+    || { echo "[mkproj_v08] failed to copy corpus-signature-lock.sh from \$FRAMEWORK_ROOT — broken framework checkout?" >&2; return 1; }
+  chmod +x "$d/.sdd/scripts/corpus-signature-lock.sh"
   cp "$FRAMEWORK_ROOT/templates/.sdd/scripts/scope-guard-config.sh"   "$d/.sdd/scripts/scope-guard-config.sh" 2>/dev/null || true
   chmod +x "$d/.sdd/scripts/scope-guard-config.sh" 2>/dev/null || true
   # get-model-for-tier.sh is manifest-tracked in v1.8+ (idea 002 — lego-style

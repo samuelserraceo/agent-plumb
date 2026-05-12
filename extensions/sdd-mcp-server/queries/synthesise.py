@@ -144,6 +144,15 @@ def synthesise(
         cfg["auth_header"] = _resolve_auth_header(cfg.get("auth_header", ""))
 
         # 4. Load graph cache (used for cite-check + retrieval)
+        #
+        # F024 / #113 race forward-load: when a user edits .sdd/ markdown
+        # in parallel with this read, the source_signature can land mid-
+        # write — cache key indexes inconsistent corpus state. Bash helper
+        # .sdd/scripts/corpus-signature-lock.sh ships defensively; wire
+        # `acquire <cache_dir>/.corpus-signature.lock.d` BEFORE this load
+        # and `release` AFTER _save_synthesis_cache below when Tier 3
+        # enables on a downstream project. See templates/CLAUDE.md
+        # "Corpus-signature lock around synthesise()" doctrine paragraph.
         graph = _graph_cache.load(project_root)
         corpus_signature = graph.get("source_signature", "")
 
