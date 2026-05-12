@@ -8780,7 +8780,12 @@ GITSTUB
   chmod +x "$d/stub_bin/git"
   # Stub gh: respond to `gh api repos/.../pulls/.../reviews` with the
   # caller-supplied JSON. `gh repo view --json owner,name -q ...` is
-  # used for owner/repo inference; return a known pair.
+  # used for owner/repo inference; return a known pair. Narrow the
+  # api-arm match to the reviews endpoint so an accidental call to a
+  # different api path doesn't smuggle through the reviews JSON
+  # (CR cycle-1 finding — the original wildcard `gh api *` arm let an
+  # off-target call inherit the fixture payload and read as a real
+  # signal).
   cat > "$d/stub_bin/gh" <<GHSTUB
 #!/usr/bin/env bash
 if [ "\$1" = "repo" ] && [ "\$2" = "view" ]; then
@@ -8788,10 +8793,20 @@ if [ "\$1" = "repo" ] && [ "\$2" = "view" ]; then
   exit 0
 fi
 if [ "\$1" = "api" ]; then
-  cat <<'JSON'
+  # All remaining args concatenated for endpoint matching.
+  args="\$*"
+  case "\$args" in
+    *"repos/"*"/pulls/"*"/reviews"*)
+      cat <<'JSON'
 ${reviews_json}
 JSON
-  exit 0
+      exit 0
+      ;;
+    *)
+      echo "[stub gh] unexpected api endpoint: \$args" >&2
+      exit 22
+      ;;
+  esac
 fi
 echo ""
 exit 0
@@ -9007,6 +9022,73 @@ if [ "$ec" = "0" ] && [ "$gh_called" = "0" ]; then
   ok "T275 check-cr-convergence.sh bypasses cleanly when bypass_cr_convergence is true (no gh call)"
 else
   bad "T275 bypass path broken" "exit=$ec  gh_called=$gh_called  err='$err'"
+fi
+
+# ────────────────────────────────────────────────────────────
+# T276 — COMMENTED at latest SHA → exit 0 (CR's "I looked, no
+# changes needed" state). CR posts COMMENTED reviews in two common
+# cases: the bot replied with no findings on a clean diff, or the
+# user disabled change-request-style reviews. Either way, the
+# review-rolled-up signal is "converged enough to ship" — the gate
+# must NOT refuse on this state. Locks the second pass-path branch
+# of the script's case statement that T273 doesn't exercise.
+# ────────────────────────────────────────────────────────────
+note "T276: check-cr-convergence.sh exits 0 on COMMENTED at latest SHA (CR converged via no-findings)"
+d=$(mktemp -d)
+SHA="cccccc3333deadbeef"
+REVIEWS=$(cat <<JSON
+[
+  {"id":3,"user":{"login":"coderabbitai[bot]"},"state":"COMMENTED","commit_id":"${SHA}","submitted_at":"2026-05-12T10:00:00Z"}
+]
+JSON
+)
+mk_cr_project "$d" "coderabbit" "false" "$SHA" "$REVIEWS"
+(
+  cd "$d" || exit 99
+  export PATH="$d/stub_bin:$PATH"
+  bash "$d/.sdd/scripts/check-cr-convergence.sh" >"$d/out.txt" 2>"$d/err.txt"
+  echo "EC=$?" >>"$d/out.txt"
+) || true
+ec=$(grep '^EC=' "$d/out.txt" | cut -d= -f2)
+err=$(cat "$d/err.txt" 2>/dev/null)
+rm -rf "$d"
+if [ "$ec" = "0" ]; then
+  ok "T276 check-cr-convergence.sh exits 0 on COMMENTED at latest SHA"
+else
+  bad "T276 check-cr-convergence.sh did NOT pass on COMMENTED" "exit=$ec  err='$err'"
+fi
+
+# ────────────────────────────────────────────────────────────
+# T277 — no review on the LATEST SHA → exit 1.
+# Reviews exist on earlier SHAs (e.g., an APPROVED on the previous
+# commit), but the latest commit has nothing yet. The gate must
+# refuse — silently shipping when CR hasn't seen the latest code is
+# exactly the v1.4.x admin-merge failure mode. Locks the empty-state
+# branch (LATEST_STATE="") of the script's case statement.
+# ────────────────────────────────────────────────────────────
+note "T277: check-cr-convergence.sh exits 1 when no CR review exists on latest SHA (stale review)"
+d=$(mktemp -d)
+SHA="dddddd4444deadbeef"
+REVIEWS=$(cat <<JSON
+[
+  {"id":4,"user":{"login":"coderabbitai[bot]"},"state":"APPROVED","commit_id":"earliersha1111","submitted_at":"2026-05-11T10:00:00Z"}
+]
+JSON
+)
+mk_cr_project "$d" "coderabbit" "false" "$SHA" "$REVIEWS"
+(
+  cd "$d" || exit 99
+  export PATH="$d/stub_bin:$PATH"
+  bash "$d/.sdd/scripts/check-cr-convergence.sh" >"$d/out.txt" 2>"$d/err.txt"
+  echo "EC=$?" >>"$d/out.txt"
+) || true
+ec=$(grep '^EC=' "$d/out.txt" | cut -d= -f2)
+err=$(cat "$d/err.txt" 2>/dev/null)
+rm -rf "$d"
+if [ "$ec" = "1" ]; then
+  ok "T277 check-cr-convergence.sh exits 1 when no review exists on latest SHA"
+else
+  bad "T277 check-cr-convergence.sh did NOT refuse on missing review at HEAD SHA" "exit=$ec  err='$err'"
 fi
 
 # ============================================================
