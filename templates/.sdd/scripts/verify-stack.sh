@@ -176,6 +176,33 @@ check_tier3_provider() {
   esac
 }
 
+# --- check 6 — Test runner deps ---------------------------------------
+# Fires when stack.md declares "Test runner: <name>" (or similar shape).
+# Greps package.json (or pyproject.toml fallback) for the runner name.
+check_test_runner_deps() {
+  local declared runner
+  declared=$(grep -iE "test.runner" .sdd/stack.md 2>/dev/null | head -1)
+  [ -n "$declared" ] || return 2  # skip if not declared
+  runner=$(printf '%s\n' "$declared" | sed -E 's/.*[Tt]est.runner[: ]*//' | awk '{print $1}' | tr -d ',.;:')
+  runner=$(printf '%s' "$runner" | tr '[:upper:]' '[:lower:]')
+  [ -n "$runner" ] || return 2  # could not parse a name
+
+  if [ -f package.json ] && grep -qi "\"$runner\"" package.json; then
+    echo "✓ test runner '$runner' declared in package.json"
+    return 0
+  fi
+  if [ -f pyproject.toml ] && grep -qi "^$runner" pyproject.toml; then
+    echo "✓ test runner '$runner' declared in pyproject.toml"
+    return 0
+  fi
+  if [ -f package.json ] || [ -f pyproject.toml ]; then
+    echo "✗ test runner '$runner' NOT in package.json / pyproject.toml — npm install --save-dev $runner (or equivalent)" >&2
+    return 1
+  fi
+  echo "✗ test runner '$runner' declared but no package.json / pyproject.toml found in project — install missing" >&2
+  return 1
+}
+
 # --- Runner -----------------------------------------------------------
 fired=0
 overall_rc=0
@@ -195,6 +222,7 @@ run_check check_copilot
 run_check check_branch_protection
 run_check check_ci_workflows
 run_check check_tier3_provider
+run_check check_test_runner_deps
 
 if [ "$fired" -eq 0 ]; then
   echo "no declared tools to verify"
