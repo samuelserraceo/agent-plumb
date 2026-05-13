@@ -186,7 +186,7 @@ if [ -f "$stack_file" ]; then
     | head -1 \
     | sed -E 's/.*[Tt]est[[:space:]]+runner[[:space:]]*:[[:space:]]*//' \
     | awk '{print $1}' \
-    | tr -d ',.;:' \
+    | tr -cd 'A-Za-z0-9._/@-' \
     | tr '[:upper:]' '[:lower:]')
   if [ -n "$runner" ]; then
     found=0
