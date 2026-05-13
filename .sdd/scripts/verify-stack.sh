@@ -184,7 +184,7 @@ if [ -f "$stack_file" ]; then
   # Plain prose mentions like "nothing about a test runner here" do not match.
   runner=$(grep -iE "[Tt]est[[:space:]]+runner[[:space:]]*:[[:space:]]+[^[:space:]]" "$stack_file" 2>/dev/null \
     | head -1 \
-    | sed -E 's/.*[Tt]est[[:space:]]+runner[[:space:]]*:[[:space:]]*//' \
+    | sed -E 's/^[^:]*:[[:space:]]*//' \
     | awk '{print $1}' \
     | tr -cd 'A-Za-z0-9._/@-' \
     | tr '[:upper:]' '[:lower:]')
