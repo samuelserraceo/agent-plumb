@@ -46,7 +46,7 @@ playbook: feature
 
 ### action: flows
 
-- [x] flows:
+- [x] flows: 4 critical flows — happy / refused / skip-no-bot / bypass — covering every branch the `check-cr-convergence.sh` gate runs.
   1. **Happy path** — operator runs `/ship`. `push-pr` opens PR, `verify-ci-green` polls until green, `verify-cr-convergence` runs `check-cr-convergence.sh`. CR has APPROVED on the latest SHA → script exits 0, action ticks its box, agent proceeds to `mark-shipped`.
   2. **Refused path** — CR review state is CHANGES_REQUESTED on the latest SHA. Script exits 1 with stderr: "verify-cr-convergence: CodeRabbit review state CHANGES_REQUESTED on commit <SHA>. Either push a fix that resolves the findings, or set `parameters.review.bypass_cr_convergence: true` in `.sdd/config.md` (and record the override in `decisions.md`)." Action halts {verify-by: T272}. mark-shipped does not fire {verify-by: T272}.
   3. **Skip path (no bot)** — `parameters.review.bot: ""` (empty). Script exits 0 immediately with one stderr line "verify-cr-convergence: skipped — parameters.review.bot is empty." No gh-api call.
@@ -58,7 +58,7 @@ playbook: feature
 
 ### action: out-of-scope
 
-- [x] list:
+- [x] list: 4 explicit deferrals — auto-nudge poll loop, cr-decisions.md per-finding ledger, CLAUDE.md doctrine subsection, Critical-only refusal logic.
   - **Auto-nudge poll loop** — the "wait + post `@coderabbitai full review` after N minutes" sub-feature of issue #166. Reason: deferred per the issue's "don't ship until 2-3 more PRs show the failure mode" caveat; ship the gate first.
   - **`cr-decisions.md` per-finding ledger** — the issue suggests a separate file enumerating each CR finding with `resolved-as-stale-finding / resolved-by-commit-X / accepted-with-tradeoff`. Reason: the gate first; the ledger is doctrine on top of the gate. Add later if downstream projects need it. Bypass + `decisions.md` row is the v1 escape hatch.
   - **CLAUDE.md "CR convergence rules" subsection** — the issue's doctrine half. Reason: deferred. The action prose carries the operator-facing rule; the durable doctrine update lands when 2-3 PRs have run through the new gate.
@@ -67,7 +67,7 @@ playbook: feature
 
 ### action: non-functional
 
-- [x] constraints:
+- [x] constraints: bash 3.2 compat; tests mock gh via PATH-prepend; anti-theatre lint passes; script idempotent; exit codes 0=pass, 1=refused, 2=usage; plain-English stderr.
   - Bash 3.2 compat (macOS default).
   - Tests mock `gh api` via PATH-prepend (so no real GitHub calls during framework-test run).
   - Anti-theatre lint passes (every numerical/enforcement claim verifiable; "checks CR" must be true after running the script, not just prose).
@@ -77,7 +77,7 @@ playbook: feature
 
 ### action: acceptance-criteria
 
-- [x] approval:
+- [x] approval: 6 ACs (AC1-AC6) — file presence, playbook position, 4 exit-code paths (refused / approved / skip / bypass).
 - [ ] AC1: `.sdd/actions/verify-cr-convergence.md` + `templates/.sdd/actions/verify-cr-convergence.md` exist with frontmatter (`type: action`, `slug: verify-cr-convergence`, `tag: AGENT-LED`, `model_tier: mechanical`, `trust: framework`). {verify-by: T270}
 - [ ] AC2: `templates/.sdd/playbooks/feature.md` lists `verify-cr-convergence` in the SHIP stage's `actions:` list, positioned exactly between `verify-ci-green` and `mark-shipped`. Live mirror matches. {verify-by: T271}
 - [ ] AC3: `check-cr-convergence.sh` exits 1 when the mocked CR review state is `CHANGES_REQUESTED` on the latest SHA. {verify-by: T272}
@@ -87,7 +87,7 @@ playbook: feature
 
 ### action: signoff-steps
 
-- [x] manual-steps:
+- [x] manual-steps: 2 manual smokes {best-effort: Sam at SHIP} — confirm new gate fires on this PR's first /ship; confirm /ship flow does not regress for downstream projects with `parameters.review.bot: ""`.
   - Confirm `gh pr view` on this PR shows CR convergence working through the new gate the first time it runs (post-merge real-session walk).
   - Confirm `/ship` flow doesn't regress on a feature that has `parameters.review.bot: ""` (downstream-no-CR shape).
 
@@ -108,7 +108,7 @@ playbook: feature
 
 ### action: plan-decompose
 
-- [x] tasks:
+- [x] tasks: 6 ordered T-tasks T270-T275 — file + frontmatter, playbook insertion, 4 exit-code paths.
 - [ ] T270: action file + frontmatter — write `.sdd/actions/verify-cr-convergence.md` and `templates/.sdd/actions/verify-cr-convergence.md` with the required frontmatter shape. Test asserts both files exist + grep finds required keys. {verify-by: tests/task-270*}
 - [ ] T271: playbook insertion — edit `.sdd/playbooks/feature.md` + `templates/.sdd/playbooks/feature.md` SHIP `actions:` block to add `verify-cr-convergence` between `verify-ci-green` and `mark-shipped`. Test asserts ordering in both files. {verify-by: tests/task-271*}
 - [ ] T272: refused path — `check-cr-convergence.sh` exits 1 with mocked CHANGES_REQUESTED on latest SHA. {verify-by: tests/task-272*}

@@ -8,8 +8,10 @@
 #
 #   1. CodeRabbit App      — `gh api repos/<r>/installation` if review.bot=coderabbit
 #   2. Ollama endpoint     — HEAD/GET if mcp.tier3.enabled+provider=ollama
-#   3. Branch protection   — `gh api repos/<r>/branches/main/protection` if user opted in
+#   3. OpenAI key          — OPENAI_API_KEY env-var presence (followup) if provider=openai
 #   4. CI workflow files   — `.github/workflows/*.yml` presence check
+#   5. Branch protection   — `gh api repos/<r>/branches/main/protection` if user opted in
+#   6. Test runner deps    — runner name in package.json / pyproject.toml (followup)
 #
 # Each check prints one line: `[verify-stack] <check>: <ok|warn|fail> — <message>`.
 # Exit code: 0 if no FAIL entries (warnings allowed); 1 if any FAIL.
@@ -131,7 +133,23 @@ if [ "$tier3_enabled" = "true" ]; then
   fi
 fi
 
-# ─── Check 3: CI workflow files ──────────────────────────────────────
+# ─── Check 3: OpenAI key (if Tier 3 enabled + openai provider) ──────
+# Extends F027's Tier 3 reality-check to the OpenAI path. Cannot
+# validate the key without a paid call; probes env-var presence only.
+if [ "$tier3_enabled" = "true" ]; then
+  case "$tier3_provider" in
+    openai|openai-*)
+      if [ -n "${OPENAI_API_KEY:-}" ]; then
+        emit "openai-key" "ok" "OPENAI_API_KEY env-var present (key-validity not probed — would need a paid call)"
+      else
+        emit "openai-key" "fail" "Tier 3 OpenAI declared but OPENAI_API_KEY env-var NOT set — export it in your shell rc"
+        FAILED=$((FAILED + 1))
+      fi
+      ;;
+  esac
+fi
+
+# ─── Check 4: CI workflow files ──────────────────────────────────────
 wf_dir="$PROJECT_DIR/.github/workflows"
 if [ -d "$wf_dir" ]; then
   wf_count=$(find "$wf_dir" -maxdepth 1 -type f \( -name "*.yml" -o -name "*.yaml" \) 2>/dev/null | wc -l | tr -d ' ')
@@ -144,7 +162,7 @@ else
   emit "ci-workflows" "warn" "no .github/workflows/ directory — CI checks won't fire"
 fi
 
-# ─── Check 4: Branch protection (optional, skipped if no gh) ─────────
+# ─── Check 5: Branch protection (optional, skipped if no gh) ─────────
 if command -v gh >/dev/null 2>&1; then
   repo=$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null || echo "")
   if [ -n "$repo" ]; then
@@ -152,6 +170,41 @@ if command -v gh >/dev/null 2>&1; then
       emit "branch-protection" "ok" "main branch protection rule found on $repo"
     else
       emit "branch-protection" "warn" "main branch protection NOT configured on $repo — consider enabling required checks"
+    fi
+  fi
+fi
+
+# ─── Check 6: Test runner deps in package.json / pyproject.toml ─────
+# Extends F027 with the test-runner-deps check from issue #165 step 6.
+# Reads "Test runner:" line from stack.md, greps the project's
+# package manifest for the declared runner name.
+stack_file="$PROJECT_DIR/.sdd/stack.md"
+if [ -f "$stack_file" ]; then
+  # Strict match: requires a colon AND a non-empty value (e.g. "Test runner: Vitest").
+  # Plain prose mentions like "nothing about a test runner here" do not match.
+  runner=$(grep -iE "[Tt]est[[:space:]]+runner[[:space:]]*:[[:space:]]+[^[:space:]]" "$stack_file" 2>/dev/null \
+    | head -1 \
+    | sed -E 's/^[^:]*:[[:space:]]*//' \
+    | awk '{print $1}' \
+    | tr -cd 'A-Za-z0-9._/@-' \
+    | tr '[:upper:]' '[:lower:]')
+  if [ -n "$runner" ]; then
+    found=0
+    if [ -f "$PROJECT_DIR/package.json" ] && grep -Fqi "\"$runner\"" "$PROJECT_DIR/package.json"; then
+      emit "test-runner-deps" "ok" "test runner '$runner' declared in package.json"
+      found=1
+    fi
+    if [ "$found" -eq 0 ] && [ -f "$PROJECT_DIR/pyproject.toml" ] && grep -Fqi "$runner" "$PROJECT_DIR/pyproject.toml"; then
+      emit "test-runner-deps" "ok" "test runner '$runner' declared in pyproject.toml"
+      found=1
+    fi
+    if [ "$found" -eq 0 ]; then
+      if [ -f "$PROJECT_DIR/package.json" ] || [ -f "$PROJECT_DIR/pyproject.toml" ]; then
+        emit "test-runner-deps" "fail" "test runner '$runner' NOT in package.json / pyproject.toml — npm install --save-dev $runner (or language equivalent)"
+        FAILED=$((FAILED + 1))
+      else
+        emit "test-runner-deps" "warn" "test runner '$runner' declared in stack.md but no package.json / pyproject.toml found"
+      fi
     fi
   fi
 fi
