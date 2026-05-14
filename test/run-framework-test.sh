@@ -8345,6 +8345,13 @@ else
   lint_exec_errors=0
   for spec in "${specs[@]}"; do
     feat=$(basename "$(dirname "$spec")")
+    # Cold-feature rule (v1.10/2 — closes lint-collateral from extended
+    # TOK_ENFORCE regex). If .shipped marker exists in the spec's folder,
+    # this is archive content — don't re-lint. Mirrors CLAUDE.md's
+    # 'shipped features are cold — do NOT re-read them' rule.
+    if [ -f "$(dirname "$spec")/.shipped" ]; then
+      continue
+    fi
     case "$feat" in
       001-tier-3-llm-driven-synthesis|002-plain-english-prose-sweep)
         # Pre-existing; covered by their own SHIP-cycle audit. Skip.
