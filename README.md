@@ -4,7 +4,7 @@
 > **The state file is the program. The playbook is the questioning agent. The filesystem is the retrieval system.**
 > No orchestrator, no database, no RAG, no magic.
 
-📖 **[Read the v1.0 walkthrough →](docs/walkthrough.html)** — single-page entry-point with an interactive architecture diagram, three reader-driven foundation-validation checks, and a review mode you can use to flag sections and export feedback. Best opened in a browser.
+📖 **[Read the v1.0 → v1.9 walkthrough →](docs/walkthrough.html)** — single-page entry-point with an interactive architecture diagram, three reader-driven foundation-validation checks, and a review mode you can use to flag sections and export feedback. Best opened in a browser. Current as of v1.8.3 + v1.9 ship-batch (multi-model adapter, auto-advance steps, MCP-doctrine sentinel, /sdd-verify-stack post-wizard reality check, /ship CR convergence gate, lego-style model-tier-per-action, specialised subagents).
 
 ---
 

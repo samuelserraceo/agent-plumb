@@ -20,7 +20,7 @@
 - **Test runner**: pure bash + Python 3 stdlib (no pytest / mocha / jest dependency)
 - **Where**: `test/run-framework-test.sh`
 - **Pattern**: each test is a `note` block + assertion bash; mutation-verified discipline
-- **Today's count**: 140+ framework tests (count grows as v1.0 items add new T-cases — derive precisely with `bash test/run-framework-test.sh | tail -1`).
+- **Today's count**: 248 framework tests as of 2026-05-13 (v1.7-v1.9 ship batch + the F027 verify-stack 8-check suite at T280-T287). Count grows as new T-cases land — derive precisely with `bash test/run-framework-test.sh | tail -1`.
 - **CI**: `.github/workflows/sdd-ci.yml` — framework-tests + scope-guard jobs
 
 ## Running services
