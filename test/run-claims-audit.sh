@@ -959,6 +959,116 @@ sys.exit(0)
 }
 
 # ============================================================
+# CLAIM (v1.10/3 — closes GPT-5.5 review Q3 doc-drift): action count
+# in walkthrough.html matches the actual file count in templates/.sdd/actions/.
+# Source: GPT-5.5 review 2026-05-14 — caught walkthrough claiming 42 actions
+# vs actual 44.
+# ============================================================
+claim_action_count_matches_walkthrough() {
+  local actual claimed
+  actual=$(find templates/.sdd/actions -maxdepth 1 -name "*.md" -type f 2>/dev/null | wc -l | tr -d ' ')
+  # Extract the canonical claim from walkthrough — the H4 in the actions section.
+  claimed=$(grep -oE '[0-9]+ actions \(v1\.6 added' docs/walkthrough.html 2>/dev/null | head -1 | grep -oE '^[0-9]+')
+  if [ -z "$claimed" ]; then
+    echo "  walkthrough claim line missing — expected '<N> actions (v1.6 added brief-intake; …)'" >&2
+    return 1
+  fi
+  if [ "$actual" != "$claimed" ]; then
+    echo "  drift: actual=$actual actions in templates/.sdd/actions/ but walkthrough claims $claimed" >&2
+    return 1
+  fi
+  return 0
+}
+
+# ============================================================
+# CLAIM (v1.10/3 — closes GPT-5.5 review Q6): every `.shipped` feature has
+# spec.md PHASE: SHIPPED. GPT caught bug-002's spec.md still saying
+# [PHASE: SPEC] despite having a .shipped marker.
+# Source: GPT-5.5 review 2026-05-14
+# ============================================================
+claim_shipped_features_have_phase_shipped() {
+  local stale=0 stale_files=()
+  while IFS= read -r marker; do
+    [ -f "$marker" ] || continue
+    local dir spec
+    dir=$(dirname "$marker")
+    spec="$dir/spec.md"
+    if [ ! -f "$spec" ]; then continue; fi
+    # First [PHASE: X] line must be SHIPPED (or anything ending in SHIPPED for safety).
+    local phase
+    phase=$(grep -m1 -oE '^\[PHASE:[[:space:]]*[A-Z]+\]' "$spec" 2>/dev/null | grep -oE '[A-Z]+$')
+    if [ -n "$phase" ] && [ "$phase" != "SHIPPED" ]; then
+      stale=$((stale + 1))
+      stale_files+=("$spec (PHASE: $phase)")
+    fi
+  done < <(find .sdd/features .sdd/bugs .sdd/refactors -maxdepth 3 -name .shipped -type f 2>/dev/null)
+  if [ "$stale" -gt 0 ]; then
+    echo "  $stale shipped feature(s) have stale PHASE in spec.md:" >&2
+    for s in "${stale_files[@]}"; do echo "    - $s" >&2; done
+    return 1
+  fi
+  return 0
+}
+
+# ============================================================
+# CLAIM (v1.10/3 — closes GPT-5.5 review Q6): every `templates/...` file
+# path mentioned in a shipped feature's spec.md "Files touched" list MUST
+# exist. GPT caught F007's spec.md line 44 claiming
+# templates/.claude/commands/sdd-migrate.md (which didn't exist before #271).
+# Source: GPT-5.5 review 2026-05-14
+# Strict shape: only checks lines matching `^- \`templates/...\`` — the
+# canonical SDD-shape bullet for Files-touched. Other formats skipped.
+# ============================================================
+claim_shipped_spec_named_files_exist() {
+  local missing=0 missing_files=()
+  while IFS= read -r marker; do
+    [ -f "$marker" ] || continue
+    local dir spec
+    dir=$(dirname "$marker")
+    spec="$dir/spec.md"
+    if [ ! -f "$spec" ]; then continue; fi
+    # Extract every `templates/...` path from canonical-shape bullets.
+    # Skip placeholder/glob paths — they describe shape, not literal
+    # files. Filter out anything containing < > { } * ? or `...`.
+    while IFS= read -r path; do
+      [ -n "$path" ] || continue
+      case "$path" in
+        *'<'*|*'>'*|*'{'*|*'}'*|*'*'*|*'?'*|*'...'*)
+          continue ;;
+      esac
+      # Known pre-existing drift — tracked here, not patched into shipped
+      # specs (touching shipped spec.md prose is a higher-cost discipline
+      # than skip-listing). Each entry must name the spec + path and the
+      # rationale; new drift is NOT added without the same audit. Same
+      # precedent as T141's 001/002 in-flight skip list.
+      case "$spec→$path" in
+        ".sdd/features/001-tier-3-llm-driven-synthesis/spec.md→templates/.sdd/setup/setup-tier3.md")
+          # F001 AC11: pattern list deferred along with v1.2+ paid-provider
+          # wizard. Spec text says "becomes load-bearing when v1.2+ widens
+          # wizard support" — file ships when that future feature lands.
+          continue ;;
+        ".sdd/features/024-corpus-signature-lock-for-synthesise-race/spec.md→templates/.sdd/manifest.json")
+          # F024 AC6: spec text references the manifest as a top-level
+          # path. The actual location is .sdd/.cache/manifest.json — a
+          # path-naming sloppiness in the spec, not a missing file.
+          # Manifest IS pinned (T120 + manifest-related claims pass).
+          continue ;;
+      esac
+      if [ ! -e "$path" ]; then
+        missing=$((missing + 1))
+        missing_files+=("$spec → $path")
+      fi
+    done < <(grep -hoE '`templates/[^`]+`' "$spec" 2>/dev/null | sed 's/`//g' | sort -u)
+  done < <(find .sdd/features .sdd/bugs .sdd/refactors -maxdepth 3 -name .shipped -type f 2>/dev/null)
+  if [ "$missing" -gt 0 ]; then
+    echo "  $missing spec-named templates/... file(s) don't exist on disk:" >&2
+    for m in "${missing_files[@]}"; do echo "    - $m" >&2; done
+    return 1
+  fi
+  return 0
+}
+
+# ============================================================
 # Orchestrator
 # ============================================================
 # Bug 003 fix: source-guard so test harnesses can `source` this file
@@ -1014,6 +1124,9 @@ CLAIMS=(
   "broken_wikilink_caught_by_lint|Broken wiki-link detection wired in post-stop-lint|CLAUDE.md Wiki-links + invariant 8"
   "shipped_pr_links_merged|Every shipped PR is MERGED on GitHub|mark-shipped catalog format"
   "action_slug_matches_filename|Every action's slug matches its filename|load-playbook.sh validator"
+  "action_count_matches_walkthrough|Action file count matches walkthrough's claimed number|GPT-5.5 review Q3 doc-drift"
+  "shipped_features_have_phase_shipped|Every .shipped feature has spec.md PHASE: SHIPPED|GPT-5.5 review Q6"
+  "shipped_spec_named_files_exist|Every templates/... file mentioned in shipped spec.md exists on disk|GPT-5.5 review Q6"
 )
 
 for entry in "${CLAIMS[@]}"; do
