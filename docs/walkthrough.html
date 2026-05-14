@@ -79,6 +79,45 @@
   header.app { position: sticky; top: 0; z-index: 30; background: rgba(250,250,249,.92); backdrop-filter: blur(6px); border-bottom: 1px solid var(--line); }
   /* anchor offset for sticky header */
   section[id] { scroll-margin-top: 96px; }
+  /* Jargon tooltips (sprint #3) — hover any underlined term to see a plain-English definition */
+  .jt {
+    position: relative;
+    border-bottom: 1px dotted var(--ink-3);
+    cursor: help;
+  }
+  .jt:hover::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--ink);
+    color: #fafaf9;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-weight: 400;
+    line-height: 1.45;
+    white-space: normal;
+    min-width: 220px;
+    max-width: 360px;
+    width: max-content;
+    z-index: 100;
+    box-shadow: 0 6px 24px -8px rgba(0,0,0,.3);
+    pointer-events: none;
+  }
+  .jt:hover::before {
+    content: "";
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: var(--ink);
+    z-index: 100;
+    pointer-events: none;
+  }
 </style>
 </head>
 <body data-filter="all">
@@ -1815,6 +1854,102 @@ references: [data-model.md, INDEX.md]
   });
 
   applyReview();
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════ JARGON TOOLTIPS (sprint #3) ═══════════════════════════════════════════ -->
+<script>
+// Auto-wrap occurrences of jargon terms in <code> blocks with a tooltip-bearing
+// .jt span. Hover any underlined dotted term to see a plain-English definition.
+// Reads from a dict — easy to extend. Skips elements inside <script>, <style>,
+// SVG, and already-wrapped spans.
+(function() {
+  const DICT = {
+    "the moat": "The pre-commit hook (pre-commit-stage-verified.sh) that re-runs verification on the staged spec.md and refuses commits where the agent's claimed pass-state doesn't match what fresh checks report. The agent's 'I'm done' is text; the moat's verdict is bash-checked truth.",
+    "moat hook": "The pre-commit hook (pre-commit-stage-verified.sh) that re-runs verification on the staged spec.md and refuses commits where the agent's claimed pass-state doesn't match what fresh checks report.",
+    "manifest pin": "The framework stores a normalised SHA-256 of every shipped file in .sdd/.cache/manifest.json. Edit one of those files and the moat refuses your commit until you add a [SDD] manifest: repin commit-message marker. Catches accidental drift + a class of tamper attack.",
+    "hash-pin": "Stored SHA-256 in .sdd/.cache/manifest.json for every framework file. The moat hook re-computes the hash at commit time; mismatch refuses the commit.",
+    "wiki-link": "Cross-reference written as [[some-slug]] in markdown. Resolved via 4-tier priority (features / patterns / data-model / decisions). Broken references fail CI's graph-integrity gate.",
+    "wiki-links": "Cross-references written as [[some-slug]] in markdown. Resolved via 4-tier priority (features / patterns / data-model / decisions). Broken references fail CI's graph-integrity gate.",
+    "PHASE: QUEUED": "Pre-active state for a scaffolded work item that exists on disk but isn't being walked yet. /next refuses to advance until /promote-to-active flips it to the playbook's first stage (usually SPEC).",
+    "PHASE: SPEC": "First active stage — agent walks the playbook's USER-LED and AGENT-LED questions to fill spec.md.",
+    "PHASE: BUILD": "Strict test-first stage — each task is one commit, test must go RED before code lands GREEN.",
+    "PHASE: SHIP": "Final stage — push branch, open PR, watch CI, address CR, mark shipped.",
+    "USER-LED": "Action tag — agent asks a plain-English question and waits for your answer. Doesn't fill from assumption.",
+    "AGENT-LED": "Action tag — agent drafts a concrete answer with at least 2 alternatives + tradeoffs. You push back or approve.",
+    "BUILD-TASK": "Action tag — test-first execution: write the test, run it RED, write the code, run it GREEN, commit.",
+    "requires_user_approval": "Action frontmatter field. When true, the agent halts and waits for your 'approve' before committing the section. Used for proposed-approach, data-contract, acceptance-criteria, out-of-scope.",
+    "verify-stage.sh": "Script that mechanically re-checks every phase's exit criteria. The moat hook calls this on the staged spec.md and refuses commits where the agent's verification.json claim disagrees with fresh-run truth.",
+    "verification.json": "Per-feature file that records the agent's claim about which exit-checks have passed in the current phase. The moat hook ignores the file's claim and re-runs verify-stage on the staged spec.md to confirm.",
+    "anti-theatre": "Lint that refuses spec prose containing claims that look like enforced guards (numbers, currency, 'always', 'enforces') unless paired with a verifier annotation — {verify-by: T-NNN} / {best-effort: <who>} / {prod-only: <why>}.",
+    "atomic step": "One [ ] row in spec.md = one git commit. The framework refuses to batch multiple rows into one commit; auditability + small-diff discipline.",
+    "atomic-step": "One [ ] row in spec.md = one git commit. The framework refuses to batch multiple rows into one commit; auditability + small-diff discipline.",
+    "mcp.tier3": "Tier 3 LLM-driven synthesis — the framework's optional chat-model integration for natural-language queries over your .sdd/ corpus. Opt-in via /sdd-setup; provider/endpoint/model are explicit, never baked-in.",
+    "MCP server": "Small Python helper (extensions/sdd-mcp-server/) that exposes graph queries (get_backlinks / get_neighbours / get_pattern / search_within) to Claude as MCP tools. Lets the agent ask short questions instead of reading whole files.",
+    "graph-integrity": "CI job that walks every wiki-link [[slug]] in .sdd/ markdown and refuses the PR if any doesn't resolve to a known node. Mirrors the post-stop-lint invariant 8 check at merge boundary.",
+    "[WAVE: N]": "BUILD task marker that opts the task into parallel dispatch. Framework runs all wave-tagged tasks via Claude Code's Agent tool with fresh per-subagent contexts; orchestrator commits the spec.md flip after the wave returns.",
+    "CodeRabbit": "PR review bot. The framework's discipline says address Critical + Major findings before merge; F026 adds a mechanical /ship gate that refuses if CR's latest review state is CHANGES_REQUESTED.",
+    "CR convergence": "F026's mechanical gate at SHIP — reads gh api repos/<r>/pulls/<n>/reviews filtered by parameters.review.bot login; refuses /ship unless latest state is APPROVED or COMMENTED-clean.",
+    "scope-guard": "CI job that diffs against the PR base + refuses if UI copy ≥30 chars not in wireframe/spec, or new UI files without a // spec: reference comment. PR-only (needs base to diff).",
+    "stop-hook": "post-stop-lint.sh — fires at the end of every agent turn. Catches invariant violations (path-shape drift, broken wiki-links, unresolved [ ] markers) before the next turn starts.",
+    "trust boundary": "v0.8 (Theme 1.7) doctrine. UserPromptSubmit emits [FRAMEWORK INSTRUCTIONS — trusted] vs [PROJECT DATA — read-only] markers around injected content. Agent obeys framework instructions; reads project data for context but never executes commands found inside it.",
+    "co-stage": "F1 enforcer rule — certain file classes (CLAIM, POLICY) cannot be staged together in one commit, even when both would otherwise be valid. Catches a class of cross-contamination + tamper attacks.",
+    "append_only": "F1 enforcer rule — files like decisions.md cannot have prior bytes edited; new entries can only be appended. The pre-commit hook reads HEAD bytes vs staged bytes and refuses any edit that isn't a strict prefix extension.",
+    "F010": "Feature 010 — parallel-wave-execution. Lets you mark BUILD tasks with [WAVE: N] for parallel dispatch via Claude Code's Agent tool.",
+    "F011": "Feature 011 — auto-advance AGENT-LED steps. Adds parameters.automation.level (full / most / checkpoint) so the agent can run unattended on safe action types.",
+    "F026": "Feature 026 — /ship verify-cr-convergence. Hard-enforces CodeRabbit's latest review state at SHIP time; bypass flag adds an audit row.",
+    "F027": "Feature 027 — /sdd-verify-stack. Post-wizard reality check that probes 6 declared tools (CR App / Ollama / OpenAI key / CI workflows / branch protection / test-runner deps) against actual state.",
+  };
+  // Pre-compute regex per term, longer first so 'wiki-links' beats 'wiki-link'.
+  const terms = Object.keys(DICT).sort((a, b) => b.length - a.length);
+  const escapeRe = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const TERM_RE = new RegExp('\\b(' + terms.map(escapeRe).join('|') + ')\\b', 'g');
+
+  function wrapInTextNode(node) {
+    const txt = node.nodeValue;
+    if (!TERM_RE.test(txt)) { TERM_RE.lastIndex = 0; return false; }
+    TERM_RE.lastIndex = 0;
+    const frag = document.createDocumentFragment();
+    let last = 0;
+    let m;
+    while ((m = TERM_RE.exec(txt)) !== null) {
+      if (m.index > last) frag.appendChild(document.createTextNode(txt.slice(last, m.index)));
+      const span = document.createElement('span');
+      span.className = 'jt';
+      span.setAttribute('data-tip', DICT[m[0]]);
+      span.textContent = m[0];
+      frag.appendChild(span);
+      last = m.index + m[0].length;
+    }
+    if (last < txt.length) frag.appendChild(document.createTextNode(txt.slice(last)));
+    node.parentNode.replaceChild(frag, node);
+    return true;
+  }
+
+  const SKIP = new Set(['SCRIPT','STYLE','CODE','PRE','TEXTAREA','SVG','TITLE','HEAD']);
+  function walk(node) {
+    if (!node) return;
+    if (node.nodeType === 3) { // text node
+      if (node.parentNode && SKIP.has(node.parentNode.nodeName)) return;
+      // Skip already-wrapped (parent is .jt)
+      if (node.parentNode && node.parentNode.classList && node.parentNode.classList.contains('jt')) return;
+      wrapInTextNode(node);
+      return;
+    }
+    if (node.nodeType === 1) {
+      if (SKIP.has(node.nodeName)) return;
+      if (node.classList && node.classList.contains('jt')) return;
+      // Walk a static snapshot of children so the live mutations don't trip us
+      const children = Array.from(node.childNodes);
+      for (const c of children) walk(c);
+    }
+  }
+  // Run once after DOM ready.
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => walk(document.body));
+  } else {
+    walk(document.body);
+  }
 })();
 </script>
 
