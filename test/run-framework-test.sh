@@ -8356,18 +8356,6 @@ else
       001-tier-3-llm-driven-synthesis|002-plain-english-prose-sweep)
         # Pre-existing; covered by their own SHIP-cycle audit. Skip.
         continue ;;
-      011-per-file-injection-budgets-in-user-prompt-submit-hook)
-        # TRANSITIONAL skip — auto-removes when F011 ships (the .shipped
-        # marker check above takes over). Spec has 1 lint catch on line 468
-        # ("rejects" inside a parenthetical describing an alternative-not-
-        # chosen for negative-budget edge case in §10). F011's SPEC was
-        # approved + the moat refuses unrelated PRs from re-approving 4
-        # sections to soften that one word; deferred to F011's own SHIP
-        # ceremony (its lint sweep will catch + handle it). CR cycle 2
-        # of #273 raised the principle (skips should stay limited to
-        # cold/shipped); honoured by the time-bound here — this entry
-        # is dead the moment F011 ships.
-        continue ;;
     esac
     nt_out=$(bash "$FRAMEWORK_ROOT/.sdd/scripts/lint-no-theatre.sh" "$spec" 2>&1)
     nt_ec=$?

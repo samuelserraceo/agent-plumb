@@ -83,13 +83,16 @@ TOK_CURRENCY='(\$[0-9]+\.[0-9]+|\$[1-9][0-9]+|USD|cents?|dollars?)'
 # successfully bypassed the lint with sentences like "The command must
 # halt on drift" and "The tool guarantees safe commits."
 #
-# blocks?/stops? deliberately excluded — they're common nouns (e.g.
-# "config block", "code block", "stop word") that produce too many
-# false positives in framework prose. The other verbs are unambiguously
-# enforcement claims when they appear. CR cycle 2 of #273 raised this
-# concern after the over-broad regex caught 10+ "config block" usages
-# in F011's in-flight spec.
-TOK_ENFORCE='(refuses?|enforces?|prevents?|ensures?|guarantees?|halts?|forbids?|disallows?|rejects?|always|never)'
+# blocks?/stops?/rejects? deliberately excluded — they appear too often
+# in non-enforcement contexts in framework prose:
+#   - "config block", "code block", "stop word" (nouns)
+#   - "rejects" inside a parenthetical describing an alternative-not-
+#     chosen (e.g. F011 §10 "resolver clamps to 0 (or rejects with stderr
+#     warning)" — alternatives discussed and not picked).
+# CR cycle 2 + 3 of #273 raised the false-positive cost. The other verbs
+# remain unambiguously enforcement claims when they appear. `refuses` is
+# the standard SDD verb for hook rejections and stays.
+TOK_ENFORCE='(refuses?|enforces?|prevents?|ensures?|guarantees?|halts?|forbids?|disallows?|always|never)'
 
 # Quality absolutes (whole-word). correctly/accurate/reliable/complete.
 TOK_QUALITY='(correctly|accurate|reliable|complete)'
@@ -214,14 +217,13 @@ for spec in "${TARGETS[@]}"; do
       fi
     fi
     if [ -z "$found_token" ]; then
-      # v1.10/2 (closes GPT-5.5 review Q1): added halts/forbids/disallows/
-      # rejects after GPT-5.5 successfully bypassed the lint with sentences
-      # like "The command must halt on drift" and "The tool guarantees
-      # safe commits." blocks?/stops? deliberately excluded (common nouns
-      # like "config block" / "code block" / "stop word" produce too many
-      # false positives in framework prose). CR cycle 2 of #273 raised this
-      # concern. Inline regex MUST match TOK_ENFORCE variable above.
-      m=$(printf '%s' "$stripped" | grep -ioE '(^|[^[:alnum:]_])(refuses?|enforces?|prevents?|ensures?|guarantees?|halts?|forbids?|disallows?|rejects?|always|never)([^[:alnum:]_]|$)' | head -1 | grep -ioE '(refuses?|enforces?|prevents?|ensures?|guarantees?|halts?|forbids?|disallows?|rejects?|always|never)' | head -1)
+      # v1.10/2 (closes GPT-5.5 review Q1): added halts/forbids/disallows
+      # after GPT-5.5 successfully bypassed the lint with sentences like
+      # "The command must halt on drift" and "The tool guarantees safe
+      # commits." blocks?/stops?/rejects? deliberately excluded — see
+      # the TOK_ENFORCE variable comment above for the rationale.
+      # Inline regex MUST match TOK_ENFORCE variable above.
+      m=$(printf '%s' "$stripped" | grep -ioE '(^|[^[:alnum:]_])(refuses?|enforces?|prevents?|ensures?|guarantees?|halts?|forbids?|disallows?|always|never)([^[:alnum:]_]|$)' | head -1 | grep -ioE '(refuses?|enforces?|prevents?|ensures?|guarantees?|halts?|forbids?|disallows?|always|never)' | head -1)
       if [ -n "$m" ]; then
         found_token="$m"
       fi
