@@ -79,7 +79,7 @@ TOK_CURRENCY='(\$[0-9]+\.[0-9]+|\$[1-9][0-9]+|USD|cents?|dollars?)'
 
 # Enforcement verbs (whole-word). Refuses/enforces/prevents/ensures/guarantees.
 # Plus absolute always/never (rare but classic theatre). v1.10/2 (closes
-# GPT-5.5 review Q1): added halts/forbids/disallows/rejects after GPT-5.5
+# GPT-5.5 review Q1): added halts/forbids/disallows after GPT-5.5
 # successfully bypassed the lint with sentences like "The command must
 # halt on drift" and "The tool guarantees safe commits."
 #
@@ -93,6 +93,11 @@ TOK_CURRENCY='(\$[0-9]+\.[0-9]+|\$[1-9][0-9]+|USD|cents?|dollars?)'
 # remain unambiguously enforcement claims when they appear. `refuses` is
 # the standard SDD verb for hook rejections and stays.
 TOK_ENFORCE='(refuses?|enforces?|prevents?|ensures?|guarantees?|halts?|forbids?|disallows?|always|never)'
+# Boundary-flanked variant for whole-word matching in the scan loop.
+# Composed from TOK_ENFORCE so future edits to the alternation flow
+# through automatically (CR cycle 4 of #273: TOK_ENFORCE as single
+# source of truth — no duplicated inline alternation).
+ENFORCE_BOUNDARY_RE="(^|[^[:alnum:]_])$TOK_ENFORCE([^[:alnum:]_]|$)"
 
 # Quality absolutes (whole-word). correctly/accurate/reliable/complete.
 TOK_QUALITY='(correctly|accurate|reliable|complete)'
@@ -217,13 +222,12 @@ for spec in "${TARGETS[@]}"; do
       fi
     fi
     if [ -z "$found_token" ]; then
-      # v1.10/2 (closes GPT-5.5 review Q1): added halts/forbids/disallows
-      # after GPT-5.5 successfully bypassed the lint with sentences like
-      # "The command must halt on drift" and "The tool guarantees safe
-      # commits." blocks?/stops?/rejects? deliberately excluded — see
-      # the TOK_ENFORCE variable comment above for the rationale.
-      # Inline regex MUST match TOK_ENFORCE variable above.
-      m=$(printf '%s' "$stripped" | grep -ioE '(^|[^[:alnum:]_])(refuses?|enforces?|prevents?|ensures?|guarantees?|halts?|forbids?|disallows?|always|never)([^[:alnum:]_]|$)' | head -1 | grep -ioE '(refuses?|enforces?|prevents?|ensures?|guarantees?|halts?|forbids?|disallows?|always|never)' | head -1)
+      # Use the composed variables from above so the alternation lives
+      # in one place (CR cycle 4 of #273: TOK_ENFORCE is the single
+      # source of truth; ENFORCE_BOUNDARY_RE adds the word-boundary
+      # flanks for whole-word matching). v1.10/2 history of which verbs
+      # were added vs excluded lives in the TOK_ENFORCE comment block.
+      m=$(printf '%s' "$stripped" | grep -ioE "$ENFORCE_BOUNDARY_RE" | head -1 | grep -ioE "$TOK_ENFORCE" | head -1)
       if [ -n "$m" ]; then
         found_token="$m"
       fi
