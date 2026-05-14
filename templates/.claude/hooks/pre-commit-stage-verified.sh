@@ -818,7 +818,9 @@ check_approved_sections() {
   # would silently disable the section-lock check. Phase A test scaffolds
   # (which don't ship hash-section.sh) keep the legacy permissive path
   # because they lack .sdd/INDEX.md. Migration escape: SDD_STRICT=0.
-  if [ ! -x "$hash_script" ] && [ ! -f "$hash_script" ]; then
+  # CR cycle 1 of #275: `-x` and `-f` together are redundant — both fail
+  # when the file doesn't exist. Use the cheaper existence check.
+  if [ ! -f "$hash_script" ]; then
     if [ -f "$PROJECT_DIR/.sdd/INDEX.md" ] && [ "${SDD_STRICT:-1}" != "0" ]; then
       echo "[moat] hash-section.sh is missing — refusing commit." >&2
       echo "        Looked for: $hash_script" >&2

@@ -9518,8 +9518,12 @@ out_t290=$(cd "$t290_dir" && CLAUDE_PROJECT_DIR="$t290_dir" \
 out_t290_lenient=$(cd "$t290_dir" && CLAUDE_PROJECT_DIR="$t290_dir" SDD_STRICT=0 \
   bash .claude/hooks/pre-commit-stage-verified.sh <<<"$t290_stdin" 2>&1); ec_t290_lenient=$?
 t290_fails=()
-if [ "$ec_t290" -eq 0 ]; then
-  t290_fails+=("strict mode exit was 0; expected non-zero (fail-closed)")
+# CR cycle 1 of #275: require EXACT exit 2 (the moat's documented refusal
+# code), not just "non-zero". Other non-zero exits would indicate a
+# different failure mode (script crash, syntax error) that the test
+# should also catch.
+if [ "$ec_t290" -ne 2 ]; then
+  t290_fails+=("strict mode exit was $ec_t290; expected 2 (refusal)")
 fi
 if ! printf '%s' "$out_t290" | grep -qiF "verify-stage.sh"; then
   t290_fails+=("strict-mode stderr does not mention verify-stage.sh")
@@ -9563,8 +9567,9 @@ out_t291=$(cd "$t291_dir" && CLAUDE_PROJECT_DIR="$t291_dir" \
 out_t291_lenient=$(cd "$t291_dir" && CLAUDE_PROJECT_DIR="$t291_dir" SDD_STRICT=0 \
   bash .claude/hooks/pre-commit 2>&1); ec_t291_lenient=$?
 t291_fails=()
-if [ "$ec_t291" -eq 0 ]; then
-  t291_fails+=("strict mode exit was 0; expected non-zero (fail-closed)")
+# CR cycle 1 of #275: require EXACT exit 2 (refusal code).
+if [ "$ec_t291" -ne 2 ]; then
+  t291_fails+=("strict mode exit was $ec_t291; expected 2 (refusal)")
 fi
 if ! printf '%s' "$out_t291" | grep -qiF "missing on disk"; then
   t291_fails+=("strict-mode stderr does not name 'missing on disk'")
@@ -9607,8 +9612,9 @@ out_t292=$(cd "$t292_dir" && CLAUDE_PROJECT_DIR="$t292_dir" \
 out_t292_lenient=$(cd "$t292_dir" && CLAUDE_PROJECT_DIR="$t292_dir" SDD_STRICT=0 \
   bash .claude/hooks/pre-commit-rules.sh <<<"$t292_stdin" 2>&1); ec_t292_lenient=$?
 t292_fails=()
-if [ "$ec_t292" -eq 0 ]; then
-  t292_fails+=("strict mode exit was 0; expected non-zero (fail-closed)")
+# CR cycle 1 of #275: require EXACT exit 2 (refusal code).
+if [ "$ec_t292" -ne 2 ]; then
+  t292_fails+=("strict mode exit was $ec_t292; expected 2 (refusal)")
 fi
 if ! printf '%s' "$out_t292" | grep -qiF "state_rules"; then
   t292_fails+=("strict-mode stderr does not name state_rules parser")
@@ -9622,6 +9628,83 @@ else
   ok "T292 state_rules fails closed on malformed config + SDD_STRICT=0 escapes"
 fi
 rm -rf "$t292_dir"
+
+# ---- T293: pre-commit-test-first.sh fails closed when `git stash push`
+#            fails in an initialized SDD project. CR cycle 1 of #275
+#            asked for this coverage — the 5th fail-open site flipped
+#            in v1.10/4 was the only one without a test. ----
+note "T293: pre-commit-test-first fails closed on stash failure (v1.10/4 site 5)"
+t293_dir=$(mktemp -d)
+mkdir -p "$t293_dir/.sdd" "$t293_dir/.claude/hooks" "$t293_dir/stub_bin" "$t293_dir/tests"
+echo "# fake INDEX" > "$t293_dir/.sdd/INDEX.md"
+# Minimal config.md so parameters.test_runner can be resolved (empty here,
+# but the file must exist — the hook reads from it).
+cat > "$t293_dir/.sdd/config.md" <<'CFG'
+---
+type: config
+parameters:
+  test_runner: "true"
+---
+CFG
+cp "$FRAMEWORK_ROOT/templates/.claude/hooks/pre-commit-test-first.sh" \
+  "$t293_dir/.claude/hooks/"
+chmod +x "$t293_dir/.claude/hooks/pre-commit-test-first.sh"
+# Stub git: pass through to real git EXCEPT when invoked as
+# `git stash push ...`, which returns 1 unconditionally. That's the
+# fail-open trigger the v1.10/4 fix flipped to fail-closed.
+real_git=$(command -v git)
+cat > "$t293_dir/stub_bin/git" <<GITSTUB
+#!/usr/bin/env bash
+if [ "\$1" = "stash" ] && [ "\$2" = "push" ]; then
+  echo "[stub git] simulated stash push failure" >&2
+  exit 1
+fi
+exec "${real_git}" "\$@"
+GITSTUB
+chmod +x "$t293_dir/stub_bin/git"
+# Build a real repo + scaffold a test+code pair the hook will detect.
+(
+  cd "$t293_dir" && "${real_git}" init -q && \
+    "${real_git}" config user.email t293@x && "${real_git}" config user.name t293
+  # Initial commit so HEAD exists (the hook probes parent state).
+  echo "init" > README.md && "${real_git}" add README.md && "${real_git}" commit -q -m initial
+  # Stage a test file + a code file together — the multi-file pair the
+  # hook tries to stash-and-test.
+  mkdir -p tests
+  echo 'test placeholder' > tests/task-001.sh
+  echo 'code placeholder' > impl.sh
+  "${real_git}" add tests/task-001.sh impl.sh
+  # Write the SDD-shaped commit message into COMMIT_EDITMSG so the
+  # hook recognises this as a BUILD-task commit.
+  echo "[SDD:001][T01] test-first stash-fail probe" > .git/COMMIT_EDITMSG
+)
+# Synthetic stdin matches what the native pre-commit shim passes.
+t293_stdin='{"tool_input":{"command":"git commit"}}'
+# Strict mode — should refuse with exit 2.
+out_t293=$(cd "$t293_dir" && PATH="$t293_dir/stub_bin:$PATH" CLAUDE_PROJECT_DIR="$t293_dir" \
+  bash .claude/hooks/pre-commit-test-first.sh <<<"$t293_stdin" 2>&1); ec_t293=$?
+# Lenient mode — should pass through with exit 0.
+out_t293_lenient=$(cd "$t293_dir" && PATH="$t293_dir/stub_bin:$PATH" CLAUDE_PROJECT_DIR="$t293_dir" \
+  SDD_STRICT=0 bash .claude/hooks/pre-commit-test-first.sh <<<"$t293_stdin" 2>&1); ec_t293_lenient=$?
+t293_fails=()
+if [ "$ec_t293" -ne 2 ]; then
+  t293_fails+=("strict mode exit was $ec_t293; expected 2 (refusal)")
+fi
+if ! printf '%s' "$out_t293" | grep -qF "Cannot run the test-first gate"; then
+  t293_fails+=("strict-mode stderr missing 'Cannot run the test-first gate'")
+fi
+if ! printf '%s' "$out_t293" | grep -qF "SDD_STRICT=0"; then
+  t293_fails+=("strict-mode stderr does not name the SDD_STRICT=0 escape")
+fi
+if [ "$ec_t293_lenient" -ne 0 ]; then
+  t293_fails+=("SDD_STRICT=0 should pass through with exit 0, got $ec_t293_lenient")
+fi
+if [ ${#t293_fails[@]} -gt 0 ]; then
+  bad "T293 test-first stash-fail fail-closed" "$(IFS=';'; echo "${t293_fails[*]}")"
+else
+  ok "T293 pre-commit-test-first fails closed on stash failure + SDD_STRICT=0 escapes"
+fi
+rm -rf "$t293_dir"
 
 # ============================================================
 # Report
