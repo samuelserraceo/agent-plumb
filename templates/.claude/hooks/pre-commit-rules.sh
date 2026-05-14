@@ -256,24 +256,52 @@ export LENIENT_MODE
 #     - subsumes pre-commit-block.sh's central guarantee
 #
 # Adding a new rule type = a new `when:` value + a new branch below.
-state_rules_result=$(STAGED="$staged" python3 - <<'PYEOF' || echo "ALLOW"
+# v1.10/4 (closes GPT-5.5 review Q4 site 3): pass strict-mode signal
+# into the Python heredoc. When the parser hits a fail-open path AND
+# this is an initialized SDD project (.sdd/INDEX.md exists) AND
+# SDD_STRICT != 0, emit STRICT_REFUSE so the bash case below blocks
+# the commit. Default behaviour: strict on SDD projects, lenient on
+# anything else.
+SDD_INDEX_PRESENT=0
+[ -f ".sdd/INDEX.md" ] && SDD_INDEX_PRESENT=1
+state_rules_result=$(STAGED="$staged" SDD_INDEX_PRESENT="$SDD_INDEX_PRESENT" \
+  SDD_STRICT="${SDD_STRICT:-1}" python3 - <<'PYEOF' || echo "ALLOW"
 import os, re, subprocess, sys
+
+# Strict-mode helper: fail-closed when both the SDD project marker
+# (.sdd/INDEX.md) is present AND SDD_STRICT != 0.
+SDD_STRICT_MODE = (
+    os.environ.get("SDD_INDEX_PRESENT") == "1"
+    and os.environ.get("SDD_STRICT", "1") != "0"
+)
+
+def fail_open_or_strict(reason):
+    """Print ALLOW (legacy) OR STRICT_REFUSE (initialized SDD project)."""
+    if SDD_STRICT_MODE:
+        print("STRICT_REFUSE")
+        print(f"pre-commit-rules.sh state_rules parser hit a fail-open path: {reason}")
+        print("Without parsing state_rules the framework can't enforce phase-advance")
+        print("safeguards (open-blocker check, append-only audit). Fix the underlying")
+        print("issue, or set SDD_STRICT=0 for a one-off migration commit.")
+        sys.exit(0)
+    print("ALLOW"); sys.exit(0)
+
 try:
     import yaml
 except Exception:
-    print("ALLOW"); sys.exit(0)
+    fail_open_or_strict("PyYAML not installed (pip install PyYAML)")
 
 try:
     text = open(".sdd/config.md").read()
 except OSError:
-    print("ALLOW"); sys.exit(0)
+    fail_open_or_strict(".sdd/config.md missing or unreadable")
 m = re.match(r"^---\n(.*?)\n---", text, re.DOTALL)
 if not m:
-    print("ALLOW"); sys.exit(0)
+    fail_open_or_strict(".sdd/config.md has no YAML frontmatter")
 try:
     fm = yaml.safe_load(m.group(1)) or {}
-except Exception:
-    print("ALLOW"); sys.exit(0)
+except Exception as e:
+    fail_open_or_strict(f".sdd/config.md frontmatter is invalid YAML: {e}")
 
 rules = fm.get("state_rules") or []
 if not rules:
@@ -435,6 +463,24 @@ PYEOF
 
 case "$state_rules_result" in
   ALLOW*) ;;
+  STRICT_REFUSE*)
+    cat >&2 <<EOF
+
+[SDD rules / state_rules] Fail-closed in initialized SDD project.
+
+$(printf '%s\n' "$state_rules_result" | sed -n '2,$p')
+
+This is an initialized SDD project (.sdd/INDEX.md present). The
+state_rules parser couldn't run cleanly, so the framework refuses
+the commit rather than silently letting phase-advance go through
+unchecked. Fix the underlying issue (install PyYAML, repair
+.sdd/config.md, etc.), then retry.
+
+For a one-off migration commit, set SDD_STRICT=0 — but only when
+you've decided the bypass is safe (immediately fix the root cause).
+EOF
+    exit 2
+    ;;
   BLOCK*)
     cat >&2 <<EOF
 

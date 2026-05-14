@@ -152,7 +152,24 @@ locate_verify_stage() {
 }
 
 VERIFY_STAGE=$(locate_verify_stage) || {
-  # Cannot verify; default to allow (better than blocking on a config gap).
+  # v1.10/4 (closes GPT-5.5 review Q4): fail-CLOSED in an initialized
+  # SDD project. The moat can't verify staged spec.md without verify-stage.sh
+  # — silently allowing the commit would let an adversary remove the script
+  # and slip a fabricated verification.json through. Pre-v1.10 behaviour
+  # (exit 0) is preserved for non-SDD-project repos (no .sdd/INDEX.md).
+  # Migration / debugging escape: export SDD_STRICT=0 before the commit.
+  if [ -f "$PROJECT_DIR/.sdd/INDEX.md" ] && [ "${SDD_STRICT:-1}" != "0" ]; then
+    echo "[moat] verify-stage.sh is missing — refusing commit." >&2
+    echo "        Looked in:" >&2
+    echo "          $PROJECT_DIR/.sdd/scripts/verify-stage.sh" >&2
+    echo "          $PROJECT_DIR/templates/.sdd/scripts/verify-stage.sh" >&2
+    echo "        Without this script the moat can't verify staged spec.md," >&2
+    echo "        so any fabricated verification.json would slip through." >&2
+    echo "        Fix: restore verify-stage.sh from the framework template," >&2
+    echo "        or set SDD_STRICT=0 for a one-off migration commit." >&2
+    exit 2
+  fi
+  # Not an SDD project (or explicit migration mode) — allow.
   exit 0
 }
 
@@ -795,10 +812,25 @@ fi
 check_approved_sections() {
   local claimed="$1" staged_spec="$2" hash_script="$3"
 
-  # If hash-section.sh isn't available (template not installed yet),
-  # skip — preserves Phase A test compatibility (those scaffolds don't
-  # ship hash-section.sh).
-  [ -x "$hash_script" ] || [ -f "$hash_script" ] || return 0
+  # If hash-section.sh isn't available, fail-closed in an initialized SDD
+  # project (closes GPT-5.5 Q4 site 2). Without hash-section.sh the moat
+  # can't verify approved_sections — an attacker who removes the script
+  # would silently disable the section-lock check. Phase A test scaffolds
+  # (which don't ship hash-section.sh) keep the legacy permissive path
+  # because they lack .sdd/INDEX.md. Migration escape: SDD_STRICT=0.
+  if [ ! -x "$hash_script" ] && [ ! -f "$hash_script" ]; then
+    if [ -f "$PROJECT_DIR/.sdd/INDEX.md" ] && [ "${SDD_STRICT:-1}" != "0" ]; then
+      echo "[moat] hash-section.sh is missing — refusing commit." >&2
+      echo "        Looked for: $hash_script" >&2
+      echo "        Without this script the moat can't verify approved sections" >&2
+      echo "        haven't been silently changed before the commit lands." >&2
+      echo "        Fix: restore hash-section.sh from the framework template," >&2
+      echo "        or set SDD_STRICT=0 for a one-off migration commit." >&2
+      return 1
+    fi
+    # Not an SDD project — preserve Phase A test compatibility.
+    return 0
+  fi
 
   CLAIMED_BLOB="$claimed" STAGED_SPEC="$staged_spec" PROJ="$PROJECT_DIR" \
     HASH_SCRIPT="$hash_script" python3 <<'PYEOF'

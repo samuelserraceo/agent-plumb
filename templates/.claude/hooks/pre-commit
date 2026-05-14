@@ -85,6 +85,23 @@ while IFS= read -r hook; do
   [ -z "$hook" ] && continue
   hook_path="$PROJECT_DIR/$hook"
   if [ ! -f "$hook_path" ]; then
+    # v1.10/4 (closes GPT-5.5 review Q4 site 4): fail-closed in an
+    # initialized SDD project. A missing hook declared in settings.json
+    # used to warn-and-continue, which let an adversary remove a hook
+    # file to silently disable enforcement. In an SDD project the
+    # framework now refuses the commit. SDD_STRICT=0 for migration.
+    if [ -f "$PROJECT_DIR/.sdd/INDEX.md" ] && [ "${SDD_STRICT:-1}" != "0" ]; then
+      echo "[pre-commit shim] hook declared in settings.json is missing on disk:" >&2
+      echo "[pre-commit shim]   $hook" >&2
+      echo "[pre-commit shim] Refusing commit — this is an initialized SDD project," >&2
+      echo "[pre-commit shim] silently skipping a missing enforcement hook would let" >&2
+      echo "[pre-commit shim] an adversary disable the moat by deleting one file." >&2
+      echo "[pre-commit shim] Fix: restore the hook OR remove its entry from" >&2
+      echo "[pre-commit shim]      .claude/settings.json's PreToolUse(Bash) array." >&2
+      echo "[pre-commit shim] For a one-off migration commit, set SDD_STRICT=0." >&2
+      exit 2
+    fi
+    # Non-SDD project — preserve the legacy warn-and-continue.
     echo "[pre-commit shim] WARNING: hook declared in settings.json is missing on disk: $hook" >&2
     echo "[pre-commit shim]          (commit allowed; fix settings.json to silence this warning)" >&2
     continue
