@@ -215,8 +215,28 @@ stash_msg="sdd-pre-commit-test-first-$$"
 
 # shellcheck disable=SC2086
 if ! git stash push --quiet -m "$stash_msg" -- $code_files >/dev/null 2>&1; then
-  # Stash failed — likely no diff (already-clean state) or path issue.
-  # Pass through; the moat hook + downstream review still apply.
+  # v1.10/4 (closes GPT-5.5 review Q4 site 5): fail-closed when stash
+  # fails in an initialized SDD project. Without the stash we can't
+  # actually run the test against test-only state — passing through
+  # silently lets an adversary commit code-with-test in one breath
+  # while claiming TDD discipline. SDD_STRICT=0 for migration.
+  if [ -f "$PROJECT_DIR/.sdd/INDEX.md" ] && [ "${SDD_STRICT:-1}" != "0" ]; then
+    cat >&2 <<HOOK_ERR
+[pre-commit-test-first] Cannot run the test-first gate.
+
+  git stash push failed when isolating code-side files. Without the
+  stash the framework can't verify the test fails on test-only state
+  (the RED step of test-first). Common causes:
+    - paths containing spaces (CR cycle 1 L69 known limitation)
+    - no clean working tree to stash onto
+    - git index is partially-locked from a prior aborted operation
+
+  Fix the working tree (resolve any conflicts, retry git operations)
+  and re-commit. For a one-off migration commit, set SDD_STRICT=0.
+HOOK_ERR
+    exit 2
+  fi
+  # Not an SDD project — preserve legacy pass-through.
   exit 0
 fi
 

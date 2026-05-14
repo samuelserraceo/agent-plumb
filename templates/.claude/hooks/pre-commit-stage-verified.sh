@@ -152,7 +152,24 @@ locate_verify_stage() {
 }
 
 VERIFY_STAGE=$(locate_verify_stage) || {
-  # Cannot verify; default to allow (better than blocking on a config gap).
+  # v1.10/4 (closes GPT-5.5 review Q4): fail-CLOSED in an initialized
+  # SDD project. The moat can't verify staged spec.md without verify-stage.sh
+  # — silently allowing the commit would let an adversary remove the script
+  # and slip a fabricated verification.json through. Pre-v1.10 behaviour
+  # (exit 0) is preserved for non-SDD-project repos (no .sdd/INDEX.md).
+  # Migration / debugging escape: export SDD_STRICT=0 before the commit.
+  if [ -f "$PROJECT_DIR/.sdd/INDEX.md" ] && [ "${SDD_STRICT:-1}" != "0" ]; then
+    echo "[moat] verify-stage.sh is missing — refusing commit." >&2
+    echo "        Looked in:" >&2
+    echo "          $PROJECT_DIR/.sdd/scripts/verify-stage.sh" >&2
+    echo "          $PROJECT_DIR/templates/.sdd/scripts/verify-stage.sh" >&2
+    echo "        Without this script the moat can't verify staged spec.md," >&2
+    echo "        so any fabricated verification.json would slip through." >&2
+    echo "        Fix: restore verify-stage.sh from the framework template," >&2
+    echo "        or set SDD_STRICT=0 for a one-off migration commit." >&2
+    exit 2
+  fi
+  # Not an SDD project (or explicit migration mode) — allow.
   exit 0
 }
 
@@ -795,10 +812,47 @@ fi
 check_approved_sections() {
   local claimed="$1" staged_spec="$2" hash_script="$3"
 
-  # If hash-section.sh isn't available (template not installed yet),
-  # skip — preserves Phase A test compatibility (those scaffolds don't
-  # ship hash-section.sh).
-  [ -x "$hash_script" ] || [ -f "$hash_script" ] || return 0
+  # If hash-section.sh isn't available, fail-closed when the manifest
+  # claims it SHOULD exist (closes GPT-5.5 Q4 site 2). Detection by
+  # manifest-pin rather than INDEX.md existence avoids false-positives
+  # on test scaffolds that scaffold `.sdd/` shape without committing
+  # the full framework (T16 + similar minimal fixtures). A "real" SDD
+  # project has manifest.json with scripts.hash-section.sh pinned;
+  # if pinned-but-missing, that's the silent-tamper attack v1.10/4
+  # closes. Migration escape: SDD_STRICT=0.
+  # CR cycle 1 of #275: `-x` and `-f` together are redundant — both fail
+  # when the file doesn't exist. Use the cheaper existence check.
+  if [ ! -f "$hash_script" ]; then
+    manifest="$PROJECT_DIR/.sdd/.cache/manifest.json"
+    manifest_pins_hash_section=0
+    if [ -f "$manifest" ]; then
+      if MANIFEST="$manifest" python3 -c "
+import json, os, sys
+try:
+    with open(os.environ['MANIFEST']) as f:
+        m = json.load(f)
+except Exception:
+    sys.exit(1)
+scripts = m.get('scripts', {}) or {}
+sys.exit(0 if 'hash-section.sh' in scripts else 1)
+" 2>/dev/null; then
+        manifest_pins_hash_section=1
+      fi
+    fi
+    if [ "$manifest_pins_hash_section" = "1" ] && [ "${SDD_STRICT:-1}" != "0" ]; then
+      echo "[moat] hash-section.sh is missing — refusing commit." >&2
+      echo "        Looked for: $hash_script" >&2
+      echo "        Manifest pins scripts.hash-section.sh — its absence on disk" >&2
+      echo "        means the section-lock check is silently disabled (an" >&2
+      echo "        attacker removing the script could weaken approved sections" >&2
+      echo "        without trace). Fix: restore hash-section.sh from the" >&2
+      echo "        framework template, or set SDD_STRICT=0 for a one-off" >&2
+      echo "        migration commit." >&2
+      return 1
+    fi
+    # No manifest claim (test scaffold / Phase A) — preserve legacy path.
+    return 0
+  fi
 
   CLAIMED_BLOB="$claimed" STAGED_SPEC="$staged_spec" PROJ="$PROJECT_DIR" \
     HASH_SCRIPT="$hash_script" python3 <<'PYEOF'
@@ -1181,11 +1235,15 @@ EOF
   # integrity of approvals comes before per-check fabrication detection.
   # No-op when approved_sections is absent (v0.7.5 verification.json) or
   # empty (v0.8 with no requires_user_approval actions).
-  if [ -n "$HASH_SECTION" ]; then
-    if ! check_approved_sections "$claimed" "$staged_spec" "$HASH_SECTION"; then
-      rm -f "$staged_spec"
-      exit 2
-    fi
+  #
+  # CR cycle 2 of #275: call unconditionally — let the function's own
+  # missing-hash-script branch decide fail-closed (SDD project) vs
+  # fail-open (Phase A scaffold). Previously the [ -n "$HASH_SECTION" ]
+  # guard short-circuited the call entirely, so the v1.10/4 fail-closed
+  # branch couldn't trigger.
+  if ! check_approved_sections "$claimed" "$staged_spec" "$HASH_SECTION"; then
+    rm -f "$staged_spec"
+    exit 2
   fi
 
   # Re-run verify-stage on the staged spec, in an isolated temp dir.
@@ -1241,8 +1299,11 @@ done <<< "$staged_verifications"
 # the staged set (already covered by the loop above), pull verification
 # from HEAD and re-run check_approved_sections. Mismatch → block.
 # No HEAD verification.json (legitimate new-feature mid-SPEC) → skip.
-# No hash-section.sh available (Phase A scaffold) → skip.
-if [ -n "$HASH_SECTION" ] && [ -n "$staged_specs" ]; then
+# CR cycle 2 of #275: no longer gate on HASH_SECTION existence — let
+# check_approved_sections decide fail-closed (SDD project) vs fail-open
+# (Phase A scaffold). The empty `staged_specs` short-circuit is the
+# only legitimate skip here.
+if [ -n "$staged_specs" ]; then
   while IFS= read -r spath; do
     [ -z "$spath" ] && continue
     feature_dir=$(dirname "$spath")
