@@ -17,11 +17,13 @@ A workflow for using AI to build real software without the AI making stuff up. T
 From the README + CLAUDE.md, these are the stated promises. **Please grade each against the actual repo state.**
 
 ### 2a. Foundation 3 — load-bearing design pillars
+
 1. **Simplicity over capability.** Files you can `cat`. Bash + markdown + YAML. No build step, no SaaS, no database, no `node_modules`. Deps: `bash` + `python3` + PyYAML + `git` + `gh`. *Question: did SDD honour this, or did it accumulate complexity it didn't need?*
 2. **Composable Lego bricks.** Actions are atoms slot-able into any playbook. Notebooks (INDEX / decisions / patterns / data-model / stack) are separate bricks. Playbooks are compositions. *Question: do the bricks actually compose, or is there hidden coupling?*
 3. **Never assume — always check.** The manifest hash never trusts a file is unchanged — it checks. The moat hook never trusts the agent's "I'm done" claim — it re-runs verification. *Question: where does the framework still assume? Find every place it shortcuts the check.*
 
 ### 2b. The 8 code-quality doctrine rules
+
 1. Never assume — always ask
 2. Conciseness is an asset
 3. Don't over-engineer
@@ -32,6 +34,7 @@ From the README + CLAUDE.md, these are the stated promises. **Please grade each 
 8. Plain English first (mum-test)
 
 ### 2c. The user promises
+
 - The agent **literally cannot** commit code that wanders from its spec (pre-commit hooks refuse)
 - The non-technical user brings the WHAT (in plain English); agent proposes the HOW (with tradeoffs you can react to)
 - Every decision lands in markdown a non-coder can read 6 months later
@@ -66,30 +69,39 @@ If you **can't** browse, reason from the framing and tell me what you'd want to 
 Please respond in this structure:
 
 ### Q1. Does the framework deliver "mechanically impossible to drift"?
+
 The README claims the agent cannot commit code that wanders from spec. Find the hooks that enforce this. Are they actually enforcing, or are they reminders dressed up as enforcers? Specifically check: (a) the moat re-runs verify-stage on staged content — does it really, or does it trust verification.json? (b) the manifest hash-pin catches edited framework files — does the marker bypass work as documented? (c) the anti-theatre lint refuses unverified claims — is the regex tight enough?
 
 ### Q2. Is the plain-English promise honoured?
+
 Open `docs/walkthrough.html` (or `README.md`). Read 5 random paragraphs. Could a non-technical founder follow each one without a dictionary? If not, name the exact sentences that fail the mum-test.
 
 ### Q3. Is Foundation 1 (Simplicity) honoured, or did SDD become what it warned against?
+
 Count: lines of bash, lines of python, lines of markdown, lines of HTML, number of npm packages, number of external services. Does the dep envelope match the README's claim ("bash + python3 + PyYAML + git + gh")? Anything in node_modules / package-lock.json / etc.? If you find scope creep, name it.
 
 ### Q4. Where does the framework still assume?
+
 Foundation 3 says "Never assume — always check." Scan for any code path where the framework SHORTCUTS the check. Examples that already shipped: `start.sh` previously assumed the next feature ID by counting local folders (didn't check origin/main) — fixed in PR #231. Find the next 3-5 places this pattern still exists.
 
 ### Q5. Is the SDD discipline going to survive its first real downstream user?
+
 This repo dogfoods itself, which is convenient. But the first downstream project (pipelogic_v2) surfaced ~6 friction points that drove v1.6 + v1.7 + v1.8 + v1.9. Imagine a second downstream user with a *different* shape — say, a Python data pipeline, not a TypeScript webapp. Where will the framework's bash + markdown + filesystem layer hurt? Name 3 concrete failure modes.
 
 ### Q6. Are the "shipped" features actually shipped?
+
 Pick 3 features from `INDEX.md`'s `## Shipped` section at random. For each, verify: (a) the spec.md has the marker `.shipped` file in its folder, (b) the PR linked actually merged, (c) the code claimed in the spec actually exists at the paths the spec names, (d) the tests claimed (T-NNN) actually exist in `test/run-framework-test.sh`. If any of the 3 picks fails the audit, that's a structural problem.
 
 ### Q7. Goals not met (the honest verdict)
+
 List goals from §2 above that SDD does NOT fully deliver. Each entry should name: (a) the goal, (b) the gap, (c) what would close it. No "looks good" — be specific.
 
 ### Q8. Goals MET that I shouldn't take credit for
+
 If a goal is delivered, is it delivered by SDD's own design — or is it delivered by Claude Code's harness, by GitHub Actions, by CodeRabbit, by the user's discipline? Separate "SDD does this" from "the surrounding ecosystem does this for SDD".
 
 ### Q9. Risks for v2.0
+
 If I were to start v2.0 tomorrow, what should I rip out, what should I double down on, and what should I leave alone? One sentence each.
 
 ## 5. Format I want back
