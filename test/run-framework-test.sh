@@ -8357,13 +8357,16 @@ else
         # Pre-existing; covered by their own SHIP-cycle audit. Skip.
         continue ;;
       011-per-file-injection-budgets-in-user-prompt-submit-hook)
-        # In-flight, mid-SHIP feature whose spec.md describes hook
-        # BLOCKING behaviour using "block(s)" as plain-English prose
-        # for what the hook does. The v1.10/2 TOK_ENFORCE regex
-        # extension catches these as theatre even though they describe
-        # genuinely-verified behaviour. Will be audited and annotated
-        # at this feature's own SHIP cycle; back-fixing pre-extension
-        # specs is parked per the same precedent as 001/002 above.
+        # TRANSITIONAL skip — auto-removes when F011 ships (the .shipped
+        # marker check above takes over). Spec has 1 lint catch on line 468
+        # ("rejects" inside a parenthetical describing an alternative-not-
+        # chosen for negative-budget edge case in §10). F011's SPEC was
+        # approved + the moat refuses unrelated PRs from re-approving 4
+        # sections to soften that one word; deferred to F011's own SHIP
+        # ceremony (its lint sweep will catch + handle it). CR cycle 2
+        # of #273 raised the principle (skips should stay limited to
+        # cold/shipped); honoured by the time-bound here — this entry
+        # is dead the moment F011 ships.
         continue ;;
     esac
     nt_out=$(bash "$FRAMEWORK_ROOT/.sdd/scripts/lint-no-theatre.sh" "$spec" 2>&1)
