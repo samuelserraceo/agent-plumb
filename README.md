@@ -18,7 +18,7 @@ If you've used Claude Code, Cursor, Lovable, or any other AI coding tool, you've
 - Six months later you can't remember **why** the AI picked one tech over another.
 - Documentation drifted. Schema drifted. Tests skipped.
 
-SDD makes the wrong path **mechanically impossible**, not just discouraged. The agent literally cannot commit code that drifts from its spec, because git pre-commit hooks refuse the commit. The "moat" hook re-runs your verification checks on every commit and blocks any "the agent claims it works" assertion that doesn't match what fresh tests actually report.
+SDD makes the wrong path **mechanically checked at every commit**, not just discouraged. With SDD configured (hooks active, manifest pinned, no `--no-verify` bypass), the agent cannot commit code that drifts from its spec — git pre-commit hooks refuse the commit. The "moat" hook re-runs your verification checks on every commit and blocks any "the agent claims it works" assertion that doesn't match what fresh tests actually report. (Honest caveat: a determined human with `--no-verify` or a misconfigured project can route around any check; the framework's discipline is "every committed atom is mechanically verified," not "physically impossible to drift.")
 
 You bring the *what* (in plain English). The agent proposes the *how* (with tradeoffs you can react to). Every decision is captured in markdown files you can read, share with an investor, hand to a future engineer, or rebuild in a different stack.
 
