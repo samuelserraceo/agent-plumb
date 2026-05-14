@@ -78,8 +78,11 @@ TOK_NUMERIC='([0-9]+%|[<>≤≥]\s*[0-9]+\s*(KB|MB|ms|sec|tokens?|bytes?)|at lea
 TOK_CURRENCY='(\$[0-9]+\.[0-9]+|\$[1-9][0-9]+|USD|cents?|dollars?)'
 
 # Enforcement verbs (whole-word). Refuses/enforces/prevents/ensures/guarantees.
-# Plus absolute always/never (rare but classic theatre).
-TOK_ENFORCE='(refuses?|enforces?|prevents?|ensures?|guarantees?|always|never)'
+# Plus absolute always/never (rare but classic theatre). v1.10/2 (closes
+# GPT-5.5 review Q1): added halts/blocks/stops/forbids/disallows/rejects
+# after GPT-5.5 successfully bypassed the lint with sentences like
+# "The command must halt on drift" and "The tool blocks unsafe changes."
+TOK_ENFORCE='(refuses?|enforces?|prevents?|ensures?|guarantees?|halts?|blocks?|stops?|forbids?|disallows?|rejects?|always|never)'
 
 # Quality absolutes (whole-word). correctly/accurate/reliable/complete.
 TOK_QUALITY='(correctly|accurate|reliable|complete)'
@@ -204,7 +207,11 @@ for spec in "${TARGETS[@]}"; do
       fi
     fi
     if [ -z "$found_token" ]; then
-      m=$(printf '%s' "$stripped" | grep -ioE '(^|[^[:alnum:]_])(refuses?|enforces?|prevents?|ensures?|guarantees?|always|never)([^[:alnum:]_]|$)' | head -1 | grep -ioE '(refuses?|enforces?|prevents?|ensures?|guarantees?|always|never)' | head -1)
+      # v1.10/2 (closes GPT-5.5 review Q1): added halts/blocks/stops/forbids/
+      # disallows/rejects after GPT-5.5 successfully bypassed the lint with
+      # sentences like "The command must halt on drift" and "The tool blocks
+      # unsafe changes." Inline regex must match TOK_ENFORCE variable above.
+      m=$(printf '%s' "$stripped" | grep -ioE '(^|[^[:alnum:]_])(refuses?|enforces?|prevents?|ensures?|guarantees?|halts?|blocks?|stops?|forbids?|disallows?|rejects?|always|never)([^[:alnum:]_]|$)' | head -1 | grep -ioE '(refuses?|enforces?|prevents?|ensures?|guarantees?|halts?|blocks?|stops?|forbids?|disallows?|rejects?|always|never)' | head -1)
       if [ -n "$m" ]; then
         found_token="$m"
       fi
