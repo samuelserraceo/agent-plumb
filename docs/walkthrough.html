@@ -852,7 +852,108 @@ search_within(slug)   bounded semantic search
     </div>
     <div class="card card-v11 p-4">
       <h4 class="font-semibold mb-1">F027 · /sdd-verify-stack <span class="pill pill-v11 ml-2">v1.9</span></h4>
-      <p class="text-sm text-stone-600">Post-wizard reality check — runs after <code class="mono text-xs">/sdd-setup</code>. Probes 6 declared tools: CodeRabbit App (gh-api install check), Ollama endpoint (curl HEAD 2s timeout), <strong>OpenAI key</strong> (<code class="mono text-xs">OPENAI_API_KEY</code> env-var presence — followup), CI workflow files (yml count), main branch protection (gh-api), <strong>test-runner deps</strong> (declared runner found in <code class="mono text-xs">package.json</code> / <code class="mono text-xs">pyproject.toml</code> — followup). Emits <code class="mono text-xs">[verify-stack] &lt;check&gt;: &lt;ok|warn|fail&gt; — &lt;message&gt;</code>. Each check gracefully skips if its precondition isn't set.</p>
+      <p class="text-sm text-stone-600">Post-wizard reality check — runs after <code class="mono text-xs">/sdd-setup</code>. Probes 6 declared tools and tells you what's actually wired vs just claimed in your config.</p>
+
+      <!-- Visual flow diagram for F027 verify-stack -->
+      <div class="mt-3 mb-3 overflow-x-auto bg-stone-50 rounded p-2 border border-stone-200">
+        <svg viewBox="0 0 720 320" class="w-full" style="min-width: 640px;" aria-label="verify-stack flow diagram">
+          <defs>
+            <marker id="vs-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="#78716c"/>
+            </marker>
+          </defs>
+
+          <!-- USER -->
+          <g>
+            <rect x="20" y="20" width="180" height="44" rx="6" fill="#fafaf9" stroke="#a8a29e" stroke-width="1.5"/>
+            <text x="110" y="40" text-anchor="middle" font-size="12" font-weight="600" fill="#1c1917">YOU type</text>
+            <text x="110" y="56" text-anchor="middle" font-size="11" font-family="monospace" fill="#57534e">/sdd-verify-stack</text>
+          </g>
+          <line x1="200" y1="42" x2="240" y2="42" stroke="#78716c" stroke-width="1.5" marker-end="url(#vs-arrow)"/>
+
+          <!-- READ STEP -->
+          <g>
+            <rect x="240" y="20" width="220" height="44" rx="6" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5"/>
+            <text x="350" y="38" text-anchor="middle" font-size="12" font-weight="600" fill="#1e3a8a">verify-stack.sh reads</text>
+            <text x="350" y="55" text-anchor="middle" font-size="10" font-family="monospace" fill="#1e40af">.sdd/config.md + .sdd/stack.md</text>
+          </g>
+          <line x1="460" y1="42" x2="500" y2="42" stroke="#78716c" stroke-width="1.5" marker-end="url(#vs-arrow)"/>
+
+          <!-- RUNS 6 CHECKS -->
+          <g>
+            <rect x="500" y="20" width="200" height="44" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+            <text x="600" y="38" text-anchor="middle" font-size="12" font-weight="600" fill="#78350f">runs 6 checks</text>
+            <text x="600" y="55" text-anchor="middle" font-size="10" fill="#92400e">each one skips if not declared</text>
+          </g>
+
+          <!-- DOWNWARD CHECK GRID -->
+          <line x1="600" y1="64" x2="600" y2="92" stroke="#78716c" stroke-width="1.5" marker-end="url(#vs-arrow)"/>
+
+          <!-- 6 CHECK BOXES IN A ROW -->
+          <g>
+            <rect x="20" y="100" width="108" height="58" rx="5" fill="#f5f5f4" stroke="#a8a29e" stroke-width="1"/>
+            <text x="74" y="118" text-anchor="middle" font-size="11" font-weight="600" fill="#1c1917">1. CR App</text>
+            <text x="74" y="134" text-anchor="middle" font-size="9" fill="#57534e">gh api</text>
+            <text x="74" y="148" text-anchor="middle" font-size="9" fill="#57534e">install check</text>
+          </g>
+          <g>
+            <rect x="138" y="100" width="108" height="58" rx="5" fill="#f5f5f4" stroke="#a8a29e" stroke-width="1"/>
+            <text x="192" y="118" text-anchor="middle" font-size="11" font-weight="600" fill="#1c1917">2. Ollama</text>
+            <text x="192" y="134" text-anchor="middle" font-size="9" fill="#57534e">curl HEAD 2s</text>
+            <text x="192" y="148" text-anchor="middle" font-size="9" fill="#57534e">on endpoint</text>
+          </g>
+          <g>
+            <rect x="256" y="100" width="108" height="58" rx="5" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+            <text x="310" y="118" text-anchor="middle" font-size="11" font-weight="600" fill="#78350f">3. OpenAI key</text>
+            <text x="310" y="134" text-anchor="middle" font-size="9" fill="#92400e">OPENAI_API_KEY</text>
+            <text x="310" y="148" text-anchor="middle" font-size="9" fill="#92400e">env-var present?</text>
+          </g>
+          <g>
+            <rect x="374" y="100" width="108" height="58" rx="5" fill="#f5f5f4" stroke="#a8a29e" stroke-width="1"/>
+            <text x="428" y="118" text-anchor="middle" font-size="11" font-weight="600" fill="#1c1917">4. CI workflow</text>
+            <text x="428" y="134" text-anchor="middle" font-size="9" fill="#57534e">.github/workflows</text>
+            <text x="428" y="148" text-anchor="middle" font-size="9" fill="#57534e">.yml file count</text>
+          </g>
+          <g>
+            <rect x="492" y="100" width="108" height="58" rx="5" fill="#f5f5f4" stroke="#a8a29e" stroke-width="1"/>
+            <text x="546" y="118" text-anchor="middle" font-size="11" font-weight="600" fill="#1c1917">5. Branch prot.</text>
+            <text x="546" y="134" text-anchor="middle" font-size="9" fill="#57534e">gh api branches</text>
+            <text x="546" y="148" text-anchor="middle" font-size="9" fill="#57534e">main protection</text>
+          </g>
+          <g>
+            <rect x="610" y="100" width="108" height="58" rx="5" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+            <text x="664" y="118" text-anchor="middle" font-size="11" font-weight="600" fill="#78350f">6. Test runner</text>
+            <text x="664" y="134" text-anchor="middle" font-size="9" fill="#92400e">name in package.json</text>
+            <text x="664" y="148" text-anchor="middle" font-size="9" fill="#92400e">/ pyproject.toml</text>
+          </g>
+
+          <!-- ARROWS DOWN to OUTPUT -->
+          <line x1="74" y1="158" x2="74" y2="200" stroke="#78716c" stroke-width="1" stroke-dasharray="3,2"/>
+          <line x1="192" y1="158" x2="192" y2="200" stroke="#78716c" stroke-width="1" stroke-dasharray="3,2"/>
+          <line x1="310" y1="158" x2="310" y2="200" stroke="#78716c" stroke-width="1" stroke-dasharray="3,2"/>
+          <line x1="428" y1="158" x2="428" y2="200" stroke="#78716c" stroke-width="1" stroke-dasharray="3,2"/>
+          <line x1="546" y1="158" x2="546" y2="200" stroke="#78716c" stroke-width="1" stroke-dasharray="3,2"/>
+          <line x1="664" y1="158" x2="664" y2="200" stroke="#78716c" stroke-width="1" stroke-dasharray="3,2"/>
+
+          <!-- OUTPUT TERMINAL -->
+          <g>
+            <rect x="20" y="200" width="700" height="92" rx="6" fill="#1c1917" stroke="#3f3f46" stroke-width="1"/>
+            <text x="40" y="222" font-size="10" font-family="monospace" fill="#34d399">[verify-stack] coderabbit-app: ok — installed on samuelserraceo/sdd</text>
+            <text x="40" y="238" font-size="10" font-family="monospace" fill="#34d399">[verify-stack] ollama-endpoint: ok — reachable at http://localhost:11434</text>
+            <text x="40" y="254" font-size="10" font-family="monospace" fill="#f87171">[verify-stack] openai-key: fail — OPENAI_API_KEY not set — export it in your shell rc</text>
+            <text x="40" y="270" font-size="10" font-family="monospace" fill="#34d399">[verify-stack] ci-workflows: ok — 2 yml files in .github/workflows/</text>
+            <text x="40" y="286" font-size="10" font-family="monospace" fill="#fbbf24">[verify-stack] branch-protection: warn — main protection NOT configured</text>
+          </g>
+
+          <!-- EXIT CODE -->
+          <g>
+            <rect x="20" y="295" width="700" height="20" fill="none"/>
+            <text x="40" y="310" font-size="11" font-family="monospace" fill="#57534e">exit 1 (any fail = exit 1; warn alone = exit 0)</text>
+          </g>
+        </svg>
+      </div>
+
+      <p class="text-xs text-stone-500 mt-2">Highlighted (orange) = the 2 checks added in PR #260 followup. Each fail line includes the concrete fix command — no Stack-Overflow detour. Each check skips silently when its precondition isn't declared (e.g. no Ollama check if Tier 3 is off).</p>
       <p class="text-xs text-stone-500 mt-2">Shipped <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/258" target="_blank" rel="noopener noreferrer">PR #258</a> + 2-check followup <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/pull/260" target="_blank" rel="noopener noreferrer">PR #260</a> · closes #165 (all 6 checks)</p>
     </div>
     <div class="card card-v11 p-4">
