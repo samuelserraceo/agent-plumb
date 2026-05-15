@@ -1,6 +1,6 @@
 {
   "name": "agent-plumb-pi",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Agent Plumb for pi.dev — keeps your AI coding in plumb. Spec-driven workflow (SPEC → BUILD → SHIP, mechanical drift checks, append-only decisions ledger) for any of pi's 20+ AI providers.",
   "keywords": [
     "pi",
