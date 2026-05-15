@@ -76,6 +76,23 @@ claude plugin install agent-plumb@agent-plumb
 /sdd-setup
 ```
 
+### Companion: `sdd-brief` 🪡 — write the brief BEFORE you build
+
+`sdd-brief` is a **separate Claude plugin** that turns a 1–3 sentence pitch into the kind of tight 11-section brief Plumb's `brief-intake` action ingests during `/sdd-start`. The full pipeline becomes:
+
+```
+idea → /write-brief → /sdd-start "<brief>" → /sdd-next … → /sdd-ship
+```
+
+Install (Terminal):
+
+```bash
+claude plugin marketplace add samuelserraceo/sam-serra-plugins
+claude plugin install sdd-brief@sam-serra-plugins
+```
+
+Then `/write-brief` in any Claude Code session. (Cowork desktop users: three-click install via the `.plugin` file at https://github.com/samuelserraceo/sam-serra-plugins.)
+
 To pull in framework updates later (refresh `.sdd/` from upstream):
 
 ```bash
