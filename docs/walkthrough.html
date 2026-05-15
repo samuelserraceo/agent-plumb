@@ -291,160 +291,108 @@
   <textarea class="review-note review-only" placeholder="Notes on the three-card explainer…" data-note="at-a-glance"></textarea>
 </section>
 
-<!-- ═══════════════════════════════════════════ THE 30-SECOND LOOP ═══════════════════════════════════════════ -->
-<section id="loop" class="max-w-6xl mx-auto px-6 py-10 reviewable" data-section="loop">
-  <div class="review-tools review-only"><button type="button" class="rb" data-flag="ok">✓</button><button type="button" class="rb" data-flag="unclear">?</button><button type="button" class="rb" data-flag="problem">✗</button></div>
-  <h2 class="text-2xl font-bold mb-2">The 30-second loop — what one <code class="mono text-xl bg-stone-100 px-2 rounded">/next</code> actually does.</h2>
-  <p class="text-stone-600 max-w-3xl mb-6">Every <code class="mono text-sm bg-stone-100 px-1 rounded">/next</code> command runs the same four-step container. One step in your spec = one commit in git. No batching, no shortcuts.</p>
-
-  <!-- Stepper nav -->
-  <div class="card p-6">
-    <div class="flex items-center gap-2 md:gap-6 mb-6 overflow-x-auto" id="loopStepper">
-      <button type="button" class="loop-step flex items-center gap-3" data-step="1">
-        <span class="step-dot"></span><span class="step-label text-sm text-stone-500">1. LOCATE</span>
-      </button>
-      <span class="flex-1 h-px bg-stone-200 min-w-4"></span>
-      <button type="button" class="loop-step flex items-center gap-3" data-step="2">
-        <span class="step-dot"></span><span class="step-label text-sm text-stone-500">2. EXECUTE</span>
-      </button>
-      <span class="flex-1 h-px bg-stone-200 min-w-4"></span>
-      <button type="button" class="loop-step flex items-center gap-3" data-step="3">
-        <span class="step-dot"></span><span class="step-label text-sm text-stone-500">3. SYNC</span>
-      </button>
-      <span class="flex-1 h-px bg-stone-200 min-w-4"></span>
-      <button type="button" class="loop-step flex items-center gap-3" data-step="4">
-        <span class="step-dot"></span><span class="step-label text-sm text-stone-500">4. ADVANCE</span>
-      </button>
-    </div>
-
-    <!-- Step content -->
-    <div id="loopContent" class="grid md:grid-cols-2 gap-6 min-h-[280px]"></div>
-
-    <div class="mt-6 flex justify-between items-center">
-      <button type="button" id="loopPrev" class="px-4 py-2 rounded border border-stone-300 text-sm hover:bg-stone-100">← Previous step</button>
-      <span id="loopCounter" class="text-xs text-stone-500">Step 1 of 4</span>
-      <button type="button" id="loopNext" class="px-4 py-2 rounded border border-stone-300 text-sm hover:bg-stone-100">Next step →</button>
-    </div>
-  </div>
-  <textarea class="review-note review-only" placeholder="Notes on the loop demo…" data-note="loop"></textarea>
-</section>
-
-<!-- ═══════════════════════════════════════════ LIFECYCLE + HOOKS + TRUST ═══════════════════════════════════════════ -->
+<!-- ═══════════════════════════════════════════ HOW A STEP FLOWS ═══════════════════════════════════════════ -->
 <section id="lifecycle" class="max-w-6xl mx-auto px-6 py-10 reviewable" data-section="lifecycle">
   <div class="review-tools review-only"><button type="button" class="rb" data-flag="ok">✓</button><button type="button" class="rb" data-flag="unclear">?</button><button type="button" class="rb" data-flag="problem">✗</button></div>
-  <h2 class="text-2xl font-bold mb-2">Lifecycle, hooks, and trust — what stops the agent making stuff up.</h2>
-  <p class="text-stone-600 max-w-3xl mb-8">Three diagrams, three different surfaces. Each is a real mechanical gate, not just doctrine — the agent literally cannot proceed if any of them refuses.</p>
+  <h2 class="text-2xl font-bold mb-2">How a step flows — the loop, the hooks, the phase machine in one panel.</h2>
+  <p class="text-stone-600 max-w-3xl mb-6">Every <code class="mono text-sm bg-stone-100 px-1 rounded">/next</code> walks four atoms: LOCATE → DO → COMMIT → ADVANCE. Hooks fire only on COMMIT. The phase state-machine on the right is the larger arc the loop nests inside.</p>
 
-  <!-- ───────── Diagram 1: Phase state-machine ───────── -->
-  <div class="card p-4 md:p-6 mb-6">
-    <h3 class="font-semibold mb-2">1 · Phase state-machine — every work item walks this path</h3>
-    <p class="text-sm text-stone-600 mb-4">A new feature lives in <code class="mono text-xs bg-stone-100 px-1 rounded">QUEUED</code> until you promote it. Then the agent walks SPEC → BUILD → SHIP one atomic step at a time. Every transition between phases is gated by a hook that re-checks the work; the agent's "I'm done" claim is text, the gate's verdict is bash-checked truth.</p>
-    <div class="overflow-x-auto bg-stone-50 rounded p-2 border border-stone-200">
-      <svg viewBox="0 0 760 200" class="w-full" style="min-width: 720px;" aria-label="Phase state-machine diagram">
-        <defs>
-          <marker id="ph-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path d="M0,0 L10,5 L0,10 z" fill="#78716c"/>
-          </marker>
-          <marker id="ph-gate" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path d="M0,0 L10,5 L0,10 z" fill="#dc2626"/>
-          </marker>
-        </defs>
-        <!-- 5 PHASE BOXES -->
-        <g><rect x="20" y="60" width="120" height="50" rx="6" fill="#f5f5f4" stroke="#a8a29e" stroke-width="1.5"/>
-          <text x="80" y="82" text-anchor="middle" font-size="13" font-weight="600" fill="#1c1917">QUEUED</text>
-          <text x="80" y="98" text-anchor="middle" font-size="10" fill="#57534e">parked, not active</text></g>
-        <g><rect x="180" y="60" width="120" height="50" rx="6" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
-          <text x="240" y="82" text-anchor="middle" font-size="13" font-weight="600" fill="#1e3a8a">SPEC</text>
-          <text x="240" y="98" text-anchor="middle" font-size="10" fill="#1e40af">15 actions, plain English Qs</text></g>
-        <g><rect x="340" y="60" width="120" height="50" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
-          <text x="400" y="82" text-anchor="middle" font-size="13" font-weight="600" fill="#78350f">BUILD</text>
-          <text x="400" y="98" text-anchor="middle" font-size="10" fill="#92400e">test → code → green</text></g>
-        <g><rect x="500" y="60" width="120" height="50" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
-          <text x="560" y="82" text-anchor="middle" font-size="13" font-weight="600" fill="#14532d">SHIP</text>
-          <text x="560" y="98" text-anchor="middle" font-size="10" fill="#166534">PR · CR · CI · merge</text></g>
-        <g><rect x="660" y="60" width="80" height="50" rx="6" fill="#1c1917" stroke="#000" stroke-width="1.5"/>
-          <text x="700" y="82" text-anchor="middle" font-size="13" font-weight="600" fill="#fff">SHIPPED</text>
-          <text x="700" y="98" text-anchor="middle" font-size="10" fill="#a8a29e">.shipped marker</text></g>
-        <!-- ARROWS BETWEEN -->
-        <line x1="140" y1="85" x2="180" y2="85" stroke="#78716c" stroke-width="1.5" marker-end="url(#ph-arrow)"/>
-        <line x1="300" y1="85" x2="340" y2="85" stroke="#dc2626" stroke-width="1.5" marker-end="url(#ph-gate)"/>
-        <line x1="460" y1="85" x2="500" y2="85" stroke="#dc2626" stroke-width="1.5" marker-end="url(#ph-gate)"/>
-        <line x1="620" y1="85" x2="660" y2="85" stroke="#dc2626" stroke-width="1.5" marker-end="url(#ph-gate)"/>
-        <!-- GATE LABELS -->
-        <text x="160" y="50" text-anchor="middle" font-size="9" fill="#57534e">/promote-to-active</text>
-        <text x="320" y="50" text-anchor="middle" font-size="9" fill="#dc2626" font-weight="600">verify-stage</text>
-        <text x="320" y="40" text-anchor="middle" font-size="9" fill="#dc2626">writes verification.json</text>
-        <text x="480" y="50" text-anchor="middle" font-size="9" fill="#dc2626" font-weight="600">all tests GREEN</text>
-        <text x="480" y="40" text-anchor="middle" font-size="9" fill="#dc2626">moat re-runs</text>
-        <text x="640" y="50" text-anchor="middle" font-size="9" fill="#dc2626" font-weight="600">CI · CR convergence</text>
-        <text x="640" y="40" text-anchor="middle" font-size="9" fill="#dc2626">verify-cr-convergence.sh</text>
-        <!-- BACKWARD ARROW (BUG → BUILD) -->
-        <path d="M 700 110 Q 700 170 400 170 Q 100 170 80 110" fill="none" stroke="#7c3aed" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#ph-arrow)"/>
-        <text x="400" y="186" text-anchor="middle" font-size="10" fill="#6b21a8" font-style="italic">if a bug is filed post-ship, it routes back to BUILD as a [BUG] task</text>
-      </svg>
+  <div class="card p-5 mb-6">
+    <div class="grid md:grid-cols-[1fr_280px] gap-6">
+
+      <!-- LEFT: the 4-step loop with hook stack inside step 3 -->
+      <div>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+
+          <!-- Step 1: LOCATE -->
+          <div class="border border-stone-300 rounded-lg p-3 bg-stone-50">
+            <div class="text-xs font-semibold mono mb-1" style="color:#6B9900">① LOCATE</div>
+            <div class="text-sm font-semibold mb-1">Read state</div>
+            <p class="text-xs text-stone-600">Run <code class="mono text-xs">resolve-active.sh</code>. Find the next <code class="mono text-xs">[ ]</code> row in the active phase. Halt politely if state is ambiguous.</p>
+          </div>
+
+          <!-- Step 2: DO -->
+          <div class="border border-stone-300 rounded-lg p-3 bg-stone-50">
+            <div class="text-xs font-semibold mono mb-1" style="color:#6B9900">② DO</div>
+            <div class="text-sm font-semibold mb-1">Answer or draft</div>
+            <p class="text-xs text-stone-600">USER-LED → ask plain-English question. AGENT-LED → propose with tradeoffs. BUILD-TASK → write test first, watch RED, write code, watch GREEN.</p>
+          </div>
+
+          <!-- Step 3: COMMIT (where hooks fire) -->
+          <div class="border-2 rounded-lg p-3" style="border-color:#B8FF00; background: linear-gradient(135deg, #F5FFE0 0%, #FAFFE6 100%);">
+            <div class="text-xs font-semibold mono mb-1" style="color:#6B9900">③ COMMIT 🛡️</div>
+            <div class="text-sm font-semibold mb-2">Hooks fire</div>
+            <ol class="text-xs text-stone-700 space-y-0.5 list-decimal list-inside leading-tight">
+              <li>block — phase has open <code class="mono">[ ]</code>?</li>
+              <li>rules — F1 generic enforcer</li>
+              <li>test-first — RED before GREEN</li>
+              <li>no-theatre — verifier annotations</li>
+              <li>no-assumed-markers</li>
+              <li><strong>MOAT</strong> — re-runs verify-stage on staged spec.md</li>
+            </ol>
+          </div>
+
+          <!-- Step 4: ADVANCE -->
+          <div class="border border-stone-300 rounded-lg p-3 bg-stone-50">
+            <div class="text-xs font-semibold mono mb-1" style="color:#6B9900">④ ADVANCE</div>
+            <div class="text-sm font-semibold mb-1">Update INDEX</div>
+            <p class="text-xs text-stone-600">Tick the row. If phase complete, run <code class="mono text-xs">advance.sh</code> + write to <code class="mono text-xs">decisions.md</code>. <strong>One step = one commit.</strong></p>
+          </div>
+
+        </div>
+
+        <!-- Arrow underline showing the loop -->
+        <div class="flex items-center text-xs mono text-stone-500 mt-3">
+          <span class="flex-1 border-t border-dashed border-stone-300"></span>
+          <span class="px-3">↻ one /next runs ALL FOUR · then loop back</span>
+          <span class="flex-1 border-t border-dashed border-stone-300"></span>
+        </div>
+      </div>
+
+      <!-- RIGHT: tiny phase state-machine -->
+      <div class="border border-stone-300 rounded-lg p-3 bg-stone-50">
+        <div class="text-xs font-semibold mono mb-2" style="color:#3A3A3A">PHASE MACHINE</div>
+        <div class="text-xs text-stone-500 mb-3">The bigger arc the loop nests inside:</div>
+        <div class="space-y-1.5">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-stone-400"></span>
+            <span class="text-xs mono">QUEUED</span>
+            <span class="text-xs text-stone-400">scaffolded, not active</span>
+          </div>
+          <div class="text-stone-400 ml-1.5">↓</div>
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full" style="background:#B8FF00"></span>
+            <span class="text-xs mono font-semibold">SPEC</span>
+            <span class="text-xs text-stone-400">questions filled</span>
+          </div>
+          <div class="text-stone-400 ml-1.5">↓</div>
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full" style="background:#B8FF00"></span>
+            <span class="text-xs mono font-semibold">BUILD</span>
+            <span class="text-xs text-stone-400">tests GREEN</span>
+          </div>
+          <div class="text-stone-400 ml-1.5">↓</div>
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full" style="background:#B8FF00"></span>
+            <span class="text-xs mono font-semibold">SHIP</span>
+            <span class="text-xs text-stone-400">PR opened, CI green</span>
+          </div>
+          <div class="text-stone-400 ml-1.5">↓</div>
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full" style="background:#0F1419"></span>
+            <span class="text-xs mono">SHIPPED</span>
+            <span class="text-xs text-stone-400">.shipped marker · cold</span>
+          </div>
+        </div>
+        <div class="text-xs text-stone-500 mt-3 pt-3 border-t border-stone-200">
+          <strong>Cannot advance phase</strong> while any <code class="mono">[ ]</code> remains.
+        </div>
+      </div>
+
     </div>
-    <p class="text-xs text-stone-500 mt-2"><strong>Red arrow = mechanical gate.</strong> The framework refuses to advance if the gate's check fails. <strong>Purple dashed arrow = bug back-route</strong> (a post-ship bug becomes a fresh <code class="mono text-xs">[BUG]</code> task in BUILD).</p>
   </div>
 
-  <!-- ───────── Diagram 2: Pre-commit hook chain ───────── -->
-  <div class="card p-4 md:p-6 mb-6">
-    <h3 class="font-semibold mb-2">2 · Pre-commit hook chain — what every <code class="mono text-sm bg-stone-100 px-1 rounded">git commit</code> goes through</h3>
-    <p class="text-sm text-stone-600 mb-4">When the agent (or you) runs <code class="mono text-xs bg-stone-100 px-1 rounded">git commit</code>, eight checks fire in sequence. Any one of them can refuse the commit; the failure message names the fix in plain English.</p>
-    <div class="overflow-x-auto bg-stone-50 rounded p-2 border border-stone-200">
-      <svg viewBox="0 0 780 320" class="w-full" style="min-width: 720px;" aria-label="Pre-commit hook chain diagram">
-        <defs>
-          <marker id="hk-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path d="M0,0 L10,5 L0,10 z" fill="#78716c"/>
-          </marker>
-        </defs>
-        <!-- ENTRY -->
-        <g><rect x="20" y="20" width="160" height="40" rx="6" fill="#fafaf9" stroke="#a8a29e" stroke-width="1.5"/>
-          <text x="100" y="44" text-anchor="middle" font-size="12" font-weight="600" fill="#1c1917">git commit fires</text></g>
-        <line x1="180" y1="40" x2="220" y2="40" stroke="#78716c" stroke-width="1.5" marker-end="url(#hk-arrow)"/>
-        <!-- HOOK GRID -->
-        <g><rect x="220" y="20" width="160" height="40" rx="5" fill="#fee2e2" stroke="#dc2626" stroke-width="1"/>
-          <text x="300" y="36" text-anchor="middle" font-size="10" font-weight="600" fill="#7f1d1d">1. block</text>
-          <text x="300" y="50" text-anchor="middle" font-size="9" fill="#991b1b">refuses if [ ] open in current phase</text></g>
-        <line x1="300" y1="60" x2="300" y2="80" stroke="#78716c" stroke-width="1" marker-end="url(#hk-arrow)"/>
-        <g><rect x="220" y="80" width="160" height="40" rx="5" fill="#fee2e2" stroke="#dc2626" stroke-width="1"/>
-          <text x="300" y="96" text-anchor="middle" font-size="10" font-weight="600" fill="#7f1d1d">2. rules (F1)</text>
-          <text x="300" y="110" text-anchor="middle" font-size="9" fill="#991b1b">touches · co-stage · append_only · size-cap</text></g>
-        <line x1="300" y1="120" x2="300" y2="140" stroke="#78716c" stroke-width="1" marker-end="url(#hk-arrow)"/>
-        <g><rect x="220" y="140" width="160" height="40" rx="5" fill="#fee2e2" stroke="#dc2626" stroke-width="1"/>
-          <text x="300" y="156" text-anchor="middle" font-size="10" font-weight="600" fill="#7f1d1d">3. no-theatre</text>
-          <text x="300" y="170" text-anchor="middle" font-size="9" fill="#991b1b">unverified claims need {verify-by:…}</text></g>
-        <line x1="300" y1="180" x2="300" y2="200" stroke="#78716c" stroke-width="1" marker-end="url(#hk-arrow)"/>
-        <g><rect x="220" y="200" width="160" height="40" rx="5" fill="#fee2e2" stroke="#dc2626" stroke-width="1"/>
-          <text x="300" y="216" text-anchor="middle" font-size="10" font-weight="600" fill="#7f1d1d">4. no-assumed-markers</text>
-          <text x="300" y="230" text-anchor="middle" font-size="9" fill="#991b1b">refuses (assumed) / (TBD) / [?]</text></g>
-        <line x1="300" y1="240" x2="300" y2="260" stroke="#78716c" stroke-width="1" marker-end="url(#hk-arrow)"/>
-        <!-- RIGHT COLUMN -->
-        <g><rect x="420" y="20" width="160" height="40" rx="5" fill="#fee2e2" stroke="#dc2626" stroke-width="1"/>
-          <text x="500" y="36" text-anchor="middle" font-size="10" font-weight="600" fill="#7f1d1d">5. test-first</text>
-          <text x="500" y="50" text-anchor="middle" font-size="9" fill="#991b1b">test must go RED before code lands</text></g>
-        <line x1="500" y1="60" x2="500" y2="80" stroke="#78716c" stroke-width="1" marker-end="url(#hk-arrow)"/>
-        <g><rect x="420" y="80" width="160" height="40" rx="5" fill="#fee2e2" stroke="#dc2626" stroke-width="1"/>
-          <text x="500" y="96" text-anchor="middle" font-size="10" font-weight="600" fill="#7f1d1d">6. stage-verified (THE MOAT)</text>
-          <text x="500" y="110" text-anchor="middle" font-size="9" fill="#991b1b">re-runs verify-stage on staged spec.md</text></g>
-        <line x1="500" y1="120" x2="500" y2="140" stroke="#78716c" stroke-width="1" marker-end="url(#hk-arrow)"/>
-        <g><rect x="420" y="140" width="160" height="40" rx="5" fill="#fee2e2" stroke="#dc2626" stroke-width="1"/>
-          <text x="500" y="156" text-anchor="middle" font-size="10" font-weight="600" fill="#7f1d1d">7. manifest hash-pin</text>
-          <text x="500" y="170" text-anchor="middle" font-size="9" fill="#991b1b">refuses framework-file edit w/o repin marker</text></g>
-        <line x1="500" y1="180" x2="500" y2="200" stroke="#78716c" stroke-width="1" marker-end="url(#hk-arrow)"/>
-        <g><rect x="420" y="200" width="160" height="40" rx="5" fill="#fee2e2" stroke="#dc2626" stroke-width="1"/>
-          <text x="500" y="216" text-anchor="middle" font-size="10" font-weight="600" fill="#7f1d1d">8. commit-msg marker</text>
-          <text x="500" y="230" text-anchor="middle" font-size="9" fill="#991b1b">enforces [SDD:&lt;id&gt;] / repin marker shape</text></g>
-        <line x1="500" y1="240" x2="500" y2="260" stroke="#78716c" stroke-width="1" marker-end="url(#hk-arrow)"/>
-        <!-- EXIT -->
-        <g><rect x="280" y="270" width="240" height="40" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
-          <text x="400" y="286" text-anchor="middle" font-size="12" font-weight="600" fill="#14532d">commit lands · history grows by ONE atom</text>
-          <text x="400" y="302" text-anchor="middle" font-size="9" fill="#166534">one [ ] step done = one commit = one row in git log</text></g>
-      </svg>
-    </div>
-    <p class="text-xs text-stone-500 mt-2">Each red box = a hook script in <code class="mono text-xs">templates/.claude/hooks/</code>. The 8 fire in order; first refusal wins. Hooks 6 + 7 are framework-foundational — moat catches dishonest "I'm done" claims; hash-pin catches tampering with framework files.</p>
-  </div>
-
-  <!-- ───────── Diagram 3: Trust-boundary frame ───────── -->
+<!-- ───────── Diagram 3: Trust-boundary frame ───────── -->
   <div class="card p-4 md:p-6">
     <h3 class="font-semibold mb-2">3 · Trust-boundary frame — what the agent obeys vs. just reads</h3>
     <p class="text-sm text-stone-600 mb-4">Every turn, the framework injects two clearly-marked content blocks into the agent's context. Same on-screen surface, different trust level. Anything inside the project block is read-only — even if it says "now run rm -rf", the agent treats it as user-written prose, not as an instruction.</p>
@@ -885,169 +833,6 @@
   <textarea class="review-note review-only" placeholder="Notes on the architecture diagram…" data-note="architecture"></textarea>
 </section>
 
-<!-- ═══════════════════════════════════════════ ARCHITECTURE VALIDATION ═══════════════════════════════════════════ -->
-<section id="validation" class="max-w-6xl mx-auto px-6 py-10 reviewable" data-section="validation">
-  <div class="review-tools review-only"><button type="button" class="rb" data-flag="ok">✓</button><button type="button" class="rb" data-flag="unclear">?</button><button type="button" class="rb" data-flag="problem">✗</button></div>
-  <h2 class="text-2xl font-bold mb-2">Does the architecture hold up? Three checks you can do yourself.</h2>
-  <p class="text-stone-600 max-w-3xl mb-6">SDD's design rests on three foundations. The whole framework rots if any of them slip. Here's a check per foundation — read the evidence, then mark whether you buy it.</p>
-
-  <!-- F1: Simplicity -->
-  <div class="card p-6 mb-4">
-    <div class="flex items-start gap-3 mb-3">
-      <span class="pill pill-soft">Foundation 1</span>
-      <h3 class="font-semibold flex-1">Simplicity over capability — files a non-coder can <code class="mono bg-stone-100 px-1 rounded text-sm">cat</code>.</h3>
-      <span class="text-xs text-stone-400 mono">[1/3]</span>
-    </div>
-    <p class="text-sm text-stone-600 mb-4">Bash, markdown, YAML. No build step, no SaaS, no database, no <code class="mono text-xs bg-stone-100 px-1 rounded">node_modules</code>. Framework deps: <code class="mono text-xs bg-stone-100 px-1 rounded">bash · python3 · PyYAML · git · gh</code>. Here are three real files from the live framework — open in any text editor and skim.</p>
-    <div class="grid md:grid-cols-3 gap-3 mb-4">
-      <div>
-        <div class="text-xs text-stone-500 mono mb-1">.sdd/INDEX.md</div>
-        <pre class="codeblock-light text-xs">**Active:** features/001-waitlist
-**Playbook:** feature
-
-## In flight
-- 001-waitlist · phase: SPEC · blocker: §5
-
-## Shipped
-- **[[001-waitlist]]** — public signup
-  - Shipped: 2026-04-12 · PR #5</pre>
-      </div>
-      <div>
-        <div class="text-xs text-stone-500 mono mb-1">spec.md (excerpt)</div>
-        <pre class="codeblock-light text-xs">## §1. Problem [USER-LED]
-- [x] who: solo founders, age 25-45
-- [x] why-now: launch in 6 weeks
-- [ ] what-breaks: ?
-
-## §2. Success [USER-LED]
-- [ ] target: 200 signups/mo</pre>
-      </div>
-      <div>
-        <div class="text-xs text-stone-500 mono mb-1">templates/.sdd/config.md (excerpt)</div>
-        <pre class="codeblock-light text-xs">parameters:
-  budget:
-    max_minutes: 5
-    max_commits: 1
-  voice:
-    plain_english: true
-    translate_jargon_on_first_use: true</pre>
-      </div>
-    </div>
-    <div class="flex items-center gap-2 flex-wrap pt-3 border-t border-stone-100">
-      <span class="text-sm text-stone-600 mr-2">Can a non-coder read these?</span>
-      <button type="button" class="vbtn validation-btn" data-validation="f1" data-vote="ok">✓ Yes</button>
-      <button type="button" class="vbtn validation-btn" data-validation="f1" data-vote="unclear">🤔 Some bits unclear</button>
-      <button type="button" class="vbtn validation-btn" data-validation="f1" data-vote="problem">✗ Too dense</button>
-    </div>
-  </div>
-
-  <!-- F2: Lego -->
-  <div class="card p-6 mb-4">
-    <div class="flex items-start gap-3 mb-3">
-      <span class="pill pill-soft">Foundation 2</span>
-      <h3 class="font-semibold flex-1">Composable Lego bricks — new playbooks are compositions of existing actions.</h3>
-      <span class="text-xs text-stone-400 mono">[2/3]</span>
-    </div>
-    <p class="text-sm text-stone-600 mb-4">v1.0 doubled the playbook count from 2 to 4. <strong>None of those new playbooks needed new code</strong> — they're just new compositions of existing action atoms. Here are all 4 playbook frontmatters side by side. Same shape: <code class="mono text-xs bg-stone-100 px-1 rounded">stages → actions → exit_checks</code>.</p>
-    <div class="grid md:grid-cols-2 gap-3 mb-4">
-      <div>
-        <div class="text-xs text-stone-500 mono mb-1">feature.md — full SPEC + BUILD + SHIP</div>
-        <pre class="codeblock-light text-xs">stages:
-  - id: SPEC
-    actions: [problem, success, user-stories,
-      ux-brief, proposed-approach, data-contract,
-      flows, dependencies, out-of-scope,
-      non-functional, acceptance-criteria,
-      signoff-steps, wireframe, plan-decompose,
-      edge-case-sweep]
-    exit_checks: [≥1 AC, ≥1 task]</pre>
-      </div>
-      <div>
-        <div class="text-xs text-stone-500 mono mb-1">bug.md — tight 5-section repro→fix</div>
-        <pre class="codeblock-light text-xs">stages:
-  - id: SPEC
-    actions: [bug-problem, bug-repro,
-      bug-root-cause, bug-fix,
-      bug-regression-test]
-    exit_checks: [repro, cause, fix, regression]
-  - id: BUILD
-    actions: [run-mode-chosen, build-task]
-  - id: SHIP
-    actions: [verify-test-run, learn,
-      push-pr, verify-ci-green, mark-shipped]</pre>
-      </div>
-      <div>
-        <div class="text-xs text-stone-500 mono mb-1">refactor.md — minimal-diff discipline</div>
-        <pre class="codeblock-light text-xs">stages:
-  - id: SPEC
-    actions: [refactor-scope,
-      regression-coverage, refactor-approach,
-      minimal-diff-verify]
-    exit_checks: [scope, coverage,
-      approach, minimal-diff]
-  - id: BUILD
-    actions: [run-mode-chosen, build-task]</pre>
-      </div>
-      <div>
-        <div class="text-xs text-stone-500 mono mb-1">project.md — multi-feature roadmap</div>
-        <pre class="codeblock-light text-xs">stages:
-  - id: VISION
-    actions: [project-problem, project-success,
-      project-stakeholders]
-  - id: BREAKDOWN
-    actions: [project-capabilities,
-      project-priorities]
-  - id: KICKOFF
-    actions: [project-queue-features,
-      project-start-first]</pre>
-      </div>
-    </div>
-    <div class="flex items-center gap-2 flex-wrap pt-3 border-t border-stone-100">
-      <span class="text-sm text-stone-600 mr-2">All four follow the same shape?</span>
-      <button type="button" class="vbtn validation-btn" data-validation="f2" data-vote="ok">✓ Same shape, different actions</button>
-      <button type="button" class="vbtn validation-btn" data-validation="f2" data-vote="unclear">🤔 Hard to tell</button>
-      <button type="button" class="vbtn validation-btn" data-validation="f2" data-vote="problem">✗ They diverge</button>
-    </div>
-  </div>
-
-  <!-- F3: Never-assume -->
-  <div class="card p-6 mb-4">
-    <div class="flex items-start gap-3 mb-3">
-      <span class="pill pill-soft">Foundation 3</span>
-      <h3 class="font-semibold flex-1">Never assume — always check.</h3>
-      <span class="text-xs text-stone-400 mono">[3/3]</span>
-    </div>
-    <p class="text-sm text-stone-600 mb-4">Every place the framework <em>could</em> trust the agent's word, it instead re-checks. Three concrete examples below.</p>
-    <div class="space-y-3 mb-4">
-      <details class="card p-3" open>
-        <summary class="font-semibold text-sm flex items-center"><span class="chevron mr-2">▶</span>Example 1 — the moat hook re-runs verification on the staged file, ignoring what the agent claims</summary>
-        <p class="text-sm text-stone-600 mt-2">When the agent commits, <code class="mono text-xs bg-stone-100 px-1 rounded">pre-commit-stage-verified.sh</code> doesn't read the agent's "I'm done" claim. It re-runs <code class="mono text-xs bg-stone-100 px-1 rounded">verify-stage.sh</code> on the actually-staged spec.md. If the freshly-computed result disagrees with what's claimed, the commit is refused.</p>
-      </details>
-      <details class="card p-3">
-        <summary class="font-semibold text-sm flex items-center"><span class="chevron mr-2">▶</span>Example 2 — the manifest is hash-pinned; the moat catches modify, delete AND rename of any framework file</summary>
-        <p class="text-sm text-stone-600 mt-2">~61 framework files (playbooks, actions, scripts, hooks) have their normalised SHA-256 stored in <code class="mono text-xs bg-stone-100 px-1 rounded">.sdd/.cache/manifest.json</code>. v1.0 Phase B closed three tamper paths that were possible before: isolated edit (T135), isolated delete (T135b), isolated rename (T135c). All three now refuse the commit with a plain-English explanation.</p>
-      </details>
-      <details class="card p-3">
-        <summary class="font-semibold text-sm flex items-center"><span class="chevron mr-2">▶</span>Example 3 — placeholder tokens like <code class="mono text-xs bg-stone-100 px-1 rounded">(assumed)</code> in spec.md cause an automatic refusal</summary>
-        <p class="text-sm text-stone-600 mt-2"><code class="mono text-xs bg-stone-100 px-1 rounded">pre-commit-no-assumed-markers.sh</code> scans staged spec.md for <code class="mono text-xs bg-stone-100 px-1 rounded">(assumed)</code>, <code class="mono text-xs bg-stone-100 px-1 rounded">(TBD)</code>, <code class="mono text-xs bg-stone-100 px-1 rounded">(?)</code>, <code class="mono text-xs bg-stone-100 px-1 rounded">&lt;FILL IN&gt;</code>, <code class="mono text-xs bg-stone-100 px-1 rounded">[?]</code> task rows, and 5 other placeholders. If the agent gave up and filled with a guess, the commit gets blocked. The right move: ask the human.</p>
-      </details>
-    </div>
-    <div class="flex items-center gap-2 flex-wrap pt-3 border-t border-stone-100">
-      <span class="text-sm text-stone-600 mr-2">Do these checks defeat assumption?</span>
-      <button type="button" class="vbtn validation-btn" data-validation="f3" data-vote="ok">✓ I see the checks</button>
-      <button type="button" class="vbtn validation-btn" data-validation="f3" data-vote="unclear">🤔 Half convinced</button>
-      <button type="button" class="vbtn validation-btn" data-validation="f3" data-vote="problem">✗ Still assumptions</button>
-    </div>
-  </div>
-
-  <!-- summary -->
-  <div id="validationSummary" class="card p-5 bg-stone-900 text-white">
-    <p class="text-sm">Tick all three foundations to see whether the architecture validates against its own philosophy. <span id="validationCount" class="font-mono">0/3 checked</span></p>
-  </div>
-
-  <textarea class="review-note review-only" placeholder="Notes on the foundation checks…" data-note="validation"></textarea>
-</section>
-
 <!-- ═══════════════════════════════════════════ RELEASES TIMELINE ═══════════════════════════════════════════ -->
 <section id="releases" class="max-w-6xl mx-auto px-6 py-10 reviewable" data-section="releases">
   <div class="review-tools review-only"><button type="button" class="rb" data-flag="ok">✓</button><button type="button" class="rb" data-flag="unclear">?</button><button type="button" class="rb" data-flag="problem">✗</button></div>
@@ -1263,88 +1048,6 @@
   </div>
 
   <textarea class="review-note review-only" placeholder="Notes on the release timeline…" data-note="releases"></textarea>
-</section>
-
-<!-- ═══════════════════════════════════════════ ROADMAP ═══════════════════════════════════════════ -->
-<section id="roadmap" class="max-w-6xl mx-auto px-6 py-10 reviewable" data-section="roadmap">
-  <div class="review-tools review-only"><button type="button" class="rb" data-flag="ok">✓</button><button type="button" class="rb" data-flag="unclear">?</button><button type="button" class="rb" data-flag="problem">✗</button></div>
-  <div class="flex items-end justify-between mb-2 flex-wrap gap-3">
-    <div>
-      <h2 class="text-2xl font-bold">Roadmap — what's done, what's queued.</h2>
-      <p class="text-stone-600 mt-1">Tagged release cuts on the left (each links to GitHub release notes); active follow-ups + parking-lot ideas on the right. Anything in <em>Queued</em> is real work the framework knows about — not a wishlist.</p>
-    </div>
-    <span class="pill pill-v11">live as of 2026-05-11</span>
-  </div>
-
-  <div class="grid md:grid-cols-2 gap-4">
-    <!-- DONE column -->
-    <div class="card p-5">
-      <h3 class="font-semibold mb-3 text-emerald-700">Done — shipped releases</h3>
-      <ul class="space-y-3 text-sm">
-        <li>
-          <a class="font-mono font-semibold text-emerald-700 underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/releases/tag/v1.0.0" target="_blank" rel="noopener noreferrer">v1.0.0</a>
-          <span class="text-stone-500"> · 2026-05-01</span>
-          <p class="text-stone-600 mt-1">Knowledge-graph foundation, branch-derived active feature, 4 playbooks, CI graph-integrity gate, Playwright explorer.</p>
-        </li>
-        <li>
-          <span class="font-mono font-semibold text-emerald-700">v1.1</span>
-          <span class="text-stone-500"> · 2026-05-01 (logical, no tag)</span>
-          <p class="text-stone-600 mt-1">Tier 3 LLM-driven synthesis — chat over <code class="mono text-xs">.sdd/</code> corpus with cite-checked <code class="mono text-xs">[[…]]</code> citations.</p>
-        </li>
-        <li>
-          <span class="font-mono font-semibold text-emerald-700">v1.2</span>
-          <span class="text-stone-500"> · 2026-05-02 → 2026-05-03 (logical, no tag)</span>
-          <p class="text-stone-600 mt-1">Plain-English action lint · anti-theatre spec lint · graph-cache multi-line code-span fix · wireframe action redesign.</p>
-        </li>
-        <li>
-          <span class="font-mono font-semibold text-emerald-700">v1.3</span>
-          <span class="text-stone-500"> · 2026-05-04 (logical, no tag)</span>
-          <p class="text-stone-600 mt-1">Mechanical test-first hook · claims-audit chicken-egg fix · Wave 2 context auto-inject · safety-hook false-positive fixes.</p>
-        </li>
-        <li>
-          <a class="font-mono font-semibold text-emerald-700 underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/releases/tag/v1.4.0" target="_blank" rel="noopener noreferrer">v1.4.0</a>
-          <span class="text-stone-500"> → v1.4.4 · 2026-05-04</span>
-          <p class="text-stone-600 mt-1"><code class="mono text-xs">sdd-migrate.sh</code> Channel B updatability + <code class="mono text-xs">/plugin install</code> Channel A. Framework finally an updatable internal package.</p>
-        </li>
-        <li>
-          <a class="font-mono font-semibold text-emerald-700 underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/releases/tag/v1.5.0" target="_blank" rel="noopener noreferrer">v1.5.0</a>
-          <span class="text-stone-500"> → v1.5.4 · 2026-05-05 → 2026-05-09</span>
-          <p class="text-stone-600 mt-1">Plain-English-first ceremony layer: refresher block · grill protocol · walking-skeleton T01 doctrine · 3 F01 Criticals · 5 v1.6 quality fixes · wizard runs enable.sh.</p>
-        </li>
-        <li>
-          <a class="font-mono font-semibold text-emerald-700 underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/releases/tag/v1.6.0" target="_blank" rel="noopener noreferrer">v1.6.0</a>
-          <span class="text-stone-500"> · 2026-05-10 / 11 · marquee</span>
-          <p class="text-stone-600 mt-1">v1.6 anchor (#207) — PR-A brief-driven SPEC entry · PR-B §2 cleanup · PR-C <code class="mono text-xs">requires_user_approval</code> matrix lock · PR-D plain-English-first <code class="mono text-xs">&lt;details&gt;</code> doctrine. Plus same-day F008 <code class="mono text-xs">sdd-pi-adapter</code> + 009 background-while-waiting. <strong>33 claims audited end-to-end.</strong></p>
-        </li>
-      </ul>
-    </div>
-
-    <!-- QUEUED column -->
-    <div class="card p-5">
-      <h3 class="font-semibold mb-3 text-violet-700">Queued — v1.7 candidates + ideas</h3>
-      <p class="text-xs text-stone-500 mb-3">Open issues + parked ideas. Anything below is captured in <code class="mono text-xs">.sdd/INDEX.md</code>'s <code class="mono text-xs">## Ideas</code> block as a real (cheap) entry — not a vague aspiration. <code class="mono text-xs">/start</code> any of them when one earns it.</p>
-
-      <p class="text-xs uppercase tracking-wider text-stone-500 mb-2 font-semibold">v1.7 follow-ups</p>
-      <ul class="space-y-2 text-sm mb-4">
-        <li>· <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/220" target="_blank" rel="noopener noreferrer">#220</a> — Hook merge-commit exception for byte-prefix append-only on <code class="mono text-xs">decisions.md</code>. Currently blocks MD022 cosmetic cleanup; needs admin override. <strong>v1.7-A candidate.</strong></li>
-        <li>· <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/217" target="_blank" rel="noopener noreferrer">#217</a> — <code class="mono text-xs">/start</code> ID collision when two branches scaffold the same feature ID concurrently. Surfaced twice during F009's two folder renames. <strong>v1.7-B candidate.</strong></li>
-        <li>· <a class="underline" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/109" target="_blank" rel="noopener noreferrer">#109</a> — Older graph-cache fix; needs rebase against the v1.0 graph layer.</li>
-      </ul>
-
-      <p class="text-xs uppercase tracking-wider text-stone-500 mb-2 font-semibold">Parked ideas (post-2026-05-10 brainstorm)</p>
-      <ul class="space-y-2 text-sm">
-        <li>· <code class="mono text-xs">ideas/001</code> — Brief-builder pre-fills SPEC §0; SDD grills only the gaps + audits against project corpus.</li>
-        <li>· <code class="mono text-xs">ideas/002</code> — Lego-style model right-sizing: each step declares thinking/routine/mechanical tier; framework picks model per tier (Claude-only or pi.dev).</li>
-        <li>· <code class="mono text-xs">ideas/003</code> — Prompt-caching across turns: order prompt so stable corpus comes first, variable turn comes last; provider cache picks up the prefix.</li>
-        <li>· <code class="mono text-xs">ideas/004</code> — Background while waiting (<strong>shipped as 009 in v1.6</strong>; idea row kept for traceability).</li>
-        <li>· <code class="mono text-xs">ideas/005</code> — Auto-advance AGENT-LED steps: default <code class="mono text-xs">requires_user_approval: false</code>; setup-time automation-level toggle; extends BUILD autonomy across SPEC/SHIP.</li>
-        <li>· <code class="mono text-xs">ideas/006</code> — Plain-English sweep of SDD's user-facing prose to match brief-builder v0.4's bar (jargon → notes-from-a-colleague tone).</li>
-        <li>· <code class="mono text-xs">ideas/007</code> — Cross-branch feature ID collision: 3 SDD rules (append-only · cofile-block · wiki-link resolution) collide on git merges when two branches scaffold the same ID.</li>
-      </ul>
-    </div>
-  </div>
-
-  <textarea class="review-note review-only" placeholder="Notes on the roadmap…" data-note="roadmap"></textarea>
 </section>
 
 <!-- ═══════════════════════════════════════════ TRY IT NOW ═══════════════════════════════════════════ -->
