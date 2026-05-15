@@ -392,6 +392,34 @@
     </div>
   </div>
 
+  <!-- ───────── Companion plugin callout — agent-plumb-brief ───────── -->
+  <div class="card p-5 mb-6" style="background: linear-gradient(135deg, #F5FFE0 0%, #FAFFE6 100%); border: 2px solid #B8FF00;">
+    <div class="flex items-start gap-4 flex-wrap">
+      <div class="text-4xl">🪡</div>
+      <div class="flex-1 min-w-[280px]">
+        <div class="flex items-center gap-2 mb-1 flex-wrap">
+          <span class="font-bold text-lg">Pair with <code class="mono text-base bg-white px-1.5 py-0.5 rounded">agent-plumb-brief</code></span>
+          <span class="text-xs px-2 py-0.5 rounded mono" style="background: #0F1419; color: #B8FF00;">v0.8.0</span>
+          <span class="text-xs text-stone-500">· companion Claude plugin</span>
+        </div>
+        <p class="text-sm text-stone-700 mt-1">
+          The <code class="mono text-xs bg-white px-1 rounded">brief-intake</code> action above ingests an 11-section markdown brief.
+          <strong>agent-plumb-brief</strong> is the upstream tool that helps you WRITE that brief — a separate Claude plugin
+          (in its own marketplace, <code class="mono text-xs bg-white px-1 rounded">sam-serra-plugins</code>) that grills you
+          one question at a time until every fuzzy word becomes a concrete rule. The full pipeline:
+        </p>
+        <div class="mt-3 mono text-sm text-center bg-white rounded-lg py-2 px-3">
+          idea → <strong style="color:#6B9900">/write-brief</strong> → <strong style="color:#6B9900">/sdd-start "&lt;brief&gt;"</strong> → <strong style="color:#6B9900">/sdd-next</strong> … → <strong style="color:#6B9900">/sdd-ship</strong>
+        </div>
+        <div class="mt-3 text-xs text-stone-500">
+          Install instructions: <a href="index.html#step-firstfeature" class="underline" style="color:#6B9900">see the wizard's reference shelf →</a>
+          ·
+          Repo: <a href="https://github.com/samuelserraceo/sam-serra-plugins" target="_blank" class="underline" style="color:#6B9900">samuelserraceo/sam-serra-plugins</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
 <!-- ───────── Diagram 3: Trust-boundary frame ───────── -->
   <div class="card p-4 md:p-6">
     <h3 class="font-semibold mb-2">3 · Trust-boundary frame — what the agent obeys vs. just reads</h3>
@@ -1041,6 +1069,7 @@
         <li>GPT-5.5 external review actioned across 4 PRs: anti-theatre regex hardening, 3 new CI claims, fail-closed hook paths</li>
         <li>Brand rename: SDD → <strong>Agent Plumb</strong> 🪡 · "Specs &gt; vibes" tagline · chartreuse accent · Pixel Plumb mascot</li>
         <li>npm package: <code class="mono text-xs bg-stone-100 px-1 rounded">sdd-pi-adapter</code> → <code class="mono text-xs bg-stone-100 px-1 rounded">agent-plumb-pi</code></li>
+        <li>Companion plugin shipped: <code class="mono text-xs bg-stone-100 px-1 rounded">agent-plumb-brief@0.8.0</code> on a new <code class="mono text-xs bg-stone-100 px-1 rounded">sam-serra-plugins</code> Claude marketplace — pairs with <code class="mono text-xs bg-stone-100 px-1 rounded">brief-intake</code> to feed the SPEC pipeline (`/write-brief` → `/sdd-start "<brief>"`)</li>
         <li>Repo renamed + flipped public · GitHub Pages live · friend-onboarding shippable</li>
       </ul>
     </details>
