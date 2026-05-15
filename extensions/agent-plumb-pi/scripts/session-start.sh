@@ -140,4 +140,34 @@ if [ -f "$worktree_check" ]; then
   ( cd "$project" && bash "$worktree_check" ) || exit 1
 fi
 
+# --- Agent Plumb banner --------------------------------------------
+# Geeky session-start header. ANSI-colored when terminal supports it,
+# plain text otherwise (CI, pipes, dumb terminals).
+if [ -t 1 ] && [ "${TERM:-}" != "dumb" ]; then
+  C_GRN=$'\033[38;5;154m'   # chartreuse
+  C_BOLD=$'\033[1m'
+  C_DIM=$'\033[2m'
+  C_RST=$'\033[0m'
+else
+  C_GRN=''; C_BOLD=''; C_DIM=''; C_RST=''
+fi
+
+cat <<BANNER
+
+   ${C_GRN}┃${C_RST}
+   ${C_GRN}┃${C_RST}
+   ${C_GRN}▼${C_RST}
+  ${C_GRN}◢█◣${C_RST}        ${C_BOLD}AGENT PLUMB${C_RST}  ${C_DIM}· v0.1 · agent-plumb-pi${C_RST}
+   ${C_GRN}▼${C_RST}         ${C_DIM}Specs > vibes.${C_RST}
+
+  ${C_DIM}→${C_RST} ${C_BOLD}/sdd-setup${C_RST}     bootstrap a project ${C_DIM}(once)${C_RST}
+  ${C_DIM}→${C_RST} ${C_BOLD}/sdd-next${C_RST}      advance one atomic step
+  ${C_DIM}→${C_RST} ${C_BOLD}/sdd-status${C_RST}    where am I?
+  ${C_DIM}→${C_RST} ${C_BOLD}/sdd-ship${C_RST}      push branch + open PR
+  ${C_DIM}→${C_RST} ${C_BOLD}/sdd-idea${C_RST}      capture a thought to backlog
+
+  ${C_DIM}docs: https://github.com/samuelserraceo/agent-plumb${C_RST}
+
+BANNER
+
 exit 0

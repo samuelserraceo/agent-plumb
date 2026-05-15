@@ -1,19 +1,23 @@
 {
-  "name": "sdd",
-  "description": "Spec-Driven Development — opinionated workflow that mechanically refuses commits drifting from approved decisions. Four playbooks (feature, project, bug, refactor), plain-English specs, append-only audit trail, mutation-verified test suite, mechanical test-first hook (RED before GREEN), and sdd-migrate.sh for updatable installs.",
-  "version": "1.5.2",
+  "name": "agent-plumb",
+  "description": "Agent Plumb 🪡 — Specs > vibes. Spec-driven workflow for AI coding agents that mechanically refuses commits drifting from approved decisions. Plain-English specs, four playbooks (feature / project / bug / refactor), append-only audit trail, mutation-verified test suite, mechanical test-first hook (RED before GREEN).",
+  "version": "1.10.0",
   "author": {
     "name": "Samuel Serra",
     "email": "hello@samserra.com"
   },
-  "homepage": "https://github.com/samuelserraceo/spec-driven-dev-workflow",
-  "repository": "https://github.com/samuelserraceo/spec-driven-dev-workflow.git",
+  "homepage": "https://github.com/samuelserraceo/agent-plumb",
+  "repository": "https://github.com/samuelserraceo/agent-plumb.git",
   "license": "MIT",
   "keywords": [
+    "agent-plumb",
+    "plumb",
     "spec-driven-development",
+    "ai-coding",
     "workflow",
     "non-technical",
     "audit-trail",
-    "claude-code"
+    "claude-code",
+    "anti-drift"
   ]
 }
