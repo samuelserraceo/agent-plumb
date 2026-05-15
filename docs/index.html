@@ -337,7 +337,10 @@
       <div class="text-4xl">③</div>
       <h2 class="display text-3xl font-bold">Install Plumb inside Claude Code</h2>
     </div>
-    <p class="text-stone-600 mb-6">Two commands. Type them in Claude Code's <strong>chat box</strong> (not Terminal). Works the same on Mac, Windows, Linux.</p>
+    <p class="text-stone-600 mb-4">Two commands. Paste them into <strong>Terminal</strong> (not Claude's chat box). Works the same on Mac, Windows, Linux.</p>
+    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 text-sm">
+      <strong>⚠️ Why Terminal, not chat:</strong> Claude Code v2.1+ moved plugin install from a chat-box slash command to a CLI subcommand. Run <code class="mono text-xs bg-amber-100 px-1 rounded">claude plugin …</code> in Terminal; trying <code class="mono text-xs bg-amber-100 px-1 rounded">/plugin …</code> in chat returns "not available in this environment" on recent Claude Code versions.
+    </div>
 
     <div class="space-y-4">
       <!-- Sub-step A -->
@@ -346,13 +349,13 @@
           <div class="bg-amber-500 text-white font-bold rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">A</div>
           <div>
             <div class="font-semibold">Tell Claude where Plumb lives</div>
-            <div class="text-sm text-stone-500">Click Copy. Paste into Claude's chat box. Press Enter.</div>
+            <div class="text-sm text-stone-500">Click Copy. Paste into Terminal. Press Enter.</div>
           </div>
         </div>
         <div class="flex flex-col sm:flex-row items-stretch gap-2">
-          <code class="flex-1 bg-stone-900 text-amber-200 mono text-sm px-4 py-3 rounded-lg break-all">/plugin marketplace add https://github.com/samuelserraceo/agent-plumb</code>
+          <code class="flex-1 bg-stone-900 text-amber-200 mono text-sm px-4 py-3 rounded-lg break-all">claude plugin marketplace add https://github.com/samuelserraceo/agent-plumb</code>
           <button class="copy-btn bg-amber-500 hover:bg-amber-600 text-white font-semibold px-4 py-2 rounded-lg whitespace-nowrap"
-            onclick="copyAndCheck(this, '/plugin marketplace add https://github.com/samuelserraceo/agent-plumb')">📋 Copy</button>
+            onclick="copyAndCheck(this, 'claude plugin marketplace add https://github.com/samuelserraceo/agent-plumb')">📋 Copy</button>
         </div>
       </div>
 
@@ -366,9 +369,9 @@
           </div>
         </div>
         <div class="flex flex-col sm:flex-row items-stretch gap-2">
-          <code class="flex-1 bg-stone-900 text-amber-200 mono text-sm px-4 py-3 rounded-lg">/plugin install agent-plumb@agent-plumb</code>
+          <code class="flex-1 bg-stone-900 text-amber-200 mono text-sm px-4 py-3 rounded-lg">claude plugin install agent-plumb@agent-plumb</code>
           <button class="copy-btn bg-amber-500 hover:bg-amber-600 text-white font-semibold px-4 py-2 rounded-lg whitespace-nowrap"
-            onclick="copyAndCheck(this, '/plugin install agent-plumb@agent-plumb')">📋 Copy</button>
+            onclick="copyAndCheck(this, 'claude plugin install agent-plumb@agent-plumb')">📋 Copy</button>
         </div>
       </div>
 
@@ -1241,7 +1244,7 @@
 
         <details class="bg-stone-50 rounded-lg p-4">
           <summary class="font-semibold">"How do I update Plumb when a new version ships?"</summary>
-          <p class="mt-2 text-stone-700 text-xs">Two ways. Claude Code plugin path: <code class="mono">/plugin marketplace update</code> then <code class="mono">/plugin install agent-plumb@agent-plumb</code>. Manual path: run <code class="mono">/sdd-migrate</code> (preview) then <code class="mono">/sdd-migrate --apply</code>. Your specs / decisions / patterns are never touched — only framework infrastructure.</p>
+          <p class="mt-2 text-stone-700 text-xs">Two ways. Claude Code plugin path: <code class="mono">claude plugin marketplace update</code> then <code class="mono">claude plugin install agent-plumb@agent-plumb</code>. Manual path: run <code class="mono">/sdd-migrate</code> (preview) then <code class="mono">/sdd-migrate --apply</code>. Your specs / decisions / patterns are never touched — only framework infrastructure.</p>
         </details>
 
         <details class="bg-stone-50 rounded-lg p-4">

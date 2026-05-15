@@ -68,8 +68,8 @@ Each phase has its own actions (small focused steps). You can never skip a phase
 
 ```bash
 # In Claude Code, add the marketplace (your team's git URL or this repo)
-/plugin marketplace add https://github.com/samuelserraceo/spec-driven-dev-workflow
-/plugin install sdd@sdd-marketplace
+claude plugin marketplace add https://github.com/samuelserraceo/agent-plumb
+claude plugin install agent-plumb@agent-plumb
 
 # After install, slash commands and hooks are available immediately.
 # To set up SDD inside a project:
@@ -90,7 +90,7 @@ The migrate tool keeps your `INDEX.md` / `decisions.md` / `patterns.md` / `data-
 ### 1. Clone SDD somewhere stable
 
 ```bash
-git clone https://github.com/samuelserraceo/spec-driven-dev-workflow ~/Projects/sdd
+git clone https://github.com/samuelserraceo/agent-plumb ~/Projects/sdd
 ```
 
 ### 2. Drop SDD into your project
@@ -328,7 +328,7 @@ Your data is never touched: `INDEX.md`, `data-model.md`, `patterns.md`, `decisio
 
 ### Plugin install cache stuck on an old version? (closes #164 bug 2)
 
-If you installed SDD via `/plugin install sdd@sdd-marketplace` and the framework seems frozen on an old version even after `/plugin marketplace update`, Claude Code caches the install in three places. Any one of them stale will hold the old bytes. Clear all three:
+If you installed SDD via `claude plugin install agent-plumb@agent-plumb` and the framework seems frozen on an old version even after `claude plugin marketplace update`, Claude Code caches the install in three places. Any one of them stale will hold the old bytes. Clear all three:
 
 ```bash
 # 1. The marketplace catalog (the index of what plugins exist):
@@ -341,7 +341,7 @@ rm -rf ~/.claude/plugins/cache/sdd-marketplace/
 rm -rf ~/.claude/plugins/cache/temp_local_*/
 ```
 
-Then re-run `/plugin marketplace add sdd@sdd-marketplace` and `/plugin install sdd@sdd-marketplace` from scratch. The first session after install fires the SessionStart hook which now prints `[SDD bootstrap] ready — .sdd/ scaffold ready` so you can confirm it worked (v1.8.2+).
+Then re-run `claude plugin marketplace add https://github.com/samuelserraceo/agent-plumb` and `claude plugin install agent-plumb@agent-plumb` from scratch. The first session after install fires the SessionStart hook which now prints `[SDD bootstrap] ready — .sdd/ scaffold ready` so you can confirm it worked (v1.8.2+).
 
 If you're not sure which version you're on, look at the `v1.x.y` line in the SessionStart hook output or check `git tag | tail -5` if you cloned via git.
 
@@ -403,7 +403,7 @@ Currently at **v1.5.2** — knowledge-graph foundation + 4 doctrine playbooks (`
 
 **187 framework tests + 68 MCP unit tests passing**, all mutation-verified.
 
-Next: v1.1 brings Tier 3 LLM-driven synthesis (knowledge-graph queries → chat-based summarisation with cite-check guarantees) and a one-shot migration tool for existing projects to retrofit the graph layer. See [#97](https://github.com/samuelserraceo/spec-driven-dev-workflow/issues/97).
+Next: v1.1 brings Tier 3 LLM-driven synthesis (knowledge-graph queries → chat-based summarisation with cite-check guarantees) and a one-shot migration tool for existing projects to retrofit the graph layer. See [#97](https://github.com/samuelserraceo/agent-plumb/issues/97).
 
 ---
 
