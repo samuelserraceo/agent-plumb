@@ -1,0 +1,1406 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Agent Plumb in 5 minutes — get started</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', system-ui, sans-serif; }
+    .display { font-family: 'Fraunces', serif; font-optical-sizing: auto; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .visually-hidden { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+
+    /* Cards animate in on click */
+    .card { transition: all 0.3s ease; }
+    .card:hover { transform: translateY(-2px); box-shadow: 0 12px 32px -8px rgba(0,0,0,0.15); }
+    .card-selected { transform: translateY(-2px); }
+
+    /* Step accordion */
+    .step { transition: all 0.4s ease; }
+    .step-locked { opacity: 0.35; pointer-events: none; }
+    .step-active { opacity: 1; }
+    .step-done { opacity: 0.7; }
+
+    /* Pulse for the call-to-action */
+    @keyframes pulse-ring {
+      0% { box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.5); }
+      70% { box-shadow: 0 0 0 14px rgba(217, 119, 6, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(217, 119, 6, 0); }
+    }
+    .pulse { animation: pulse-ring 2s infinite; }
+
+    /* Copy-button feedback */
+    .copy-btn { transition: all 0.2s ease; }
+    .copy-btn.copied { background-color: #16a34a !important; color: white; }
+
+    /* Confetti */
+    @keyframes confetti-fall {
+      0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+    }
+    .confetti { position: fixed; width: 10px; height: 10px; pointer-events: none; z-index: 50; animation: confetti-fall 3s ease-in forwards; }
+
+    /* Progress bar */
+    .progress-fill { transition: width 0.5s ease; }
+
+    /* Hidden steps slide down on reveal */
+    .reveal { max-height: 0; overflow: hidden; transition: max-height 0.5s ease; }
+    .reveal.open { max-height: 5000px; }
+
+    /* Daily-use cards */
+    .cmd-card { transition: all 0.2s ease; cursor: pointer; }
+    .cmd-card:hover { transform: scale(1.03); }
+
+    /* OS tabs */
+    .os-tab { transition: all 0.2s; }
+    .os-tab.active { background: #1c1917; color: white; }
+    .os-panel { display: none; }
+    .os-panel.active { display: block; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Foldable section accent */
+    details > summary { list-style: none; cursor: pointer; }
+    details > summary::-webkit-details-marker { display: none; }
+    details > summary::before { content: "▶"; display: inline-block; margin-right: 0.5rem; transition: transform 0.2s; color: #d97706; }
+    details[open] > summary::before { transform: rotate(90deg); }
+  </style>
+</head>
+<body class="bg-stone-50 text-stone-900">
+
+<!-- ─── HERO ──────────────────────────────────────────────────────── -->
+<header class="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-b border-stone-200">
+  <div class="max-w-4xl mx-auto px-6 py-16 text-center">
+    <div class="text-6xl mb-4">🚀</div>
+    <h1 class="display text-5xl font-extrabold tracking-tight mb-3">Agent Plumb in 5 minutes</h1>
+    <p class="text-xl text-stone-700 mb-2">No terminal experience? No problem. Just click, copy, paste.</p>
+    <p class="text-sm text-stone-500 mb-8">Works on Mac, Windows, and Linux. Pick your AI tool below — we'll show you the exact steps.</p>
+    <div class="flex justify-center gap-4 flex-wrap">
+      <a href="#start" class="inline-block bg-amber-600 hover:bg-amber-700 text-white font-semibold px-8 py-4 rounded-full text-lg pulse">Start the wizard →</a>
+      <a href="walkthrough.html" class="inline-block bg-white border border-stone-300 hover:border-stone-400 text-stone-700 font-semibold px-8 py-4 rounded-full text-lg">What is Plumb?</a>
+    </div>
+    <div class="mt-6 flex justify-center gap-6 text-xs text-stone-500 flex-wrap">
+      <span>⚡ 14 slash commands</span>
+      <span>📝 8 setup questions</span>
+      <span>🧩 3 optional extensions</span>
+      <span>📖 5 hidden memory files</span>
+    </div>
+  </div>
+</header>
+
+<!-- ─── PROGRESS BAR ──────────────────────────────────────────────── -->
+<div class="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-stone-200">
+  <div class="max-w-4xl mx-auto px-6 py-3 flex items-center gap-4">
+    <div class="text-sm font-semibold text-stone-600 whitespace-nowrap">Your progress</div>
+    <div class="flex-1 h-2 bg-stone-200 rounded-full overflow-hidden">
+      <div id="progress" class="progress-fill h-full bg-gradient-to-r from-amber-400 to-rose-500" style="width: 0%"></div>
+    </div>
+    <div id="progress-label" class="text-sm font-semibold text-stone-600 whitespace-nowrap">0 / 5</div>
+  </div>
+</div>
+
+<main class="max-w-4xl mx-auto px-6 py-12 space-y-12">
+
+  <!-- ─── STEP 1: Pick tool ───────────────────────────────────────── -->
+  <section id="start" class="step step-active">
+    <div class="flex items-baseline gap-3 mb-4">
+      <div class="text-4xl">①</div>
+      <h2 class="display text-3xl font-bold">Which app are you using?</h2>
+    </div>
+    <p class="text-stone-600 mb-6">Pick one. We'll show only the steps that apply to you.</p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <button onclick="pickTool('claude')" id="card-claude"
+        class="card bg-white border-2 border-stone-200 rounded-2xl p-6 text-left hover:border-amber-400">
+        <div class="text-5xl mb-3">💬</div>
+        <h3 class="display text-2xl font-bold mb-1">Claude Code</h3>
+        <p class="text-stone-600 text-sm mb-3">Anthropic's chat-style coding assistant. Easiest path — you type slash commands inside its chat box, no terminal needed for daily use.</p>
+        <div class="inline-block bg-amber-100 text-amber-800 text-xs font-semibold px-3 py-1 rounded-full">⚡ Recommended for non-coders</div>
+      </button>
+
+      <button onclick="pickTool('pi')" id="card-pi"
+        class="card bg-white border-2 border-stone-200 rounded-2xl p-6 text-left hover:border-violet-400">
+        <div class="text-5xl mb-3">🎛️</div>
+        <h3 class="display text-2xl font-bold mb-1">pi.dev</h3>
+        <p class="text-stone-600 text-sm mb-3">A terminal coding agent that runs on 20+ AI providers — Anthropic, OpenAI, Google, NVIDIA Build, Mistral, Groq, Ollama, etc. <strong>Use your existing ChatGPT Plus / Pro or Claude Pro subscription</strong> via OAuth — no API key billing needed.</p>
+        <div class="inline-block bg-violet-100 text-violet-800 text-xs font-semibold px-3 py-1 rounded-full">🌈 Multi-model + subscription-friendly</div>
+      </button>
+    </div>
+  </section>
+
+  <!-- ─── STEP 2: OS-aware preflight (Claude or pi) ──────────────── -->
+  <section id="step-preflight" class="step step-locked reveal">
+    <div class="flex items-baseline gap-3 mb-4">
+      <div class="text-4xl">②</div>
+      <h2 class="display text-3xl font-bold" id="preflight-title">Get the app first</h2>
+    </div>
+    <p class="text-stone-600 mb-4" id="preflight-blurb">Don't have it yet? Here's how to get it. Pick your operating system:</p>
+
+    <!-- OS tab buttons -->
+    <div class="flex gap-2 mb-4">
+      <button onclick="pickOS('mac')" class="os-tab active px-4 py-2 rounded-lg border border-stone-300 font-semibold text-sm">🍎 Mac</button>
+      <button onclick="pickOS('win')" class="os-tab px-4 py-2 rounded-lg border border-stone-300 font-semibold text-sm">🪟 Windows</button>
+      <button onclick="pickOS('linux')" class="os-tab px-4 py-2 rounded-lg border border-stone-300 font-semibold text-sm">🐧 Linux</button>
+    </div>
+
+    <!-- Claude Code panels -->
+    <div id="preflight-claude" class="reveal open">
+      <div class="os-panel active" data-os="mac">
+        <div class="bg-white border border-stone-200 rounded-2xl p-5 space-y-3">
+          <div class="font-semibold">Install Claude Code on Mac</div>
+          <ol class="text-sm text-stone-700 space-y-2 list-decimal list-inside">
+            <li>Go to <a href="https://claude.ai/code" target="_blank" class="underline text-amber-700 font-semibold">claude.ai/code</a></li>
+            <li>Click "Download for macOS". Open the file when it finishes.</li>
+            <li>Drag the Claude icon into your Applications folder.</li>
+            <li>Open Spotlight (<kbd class="bg-stone-100 px-2 py-1 rounded text-xs mono">Cmd + Space</kbd>), type <span class="mono text-amber-700">Claude</span>, press Enter.</li>
+            <li>Sign in with your Anthropic account (free trial available).</li>
+          </ol>
+        </div>
+      </div>
+      <div class="os-panel" data-os="win">
+        <div class="bg-white border border-stone-200 rounded-2xl p-5 space-y-3">
+          <div class="font-semibold">Install Claude Code on Windows</div>
+          <ol class="text-sm text-stone-700 space-y-2 list-decimal list-inside">
+            <li>Go to <a href="https://claude.ai/code" target="_blank" class="underline text-amber-700 font-semibold">claude.ai/code</a></li>
+            <li>Click "Download for Windows". Run the installer when it finishes.</li>
+            <li>Walk through the installer (Next → Next → Install).</li>
+            <li>Press the <kbd class="bg-stone-100 px-2 py-1 rounded text-xs mono">Win</kbd> key, type <span class="mono text-amber-700">Claude</span>, press Enter.</li>
+            <li>Sign in with your Anthropic account.</li>
+          </ol>
+          <div class="text-xs text-stone-500 bg-stone-50 p-3 rounded">💡 Plumb's git hooks use bash. Windows users should also install <a href="https://gitforwindows.org/" target="_blank" class="underline">Git for Windows</a> (comes with Git Bash) if you don't have it yet.</div>
+        </div>
+      </div>
+      <div class="os-panel" data-os="linux">
+        <div class="bg-white border border-stone-200 rounded-2xl p-5 space-y-3">
+          <div class="font-semibold">Install Claude Code on Linux</div>
+          <ol class="text-sm text-stone-700 space-y-2 list-decimal list-inside">
+            <li>Go to <a href="https://claude.ai/code" target="_blank" class="underline text-amber-700 font-semibold">claude.ai/code</a></li>
+            <li>Download the Linux package (`.deb` for Ubuntu/Debian, `.rpm` for Fedora, AppImage as fallback).</li>
+            <li>Install with your package manager. Example: <code class="mono bg-stone-100 px-1 rounded text-xs">sudo dpkg -i claude-*.deb</code></li>
+            <li>Run <code class="mono bg-stone-100 px-1 rounded text-xs">claude</code> in your terminal.</li>
+            <li>Sign in with your Anthropic account.</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+
+    <!-- pi.dev panels -->
+    <div id="preflight-pi" class="reveal">
+      <div class="os-panel active" data-os="mac">
+        <div class="bg-white border border-stone-200 rounded-2xl p-5 space-y-4">
+          <div class="font-semibold">Open Terminal + install pi on Mac</div>
+          <ol class="text-sm text-stone-700 space-y-2 list-decimal list-inside">
+            <li>Open Terminal: <kbd class="bg-stone-100 px-2 py-1 rounded text-xs mono">Cmd + Space</kbd>, type <span class="mono text-amber-700">terminal</span>, press Enter.</li>
+            <li>Paste ONE of the install commands below + press Enter.</li>
+            <li>Verify: type <code class="mono bg-stone-100 px-1 rounded text-xs">pi --version</code>, press Enter. You should see a version number.</li>
+          </ol>
+          <div>
+            <div class="text-xs font-semibold text-stone-600 mb-2">Pick whichever works — easiest first:</div>
+            <div class="space-y-2 text-xs">
+              <div class="flex flex-col sm:flex-row gap-2">
+                <code class="flex-1 bg-stone-900 text-violet-200 mono px-3 py-2 rounded">curl -fsSL https://pi.dev/install.sh | sh</code>
+                <button class="copy-btn bg-violet-500 hover:bg-violet-600 text-white font-semibold px-3 py-1 rounded whitespace-nowrap" onclick="copyAndCheck(this, 'curl -fsSL https://pi.dev/install.sh | sh')">📋</button>
+              </div>
+              <div class="flex flex-col sm:flex-row gap-2">
+                <code class="flex-1 bg-stone-900 text-violet-200 mono px-3 py-2 rounded">npm install -g @earendil-works/pi-coding-agent</code>
+                <button class="copy-btn bg-violet-500 hover:bg-violet-600 text-white font-semibold px-3 py-1 rounded whitespace-nowrap" onclick="copyAndCheck(this, 'npm install -g @earendil-works/pi-coding-agent')">📋</button>
+              </div>
+              <details class="text-stone-500">
+                <summary class="cursor-pointer">Alternatives: pnpm / bun</summary>
+                <div class="mt-2 space-y-2">
+                  <div class="flex flex-col sm:flex-row gap-2">
+                    <code class="flex-1 bg-stone-900 text-violet-200 mono px-3 py-2 rounded">pnpm add -g @earendil-works/pi-coding-agent</code>
+                    <button class="copy-btn bg-violet-500 hover:bg-violet-600 text-white font-semibold px-3 py-1 rounded whitespace-nowrap" onclick="copyAndCheck(this, 'pnpm add -g @earendil-works/pi-coding-agent')">📋</button>
+                  </div>
+                  <div class="flex flex-col sm:flex-row gap-2">
+                    <code class="flex-1 bg-stone-900 text-violet-200 mono px-3 py-2 rounded">bun add -g @earendil-works/pi-coding-agent</code>
+                    <button class="copy-btn bg-violet-500 hover:bg-violet-600 text-white font-semibold px-3 py-1 rounded whitespace-nowrap" onclick="copyAndCheck(this, 'bun add -g @earendil-works/pi-coding-agent')">📋</button>
+                  </div>
+                </div>
+              </details>
+            </div>
+          </div>
+          <div class="text-xs text-stone-500 bg-stone-50 p-3 rounded">💡 The <code class="mono">curl</code> one is easiest — works without npm/Node already installed. Use <code class="mono">npm</code> if you already have Node.js for other projects.</div>
+        </div>
+      </div>
+      <div class="os-panel" data-os="win">
+        <div class="bg-white border border-stone-200 rounded-2xl p-5 space-y-4">
+          <div class="font-semibold">PowerShell + install pi on Windows</div>
+          <ol class="text-sm text-stone-700 space-y-2 list-decimal list-inside">
+            <li>Press <kbd class="bg-stone-100 px-2 py-1 rounded text-xs mono">Win</kbd>, type <span class="mono text-amber-700">powershell</span>, press Enter.</li>
+            <li>Install <a href="https://nodejs.org" target="_blank" class="underline">Node.js</a> first if you don't have it (download LTS from the page, run installer). Verify with <code class="mono bg-stone-100 px-1 rounded text-xs">node --version</code>.</li>
+            <li>Paste the install command + Enter.</li>
+            <li>Verify: <code class="mono bg-stone-100 px-1 rounded text-xs">pi --version</code>.</li>
+          </ol>
+          <div class="space-y-2 text-xs">
+            <div class="flex flex-col sm:flex-row gap-2">
+              <code class="flex-1 bg-stone-900 text-violet-200 mono px-3 py-2 rounded">npm install -g @earendil-works/pi-coding-agent</code>
+              <button class="copy-btn bg-violet-500 hover:bg-violet-600 text-white font-semibold px-3 py-1 rounded whitespace-nowrap" onclick="copyAndCheck(this, 'npm install -g @earendil-works/pi-coding-agent')">📋</button>
+            </div>
+          </div>
+          <div class="text-xs text-stone-500 bg-stone-50 p-3 rounded">💡 If you get "execution policy" errors, run <code class="mono text-xs">Set-ExecutionPolicy -Scope CurrentUser RemoteSigned</code> once. Or use <a href="https://learn.microsoft.com/en-us/windows/wsl/install" target="_blank" class="underline">WSL</a> + the Mac/Linux <code class="mono">curl</code> command instead.</div>
+        </div>
+      </div>
+      <div class="os-panel" data-os="linux">
+        <div class="bg-white border border-stone-200 rounded-2xl p-5 space-y-4">
+          <div class="font-semibold">Open Terminal + install pi on Linux</div>
+          <ol class="text-sm text-stone-700 space-y-2 list-decimal list-inside">
+            <li>Press <kbd class="bg-stone-100 px-2 py-1 rounded text-xs mono">Ctrl + Alt + T</kbd> to open Terminal.</li>
+            <li>Paste ONE of the install commands below + press Enter.</li>
+            <li>Verify: <code class="mono bg-stone-100 px-1 rounded text-xs">pi --version</code>.</li>
+          </ol>
+          <div class="space-y-2 text-xs">
+            <div class="flex flex-col sm:flex-row gap-2">
+              <code class="flex-1 bg-stone-900 text-violet-200 mono px-3 py-2 rounded">curl -fsSL https://pi.dev/install.sh | sh</code>
+              <button class="copy-btn bg-violet-500 hover:bg-violet-600 text-white font-semibold px-3 py-1 rounded whitespace-nowrap" onclick="copyAndCheck(this, 'curl -fsSL https://pi.dev/install.sh | sh')">📋</button>
+            </div>
+            <details class="text-stone-500">
+              <summary class="cursor-pointer">Or via npm (if you already use Node.js)</summary>
+              <div class="mt-2 flex flex-col sm:flex-row gap-2">
+                <code class="flex-1 bg-stone-900 text-violet-200 mono px-3 py-2 rounded">npm install -g @earendil-works/pi-coding-agent</code>
+                <button class="copy-btn bg-violet-500 hover:bg-violet-600 text-white font-semibold px-3 py-1 rounded whitespace-nowrap" onclick="copyAndCheck(this, 'npm install -g @earendil-works/pi-coding-agent')">📋</button>
+              </div>
+            </details>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button onclick="completeStep('step-preflight', 'step-install')"
+      class="mt-6 bg-stone-900 hover:bg-stone-800 text-white font-semibold px-6 py-3 rounded-full">
+      App installed? Next →
+    </button>
+  </section>
+
+  <!-- ─── STEP 3a: Install (Claude path) ───────────────────────────── -->
+  <section id="step-install-claude" class="step step-locked reveal">
+    <div class="flex items-baseline gap-3 mb-4">
+      <div class="text-4xl">③</div>
+      <h2 class="display text-3xl font-bold">Install Plumb inside Claude Code</h2>
+    </div>
+    <p class="text-stone-600 mb-6">Two commands. Type them in Claude Code's <strong>chat box</strong> (not Terminal). Works the same on Mac, Windows, Linux.</p>
+
+    <div class="space-y-4">
+      <!-- Sub-step A -->
+      <div class="bg-white border border-stone-200 rounded-2xl p-5">
+        <div class="flex items-start gap-3 mb-3">
+          <div class="bg-amber-500 text-white font-bold rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">A</div>
+          <div>
+            <div class="font-semibold">Tell Claude where Plumb lives</div>
+            <div class="text-sm text-stone-500">Click Copy. Paste into Claude's chat box. Press Enter.</div>
+          </div>
+        </div>
+        <div class="flex flex-col sm:flex-row items-stretch gap-2">
+          <code class="flex-1 bg-stone-900 text-amber-200 mono text-sm px-4 py-3 rounded-lg break-all">/plugin marketplace add https://github.com/samuelserraceo/agent-plumb</code>
+          <button class="copy-btn bg-amber-500 hover:bg-amber-600 text-white font-semibold px-4 py-2 rounded-lg whitespace-nowrap"
+            onclick="copyAndCheck(this, '/plugin marketplace add https://github.com/samuelserraceo/agent-plumb')">📋 Copy</button>
+        </div>
+      </div>
+
+      <!-- Sub-step B -->
+      <div class="bg-white border border-stone-200 rounded-2xl p-5">
+        <div class="flex items-start gap-3 mb-3">
+          <div class="bg-amber-500 text-white font-bold rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">B</div>
+          <div>
+            <div class="font-semibold">Install the plugin</div>
+            <div class="text-sm text-stone-500">Same idea — copy, paste, Enter.</div>
+          </div>
+        </div>
+        <div class="flex flex-col sm:flex-row items-stretch gap-2">
+          <code class="flex-1 bg-stone-900 text-amber-200 mono text-sm px-4 py-3 rounded-lg">/plugin install sdd@sdd-marketplace</code>
+          <button class="copy-btn bg-amber-500 hover:bg-amber-600 text-white font-semibold px-4 py-2 rounded-lg whitespace-nowrap"
+            onclick="copyAndCheck(this, '/plugin install sdd@sdd-marketplace')">📋 Copy</button>
+        </div>
+      </div>
+
+      <!-- Verification -->
+      <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-5">
+        <div class="flex items-start gap-3">
+          <div class="text-3xl">✅</div>
+          <div>
+            <div class="font-semibold text-emerald-900">How you'll know it worked</div>
+            <p class="text-sm text-emerald-800 mt-1">Quit + reopen Claude Code. The new session prints <span class="mono bg-emerald-100 px-1 rounded text-xs">[SDD bootstrap] ready — .sdd/ scaffold ready</span> at the top. That's your green light.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button onclick="completeStep('step-install-claude', 'step-wizard')"
+      class="mt-6 bg-stone-900 hover:bg-stone-800 text-white font-semibold px-6 py-3 rounded-full">
+      Both commands run + restarted? Next →
+    </button>
+  </section>
+
+  <!-- ─── STEP 3b: Install (pi.dev path) — DUAL PATH ────────────── -->
+  <section id="step-install-pi" class="step step-locked reveal">
+    <div class="flex items-baseline gap-3 mb-4">
+      <div class="text-4xl">③</div>
+      <h2 class="display text-3xl font-bold">Connect a model + install Plumb</h2>
+    </div>
+    <p class="text-stone-600 mb-6">pi.dev runs on 20+ AI providers. Pick how you want to authenticate. Two options — neither is "better", just different.</p>
+
+    <!-- Path picker -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
+      <button onclick="pickAuthPath('oauth')" id="path-oauth"
+        class="card bg-white border-2 border-stone-200 rounded-xl p-4 text-left hover:border-violet-400">
+        <div class="text-3xl mb-2">🔑</div>
+        <div class="font-semibold">Path A: Use a subscription you already have</div>
+        <p class="text-xs text-stone-600 mt-2">Got ChatGPT Plus / Pro or Claude Pro / Max? Sign in via OAuth — no API key needed. Cheapest if you already pay for the chat product.</p>
+      </button>
+      <button onclick="pickAuthPath('apikey')" id="path-apikey"
+        class="card bg-white border-2 border-stone-200 rounded-xl p-4 text-left hover:border-violet-400">
+        <div class="text-3xl mb-2">🎟️</div>
+        <div class="font-semibold">Path B: API key from a provider</div>
+        <p class="text-xs text-stone-600 mt-2">Paste an API key (NVIDIA's free preview, OpenAI/Anthropic pay-per-token, Groq, Mistral, Ollama-local, etc.). Pay-per-token. Free tier for NVIDIA + Ollama.</p>
+      </button>
+    </div>
+
+    <!-- ─── PATH A: OAuth subscription ─────────────────────────── -->
+    <div id="auth-oauth" class="reveal mb-6">
+      <div class="bg-white border border-stone-200 rounded-2xl p-5 space-y-4">
+        <div class="flex items-start gap-3">
+          <div class="text-3xl">🔑</div>
+          <div>
+            <div class="font-semibold mb-1">Sign in with your subscription</div>
+            <p class="text-sm text-stone-600">No API key. No per-token billing. Uses your existing chat-product login.</p>
+          </div>
+        </div>
+
+        <div class="bg-stone-50 rounded-xl p-4">
+          <div class="text-xs font-semibold text-stone-600 mb-2">Step 1 — Start pi inside your project folder</div>
+          <div class="flex flex-col sm:flex-row gap-2">
+            <code class="flex-1 bg-stone-900 text-violet-200 mono text-sm px-3 py-2 rounded">cd ~/my-project && pi</code>
+            <button class="copy-btn bg-violet-500 hover:bg-violet-600 text-white font-semibold px-3 py-1 rounded whitespace-nowrap text-xs"
+              onclick="copyAndCheck(this, 'cd ~/my-project &amp;&amp; pi')">📋</button>
+          </div>
+        </div>
+
+        <div class="bg-stone-50 rounded-xl p-4">
+          <div class="text-xs font-semibold text-stone-600 mb-2">Step 2 — Type <code class="mono bg-white px-1 rounded">/login</code> inside pi</div>
+          <p class="text-xs text-stone-700 mb-3">Pi pops a provider menu. Pick the subscription you have:</p>
+
+          <!-- SVG mock of /login menu -->
+          <div class="bg-stone-900 rounded-lg p-4 mono text-xs">
+            <div class="text-stone-400 mb-2">pi &gt; /login</div>
+            <div class="text-violet-200">┌──────────────────────────────────────────┐</div>
+            <div class="text-violet-200">│ <span class="text-amber-300">●</span> Claude Pro / Max   <span class="text-stone-500">(Anthropic subscription)</span>  │</div>
+            <div class="text-violet-200">│ <span class="text-emerald-300">○</span> ChatGPT Plus / Pro <span class="text-stone-500">(OpenAI Codex)</span>        │</div>
+            <div class="text-violet-200">│ <span class="text-emerald-300">○</span> GitHub Copilot     <span class="text-stone-500">(Copilot subscription)</span>     │</div>
+            <div class="text-violet-200">│ <span class="text-stone-500">○ — — — API key options — — — — — — —</span>     │</div>
+            <div class="text-violet-200">│ <span class="text-emerald-300">○</span> Anthropic (API key)                       │</div>
+            <div class="text-violet-200">│ <span class="text-emerald-300">○</span> OpenAI (API key)                          │</div>
+            <div class="text-violet-200">│ <span class="text-stone-500">○ NVIDIA, Google, Mistral, Groq, … (key)</span>   │</div>
+            <div class="text-violet-200">└──────────────────────────────────────────┘</div>
+            <div class="text-stone-400 mt-2">↑↓ pick · Enter confirm · Esc cancel</div>
+          </div>
+        </div>
+
+        <div class="bg-stone-50 rounded-xl p-4">
+          <div class="text-xs font-semibold text-stone-600 mb-2">Step 3 — Approve in your browser</div>
+          <p class="text-xs text-stone-700">Pi opens your browser to the provider's OAuth page. Sign in (Claude.ai / ChatGPT.com / GitHub). Click <strong>"Authorize"</strong>. Pi catches the token and stores it at <code class="mono text-xs bg-white px-1 rounded">~/.pi/agent/auth.json</code> (encrypted; auto-refreshes).</p>
+        </div>
+
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs">
+          <strong>⚠️ Honest caveat:</strong> Anthropic has historically restricted heavy autonomous use of Claude Pro/Max for third-party agents. Pi's OAuth flow may work, may throttle, or may stop working without notice — that's Anthropic's policy, not pi's. ChatGPT Plus/Pro (Codex endpoint) and GitHub Copilot are more stable for now. <strong>If you're unsure, pick API key (Path B) for predictability.</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── PATH B: API key ────────────────────────────────────── -->
+    <div id="auth-apikey" class="reveal mb-6">
+      <div class="bg-white border border-stone-200 rounded-2xl p-5 space-y-4">
+        <div class="flex items-start gap-3">
+          <div class="text-3xl">🎟️</div>
+          <div>
+            <div class="font-semibold mb-1">Use an API key</div>
+            <p class="text-sm text-stone-600">Pick a provider, get a key, set an environment variable.</p>
+          </div>
+        </div>
+
+        <!-- Provider quick-picker -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+          <button onclick="pickProvider('nvidia')" id="prov-nvidia" class="bg-emerald-50 border-2 border-emerald-200 rounded p-2 font-semibold hover:bg-emerald-100">🟢 NVIDIA Build <div class="text-xs text-emerald-700 font-normal">free preview</div></button>
+          <button onclick="pickProvider('openai')" id="prov-openai" class="bg-stone-50 border-2 border-stone-200 rounded p-2 font-semibold hover:bg-stone-100">⚪️ OpenAI <div class="text-xs text-stone-600 font-normal">pay-per-token</div></button>
+          <button onclick="pickProvider('anthropic')" id="prov-anthropic" class="bg-stone-50 border-2 border-stone-200 rounded p-2 font-semibold hover:bg-stone-100">🟠 Anthropic <div class="text-xs text-stone-600 font-normal">pay-per-token</div></button>
+          <button onclick="pickProvider('ollama')" id="prov-ollama" class="bg-stone-50 border-2 border-stone-200 rounded p-2 font-semibold hover:bg-stone-100">🏠 Ollama (local) <div class="text-xs text-stone-600 font-normal">free, on your computer</div></button>
+        </div>
+        <details class="text-xs">
+          <summary class="cursor-pointer text-stone-600">Or one of 16 other providers — Google Gemini, Mistral, Groq, Cerebras, xAI, OpenRouter, DeepSeek, Cloudflare, Hugging Face, Fireworks, Together, Bedrock, Vertex, Azure, Vercel AI Gateway, LM Studio…</summary>
+          <p class="mt-2 text-stone-600">See the full table in the Reference Shelf below. Auth shape is the same for all: get a key from the provider's dashboard, set <code class="mono">&lt;PROVIDER&gt;_API_KEY</code>, restart <code class="mono">pi</code>.</p>
+        </details>
+
+        <!-- NVIDIA flow (default visible) -->
+        <div id="prov-flow-nvidia" class="prov-flow space-y-4">
+          <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+            <div class="font-semibold text-emerald-900 mb-1">🟢 NVIDIA Build — featured walkthrough</div>
+            <p class="text-xs text-emerald-800">Free during preview. 100+ open models (DeepSeek, Llama, Mistral, Qwen, Kimi, GLM, Mixtral, etc.). Rate-limited under heavy use but excellent for daily Plumb work.</p>
+          </div>
+
+          <!-- Step A: get the key -->
+          <div class="bg-stone-50 rounded-xl p-4">
+            <div class="text-xs font-semibold text-stone-600 mb-3">Step A — Get a free API key from NVIDIA Build</div>
+            <ol class="text-xs text-stone-700 space-y-2 list-decimal list-inside">
+              <li>Open <a href="https://build.nvidia.com" target="_blank" class="underline text-emerald-700 font-semibold">build.nvidia.com</a> in your browser.</li>
+              <li>Click <strong>Sign in</strong> (top-right). Use Google / GitHub / your work email — free account.</li>
+              <li>Pick any model from the gallery (e.g. <em>Llama 3.3 70B Instruct</em>, <em>DeepSeek R1</em>, <em>Mixtral 8x22B</em>).</li>
+              <li>Click the <strong>"Get API Key"</strong> button (top-right of the model page).</li>
+              <li>Copy the key — it looks like <code class="mono bg-white px-1 rounded text-xs">nvapi-•••••••••••••••••</code></li>
+            </ol>
+
+            <!-- Mock browser frame showing the flow -->
+            <div class="mt-4 rounded-lg overflow-hidden border border-stone-300">
+              <div class="bg-stone-200 px-3 py-2 flex gap-1.5 items-center">
+                <span class="w-2 h-2 rounded-full bg-red-400"></span>
+                <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                <div class="ml-3 bg-white rounded text-xs px-2 py-0.5 font-mono text-stone-500 flex-1">🔒 build.nvidia.com/meta/llama-3.3-70b-instruct</div>
+              </div>
+              <div class="bg-stone-900 text-white p-5">
+                <div class="flex justify-between items-start mb-4">
+                  <div>
+                    <div class="text-xs text-stone-400">META · LARGE LANGUAGE MODEL</div>
+                    <div class="font-bold text-lg">Llama 3.3 70B Instruct</div>
+                  </div>
+                  <button class="bg-emerald-500 hover:bg-emerald-600 px-3 py-1.5 rounded text-xs font-bold animate-pulse">🔑 Get API Key →</button>
+                </div>
+                <div class="bg-stone-800 rounded p-3 text-xs mono text-emerald-200">
+                  curl https://integrate.api.nvidia.com/v1/chat/completions \<br>
+                  &nbsp;&nbsp;-H "Authorization: Bearer <span class="text-amber-300">$NVIDIA_API_KEY</span>" \<br>
+                  &nbsp;&nbsp;-d '{"model":"meta/llama-3.3-70b-instruct", …}'
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step B: install the NVIDIA extension -->
+          <div class="bg-stone-50 rounded-xl p-4">
+            <div class="text-xs font-semibold text-stone-600 mb-2">Step B — Add NVIDIA support to pi</div>
+            <p class="text-xs text-stone-700 mb-2">pi.dev itself doesn't ship NVIDIA natively — there's a community extension. Install it:</p>
+            <div class="flex flex-col sm:flex-row gap-2">
+              <code class="flex-1 bg-stone-900 text-emerald-200 mono text-xs px-3 py-2 rounded">pi install git:github.com/xRyul/pi-nvidia-nim</code>
+              <button class="copy-btn bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-3 py-1 rounded whitespace-nowrap text-xs"
+                onclick="copyAndCheck(this, 'pi install git:github.com/xRyul/pi-nvidia-nim')">📋</button>
+            </div>
+          </div>
+
+          <!-- Step C: export the key -->
+          <div class="bg-stone-50 rounded-xl p-4">
+            <div class="text-xs font-semibold text-stone-600 mb-2">Step C — Plug the key in</div>
+            <p class="text-xs text-stone-700 mb-3">Paste this in Terminal (replace <code class="mono text-xs">nvapi-...</code> with your real key). One-off:</p>
+            <div class="flex flex-col sm:flex-row gap-2">
+              <code class="flex-1 bg-stone-900 text-emerald-200 mono text-xs px-3 py-2 rounded break-all">export NVIDIA_API_KEY="nvapi-PASTE-YOUR-KEY-HERE"</code>
+              <button class="copy-btn bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-3 py-1 rounded whitespace-nowrap text-xs"
+                onclick="copyAndCheck(this, 'export NVIDIA_API_KEY=&quot;nvapi-PASTE-YOUR-KEY-HERE&quot;')">📋</button>
+            </div>
+            <details class="text-xs text-stone-600 mt-3">
+              <summary class="cursor-pointer">Make it permanent (so you don't have to re-export every session)</summary>
+              <div class="mt-2 space-y-2">
+                <p><strong>Mac/Linux:</strong> append the <code class="mono">export</code> line to <code class="mono">~/.zshrc</code> (Mac default) or <code class="mono">~/.bashrc</code> (Linux default). Run <code class="mono">source ~/.zshrc</code> to apply.</p>
+                <p><strong>Windows PowerShell:</strong> <code class="mono">[Environment]::SetEnvironmentVariable("NVIDIA_API_KEY", "nvapi-…", "User")</code> — restart PowerShell after.</p>
+              </div>
+            </details>
+          </div>
+
+          <!-- Step D: pick a model inside pi -->
+          <div class="bg-stone-50 rounded-xl p-4">
+            <div class="text-xs font-semibold text-stone-600 mb-2">Step D — Pick a model in pi</div>
+            <p class="text-xs text-stone-700 mb-2">Run <code class="mono">pi</code>, then type <code class="mono">/model</code> (or press <kbd class="bg-white px-1 rounded text-xs">Ctrl+L</kbd>) and search "nvidia-nim". Pick whichever you like — DeepSeek R1, Llama 3.3 70B, Qwen, Mixtral are common choices.</p>
+            <div class="bg-stone-900 rounded p-3 text-xs mono text-stone-300 mt-2">
+              <div class="text-stone-500">pi &gt; <span class="text-violet-200">/model</span></div>
+              <div class="text-emerald-300">▼ nvidia-nim/meta/llama-3.3-70b-instruct  ← picked</div>
+              <div class="text-stone-500">  nvidia-nim/deepseek-ai/deepseek-r1</div>
+              <div class="text-stone-500">  nvidia-nim/qwen/qwen2.5-coder-32b-instruct</div>
+              <div class="text-stone-500">  nvidia-nim/mistralai/mixtral-8x22b-instruct-v0.1</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- OpenAI flow -->
+        <div id="prov-flow-openai" class="prov-flow space-y-4 hidden">
+          <div class="bg-stone-50 rounded-xl p-4 space-y-2">
+            <div class="text-xs font-semibold text-stone-600">OpenAI API key (pay-per-token)</div>
+            <ol class="text-xs text-stone-700 space-y-1 list-decimal list-inside">
+              <li>Open <a href="https://platform.openai.com/api-keys" target="_blank" class="underline">platform.openai.com/api-keys</a> (different from chatgpt.com!).</li>
+              <li>Sign in. Add billing (credit card required even for tiny usage).</li>
+              <li>Click <strong>"+ Create new secret key"</strong>, name it, copy.</li>
+              <li>Set: <code class="mono bg-white px-1 rounded text-xs">export OPENAI_API_KEY="sk-…"</code></li>
+            </ol>
+            <div class="bg-amber-50 border border-amber-200 rounded p-2 text-xs"><strong>⚠️ Not the same as ChatGPT Plus.</strong> Your $20/mo Plus subscription is for chatgpt.com only. The API bills separately. <strong>If you want to use Plus directly, use Path A (OAuth) above.</strong></div>
+          </div>
+        </div>
+
+        <!-- Anthropic flow -->
+        <div id="prov-flow-anthropic" class="prov-flow space-y-4 hidden">
+          <div class="bg-stone-50 rounded-xl p-4 space-y-2">
+            <div class="text-xs font-semibold text-stone-600">Anthropic API key (pay-per-token)</div>
+            <ol class="text-xs text-stone-700 space-y-1 list-decimal list-inside">
+              <li>Open <a href="https://console.anthropic.com" target="_blank" class="underline">console.anthropic.com</a> (separate from claude.ai).</li>
+              <li>Sign in. Add billing.</li>
+              <li>Settings → <strong>API Keys</strong> → <strong>Create Key</strong> → copy.</li>
+              <li>Set: <code class="mono bg-white px-1 rounded text-xs">export ANTHROPIC_API_KEY="sk-ant-…"</code></li>
+            </ol>
+            <div class="bg-amber-50 border border-amber-200 rounded p-2 text-xs"><strong>⚠️ Same caveat as OpenAI.</strong> Your Claude Pro/Max subscription is for claude.ai only. The API bills separately. Use Path A (OAuth) if you want subscription billing.</div>
+          </div>
+        </div>
+
+        <!-- Ollama flow -->
+        <div id="prov-flow-ollama" class="prov-flow space-y-4 hidden">
+          <div class="bg-stone-50 rounded-xl p-4 space-y-2">
+            <div class="text-xs font-semibold text-stone-600">Ollama — fully local, free forever</div>
+            <ol class="text-xs text-stone-700 space-y-1 list-decimal list-inside">
+              <li>Install <a href="https://ollama.com" target="_blank" class="underline">Ollama</a> (Mac/Win/Linux installers). It runs as a local server on your computer.</li>
+              <li>Pull a model: <code class="mono bg-white px-1 rounded text-xs">ollama pull llama3.3</code> (or <code class="mono text-xs">qwen2.5-coder</code>, <code class="mono text-xs">deepseek-r1</code>, …).</li>
+              <li>In pi, run <code class="mono bg-white px-1 rounded text-xs">/model</code> and pick <code class="mono text-xs">ollama/&lt;model-name&gt;</code>. No API key needed — pi auto-detects local Ollama.</li>
+            </ol>
+            <div class="bg-emerald-50 border border-emerald-200 rounded p-2 text-xs"><strong>💡 Use case:</strong> totally free, totally private, offline-capable. Trade: needs a beefy machine (16GB+ RAM minimum, 32GB+ for big models). Slower than hosted providers.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Add the Plumb adapter (after auth is set up) ────────── -->
+    <div class="bg-violet-50 border border-violet-200 rounded-2xl p-5 mb-6">
+      <div class="flex items-start gap-3 mb-3">
+        <div class="bg-violet-500 text-white font-bold rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">★</div>
+        <div>
+          <div class="font-semibold">Finally — install the Plumb adapter on top</div>
+          <div class="text-sm text-stone-600">Once pi.dev itself works + has a model, add the Plumb slash commands.</div>
+        </div>
+      </div>
+      <div class="flex flex-col sm:flex-row gap-2">
+        <code class="flex-1 bg-stone-900 text-violet-200 mono text-sm px-4 py-3 rounded-lg">pi install npm:agent-plumb-pi</code>
+        <button class="copy-btn bg-violet-500 hover:bg-violet-600 text-white font-semibold px-4 py-2 rounded-lg whitespace-nowrap"
+          onclick="copyAndCheck(this, 'pi install npm:agent-plumb-pi')">📋 Copy</button>
+      </div>
+    </div>
+
+    <!-- Verification -->
+    <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-5">
+      <div class="flex items-start gap-3">
+        <div class="text-3xl">✅</div>
+        <div>
+          <div class="font-semibold text-emerald-900">How you'll know it all worked</div>
+          <p class="text-sm text-emerald-800 mt-1">Run <code class="mono bg-emerald-100 px-1 rounded text-xs">pi</code> in your project folder, then type <code class="mono bg-emerald-100 px-1 rounded text-xs">/sdd-status</code>. If it prints workflow info (not "command not found"), you're set.</p>
+        </div>
+      </div>
+    </div>
+
+    <button onclick="completeStep('step-install-pi', 'step-wizard')"
+      class="mt-6 bg-stone-900 hover:bg-stone-800 text-white font-semibold px-6 py-3 rounded-full">
+      All working? Next →
+    </button>
+  </section>
+
+  <!-- ─── STEP 4: The wizard (sdd-setup) ─────────────────────────── -->
+  <section id="step-wizard" class="step step-locked reveal">
+    <div class="flex items-baseline gap-3 mb-4">
+      <div class="text-4xl">④</div>
+      <h2 class="display text-3xl font-bold">Run the setup wizard</h2>
+    </div>
+    <p class="text-stone-600 mb-4">Now you'll answer 8 plain-English questions about your project. Each one is multi-choice with a "describe your own" escape — pick a number or type in your own words.</p>
+
+    <div class="bg-white border border-stone-200 rounded-2xl p-5 mb-6">
+      <div class="text-sm text-stone-500 mb-2">Type this in your chat / Terminal:</div>
+      <div class="flex flex-col sm:flex-row items-stretch gap-2">
+        <code class="flex-1 bg-stone-900 text-amber-200 mono text-sm px-4 py-3 rounded-lg">/sdd-setup</code>
+        <button class="copy-btn bg-amber-500 hover:bg-amber-600 text-white font-semibold px-4 py-2 rounded-lg whitespace-nowrap"
+          onclick="copyAndCheck(this, '/sdd-setup')">📋 Copy</button>
+      </div>
+    </div>
+
+    <details class="bg-white border border-stone-200 rounded-2xl p-5 mb-3">
+      <summary class="font-semibold">What it'll ask you — preview the 8 questions ⤵</summary>
+      <div class="mt-4 space-y-4 text-sm">
+        <div class="flex gap-3"><span class="font-bold text-amber-700 w-6 flex-shrink-0">①</span><div><strong>What are you building?</strong> — Website / phone app / backend service / internal tool / CLI / scheduled script / other. Sets the default stack (TypeScript+Next.js, Python+FastAPI, Go, etc.).</div></div>
+        <div class="flex gap-3"><span class="font-bold text-amber-700 w-6 flex-shrink-0">②</span><div><strong>Does the app need to remember things?</strong> — None / small (SQLite) / accounts &amp; content (Postgres) / files (blob storage) / real-time. Picks your database shape.</div></div>
+        <div class="flex gap-3"><span class="font-bold text-amber-700 w-6 flex-shrink-0">③</span><div><strong>Do you want a code-reviewer bot?</strong> — CodeRabbit (recommended) / Copilot Review / something else / no, I'll read PRs / decide later. Adds AI review on every Pull Request.</div></div>
+        <div class="flex gap-3"><span class="font-bold text-amber-700 w-6 flex-shrink-0">④</span><div><strong>Browser-based automated tests?</strong> — Full Playwright (desktop + mobile) / lightweight (Vitest/pytest) / no UI to test / decide later. Picks the test runner.</div></div>
+        <div class="flex gap-3"><span class="font-bold text-amber-700 w-6 flex-shrink-0">⑤</span><div><strong>Where will it run when shipped?</strong> — Just my laptop / Vercel / Railway / Fly.io / Render / AWS / GCP / Azure / Cloudflare Workers / private server / decide later. Sets hosting + deploy command.</div></div>
+        <div class="flex gap-3"><span class="font-bold text-amber-700 w-6 flex-shrink-0">⑥</span><div><strong>6 quick yes/no extras</strong> — sign-in? email-sending? payments? error tracking? analytics? AI in the product? Each gets a 1-line provider suggestion if you say yes.</div></div>
+        <div class="flex gap-3"><span class="font-bold text-amber-700 w-6 flex-shrink-0">⑦</span><div><strong>Save tokens as the project grows?</strong> — Turn on the MCP server (local Python helper) so the AI doesn't re-read big files every turn. Recommended for projects you'll work on for months.</div></div>
+        <div class="flex gap-3"><span class="font-bold text-amber-700 w-6 flex-shrink-0">⑧</span><div><strong>Automation level?</strong> — Full (auto-advance technical steps) / Most (recommended, prompts before destructive things like ship + merge) / Checkpoint (prompt every step, slowest). You can change this any time with <code class="mono text-xs bg-stone-100 px-1 rounded">/sdd-config 008</code>.</div></div>
+      </div>
+    </details>
+
+    <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-3">
+      <p class="text-sm text-amber-900">💡 <strong>Don't overthink answers.</strong> Anything you pick can be changed later with <code class="mono text-xs bg-amber-100 px-1 rounded">/sdd-config &lt;question-id&gt;</code>. Going with defaults is fine.</p>
+    </div>
+
+    <button onclick="completeStep('step-wizard', 'step-firstfeature')"
+      class="mt-4 bg-stone-900 hover:bg-stone-800 text-white font-semibold px-6 py-3 rounded-full">
+      Wizard done? Next →
+    </button>
+  </section>
+
+  <!-- ─── STEP 5: First feature ─────────────────────────────────── -->
+  <section id="step-firstfeature" class="step step-locked reveal">
+    <div class="flex items-baseline gap-3 mb-4">
+      <div class="text-4xl">⑤</div>
+      <h2 class="display text-3xl font-bold">Build your first feature</h2>
+    </div>
+    <p class="text-stone-600 mb-6">Three commands, in order. Walk it once end-to-end so you feel the rhythm.</p>
+
+    <div class="space-y-4">
+      <div class="bg-white border border-stone-200 rounded-2xl p-5">
+        <div class="flex items-start gap-4">
+          <div class="text-4xl">🎯</div>
+          <div class="flex-1">
+            <div class="flex items-center gap-3 mb-1 flex-wrap">
+              <code class="mono bg-amber-100 text-amber-900 font-semibold px-2 py-1 rounded">/start "&lt;your idea&gt;"</code>
+            </div>
+            <p class="text-sm text-stone-700 mt-1">Example: <code class="mono bg-stone-100 text-xs px-1 rounded">/start "waitlist signup form that emails me when someone signs up"</code>. Plain English. The AI asks clarifying questions one at a time. You answer in your own words.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white border border-stone-200 rounded-2xl p-5">
+        <div class="flex items-start gap-4">
+          <div class="text-4xl">⏭️</div>
+          <div class="flex-1">
+            <div class="flex items-center gap-3 mb-1 flex-wrap">
+              <code class="mono bg-amber-100 text-amber-900 font-semibold px-2 py-1 rounded">/next</code>
+              <span class="text-xs text-stone-500">(your main button — spam this)</span>
+            </div>
+            <p class="text-sm text-stone-700 mt-1">Type <code class="mono bg-stone-100 text-xs px-1 rounded">/next</code> over and over. Each time the framework asks the next question OR proposes the next answer. You approve, tweak, or redirect.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white border border-stone-200 rounded-2xl p-5">
+        <div class="flex items-start gap-4">
+          <div class="text-4xl">🚢</div>
+          <div class="flex-1">
+            <div class="flex items-center gap-3 mb-1 flex-wrap">
+              <code class="mono bg-amber-100 text-amber-900 font-semibold px-2 py-1 rounded">/ship</code>
+              <span class="text-xs text-stone-500">(when SPEC + BUILD are done)</span>
+            </div>
+            <p class="text-sm text-stone-700 mt-1">Pushes the branch, opens a Pull Request, watches the tests run. Green → marks the feature shipped. Red → captures the bug back into BUILD for a fix.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button onclick="finish()" id="finish-btn"
+      class="mt-8 bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 text-white font-bold px-8 py-4 rounded-full text-lg w-full md:w-auto">
+      🎉 I'm set up — finish
+    </button>
+  </section>
+
+  <!-- ─── DONE confetti ──────────────────────────────────────────── -->
+  <section id="step-done" class="step step-locked reveal">
+    <div class="bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 border-2 border-emerald-300 rounded-3xl p-10 text-center">
+      <div class="text-7xl mb-4">🎉</div>
+      <h2 class="display text-4xl font-bold mb-3">You're up and running.</h2>
+      <p class="text-lg text-stone-700">Below is your reference shelf — everything you can do, customise, and tweak. Scroll through when curious, or just keep using <code class="mono bg-white px-2 py-1 rounded font-semibold text-amber-700">/next</code> and you'll meet things in context.</p>
+    </div>
+  </section>
+
+</main>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- ─── REFERENCE SHELF (scrollable, browseable, no order) ────────── -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+
+<section class="bg-stone-100 border-t border-stone-200 py-12">
+  <div class="max-w-4xl mx-auto px-6">
+    <div class="text-center mb-10">
+      <div class="text-5xl mb-2">📚</div>
+      <h2 class="display text-3xl font-bold">Reference shelf</h2>
+      <p class="text-stone-600 mt-2">Click any card to expand. Skim freely.</p>
+    </div>
+
+    <!-- ─── REF 1: All 14 slash commands ───────────────────────── -->
+    <details class="bg-white border border-stone-200 rounded-2xl p-6 mb-4">
+      <summary class="display text-xl font-bold">🔘 All 14 slash commands</summary>
+      <div class="mt-6 space-y-5">
+
+        <div>
+          <h4 class="font-semibold text-stone-700 mb-3 text-sm uppercase tracking-wider">The main loop (you'll use these daily)</h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div class="cmd-card bg-amber-50 border border-amber-200 rounded-xl p-4">
+              <code class="mono font-semibold text-amber-800">/start "&lt;title&gt;"</code>
+              <p class="text-xs text-stone-700 mt-2">Scaffold a new feature, bug, or idea. Optional flags: <code class="mono text-xs">--extends=&lt;id&gt;</code> (evolution), <code class="mono text-xs">--queued</code> (backlog only).</p>
+            </div>
+            <div class="cmd-card bg-amber-50 border border-amber-200 rounded-xl p-4">
+              <code class="mono font-semibold text-amber-800">/next</code>
+              <p class="text-xs text-stone-700 mt-2">Advance the active work by one atomic step (= one commit). Your most-used button. Refuses on QUEUED state.</p>
+            </div>
+            <div class="cmd-card bg-amber-50 border border-amber-200 rounded-xl p-4">
+              <code class="mono font-semibold text-amber-800">/status</code>
+              <p class="text-xs text-stone-700 mt-2">Read-only "where am I?" — shows current feature, phase, blocker, and resolved settings.</p>
+            </div>
+            <div class="cmd-card bg-amber-50 border border-amber-200 rounded-xl p-4">
+              <code class="mono font-semibold text-amber-800">/ship</code>
+              <p class="text-xs text-stone-700 mt-2">Push branch, open PR, watch CI, mark shipped or auto-route failure back to BUILD as a bug.</p>
+            </div>
+            <div class="cmd-card bg-amber-50 border border-amber-200 rounded-xl p-4">
+              <code class="mono font-semibold text-amber-800">/idea "&lt;thought&gt;"</code>
+              <p class="text-xs text-stone-700 mt-2">Capture a half-formed thought to backlog. Single file, no ceremony. Convert with <code class="mono text-xs">/start</code> later.</p>
+            </div>
+            <div class="cmd-card bg-amber-50 border border-amber-200 rounded-xl p-4">
+              <code class="mono font-semibold text-amber-800">/promote-to-active &lt;id&gt;</code>
+              <p class="text-xs text-stone-700 mt-2">Flip a queued backlog item to actively-worked-on. Only needed if you used <code class="mono text-xs">--queued</code>.</p>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h4 class="font-semibold text-stone-700 mb-3 text-sm uppercase tracking-wider">Setup & config (occasional use)</h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div class="cmd-card bg-stone-50 border border-stone-200 rounded-xl p-4">
+              <code class="mono font-semibold text-stone-700">/sdd-setup</code>
+              <p class="text-xs text-stone-700 mt-2">First-session wizard — walks the 8 plain-English questions. Run once per project.</p>
+            </div>
+            <div class="cmd-card bg-stone-50 border border-stone-200 rounded-xl p-4">
+              <code class="mono font-semibold text-stone-700">/sdd-config &lt;id&gt;</code>
+              <p class="text-xs text-stone-700 mt-2">Re-answer ONE setup question without re-walking the wizard. Use when stack changes.</p>
+            </div>
+            <div class="cmd-card bg-stone-50 border border-stone-200 rounded-xl p-4">
+              <code class="mono font-semibold text-stone-700">/settings &lt;get|set|reset&gt; &lt;key&gt;</code>
+              <p class="text-xs text-stone-700 mt-2">View / change ONE parameter without editing YAML by hand. Faster than <code class="mono text-xs">/sdd-config</code> for one knob.</p>
+            </div>
+            <div class="cmd-card bg-stone-50 border border-stone-200 rounded-xl p-4">
+              <code class="mono font-semibold text-stone-700">/sdd-verify-stack</code>
+              <p class="text-xs text-stone-700 mt-2">Reality-check the tools you declared in <code class="mono text-xs">/sdd-setup</code> actually exist + are reachable.</p>
+            </div>
+            <div class="cmd-card bg-stone-50 border border-stone-200 rounded-xl p-4">
+              <code class="mono font-semibold text-stone-700">/sdd-migrate [--apply]</code>
+              <p class="text-xs text-stone-700 mt-2">Pull framework updates from upstream without touching YOUR specs / decisions / patterns.</p>
+            </div>
+            <div class="cmd-card bg-stone-50 border border-stone-200 rounded-xl p-4">
+              <code class="mono font-semibold text-stone-700">/compress</code>
+              <p class="text-xs text-stone-700 mt-2">Consolidate <code class="mono text-xs">patterns.md</code> or <code class="mono text-xs">data-model.md</code> when they grow noisy. Append-only safe.</p>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h4 class="font-semibold text-stone-700 mb-3 text-sm uppercase tracking-wider">Advanced (opt-in)</h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div class="cmd-card bg-violet-50 border border-violet-200 rounded-xl p-4">
+              <code class="mono font-semibold text-violet-800">/ask "&lt;question&gt;"</code>
+              <p class="text-xs text-stone-700 mt-2">Tier 3 LLM-powered Q&amp;A over your project's own decision history. Requires MCP server + Tier 3 enabled.</p>
+            </div>
+            <div class="cmd-card bg-violet-50 border border-violet-200 rounded-xl p-4">
+              <code class="mono font-semibold text-violet-800">/dispatch &lt;role&gt; "&lt;task&gt;"</code>
+              <p class="text-xs text-stone-700 mt-2">Spawn a fresh-context sub-AI for one specific job. Roles: <code class="mono text-xs">researcher</code> (read), <code class="mono text-xs">executor</code> (write code), <code class="mono text-xs">verifier</code> (audit).</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <!-- ─── REF 2: All 8 setup questions ───────────────────────── -->
+    <details class="bg-white border border-stone-200 rounded-2xl p-6 mb-4">
+      <summary class="display text-xl font-bold">📝 The 8 setup wizard questions (deep-dive)</summary>
+      <div class="mt-6 space-y-4 text-sm">
+        <div class="bg-stone-50 rounded-xl p-4">
+          <div class="font-semibold mb-1">① What are you building?</div>
+          <div class="text-stone-600 text-xs mb-2">Writes to: <code class="mono">.sdd/stack.md</code> · Change later: <code class="mono">/sdd-config 001</code></div>
+          <p>Picks the project shape: website, phone app, backend service, internal tool (Railway), internal-tool-becoming-SaaS, CLI, scheduled script, or "something else" (describe). The choice cascades into default test runners, hosting, CI templates, and deploy commands. The "SaaS later" option flags every future spec to surface multi-tenancy concerns.</p>
+        </div>
+        <div class="bg-stone-50 rounded-xl p-4">
+          <div class="font-semibold mb-1">② Data needs?</div>
+          <div class="text-stone-600 text-xs mb-2">Writes to: <code class="mono">.sdd/stack.md</code> · Change later: <code class="mono">/sdd-config 002</code></div>
+          <p>None (static / calculator) · small spreadsheet-like data (SQLite) · accounts &amp; content (Postgres via Neon/Supabase/Railway) · files / images / docs (blob store) · real-time data (chat / live cursors). Postgres triggers auto-seeding of <code class="mono">.sdd/data-model.md</code> with starter entity headings.</p>
+        </div>
+        <div class="bg-stone-50 rounded-xl p-4">
+          <div class="font-semibold mb-1">③ PR reviewer bot?</div>
+          <div class="text-stone-600 text-xs mb-2">Writes to: <code class="mono">.sdd/config.md</code> under <code class="mono">parameters.review</code> · Change later: <code class="mono">/sdd-config 003</code></div>
+          <p>CodeRabbit (recommended, free for OSS) · GitHub Copilot review · something else (Greptile, Qodo, custom) · no bot · decide later. CodeRabbit choice runs a walkthrough that opens the right pages in your browser + offers to seed <code class="mono">.coderabbit.yaml</code>. <code class="mono">/ship</code> polls the chosen bot's review state and auto-merges if clean.</p>
+        </div>
+        <div class="bg-stone-50 rounded-xl p-4">
+          <div class="font-semibold mb-1">④ Browser tests?</div>
+          <div class="text-stone-600 text-xs mb-2">Writes to: <code class="mono">.sdd/stack.md</code> · Change later: <code class="mono">/sdd-config 004</code></div>
+          <p>Full Playwright (desktop Chromium + iPhone-13 mobile viewports — catches layout breakage) · lightweight Vitest/pytest/Go-stdlib (faster, no UI bugs) · no UI to test · decide later. Also writes <code class="mono">.github/workflows/sdd-ci.yml</code> for CI on every PR + push.</p>
+        </div>
+        <div class="bg-stone-50 rounded-xl p-4">
+          <div class="font-semibold mb-1">⑤ Where will it run when shipped?</div>
+          <div class="text-stone-600 text-xs mb-2">Writes to: <code class="mono">.sdd/stack.md</code> · Change later: <code class="mono">/sdd-config 005</code></div>
+          <p>Laptop only · Vercel · Railway · Fly.io · Render · AWS / GCP / Azure (asks which sub-service) · Cloudflare Workers · private server (generates a Dockerfile) · decide later · something else. Shapes deploy commands + env vars for SHIP.</p>
+        </div>
+        <div class="bg-stone-50 rounded-xl p-4">
+          <div class="font-semibold mb-1">⑥ The 6 quick yes/nos</div>
+          <div class="text-stone-600 text-xs mb-2">Writes to: <code class="mono">.sdd/stack.md</code> under <code class="mono">## Extras</code> · Change later: <code class="mono">/sdd-config 006</code></div>
+          <p>Six rapid Q&amp;A. <strong>Sign-in?</strong> (Clerk / Auth0 / Supabase Auth). <strong>Email-sending?</strong> (Resend / Postmark / SendGrid / SES). <strong>Payments?</strong> (Stripe / Paddle / Lemon Squeezy). <strong>Error tracking?</strong> (Sentry / Honeybadger / Rollbar). <strong>Analytics?</strong> (Plausible / PostHog / Mixpanel / GA). <strong>AI in the product itself?</strong> (Anthropic / OpenAI / Gemini / Vercel AI Gateway / Ollama). Each "yes" updates <code class="mono">data-model.md</code> with the right schema additions.</p>
+        </div>
+        <div class="bg-stone-50 rounded-xl p-4">
+          <div class="font-semibold mb-1">⑦ Turn on the MCP server?</div>
+          <div class="text-stone-600 text-xs mb-2">Writes to: <code class="mono">.sdd/config.md</code> under <code class="mono">parameters.mcp</code> · Change later: <code class="mono">/sdd-config 007</code></div>
+          <p>Yes (saves 40–60% tokens once your project matures) · no (fine for &lt;30 features) · tell me more. Runs <code class="mono">install-mcp-server.sh</code> if yes; if Tier 3 sub-questions follow, optional Ollama + Gemma chat-based answers over your project archive (local, no cost).</p>
+        </div>
+        <div class="bg-stone-50 rounded-xl p-4">
+          <div class="font-semibold mb-1">⑧ Automation level?</div>
+          <div class="text-stone-600 text-xs mb-2">Writes to: <code class="mono">.sdd/config.md</code> under <code class="mono">parameters.automation.level</code> · Change later: <code class="mono">/sdd-config 008</code> or <code class="mono">/settings set automation.level &lt;tier&gt;</code></div>
+          <p><strong>Full</strong> — auto-advance every technical step. Fastest, least oversight. <strong>Most (recommended)</strong> — auto-advance technical, prompt on destructive (mark-shipped, manifest-repin, branch-delete, decisions.md append). <strong>Checkpoint (default)</strong> — prompt on every AGENT-LED step. Slowest, safest. Sam-tip: start at <strong>Most</strong>; flip to <strong>Full</strong> once you trust the rhythm.</p>
+        </div>
+      </div>
+    </details>
+
+    <!-- ─── REF 3: Customisation knobs ─────────────────────────── -->
+    <details class="bg-white border border-stone-200 rounded-2xl p-6 mb-4">
+      <summary class="display text-xl font-bold">⚙️ Customisation — what you can tweak</summary>
+      <div class="mt-6 text-sm space-y-4">
+        <p class="text-stone-700">Three ways to change settings. Pick whichever feels easiest — they all edit the same file (<code class="mono">.sdd/config.md</code>).</p>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div class="cmd-card bg-amber-50 border border-amber-200 rounded-xl p-4">
+            <div class="text-2xl mb-1">⚡</div>
+            <div class="font-semibold">Fastest: <code class="mono text-sm">/settings</code></div>
+            <p class="text-xs text-stone-700 mt-2">Change ONE value at a time. Example: <code class="mono text-xs">/settings set pace.halt_on_red_after_attempts 5</code>. No YAML knowledge needed.</p>
+          </div>
+          <div class="cmd-card bg-stone-50 border border-stone-200 rounded-xl p-4">
+            <div class="text-2xl mb-1">🪄</div>
+            <div class="font-semibold">Guided: <code class="mono text-sm">/sdd-config</code></div>
+            <p class="text-xs text-stone-700 mt-2">Re-walks ONE wizard question with full plain-English context. Best when you're changing stack (new database, new reviewer, etc.).</p>
+          </div>
+          <div class="cmd-card bg-stone-50 border border-stone-200 rounded-xl p-4">
+            <div class="text-2xl mb-1">📝</div>
+            <div class="font-semibold">Power-user: hand-edit YAML</div>
+            <p class="text-xs text-stone-700 mt-2">Open <code class="mono text-xs">.sdd/config.md</code> in any editor. Pure markdown + YAML — no special tooling. Save and the agent picks up changes next turn.</p>
+          </div>
+        </div>
+
+        <div class="mt-6">
+          <h4 class="font-semibold mb-3">The most-tweaked knobs</h4>
+          <div class="space-y-2">
+            <div class="bg-stone-50 rounded-lg p-3 text-xs">
+              <code class="mono font-semibold">parameters.automation.level</code> — full / most / checkpoint (covered in Q⑧ above)
+            </div>
+            <div class="bg-stone-50 rounded-lg p-3 text-xs">
+              <code class="mono font-semibold">parameters.review.bot</code> — coderabbit / sourcery / "" (no bot)
+            </div>
+            <div class="bg-stone-50 rounded-lg p-3 text-xs">
+              <code class="mono font-semibold">parameters.pace.halt_on_red_after_attempts</code> — int, default <code class="mono">3</code>. AI stops + asks after N failed test-fix attempts.
+            </div>
+            <div class="bg-stone-50 rounded-lg p-3 text-xs">
+              <code class="mono font-semibold">parameters.budget.max_minutes / max_tokens / max_commits</code> — soft caps. AI warns at limit, never blocks.
+            </div>
+            <div class="bg-stone-50 rounded-lg p-3 text-xs">
+              <code class="mono font-semibold">parameters.test_runner</code> — the shell command to run tests (e.g. <code class="mono">npm test</code>, <code class="mono">pytest</code>, <code class="mono">go test ./...</code>).
+            </div>
+            <div class="bg-stone-50 rounded-lg p-3 text-xs">
+              <code class="mono font-semibold">parameters.models.{thinking,routine,mechanical}</code> — pick a specific Claude/GPT/Gemini model per cognitive tier. Empty = use the default.
+            </div>
+            <div class="bg-stone-50 rounded-lg p-3 text-xs">
+              <code class="mono font-semibold">parameters.injection.per_file_budget_chars</code> — per-file size limits when the framework injects your project context. Sensible defaults already set.
+            </div>
+            <div class="bg-stone-50 rounded-lg p-3 text-xs">
+              <code class="mono font-semibold">parameters.review.bypass_cr_convergence</code> — boolean. Lets <code class="mono">/ship</code> merge even when CodeRabbit hasn't approved yet. Default <code class="mono">false</code>. Flip with caution.
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 mt-4 text-xs">
+          <strong>💡 When in doubt:</strong> type <code class="mono">/settings</code> with no arguments. It lists every knob with current values.
+        </div>
+      </div>
+    </details>
+
+    <!-- ─── REF 4: Extensions ──────────────────────────────────── -->
+    <details class="bg-white border border-stone-200 rounded-2xl p-6 mb-4">
+      <summary class="display text-xl font-bold">🧩 3 optional extensions</summary>
+      <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+
+        <div class="bg-stone-50 rounded-xl p-4">
+          <div class="text-3xl mb-2">🎭</div>
+          <div class="font-semibold mb-1">Playwright</div>
+          <div class="text-xs text-stone-500 mb-3">Browser-based testing</div>
+          <p class="text-xs text-stone-700">Installs Playwright (Chromium browser engine), configures desktop + iPhone-13 viewports, scaffolds test patterns in each feature's <code class="mono">tests/</code> folder. <strong>When to use:</strong> any UI project — websites, internal tools, MVPs. Catches mobile rendering, click handlers, layout breakage.</p>
+          <div class="mt-3 text-xs"><code class="mono bg-white px-2 py-1 rounded text-stone-700">bash extensions/playwright/enable.sh</code></div>
+        </div>
+
+        <div class="bg-stone-50 rounded-xl p-4">
+          <div class="text-3xl mb-2">🧠</div>
+          <div class="font-semibold mb-1">MCP server</div>
+          <div class="text-xs text-stone-500 mb-3">Save tokens at scale</div>
+          <p class="text-xs text-stone-700">Local Python helper that answers questions about your project state (active feature, patterns, decisions) without re-reading entire files. <strong>When to use:</strong> projects &gt;1 month old or &gt;20 features. Saves grow over time.</p>
+          <div class="mt-3 text-xs"><code class="mono bg-white px-2 py-1 rounded text-stone-700">bash extensions/sdd-mcp-server/enable.sh</code></div>
+        </div>
+
+        <div class="bg-stone-50 rounded-xl p-4">
+          <div class="text-3xl mb-2">🌈</div>
+          <div class="font-semibold mb-1">pi.dev adapter</div>
+          <div class="text-xs text-stone-500 mb-3">20+ AI providers + OAuth subscriptions</div>
+          <p class="text-xs text-stone-700">Brings Plumb's <code class="mono">/sdd-start /sdd-next /sdd-ship</code> loop to pi.dev — runs on Anthropic, OpenAI, Google, NVIDIA Build, Mistral, Groq, Cerebras, xAI, OpenRouter, Ollama-local, etc. Sign in with ChatGPT Plus / Claude Pro / Copilot subscriptions via OAuth, or paste any API key. <strong>When to use:</strong> you want subscription auth, multi-model flexibility, or fully-local AI.</p>
+          <div class="mt-3 text-xs"><code class="mono bg-white px-2 py-1 rounded text-stone-700">pi install npm:agent-plumb-pi</code></div>
+        </div>
+      </div>
+    </details>
+
+    <!-- ─── REF 4b: All pi.dev providers ──────────────────────── -->
+    <details class="bg-white border border-stone-200 rounded-2xl p-6 mb-4">
+      <summary class="display text-xl font-bold">🎛️ All 20+ pi.dev providers (auth + env-var table)</summary>
+      <div class="mt-6 text-sm space-y-4">
+        <p class="text-stone-700">pi supports two auth styles: <strong>OAuth subscription</strong> (sign in with your existing chat-product login — no API key) and <strong>API key</strong> (paste a token, set an env var). Switch models mid-session with <code class="mono text-xs bg-stone-100 px-1 rounded">/model</code> or <kbd class="bg-stone-100 px-1.5 py-0.5 rounded text-xs mono">Ctrl+L</kbd>.</p>
+
+        <div>
+          <h4 class="font-semibold text-stone-700 mb-2 text-sm uppercase tracking-wider">🔑 OAuth subscription (no API key)</h4>
+          <div class="space-y-1.5 text-xs">
+            <div class="flex flex-wrap items-center gap-2 bg-violet-50 rounded p-2">
+              <span class="font-semibold w-44">Claude Pro / Max</span>
+              <span class="text-stone-600 flex-1">Anthropic subscription · <code class="mono">/login</code> → "Claude Pro/Max" · stored in <code class="mono">~/.pi/agent/auth.json</code></span>
+              <span class="text-amber-700 text-xs">⚠️ may throttle for heavy autonomous use</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 bg-violet-50 rounded p-2">
+              <span class="font-semibold w-44">ChatGPT Plus / Pro</span>
+              <span class="text-stone-600 flex-1">OpenAI Codex endpoint · <code class="mono">/login</code> → "ChatGPT Plus/Pro" · uses your chatgpt.com sign-in</span>
+              <span class="text-emerald-700 text-xs">✓ supported tier</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 bg-violet-50 rounded p-2">
+              <span class="font-semibold w-44">GitHub Copilot</span>
+              <span class="text-stone-600 flex-1">Copilot subscription · <code class="mono">/login</code> → "GitHub Copilot"</span>
+              <span class="text-emerald-700 text-xs">✓ supported tier</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h4 class="font-semibold text-stone-700 mb-2 text-sm uppercase tracking-wider">🎟️ API key — pay-per-token, native pi support</h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-1.5 text-xs">
+            <div class="bg-stone-50 rounded p-2"><strong>Anthropic</strong> · <code class="mono">ANTHROPIC_API_KEY</code></div>
+            <div class="bg-stone-50 rounded p-2"><strong>OpenAI</strong> · <code class="mono">OPENAI_API_KEY</code></div>
+            <div class="bg-stone-50 rounded p-2"><strong>Google Gemini</strong> · <code class="mono">GEMINI_API_KEY</code></div>
+            <div class="bg-stone-50 rounded p-2"><strong>Mistral</strong> · <code class="mono">MISTRAL_API_KEY</code></div>
+            <div class="bg-stone-50 rounded p-2"><strong>Groq</strong> · <code class="mono">GROQ_API_KEY</code></div>
+            <div class="bg-stone-50 rounded p-2"><strong>Cerebras</strong> · <code class="mono">CEREBRAS_API_KEY</code></div>
+            <div class="bg-stone-50 rounded p-2"><strong>xAI (Grok)</strong> · <code class="mono">XAI_API_KEY</code></div>
+            <div class="bg-stone-50 rounded p-2"><strong>OpenRouter</strong> · <code class="mono">OPENROUTER_API_KEY</code></div>
+            <div class="bg-stone-50 rounded p-2"><strong>DeepSeek</strong> · <code class="mono">DEEPSEEK_API_KEY</code></div>
+            <div class="bg-stone-50 rounded p-2"><strong>Azure OpenAI</strong> · <code class="mono">AZURE_OPENAI_API_KEY</code></div>
+            <div class="bg-stone-50 rounded p-2"><strong>Amazon Bedrock</strong> · <code class="mono">AWS_*</code> creds</div>
+            <div class="bg-stone-50 rounded p-2"><strong>Google Vertex AI</strong> · <code class="mono">GOOGLE_APPLICATION_CREDENTIALS</code></div>
+            <div class="bg-stone-50 rounded p-2"><strong>Cloudflare Workers AI</strong> · <code class="mono">CLOUDFLARE_API_KEY</code></div>
+            <div class="bg-stone-50 rounded p-2"><strong>Cloudflare AI Gateway</strong> · <code class="mono">CLOUDFLARE_API_KEY</code></div>
+            <div class="bg-stone-50 rounded p-2"><strong>Hugging Face</strong> · <code class="mono">HF_TOKEN</code></div>
+            <div class="bg-stone-50 rounded p-2"><strong>Fireworks</strong> · <code class="mono">FIREWORKS_API_KEY</code></div>
+            <div class="bg-stone-50 rounded p-2"><strong>Together AI</strong> · <code class="mono">TOGETHER_API_KEY</code></div>
+            <div class="bg-stone-50 rounded p-2"><strong>Vercel AI Gateway</strong> · <code class="mono">AI_GATEWAY_API_KEY</code></div>
+          </div>
+        </div>
+
+        <div>
+          <h4 class="font-semibold text-stone-700 mb-2 text-sm uppercase tracking-wider">🧩 Via community extensions</h4>
+          <div class="space-y-1.5 text-xs">
+            <div class="bg-emerald-50 rounded p-2">
+              <strong>🟢 NVIDIA Build</strong> · install with <code class="mono">pi install git:github.com/xRyul/pi-nvidia-nim</code> · <code class="mono">NVIDIA_API_KEY</code> · 100+ models (DeepSeek, Llama 3.3, Qwen, Mixtral, GLM, Kimi…) · <span class="text-emerald-700">free preview tier, rate-limited under heavy use</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h4 class="font-semibold text-stone-700 mb-2 text-sm uppercase tracking-wider">🏠 Local (free, on your computer)</h4>
+          <div class="space-y-1.5 text-xs">
+            <div class="bg-stone-50 rounded p-2">
+              <strong>Ollama</strong> · install <a href="https://ollama.com" target="_blank" class="underline">Ollama</a>, run <code class="mono">ollama pull llama3.3</code> · no API key, pi auto-detects · <span class="text-stone-600">needs 16GB+ RAM; bigger models need more</span>
+            </div>
+            <div class="bg-stone-50 rounded p-2">
+              <strong>LM Studio</strong> · OpenAI-compatible local server · point pi at <code class="mono">http://localhost:1234</code> via custom provider config
+            </div>
+            <div class="bg-stone-50 rounded p-2">
+              <strong>vLLM / TGI / any OpenAI-compatible server</strong> · same custom-provider config trick
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs">
+          <strong>💡 How to pick:</strong> already paying for ChatGPT Plus? → OAuth path, $0 extra. Want best-in-class free? → NVIDIA Build (Llama 3.3 70B is excellent). Want fully-local + private? → Ollama. Want one-key-many-models? → OpenRouter (routes to 100+ providers, single key).
+        </div>
+      </div>
+    </details>
+
+    <!-- ─── REF 5: The 5 hidden files ──────────────────────────── -->
+    <details class="bg-white border border-stone-200 rounded-2xl p-6 mb-4">
+      <summary class="display text-xl font-bold">📖 The 5 memory files in <code class="mono text-base">.sdd/</code></summary>
+      <div class="mt-6 text-sm space-y-3">
+        <p class="text-stone-700 mb-4">These five plain-markdown files become your project's institutional memory. You can <code class="mono text-xs bg-stone-100 px-1 rounded">cat</code> any of them in Terminal — no special tools needed.</p>
+
+        <div class="bg-stone-50 rounded-xl p-4">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-2xl">📋</span>
+            <code class="mono font-semibold">INDEX.md</code>
+            <span class="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded">framework manages, you read</span>
+          </div>
+          <p class="text-stone-700 text-xs">Work catalog — Active / In flight / Backlog / Shipped sections. The framework updates it as you <code class="mono">/start</code>, <code class="mono">/next</code>, <code class="mono">/ship</code>.</p>
+        </div>
+
+        <div class="bg-stone-50 rounded-xl p-4">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-2xl">📜</span>
+            <code class="mono font-semibold">decisions.md</code>
+            <span class="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded">APPEND-ONLY (you can't edit past entries)</span>
+          </div>
+          <p class="text-stone-700 text-xs">Timestamped audit log of every approval + phase advance. Hook refuses any commit that modifies prior entries. Reset path documented for emergencies.</p>
+        </div>
+
+        <div class="bg-stone-50 rounded-xl p-4">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-2xl">🗂️</span>
+            <code class="mono font-semibold">data-model.md</code>
+            <span class="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">you edit freely</span>
+          </div>
+          <p class="text-stone-700 text-xs">Single source of truth for entities + fields across the whole project. Framework proposes additions during the <code class="mono">data-contract</code> action; you approve.</p>
+        </div>
+
+        <div class="bg-stone-50 rounded-xl p-4">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-2xl">💎</span>
+            <code class="mono font-semibold">patterns.md</code>
+            <span class="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">you edit freely</span>
+          </div>
+          <p class="text-stone-700 text-xs">Cross-feature lessons — one block per pattern, source feature linked. Auto-appended by the <code class="mono">learn</code> action at SHIP time. Use <code class="mono">/compress</code> when it grows noisy.</p>
+        </div>
+
+        <div class="bg-stone-50 rounded-xl p-4">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-2xl">🏗️</span>
+            <code class="mono font-semibold">stack.md</code>
+            <span class="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">you edit freely</span>
+          </div>
+          <p class="text-stone-700 text-xs">Your tech stack registry — database, hosting, auth, payments, etc. Filled by <code class="mono">/sdd-setup</code> and <code class="mono">/sdd-config</code>. Agent reads this every session to avoid contradicting it.</p>
+        </div>
+
+        <div class="bg-stone-50 rounded-xl p-4">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-2xl">📐</span>
+            <code class="mono font-semibold">principles.md</code>
+            <span class="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">you write</span>
+          </div>
+          <p class="text-stone-700 text-xs">Project-wide invariants you want injected EVERY turn. Example: <em>"all dates UTC"</em>, <em>"no inline styles"</em>, <em>"prefer copy edits over UI changes"</em>. The framework reads this before every <code class="mono">/next</code>.</p>
+        </div>
+
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs mt-4">
+          <strong>📌 Plus one hidden file:</strong> <code class="mono">.sdd/.cache/manifest.json</code> — tamper-detection checksums. Never edit by hand. Framework manages it; commit hook refuses tampered framework files.
+        </div>
+      </div>
+    </details>
+
+    <!-- ─── REF 6: Daily habits ────────────────────────────────── -->
+    <details class="bg-white border border-stone-200 rounded-2xl p-6 mb-4">
+      <summary class="display text-xl font-bold">📚 Daily habits that make this sing</summary>
+      <div class="mt-6 space-y-3 text-sm">
+        <div class="flex gap-3 bg-stone-50 rounded-lg p-3">
+          <span class="text-2xl">①</span>
+          <div><strong>Answer in your own words.</strong> The framework asks plain-English questions. Don't try to sound technical. Say <em>"I want signups to feel safe"</em>, not <em>"implement CSRF tokens"</em>.</div>
+        </div>
+        <div class="flex gap-3 bg-stone-50 rounded-lg p-3">
+          <span class="text-2xl">②</span>
+          <div><strong>If a question feels confusing, say so.</strong> Type <em>"I don't get it"</em> or <em>"explain in simpler words"</em>. The agent rephrases — never silently guesses.</div>
+        </div>
+        <div class="flex gap-3 bg-stone-50 rounded-lg p-3">
+          <span class="text-2xl">③</span>
+          <div><strong>Trust the loop.</strong> When the agent says <code class="mono bg-white px-1 rounded text-xs">Run /next to continue</code> — just type <code class="mono bg-white px-1 rounded text-xs">/next</code>. Don't overthink. The framework always knows the next move.</div>
+        </div>
+        <div class="flex gap-3 bg-stone-50 rounded-lg p-3">
+          <span class="text-2xl">④</span>
+          <div><strong>Capture ideas cheaply.</strong> Half-formed thought? <code class="mono bg-white px-1 rounded text-xs">/idea "the thing"</code>. Zero ceremony. Convert to a feature later if it matters.</div>
+        </div>
+        <div class="flex gap-3 bg-stone-50 rounded-lg p-3">
+          <span class="text-2xl">⑤</span>
+          <div><strong>Read <code class="mono">decisions.md</code> when you forget why.</strong> Six months from now, "why did we pick Postgres?" is answered in plain English in this file. Searchable. Permanent.</div>
+        </div>
+      </div>
+    </details>
+
+    <!-- ─── REF 7: Honest caveats ──────────────────────────────── -->
+    <details class="bg-white border border-stone-200 rounded-2xl p-6 mb-4">
+      <summary class="display text-xl font-bold">⚖️ Honest caveats — what Plumb gives up</summary>
+      <div class="mt-6 space-y-3 text-sm">
+        <p class="text-stone-700 mb-3">Plumb is opinionated. It makes deliberate tradeoffs. Knowing them prevents disappointment.</p>
+
+        <div class="bg-stone-50 rounded-lg p-4">
+          <div class="font-semibold mb-1">⏱️ SPEC takes 30–90 minutes the first time.</div>
+          <p class="text-xs text-stone-700">If you want it built RIGHT NOW with no questions, Plumb is the wrong tool. It optimises for honest review over speed.</p>
+        </div>
+
+        <div class="bg-stone-50 rounded-lg p-4">
+          <div class="font-semibold mb-1">📵 No power-user shortcuts.</div>
+          <p class="text-xs text-stone-700">No terse aliases. No "skip the rubric for a quick exception." Every message is sized for a non-engineer reader. Engineers may find it verbose — that's the trade.</p>
+        </div>
+
+        <div class="bg-stone-50 rounded-lg p-4">
+          <div class="font-semibold mb-1">🚫 No silent assumption.</div>
+          <p class="text-xs text-stone-700">If your answer's ambiguous, the AI restates what it understood + asks. If preconditions aren't met, it halts. Slower; prevents "the AI quietly softened my approval."</p>
+        </div>
+
+        <div class="bg-stone-50 rounded-lg p-4">
+          <div class="font-semibold mb-1">📜 No deleting past decisions.</div>
+          <p class="text-xs text-stone-700"><code class="mono text-xs">decisions.md</code> is append-only. You can't rewrite history. If you need plausible deniability, this framework will frustrate you.</p>
+        </div>
+
+        <div class="bg-stone-50 rounded-lg p-4">
+          <div class="font-semibold mb-1">🔗 Must use git.</div>
+          <p class="text-xs text-stone-700">Atomic-step discipline runs on commits. Pre-commit hooks enforce. If you use <code class="mono text-xs">git commit --no-verify</code> often, you're bypassing the moat.</p>
+        </div>
+
+        <div class="bg-stone-50 rounded-lg p-4">
+          <div class="font-semibold mb-1">🏗️ Retrofitting onto existing projects is still rough.</div>
+          <p class="text-xs text-stone-700">Fresh repos work great. Projects with their own conventions (Husky / Drizzle migrations / existing PRDs) need an "absorb existing" mode that's still future work. <a href="https://github.com/samuelserraceo/agent-plumb/issues" class="underline text-amber-700">File an issue</a> if you hit this.</p>
+        </div>
+
+        <div class="bg-stone-50 rounded-lg p-4">
+          <div class="font-semibold mb-1">🧠 Not a silver bullet.</div>
+          <p class="text-xs text-stone-700">Plumb makes drift expensive and deep questioning cheap. It does NOT turn a bad idea into a good one. It does NOT replace product judgement. It IS a guardrail that catches the AI quietly cheating.</p>
+        </div>
+      </div>
+    </details>
+
+    <!-- ─── REF 8: Troubleshooting / FAQ ──────────────────────── -->
+    <details class="bg-white border border-stone-200 rounded-2xl p-6 mb-4" open>
+      <summary class="display text-xl font-bold">🆘 Troubleshooting + FAQ</summary>
+      <div class="mt-6 space-y-2 text-sm">
+
+        <details class="bg-stone-50 rounded-lg p-4">
+          <summary class="font-semibold">"Claude says it can't find the marketplace"</summary>
+          <p class="mt-2 text-stone-700 text-xs">Make sure you copied the WHOLE link including <code class="mono">https://</code>. Try copying again from this page. Also check you're on Claude Code (the app), not claude.ai (the chat website) — slash plugins are app-only.</p>
+        </details>
+
+        <details class="bg-stone-50 rounded-lg p-4">
+          <summary class="font-semibold">"Nothing happens when I type /next"</summary>
+          <p class="mt-2 text-stone-700 text-xs">Three checks: (1) Did you restart Claude Code after install? (2) Did you start a feature with <code class="mono">/start</code>? <code class="mono">/next</code> only works when there's something to advance. (3) Is the feature in QUEUED state? Run <code class="mono">/promote-to-active</code> first.</p>
+        </details>
+
+        <details class="bg-stone-50 rounded-lg p-4">
+          <summary class="font-semibold">"How do I know it's actually working?"</summary>
+          <p class="mt-2 text-stone-700 text-xs">First line of every Claude session should say <code class="mono bg-white px-1 rounded text-xs">[SDD bootstrap] ready</code>. If you see that, you're good. If not — quit Claude fully (Cmd+Q on Mac, right-click tray icon → Quit on Windows) and reopen.</p>
+        </details>
+
+        <details class="bg-stone-50 rounded-lg p-4">
+          <summary class="font-semibold">"A commit is being refused — what do I do?"</summary>
+          <p class="mt-2 text-stone-700 text-xs">Don't bypass the hook. Read the error — it'll name the rule (theatre claim / append-only / approved-section changed / drift). The fix is usually: (a) revert the change, (b) re-approve with <code class="mono">/re-approve &lt;slug&gt;</code>, or (c) ask the agent to soften the wording. The hook is on your side — it caught a real problem.</p>
+        </details>
+
+        <details class="bg-stone-50 rounded-lg p-4">
+          <summary class="font-semibold">"I want to try a real example before my real project"</summary>
+          <p class="mt-2 text-stone-700 text-xs">Make a fresh empty folder. Open Claude Code in it. Type <code class="mono">/sdd-setup</code>, walk the 8 questions (pick simplest options), then <code class="mono">/start "build a hello-world API endpoint"</code>. Walk it end-to-end with <code class="mono">/next</code>. Throwaway, but you learn the rhythm in 20 minutes.</p>
+        </details>
+
+        <details class="bg-stone-50 rounded-lg p-4">
+          <summary class="font-semibold">"Windows: pre-commit hook fails saying 'bash not found'"</summary>
+          <p class="mt-2 text-stone-700 text-xs">Plumb's hooks are bash scripts. Windows doesn't have bash by default. Install <a href="https://gitforwindows.org/" target="_blank" class="underline">Git for Windows</a> (includes Git Bash) — that adds bash to your PATH. Reopen Claude Code; hooks now work.</p>
+        </details>
+
+        <details class="bg-stone-50 rounded-lg p-4">
+          <summary class="font-semibold">"How do I update Plumb when a new version ships?"</summary>
+          <p class="mt-2 text-stone-700 text-xs">Two ways. Claude Code plugin path: <code class="mono">/plugin marketplace update</code> then <code class="mono">/plugin install sdd@sdd-marketplace</code>. Manual path: run <code class="mono">/sdd-migrate</code> (preview) then <code class="mono">/sdd-migrate --apply</code>. Your specs / decisions / patterns are never touched — only framework infrastructure.</p>
+        </details>
+
+        <details class="bg-stone-50 rounded-lg p-4">
+          <summary class="font-semibold">"Can I run this without internet?"</summary>
+          <p class="mt-2 text-stone-700 text-xs">Mostly yes. The framework itself is just bash + Python + markdown — runs offline. The AI calls (Claude, OpenAI, etc.) need internet. If you want fully-local AI, pick <strong>pi.dev path</strong> + use Ollama as your provider. Tier 3 chat-based search also works offline via Ollama + Gemma.</p>
+        </details>
+
+        <details class="bg-stone-50 rounded-lg p-4">
+          <summary class="font-semibold">"What if I want to leave Plumb later?"</summary>
+          <p class="mt-2 text-stone-700 text-xs">Delete the <code class="mono">.sdd/</code> and <code class="mono">.claude/</code> folders. Your repo keeps its git history + all the code you wrote. The framework was always just files you can <code class="mono">cat</code> — no servers, no SaaS, no lock-in. Your specs stay readable in any text editor forever.</p>
+        </details>
+
+        <details class="bg-stone-50 rounded-lg p-4">
+          <summary class="font-semibold">"pi.dev: Can I really use my ChatGPT Plus or Claude Pro subscription without an API key?"</summary>
+          <p class="mt-2 text-stone-700 text-xs">Yes — pi's <code class="mono">/login</code> command supports OAuth for Claude Pro/Max, ChatGPT Plus/Pro (via the Codex endpoint), and GitHub Copilot. No API billing. <strong>Honest caveat:</strong> Anthropic has been less stable about supporting heavy autonomous use of Pro/Max with third-party agents — could throttle or stop working without notice. ChatGPT Plus/Pro and Copilot are more reliable today. If predictability matters more than cost, use Path B (API key).</p>
+        </details>
+
+        <details class="bg-stone-50 rounded-lg p-4">
+          <summary class="font-semibold">"pi.dev: My NVIDIA Build key works in the website demo but not in pi"</summary>
+          <p class="mt-2 text-stone-700 text-xs">Three checks: (1) Did you install the extension? <code class="mono text-xs">pi install git:github.com/xRyul/pi-nvidia-nim</code>. (2) Is the env var exported in the SAME terminal you're running pi from? Run <code class="mono text-xs">echo $NVIDIA_API_KEY</code> to verify. (3) Both names work — <code class="mono text-xs">NVIDIA_API_KEY</code> or <code class="mono text-xs">NVIDIA_NIM_API_KEY</code>. If you set one and pi reads the other, you'll see "missing key." Set both to be safe.</p>
+        </details>
+
+        <details class="bg-stone-50 rounded-lg p-4">
+          <summary class="font-semibold">"pi.dev: How do I switch between models mid-session?"</summary>
+          <p class="mt-2 text-stone-700 text-xs">Inside pi, type <code class="mono">/model</code> (or press <kbd class="bg-white px-1 rounded text-xs">Ctrl+L</kbd>). A picker opens with every model you've configured. Pick one — pi continues the conversation with the new model. Common pattern: use a big model (Claude Opus / Llama 3.3 70B) for thinking-heavy steps, switch to a small fast model (Groq, Cerebras, Gemini Flash) for mechanical steps.</p>
+        </details>
+
+        <details class="bg-stone-50 rounded-lg p-4">
+          <summary class="font-semibold">"Which provider is cheapest for daily Plumb work?"</summary>
+          <p class="mt-2 text-stone-700 text-xs">Three solid free options: <strong>NVIDIA Build</strong> (preview tier, rate-limited but generous — Llama 3.3 70B + DeepSeek R1 are excellent) · <strong>Ollama local</strong> (free forever, needs 16GB+ RAM) · <strong>Groq free tier</strong> (very fast, low rate limits). For paid: <strong>OpenRouter</strong> consolidates 100+ providers behind one key, so you can cost-shop per call. Anthropic + OpenAI direct API are pricier but the quality ceiling is highest.</p>
+        </details>
+
+      </div>
+    </details>
+
+    <!-- ─── Final links ────────────────────────────────────────── -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
+      <a href="walkthrough.html" class="cmd-card bg-white border border-stone-200 rounded-xl p-5">
+        <div class="text-3xl mb-2">📖</div>
+        <div class="font-semibold mb-1">The full walkthrough</div>
+        <p class="text-xs text-stone-600">Architecture diagrams + design philosophy. Read when curious.</p>
+      </a>
+      <a href="https://github.com/samuelserraceo/agent-plumb" class="cmd-card bg-white border border-stone-200 rounded-xl p-5">
+        <div class="text-3xl mb-2">⭐</div>
+        <div class="font-semibold mb-1">The repo</div>
+        <p class="text-xs text-stone-600">Source code. Star it if you like it 💛</p>
+      </a>
+      <a href="https://github.com/samuelserraceo/agent-plumb/issues" class="cmd-card bg-white border border-stone-200 rounded-xl p-5">
+        <div class="text-3xl mb-2">💬</div>
+        <div class="font-semibold mb-1">Stuck or have ideas?</div>
+        <p class="text-xs text-stone-600">Open an issue. Plain English welcome.</p>
+      </a>
+    </div>
+
+  </div>
+</section>
+
+<footer class="border-t border-stone-200 bg-stone-100 py-8">
+  <div class="max-w-4xl mx-auto px-6 text-center text-sm text-stone-600">
+    Built with Agent Plumb dogfooding itself. <a href="walkthrough.html" class="underline">See the full architecture →</a>
+  </div>
+</footer>
+
+<script>
+  // ─── State ─────────────────────────────────────────────────────
+  let currentTool = null;
+  let currentOS = 'mac';
+  let stepsCompleted = 0;
+  const totalSteps = 5;
+
+  // ─── Tool selection ────────────────────────────────────────────
+  function pickTool(tool) {
+    currentTool = tool;
+    document.getElementById('card-claude').classList.remove('card-selected', 'border-amber-500', 'ring-4', 'ring-amber-200');
+    document.getElementById('card-pi').classList.remove('card-selected', 'border-violet-500', 'ring-4', 'ring-violet-200');
+
+    if (tool === 'claude') {
+      document.getElementById('card-claude').classList.add('card-selected', 'border-amber-500', 'ring-4', 'ring-amber-200');
+      document.getElementById('preflight-title').textContent = 'Get Claude Code first';
+      document.getElementById('preflight-blurb').textContent = "If you don't have Claude Code yet, install it. Pick your operating system below:";
+      document.getElementById('preflight-claude').classList.add('open');
+      document.getElementById('preflight-pi').classList.remove('open');
+      hide('step-install-pi');
+      reveal('step-install-claude');
+    } else {
+      document.getElementById('card-pi').classList.add('card-selected', 'border-violet-500', 'ring-4', 'ring-violet-200');
+      document.getElementById('preflight-title').textContent = 'Install pi.dev first';
+      document.getElementById('preflight-blurb').textContent = "First, get pi.dev itself working. One small terminal step. Pick your operating system:";
+      document.getElementById('preflight-claude').classList.remove('open');
+      document.getElementById('preflight-pi').classList.add('open');
+      hide('step-install-claude');
+      reveal('step-install-pi');
+    }
+    reveal('step-preflight');
+    bumpProgress(1);
+    scrollToNext();
+  }
+
+  // ─── OS tab selection ──────────────────────────────────────────
+  function pickOS(os) {
+    currentOS = os;
+    document.querySelectorAll('.os-tab').forEach(t => t.classList.remove('active'));
+    event.target.classList.add('active');
+    document.querySelectorAll('.os-panel').forEach(p => {
+      if (p.dataset.os === os) p.classList.add('active');
+      else p.classList.remove('active');
+    });
+  }
+
+  // ─── pi.dev auth path picker (OAuth vs API key) ───────────────
+  function pickAuthPath(path) {
+    document.getElementById('path-oauth').classList.remove('card-selected', 'border-violet-500', 'ring-4', 'ring-violet-200');
+    document.getElementById('path-apikey').classList.remove('card-selected', 'border-violet-500', 'ring-4', 'ring-violet-200');
+    document.getElementById('path-' + path).classList.add('card-selected', 'border-violet-500', 'ring-4', 'ring-violet-200');
+    const oauth = document.getElementById('auth-oauth');
+    const apikey = document.getElementById('auth-apikey');
+    if (path === 'oauth') {
+      oauth.classList.add('open');
+      apikey.classList.remove('open');
+    } else {
+      apikey.classList.add('open');
+      oauth.classList.remove('open');
+      // Default to NVIDIA (first card)
+      pickProvider('nvidia');
+    }
+  }
+
+  // ─── pi.dev provider picker (NVIDIA / OpenAI / Anthropic / Ollama) ─
+  function pickProvider(provider) {
+    ['nvidia', 'openai', 'anthropic', 'ollama'].forEach(p => {
+      const btn = document.getElementById('prov-' + p);
+      const flow = document.getElementById('prov-flow-' + p);
+      if (!btn || !flow) return;
+      if (p === provider) {
+        btn.classList.remove('bg-stone-50', 'border-stone-200');
+        btn.classList.add('bg-emerald-50', 'border-emerald-200', 'ring-2', 'ring-emerald-300');
+        flow.classList.remove('hidden');
+      } else {
+        btn.classList.remove('bg-emerald-50', 'border-emerald-200', 'ring-2', 'ring-emerald-300');
+        btn.classList.add('bg-stone-50', 'border-stone-200');
+        flow.classList.add('hidden');
+      }
+    });
+  }
+
+  // ─── Step transitions ──────────────────────────────────────────
+  function completeStep(currentId, nextId) {
+    const cur = document.getElementById(currentId);
+    cur.classList.remove('step-active');
+    cur.classList.add('step-done');
+    reveal(nextId);
+    bumpProgress(1);
+    scrollToNext();
+  }
+
+  function reveal(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove('step-locked');
+    el.classList.add('step-active');
+    if (el.classList.contains('reveal')) el.classList.add('open');
+  }
+
+  function hide(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove('step-active', 'open');
+    el.classList.add('step-locked');
+  }
+
+  function scrollToNext() {
+    setTimeout(() => {
+      const active = document.querySelectorAll('.step-active');
+      const last = active[active.length - 1];
+      if (last) last.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 200);
+  }
+
+  // ─── Progress bar ──────────────────────────────────────────────
+  function bumpProgress(by) {
+    stepsCompleted = Math.min(stepsCompleted + by, totalSteps);
+    const pct = (stepsCompleted / totalSteps) * 100;
+    document.getElementById('progress').style.width = pct + '%';
+    document.getElementById('progress-label').textContent = `${stepsCompleted} / ${totalSteps}`;
+  }
+
+  // ─── Copy-to-clipboard ─────────────────────────────────────────
+  function copyAndCheck(btn, text) {
+    navigator.clipboard.writeText(text).then(() => {
+      const original = btn.innerHTML;
+      btn.innerHTML = '✓ Copied';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.innerHTML = original;
+        btn.classList.remove('copied');
+      }, 2000);
+    });
+  }
+
+  // ─── Confetti finish ───────────────────────────────────────────
+  function finish() {
+    bumpProgress(1);
+    reveal('step-done');
+    scrollToNext();
+    const colors = ['#f59e0b', '#ef4444', '#10b981', '#3b82f6', '#a855f7'];
+    for (let i = 0; i < 60; i++) {
+      const c = document.createElement('div');
+      c.className = 'confetti';
+      c.style.left = Math.random() * 100 + 'vw';
+      c.style.background = colors[Math.floor(Math.random() * colors.length)];
+      c.style.animationDelay = (Math.random() * 0.5) + 's';
+      document.body.appendChild(c);
+      setTimeout(() => c.remove(), 3500);
+    }
+  }
+</script>
+
+</body>
+</html>

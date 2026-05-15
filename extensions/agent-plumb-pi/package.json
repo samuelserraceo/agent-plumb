@@ -1,0 +1,42 @@
+{
+  "name": "agent-plumb-pi",
+  "version": "0.1.0",
+  "description": "Agent Plumb for pi.dev — keeps your AI coding in plumb. Spec-driven workflow (SPEC → BUILD → SHIP, mechanical drift checks, append-only decisions ledger) for any of pi's 20+ AI providers.",
+  "keywords": [
+    "pi",
+    "pi.dev",
+    "agent-plumb",
+    "plumb",
+    "spec-driven",
+    "ai-coding",
+    "agent",
+    "workflow",
+    "discipline",
+    "anti-drift",
+    "audit"
+  ],
+  "license": "MIT",
+  "author": "Samuel Serra <hello@samserra.com>",
+  "homepage": "https://github.com/samuelserraceo/agent-plumb#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/samuelserraceo/agent-plumb.git",
+    "directory": "extensions/agent-plumb-pi"
+  },
+  "bugs": {
+    "url": "https://github.com/samuelserraceo/agent-plumb/issues"
+  },
+  "files": [
+    "dist/",
+    "prompts/",
+    "scripts/",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "pi": {
+    "extensions": "dist/sdd-pi.js",
+    "prompts": "prompts/"
+  }
+}

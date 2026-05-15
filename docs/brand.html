@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Agent Plumb — brand sheet</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink:        #0F1419;  /* deep midnight — base */
+      --paper:      #F5F2ED;  /* warm off-white — surface */
+      --vermilion:  #FF3D00;  /* accent A — warm + bold */
+      --chartreuse: #B8FF00;  /* accent B — electric + alive */
+      --graphite:   #3A3A3A;  /* body ink */
+      --hairline:   #D4CFC4;  /* string / borders */
+    }
+    html, body { background: var(--paper); color: var(--ink); }
+    body { font-family: 'Inter', system-ui, sans-serif; }
+    .display { font-family: 'Space Grotesk', sans-serif; letter-spacing: -0.02em; }
+    .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+
+    /* The plumb-bob mark */
+    .plumb-mark { display: inline-block; vertical-align: middle; }
+
+    /* Swatches */
+    .swatch { aspect-ratio: 1; border-radius: 12px; box-shadow: 0 2px 0 rgba(0,0,0,0.05) inset; }
+
+    /* Hairline grid background — engineer paper */
+    .grid-bg {
+      background-image:
+        linear-gradient(to right, rgba(15,20,25,0.04) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(15,20,25,0.04) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+
+    /* Mock terminal */
+    .term { background: var(--ink); color: #E5E1D8; border-radius: 12px; }
+    .term-prompt { color: var(--vermilion); }
+
+    /* Hover effect on logo cards */
+    .logo-card { transition: all 0.2s; }
+    .logo-card:hover { transform: translateY(-3px); box-shadow: 0 16px 40px -12px rgba(15,20,25,0.18); }
+
+    /* Vermilion vs chartreuse switcher */
+    .accent-vermilion .accent-bg { background: var(--vermilion); color: white; }
+    .accent-vermilion .accent-text { color: var(--vermilion); }
+    .accent-vermilion .accent-border { border-color: var(--vermilion); }
+    .accent-chartreuse .accent-bg { background: var(--chartreuse); color: var(--ink); }
+    .accent-chartreuse .accent-text { color: #6B9900; }
+    .accent-chartreuse .accent-border { border-color: var(--chartreuse); }
+
+    .pulse-dot { animation: pulse 1.4s infinite; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.4); }
+    }
+  </style>
+</head>
+<body class="accent-chartreuse grid-bg">
+
+<!-- ─── HERO ──────────────────────────────────────────────────────── -->
+<header class="border-b" style="border-color: var(--hairline)">
+  <div class="max-w-5xl mx-auto px-8 py-20">
+
+    <div class="flex items-center gap-2 text-xs mono uppercase tracking-widest" style="color: var(--graphite)">
+      <span class="w-2 h-2 rounded-full pulse-dot" style="background: var(--vermilion)"></span>
+      Brand sheet · v0.1
+    </div>
+
+    <div class="mt-12 flex items-end gap-8 flex-wrap">
+      <!-- Logo: plumb-bob inline -->
+      <svg viewBox="0 0 80 200" class="plumb-mark" width="64" height="160" aria-label="Agent Plumb mark">
+        <line x1="40" y1="0" x2="40" y2="120" stroke="var(--ink)" stroke-width="2" />
+        <path d="M 40 120 L 60 150 L 40 195 L 20 150 Z" fill="var(--ink)" />
+        <circle cx="40" cy="195" r="3" fill="var(--chartreuse)" class="accent-fill" />
+      </svg>
+      <div>
+        <div class="mono text-xs uppercase tracking-widest mb-2" style="color: var(--graphite)">Brand name · Agent Plumb</div>
+        <h1 class="display font-bold text-[140px] leading-none">PLUMB</h1>
+      </div>
+    </div>
+
+    <div class="mt-8 flex items-baseline gap-4 flex-wrap">
+      <span class="display text-5xl font-bold">Specs &gt; vibes.</span>
+    </div>
+
+    <p class="mt-6 max-w-2xl text-lg" style="color: var(--graphite)">
+      A spec-driven workflow for AI coding. Mechanical guard rails refuse commits that drift from the approved spec — so the agent stays in plumb.
+    </p>
+
+    <div class="mt-8 flex gap-2 items-center text-xs mono" style="color: var(--graphite)">
+      <button onclick="setAccent('vermilion')" class="px-3 py-1.5 rounded-full border" style="border-color: var(--ink); background: var(--vermilion); color: white">vermilion</button>
+      <button onclick="setAccent('chartreuse')" class="px-3 py-1.5 rounded-full border" style="border-color: var(--ink); background: var(--chartreuse); color: var(--ink)">chartreuse</button>
+      <span class="ml-2">← swap accent live</span>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-5xl mx-auto px-8 py-16 space-y-20">
+
+  <!-- ─── 01 · TAGLINE LIBRARY ────────────────────────────────────── -->
+  <section>
+    <div class="flex items-baseline gap-4 mb-6">
+      <span class="mono text-xs uppercase tracking-widest" style="color: var(--graphite)">01</span>
+      <h2 class="display text-3xl font-bold">Tagline · primary + family</h2>
+    </div>
+
+    <div class="border-2 accent-border rounded-2xl p-12 mb-6 text-center" style="background: var(--paper)">
+      <div class="mono text-xs uppercase tracking-widest mb-4" style="color: var(--graphite)">PRIMARY</div>
+      <div class="display text-7xl font-bold">Specs &gt; vibes.</div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="bg-white border rounded-xl p-5" style="border-color: var(--hairline)">
+        <div class="mono text-xs uppercase tracking-wider mb-2" style="color: var(--graphite)">SUPPORTING — declarative</div>
+        <ul class="space-y-2 display text-xl">
+          <li>· AI coding, kept honest.</li>
+          <li>· Build straight. Ship true.</li>
+          <li>· No drift. Just plumb.</li>
+        </ul>
+      </div>
+      <div class="bg-white border rounded-xl p-5" style="border-color: var(--hairline)">
+        <div class="mono text-xs uppercase tracking-wider mb-2" style="color: var(--graphite)">SUPPORTING — engineer-cheeky</div>
+        <ul class="space-y-2 display text-xl">
+          <li>· The receipts your AI didn't know it needed.</li>
+          <li>· Pull the line.</li>
+          <li>· <code class="mono text-base">/next</code> until shipped.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── 02 · LOGO DIRECTIONS ────────────────────────────────────── -->
+  <section>
+    <div class="flex items-baseline gap-4 mb-6">
+      <span class="mono text-xs uppercase tracking-widest" style="color: var(--graphite)">02</span>
+      <h2 class="display text-3xl font-bold">Logo · three directions</h2>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <!-- A: Plumb-bob -->
+      <div class="logo-card bg-white border-2 rounded-2xl p-8" style="border-color: var(--hairline)">
+        <div class="aspect-square flex items-center justify-center mb-4">
+          <svg viewBox="0 0 80 200" width="120" height="200">
+            <line x1="40" y1="10" x2="40" y2="120" stroke="var(--ink)" stroke-width="2" />
+            <path d="M 40 120 L 60 150 L 40 195 L 20 150 Z" fill="var(--ink)" />
+            <circle cx="40" cy="195" r="3" fill="var(--chartreuse)" class="accent-fill" />
+          </svg>
+        </div>
+        <div class="mono text-xs uppercase tracking-wider mb-1" style="color: var(--graphite)">CONCEPT A</div>
+        <div class="display text-xl font-bold mb-2">The plumb-bob</div>
+        <p class="text-sm" style="color: var(--graphite)">Most literal + iconic. Hairline string + weighted teardrop. Single accent dot at the tip = the AI in plumb. Scales to favicon (just the bob) and stencil prints great.</p>
+      </div>
+
+      <!-- B: Vertical bar + dot -->
+      <div class="logo-card bg-white border-2 rounded-2xl p-8" style="border-color: var(--hairline)">
+        <div class="aspect-square flex items-center justify-center mb-4">
+          <svg viewBox="0 0 80 200" width="120" height="200">
+            <rect x="36" y="20" width="8" height="150" fill="var(--ink)" />
+            <circle cx="40" cy="180" r="10" fill="var(--chartreuse)" class="accent-fill" />
+          </svg>
+        </div>
+        <div class="mono text-xs uppercase tracking-wider mb-1" style="color: var(--graphite)">CONCEPT B</div>
+        <div class="display text-xl font-bold mb-2">Vertical + dot</div>
+        <p class="text-sm" style="color: var(--graphite)">Abstracted plumb-bob. Pure vertical bar (true alignment) + single accent dot below (the weight). Pairs with a wordmark like a typographic colon. Works as a UI status pip.</p>
+      </div>
+
+      <!-- C: Crosshair -->
+      <div class="logo-card bg-white border-2 rounded-2xl p-8" style="border-color: var(--hairline)">
+        <div class="aspect-square flex items-center justify-center mb-4">
+          <svg viewBox="0 0 200 200" width="160" height="160">
+            <circle cx="100" cy="100" r="64" fill="none" stroke="var(--ink)" stroke-width="3" />
+            <line x1="100" y1="20" x2="100" y2="180" stroke="var(--ink)" stroke-width="2" />
+            <line x1="20" y1="100" x2="180" y2="100" stroke="var(--ink)" stroke-width="0.5" stroke-dasharray="3,3" />
+            <circle cx="100" cy="100" r="6" fill="var(--chartreuse)" class="accent-fill" />
+          </svg>
+        </div>
+        <div class="mono text-xs uppercase tracking-wider mb-1" style="color: var(--graphite)">CONCEPT C</div>
+        <div class="display text-xl font-bold mb-2">The crosshair</div>
+        <p class="text-sm" style="color: var(--graphite)">Engineering precision. Circle + true vertical + dashed horizontal (the level). Centre dot = your spec. Modern, dynamic, slightly playful. Reads as both target + spirit-level.</p>
+      </div>
+    </div>
+
+    <div class="mt-6 mono text-xs flex gap-6" style="color: var(--graphite)">
+      <span>📐 Sam's pick goes to a vector designer for refinement</span>
+      <span>·</span>
+      <span>All three work mono + on dark/light surfaces</span>
+    </div>
+  </section>
+
+  <!-- ─── 03 · COLOUR ─────────────────────────────────────────────── -->
+  <section>
+    <div class="flex items-baseline gap-4 mb-6">
+      <span class="mono text-xs uppercase tracking-widest" style="color: var(--graphite)">03</span>
+      <h2 class="display text-3xl font-bold">Colour · monochrome + 1 accent</h2>
+    </div>
+
+    <p class="mb-6 max-w-2xl" style="color: var(--graphite)">No gradients. No second accent. The plumb-line is a single weight; the brand follows.</p>
+
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+      <div>
+        <div class="swatch" style="background: var(--ink)"></div>
+        <div class="mono text-xs mt-2 font-semibold">Ink</div>
+        <div class="mono text-xs" style="color: var(--graphite)">#0F1419</div>
+        <div class="text-xs mt-1" style="color: var(--graphite)">Base, type, marks</div>
+      </div>
+      <div>
+        <div class="swatch border" style="background: var(--paper); border-color: var(--hairline)"></div>
+        <div class="mono text-xs mt-2 font-semibold">Paper</div>
+        <div class="mono text-xs" style="color: var(--graphite)">#F5F2ED</div>
+        <div class="text-xs mt-1" style="color: var(--graphite)">Surface (carpenter's paper)</div>
+      </div>
+      <div>
+        <div class="swatch" style="background: var(--vermilion)"></div>
+        <div class="mono text-xs mt-2 font-semibold">Vermilion</div>
+        <div class="mono text-xs" style="color: var(--graphite)">#FF3D00</div>
+        <div class="text-xs mt-1" style="color: var(--graphite)">Accent A — warm + bold</div>
+      </div>
+      <div>
+        <div class="swatch" style="background: var(--chartreuse)"></div>
+        <div class="mono text-xs mt-2 font-semibold">Chartreuse</div>
+        <div class="mono text-xs" style="color: var(--graphite)">#B8FF00</div>
+        <div class="text-xs mt-1" style="color: var(--graphite)">Accent B — electric</div>
+      </div>
+      <div>
+        <div class="swatch" style="background: var(--graphite)"></div>
+        <div class="mono text-xs mt-2 font-semibold">Graphite</div>
+        <div class="mono text-xs" style="color: var(--graphite)">#3A3A3A</div>
+        <div class="text-xs mt-1" style="color: var(--graphite)">Body text</div>
+      </div>
+    </div>
+
+    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="bg-white p-6 rounded-xl border" style="border-color: var(--hairline)">
+        <div class="mono text-xs uppercase tracking-wider mb-2" style="color: var(--graphite)">VERMILION (default)</div>
+        <p style="color: var(--graphite)">Hermès × engineer. Warm, confident, slightly retro-industrial. Good for craftsmanship vibes. Reads serious without being cold.</p>
+      </div>
+      <div class="bg-white p-6 rounded-xl border" style="border-color: var(--hairline)">
+        <div class="mono text-xs uppercase tracking-wider mb-2" style="color: var(--graphite)">CHARTREUSE (alt)</div>
+        <p style="color: var(--graphite)">Linear × hacker terminal. Cyber-electric, alive, slightly weird. Better for engineer-deep audience. More memorable in a sea of SaaS lavender.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── 04 · TYPOGRAPHY ────────────────────────────────────────── -->
+  <section>
+    <div class="flex items-baseline gap-4 mb-6">
+      <span class="mono text-xs uppercase tracking-widest" style="color: var(--graphite)">04</span>
+      <h2 class="display text-3xl font-bold">Typography · three roles</h2>
+    </div>
+
+    <div class="space-y-5">
+      <div class="bg-white border rounded-2xl p-8" style="border-color: var(--hairline)">
+        <div class="mono text-xs uppercase tracking-wider mb-3" style="color: var(--graphite)">DISPLAY · Space Grotesk Bold</div>
+        <div class="display text-6xl font-bold leading-none">Specs &gt; vibes.</div>
+        <div class="display text-3xl font-bold mt-3" style="color: var(--graphite)">For wordmarks, headlines, hero copy.</div>
+      </div>
+
+      <div class="bg-white border rounded-2xl p-8" style="border-color: var(--hairline)">
+        <div class="mono text-xs uppercase tracking-wider mb-3" style="color: var(--graphite)">BODY · Inter</div>
+        <p class="text-lg">Plumb is a spec-driven workflow that keeps AI coding agents accountable. Pre-commit hooks refuse drift. Every decision lives in an append-only ledger you can read six months from now and still understand.</p>
+      </div>
+
+      <div class="bg-white border rounded-2xl p-8" style="border-color: var(--hairline)">
+        <div class="mono text-xs uppercase tracking-wider mb-3" style="color: var(--graphite)">MONO · JetBrains Mono</div>
+        <pre class="mono text-base">$ plumb start "waitlist signup"
+  → spec scaffolded · 0/12 steps
+$ plumb next
+  ▸ §1 problem · who specifically?
+$ plumb status
+  ◆ phase: SPEC · blocker: §3 user-stories</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── 05 · APPLIED ────────────────────────────────────────────── -->
+  <section>
+    <div class="flex items-baseline gap-4 mb-6">
+      <span class="mono text-xs uppercase tracking-widest" style="color: var(--graphite)">05</span>
+      <h2 class="display text-3xl font-bold">Applied · how it shows up</h2>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+      <!-- Favicon set -->
+      <div class="bg-white border rounded-2xl p-6" style="border-color: var(--hairline)">
+        <div class="mono text-xs uppercase tracking-wider mb-3" style="color: var(--graphite)">FAVICON · the bob alone</div>
+        <div class="flex items-end gap-4">
+          <div class="rounded p-2" style="background: var(--ink)">
+            <svg viewBox="0 0 60 60" width="48" height="48">
+              <path d="M 30 8 L 45 30 L 30 56 L 15 30 Z" fill="var(--paper)" />
+              <circle cx="30" cy="56" r="2" fill="var(--chartreuse)" class="accent-fill" />
+            </svg>
+          </div>
+          <div class="rounded p-2" style="background: var(--ink)">
+            <svg viewBox="0 0 60 60" width="32" height="32">
+              <path d="M 30 8 L 45 30 L 30 56 L 15 30 Z" fill="var(--paper)" />
+              <circle cx="30" cy="56" r="2" fill="var(--chartreuse)" class="accent-fill" />
+            </svg>
+          </div>
+          <div class="rounded p-2" style="background: var(--ink)">
+            <svg viewBox="0 0 60 60" width="16" height="16">
+              <path d="M 30 8 L 45 30 L 30 56 L 15 30 Z" fill="var(--paper)" />
+              <circle cx="30" cy="56" r="3" fill="var(--chartreuse)" class="accent-fill" />
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Terminal sticker -->
+      <div class="bg-white border rounded-2xl p-6" style="border-color: var(--hairline)">
+        <div class="mono text-xs uppercase tracking-wider mb-3" style="color: var(--graphite)">CLI · session signature</div>
+        <div class="term mono text-xs p-4">
+          <div><span class="term-prompt">▸</span> <span style="color: var(--vermilion)" class="accent-text-inline">plumb</span>/0.1.0  <span style="color: #888">·  in plumb</span></div>
+          <div style="color: #888">[▸] phase: BUILD · 4/12 GREEN</div>
+          <div style="color: #888">[▸] active: T05 mobile-viewport-test</div>
+          <div class="mt-2"><span class="term-prompt">$</span> _</div>
+        </div>
+      </div>
+
+      <!-- Social card -->
+      <div class="md:col-span-2 bg-white border rounded-2xl p-6" style="border-color: var(--hairline)">
+        <div class="mono text-xs uppercase tracking-wider mb-3" style="color: var(--graphite)">SOCIAL · 1200×630 OG card</div>
+        <div class="rounded-lg overflow-hidden" style="background: var(--ink); aspect-ratio: 1200/630;">
+          <div class="h-full flex flex-col justify-between p-12">
+            <div class="flex items-center gap-3">
+              <svg viewBox="0 0 30 60" width="22" height="44">
+                <line x1="15" y1="0" x2="15" y2="36" stroke="var(--paper)" stroke-width="1" />
+                <path d="M 15 36 L 22 46 L 15 58 L 8 46 Z" fill="var(--paper)" />
+                <circle cx="15" cy="58" r="1.5" fill="var(--chartreuse)" class="accent-fill" />
+              </svg>
+              <span class="display text-2xl font-bold" style="color: var(--paper)">PLUMB</span>
+            </div>
+            <div>
+              <div class="display text-7xl font-bold leading-none" style="color: var(--paper)">Specs &gt; vibes.</div>
+              <div class="mt-3 mono text-sm" style="color: var(--vermilion)">A spec-driven workflow for AI coding · plumb.dev</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── 06 · VOICE ─────────────────────────────────────────────── -->
+  <section>
+    <div class="flex items-baseline gap-4 mb-6">
+      <span class="mono text-xs uppercase tracking-widest" style="color: var(--graphite)">06</span>
+      <h2 class="display text-3xl font-bold">Voice · three rules</h2>
+    </div>
+
+    <div class="space-y-3">
+      <div class="bg-white border-2 accent-border rounded-xl p-6 flex gap-4 items-start">
+        <span class="display text-3xl font-bold accent-text">①</span>
+        <div>
+          <div class="display text-xl font-bold mb-1">Anti-hype.</div>
+          <p style="color: var(--graphite)">No "revolutionary." No "supercharge." No rocket emojis (sorry). Plumb is <strong>quiet competence</strong> — the verb form would be "to align," not "to disrupt."</p>
+        </div>
+      </div>
+      <div class="bg-white border-2 accent-border rounded-xl p-6 flex gap-4 items-start">
+        <span class="display text-3xl font-bold accent-text">②</span>
+        <div>
+          <div class="display text-xl font-bold mb-1">One sentence per claim.</div>
+          <p style="color: var(--graphite)">If you can't say it in 12 words, you don't yet know what it does. Long copy = wishy-washy thinking.</p>
+        </div>
+      </div>
+      <div class="bg-white border-2 accent-border rounded-xl p-6 flex gap-4 items-start">
+        <span class="display text-3xl font-bold accent-text">③</span>
+        <div>
+          <div class="display text-xl font-bold mb-1">Receipts always.</div>
+          <p style="color: var(--graphite)">Every claim shows the mechanism. Not "Plumb prevents drift" — "Plumb's pre-commit hook re-runs verify-stage on every commit and refuses if the result doesn't match what was approved."</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── 07 · DON'T ─────────────────────────────────────────────── -->
+  <section>
+    <div class="flex items-baseline gap-4 mb-6">
+      <span class="mono text-xs uppercase tracking-widest" style="color: var(--graphite)">07</span>
+      <h2 class="display text-3xl font-bold">Don't ·</h2>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+      <div class="bg-white p-4 rounded-lg border" style="border-color: var(--hairline)"><span class="text-red-600">✗</span> Use gradients on the bob (it's a single weight)</div>
+      <div class="bg-white p-4 rounded-lg border" style="border-color: var(--hairline)"><span class="text-red-600">✗</span> Pair with a second accent colour</div>
+      <div class="bg-white p-4 rounded-lg border" style="border-color: var(--hairline)"><span class="text-red-600">✗</span> Stack the wordmark + mark vertically (always horizontal lockup)</div>
+      <div class="bg-white p-4 rounded-lg border" style="border-color: var(--hairline)"><span class="text-red-600">✗</span> Use the bob without the string in body text (string is the metaphor)</div>
+      <div class="bg-white p-4 rounded-lg border" style="border-color: var(--hairline)"><span class="text-red-600">✗</span> Italicise the wordmark</div>
+      <div class="bg-white p-4 rounded-lg border" style="border-color: var(--hairline)"><span class="text-red-600">✗</span> Write taglines longer than 5 words</div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="border-t py-8 mt-12" style="border-color: var(--hairline)">
+  <div class="max-w-5xl mx-auto px-8 mono text-xs flex justify-between" style="color: var(--graphite)">
+    <span>PLUMB · brand sheet · v0.1</span>
+    <span>spec-driven · drift-refusing · plain-English-first</span>
+  </div>
+</footer>
+
+<script>
+  function setAccent(name) {
+    document.body.classList.remove('accent-vermilion', 'accent-chartreuse');
+    document.body.classList.add('accent-' + name);
+    const accent = name === 'vermilion' ? '#FF3D00' : '#B8FF00';
+    document.querySelectorAll('.accent-fill').forEach(el => el.setAttribute('fill', accent));
+  }
+</script>
+
+</body>
+</html>
