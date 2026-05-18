@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SDD — v0.13.6 + 6 of 11 v1.0 items shipped on main</title>
+  <title>Agent Plumb — v0.13.6 + 6 of 11 v1.0 items shipped on main</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
@@ -343,7 +343,7 @@
   <header class="border-b border-stone-200 bg-white sticky top-0 z-30">
     <div class="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
       <div>
-        <h1 class="text-base font-semibold text-stone-900 whitespace-nowrap">SDD — <span class="text-emerald-700">v0.13.6</span></h1>
+        <h1 class="text-base font-semibold text-stone-900 whitespace-nowrap">Agent Plumb — <span class="text-emerald-700">v0.13.6</span></h1>
         <p class="text-xs text-stone-500 whitespace-nowrap">Latest tag · refreshed 2026-04-29</p>
       </div>
       <nav class="hidden md:flex gap-4 text-xs text-stone-600">
@@ -1497,7 +1497,7 @@
 
           <!-- Brick 5: SDD MCP server -->
           <div class="mt-6 pt-5 border-t border-stone-200">
-            <h5 class="font-semibold text-stone-900 text-base">5. SDD MCP server <span class="text-xs text-stone-500 ml-2">(the 40-60% token-saver)</span></h5>
+            <h5 class="font-semibold text-stone-900 text-base">5. Agent Plumb MCP server <span class="text-xs text-stone-500 ml-2">(the 40-60% token-saver)</span></h5>
             <p class="text-sm text-stone-500 italic mt-1">A small Python program at extensions/sdd-mcp-server/ that gives Claude declarative queries over the .sdd/ tree. Optional semantic search opt-in.</p>
             <p class="text-sm text-stone-700 mt-3 leading-relaxed">
               <strong>What it is.</strong> A real Python server (~1,400 lines, 26 tests) at <code class="text-xs bg-stone-100 px-1 rounded">extensions/sdd-mcp-server/</code>. Claude Code talks to it via the Model Context Protocol (MCP) — a JSON-RPC interface over stdin/stdout. Each "query" the server exposes is a typed call Claude can make: <code class="text-xs bg-stone-100 px-1 rounded">mcp__sdd__get-active-step</code>, <code class="text-xs bg-stone-100 px-1 rounded">mcp__sdd__get-by-tag</code>, etc.
@@ -2107,7 +2107,7 @@ gh api "/user/installations/$INSTALL_ID/repositories" \
     <!-- =========================================================== -->
 
     <section class="space-y-3 pt-8 border-t-2 border-emerald-200">
-      <h2 class="text-2xl font-bold text-stone-900">Using SDD on your own project</h2>
+      <h2 class="text-2xl font-bold text-stone-900">Using Agent Plumb on your own project</h2>
       <p class="text-stone-600 max-w-3xl leading-relaxed">
         Everything below this line is written for you, Sam — not for the engineers tracking the release. It's how the framework feels to <em>use</em>, what you can change without writing code, and two concrete walkthroughs of building real things with it. Each card is collapsed by default; click to open.
       </p>
@@ -3508,7 +3508,7 @@ T4 GREEN — admin sees referral graph
     <!-- ============= NEW: THE FOUR NOTEBOOKS ============= -->
     <section id="notebooks" class="space-y-4">
       <div>
-        <h3 class="text-xl font-semibold text-stone-900">How SDD keeps your project memory fresh — the filing system</h3>
+        <h3 class="text-xl font-semibold text-stone-900">How Agent Plumb keeps your project memory fresh — the filing system</h3>
         <p class="text-stone-600 mt-1 text-sm max-w-3xl">
           Software projects accumulate decisions. After six months, "why are we using Stripe?" or "what was that weird customer-data quirk we hit in March?" usually lives in someone's head, scattered across Slack threads, or buried in a closed pull request. SDD refuses to let that happen. Every project gets <strong>four small notebooks</strong> — always up to date, always in the same place, always short enough that the AI can read all of them in 5 seconds at the start of every conversation.
         </p>
@@ -3519,7 +3519,7 @@ T4 GREEN — admin sees referral graph
         <button class="card-toggle w-full text-left flex items-center gap-4 p-5 hover:bg-emerald-50">
           <span class="text-2xl">📚</span>
           <div class="flex-1">
-            <h4 class="font-semibold text-stone-900">The four notebooks every SDD project keeps</h4>
+            <h4 class="font-semibold text-stone-900">The four notebooks every Agent Plumb project keeps</h4>
             <p class="text-sm text-stone-500 mt-0.5">A home page, a data truth file, a lessons file, and a diary. Together they're the AI's external brain.</p>
           </div>
           <span class="text-xs text-stone-400">click to collapse</span>
@@ -3963,7 +3963,7 @@ T4 GREEN — admin sees referral graph
 
     <section id="reference" class="space-y-5 pt-8 border-t-2 border-emerald-200">
       <div>
-        <h2 class="text-2xl font-bold text-stone-900">Reference card — what you can do with SDD</h2>
+        <h2 class="text-2xl font-bold text-stone-900">Reference card — what you can do with Agent Plumb</h2>
         <p class="text-stone-600 mt-2 text-sm max-w-3xl leading-relaxed">
           A scrollable, scannable one-page summary of everything you can run, every file you can read or edit, and every knob you can turn. Until <strong>v0.11</strong> ships the in-app <code class="text-xs bg-stone-100 px-1 rounded">/menu</code> command, this section <em>is</em> the menu.
         </p>
@@ -4323,7 +4323,7 @@ T4 GREEN — admin sees referral graph
 
     <!-- INSTALL CTA -->
     <section id="install" class="space-y-4">
-      <h3 class="text-xl font-semibold text-stone-900">Install SDD</h3>
+      <h3 class="text-xl font-semibold text-stone-900">Install Agent Plumb</h3>
       <p class="text-stone-600 text-sm max-w-2xl">A small framework that earns its keep on the first feature you build with it. Two ways in:</p>
 
       <div class="grid md:grid-cols-2 gap-4">
