@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>SDD v1.9 — per-file injection budgets · model tiers · specialized subagents · CR convergence (live)</title>
+<title>Agent Plumb v1.9 — per-file injection budgets · model tiers · specialized subagents · CR convergence (live)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
   :root {
@@ -126,7 +126,7 @@
 <header class="app">
   <div class="max-w-6xl mx-auto px-6 py-3 flex items-center gap-4 flex-wrap">
     <a href="#top" class="flex items-center gap-3">
-      <span class="text-base font-bold tracking-tight">SDD</span>
+      <span class="text-base font-bold tracking-tight">Agent Plumb</span>
       <span class="pill pill-v10">v1.0 → v1.9 shipped</span>
     </a>
     <nav class="flex items-center gap-3 text-sm text-stone-600 ml-2">
@@ -163,10 +163,10 @@
   <h1 class="text-4xl md:text-5xl font-bold leading-tight tracking-tight max-w-4xl">A way to build software with AI without the AI making stuff up.</h1>
   <div class="mt-6 max-w-3xl text-stone-600 text-lg leading-relaxed space-y-3">
     <p>You bring the <em>what</em> in plain English. The agent proposes the <em>how</em> with tradeoffs you can react to. Every decision lands in markdown files you can read, share with a future engineer, or rebuild on a different stack.</p>
-    <p>Pre-commit hooks make drift mechanically impossible — the agent literally cannot commit code that wanders from its spec. v1.0 shipped 4 playbooks, a knowledge graph layer, and a CI gate that blocks broken refs at PR time. v1.6 added a brief-paste SPEC entry, plain-English-first <code class="mono text-xs bg-stone-100 px-1 rounded">&lt;details&gt;</code> doctrine, and a pi.dev adapter that runs SDD on 15+ providers. <strong>v1.7 → v1.9 (2026-05-11 → 12)</strong> added per-file injection budgets (patterns.md no longer cut mid-paragraph), cache-friendly corpus reorder, auto-advance AGENT-LED steps, lego-style model-tier-per-action, specialized subagents (researcher/executor/verifier), cross-branch ID collision detection + rename helper, /ship verify-cr-convergence (mechanical CR gate), and /sdd-verify-stack (post-wizard reality check).</p>
+    <p>Pre-commit hooks make drift mechanically impossible — the agent literally cannot commit code that wanders from its spec. v1.0 shipped 4 playbooks, a knowledge graph layer, and a CI gate that blocks broken refs at PR time. v1.6 added a brief-paste SPEC entry, plain-English-first <code class="mono text-xs bg-stone-100 px-1 rounded">&lt;details&gt;</code> doctrine, and a pi.dev adapter that runs Agent Plumb on 15+ providers. <strong>v1.7 → v1.9 (2026-05-11 → 12)</strong> added per-file injection budgets (patterns.md no longer cut mid-paragraph), cache-friendly corpus reorder, auto-advance AGENT-LED steps, lego-style model-tier-per-action, specialized subagents (researcher/executor/verifier), cross-branch ID collision detection + rename helper, /ship verify-cr-convergence (mechanical CR gate), and /sdd-verify-stack (post-wizard reality check).</p>
   </div>
   <div class="mt-8 flex gap-3 flex-wrap">
-    <a href="#try" class="px-5 py-3 rounded-lg bg-stone-900 text-white text-sm font-semibold hover:bg-stone-700">Try SDD now →</a>
+    <a href="#try" class="px-5 py-3 rounded-lg bg-stone-900 text-white text-sm font-semibold hover:bg-stone-700">Try Agent Plumb now →</a>
     <a href="#loop" class="px-5 py-3 rounded-lg border border-stone-300 text-sm font-semibold hover:bg-stone-100">Watch the 30-second loop</a>
     <a href="#validation" class="px-5 py-3 rounded-lg border border-stone-300 text-sm font-semibold hover:bg-stone-100">Validate the architecture</a>
   </div>
@@ -409,7 +409,7 @@
           one question at a time until every fuzzy word becomes a concrete rule. The full pipeline:
         </p>
         <div class="mt-3 mono text-sm text-center bg-white rounded-lg py-2 px-3">
-          idea → <strong style="color:#6B9900">/write-brief</strong> → <strong style="color:#6B9900">/sdd-start "&lt;brief&gt;"</strong> → <strong style="color:#6B9900">/sdd-next</strong> … → <strong style="color:#6B9900">/sdd-ship</strong>
+          idea → <strong style="color:#6B9900">/write-brief</strong> → <strong style="color:#6B9900">/start "&lt;brief&gt;"</strong> → <strong style="color:#6B9900">/next</strong> … → <strong style="color:#6B9900">/ship</strong>
         </div>
         <div class="mt-3 text-xs text-stone-500">
           Install instructions: <a href="index.html#step-firstfeature" class="underline" style="color:#6B9900">see the wizard's reference shelf →</a>
@@ -577,7 +577,7 @@
           <text x="680" y="66" text-anchor="middle" font-size="9" fill="#166534">no edit happened</text></g>
       </svg>
     </div>
-    <p class="text-xs text-stone-500 mt-2">Closes 3 tamper paths: isolated edit (T135), isolated delete (T135b), isolated rename (T135c). The marker requirement makes "I just upgraded SDD" cleanly distinguishable from "an attacker silently edited a hook script". The agent that does the upgrade adds the marker; an attacker doesn't know to.</p>
+    <p class="text-xs text-stone-500 mt-2">Closes 3 tamper paths: isolated edit (T135), isolated delete (T135b), isolated rename (T135c). The marker requirement makes "I just upgraded Agent Plumb" cleanly distinguishable from "an attacker silently edited a hook script". The agent that does the upgrade adds the marker; an attacker doesn't know to.</p>
   </div>
 
   <!-- ───────── Diagram 5: Wiki-link slug-resolution graph ───────── -->
@@ -763,10 +763,10 @@
         <!-- arrow claude → sdd -->
         <line class="arch-arrow" x1="450" y1="182" x2="450" y2="206"/>
 
-        <!-- SDD FRAMEWORK BODY -->
+        <!-- AGENT PLUMB FRAMEWORK BODY -->
         <g>
           <rect x="40" y="210" width="820" height="220" rx="12" fill="#fafaf9" stroke="var(--line)" stroke-width="1.5"/>
-          <text class="arch-sub" x="60" y="232" font-size="11" font-weight="600" fill="var(--ink-2)">SDD FRAMEWORK</text>
+          <text class="arch-sub" x="60" y="232" font-size="11" font-weight="600" fill="var(--ink-2)">AGENT PLUMB FRAMEWORK</text>
 
           <!-- playbooks -->
           <g class="arch-box-grp" data-box="playbooks">
@@ -1069,7 +1069,7 @@
         <li>GPT-5.5 external review actioned across 4 PRs: anti-theatre regex hardening, 3 new CI claims, fail-closed hook paths</li>
         <li>Brand rename: SDD → <strong>Agent Plumb</strong> 🪡 · "Specs &gt; vibes" tagline · chartreuse accent · Pixel Plumb mascot</li>
         <li>npm package: <code class="mono text-xs bg-stone-100 px-1 rounded">sdd-pi-adapter</code> → <code class="mono text-xs bg-stone-100 px-1 rounded">agent-plumb-pi</code></li>
-        <li>Companion plugin shipped: <code class="mono text-xs bg-stone-100 px-1 rounded">agent-plumb-brief@0.8.0</code> on a new <code class="mono text-xs bg-stone-100 px-1 rounded">sam-serra-plugins</code> Claude marketplace — pairs with <code class="mono text-xs bg-stone-100 px-1 rounded">brief-intake</code> to feed the SPEC pipeline (`/write-brief` → `/sdd-start "<brief>"`)</li>
+        <li>Companion plugin shipped: <code class="mono text-xs bg-stone-100 px-1 rounded">agent-plumb-brief@0.8.0</code> on a new <code class="mono text-xs bg-stone-100 px-1 rounded">sam-serra-plugins</code> Claude marketplace — pairs with <code class="mono text-xs bg-stone-100 px-1 rounded">brief-intake</code> to feed the SPEC pipeline (`/write-brief` → `/start "<brief>"`)</li>
         <li>Repo renamed + flipped public · GitHub Pages live · friend-onboarding shippable</li>
       </ul>
     </details>
@@ -1091,7 +1091,7 @@
       <p class="text-xs text-stone-500 mt-2">Requires Python 3 with PyYAML (<code class="mono">pip install pyyaml</code>). Framework deps stop there.</p>
     </li>
     <li class="card p-5">
-      <p class="text-sm text-stone-500 mb-2 mono">Step 2 — drop SDD into your project</p>
+      <p class="text-sm text-stone-500 mb-2 mono">Step 2 — drop Agent Plumb into your project</p>
       <pre class="code text-xs"><span class="c">$</span> cd &lt;your-project&gt;
 <span class="c">$</span> ~/Projects/sdd/scripts/init.sh</pre>
       <p class="text-xs text-stone-500 mt-2">Adds <code class="mono">.sdd/</code>, <code class="mono">.claude/</code>, <code class="mono">CLAUDE.md</code>, copies the MCP server, and sets <code class="mono">git config core.hooksPath .claude/hooks</code> (with a halt-and-ask if you already use Husky / lefthook).</p>
@@ -1235,7 +1235,7 @@
       <li>· <strong>playwright/</strong> — browser-test runner config + scaffolding (production)</li>
       <li>· <strong>playwright-explorer/</strong> — agentic exploration loop emitting AC suggestions (production, v1.0)</li>
       <li>· <strong>sdd-mcp-server/</strong> — Python MCP helper exposing 10 queries (production, 161/161 unit tests)</li>
-      <li>· <strong>sdd-pi-extension/</strong> <span class="text-violet-700">★ v1.6</span> — pi.dev adapter bringing SDD's <code class="mono text-xs">/sdd-start /sdd-next /sdd-ship</code> loop to 15+ providers (Anthropic, OpenAI, Google, Ollama, Bedrock, Groq, xAI, OpenRouter, …). Closes the "Claude Code only" lock.</li>
+      <li>· <strong>sdd-pi-extension/</strong> <span class="text-violet-700">★ v1.6</span> — pi.dev adapter bringing Plumb's <code class="mono text-xs">/start /next /ship</code> loop to 15+ providers (Anthropic, OpenAI, Google, Ollama, Bedrock, Groq, xAI, OpenRouter, …). Closes the "Claude Code only" lock.</li>
     </ul>
   </details>
 
@@ -1278,11 +1278,11 @@
 <!-- ═══════════════════════════════════════════ HONEST CAVEATS ═══════════════════════════════════════════ -->
 <section id="caveats" class="max-w-6xl mx-auto px-6 py-10 reviewable" data-section="caveats">
   <div class="review-tools review-only"><button type="button" class="rb" data-flag="ok">✓</button><button type="button" class="rb" data-flag="unclear">?</button><button type="button" class="rb" data-flag="problem">✗</button></div>
-  <h2 class="text-2xl font-bold mb-2">Honest caveats — what SDD isn't.</h2>
-  <p class="text-stone-600 max-w-3xl mb-6">SDD is opinionated and explicitly trades some things to win others. If any of these feel wrong for your project, SDD is the wrong tool.</p>
+  <h2 class="text-2xl font-bold mb-2">Honest caveats — what Agent Plumb isn't.</h2>
+  <p class="text-stone-600 max-w-3xl mb-6">Agent Plumb is opinionated and explicitly trades some things to win others. If any of these feel wrong for your project, Plumb is the wrong tool.</p>
 
   <ul class="space-y-3">
-    <li class="card p-4"><strong class="block mb-1">Not for typo fixes or copy tweaks.</strong> A 30–90 minute SPEC ceremony for a one-line change is the wrong tool. SDD's "triage on first message" rule routes those to plain commits with no ceremony.</li>
+    <li class="card p-4"><strong class="block mb-1">Not for typo fixes or copy tweaks.</strong> A 30–90 minute SPEC ceremony for a one-line change is the wrong tool. Plumb's "triage on first message" rule routes those to plain commits with no ceremony.</li>
     <li class="card p-4"><strong class="block mb-1">Not for one-shot speed.</strong> A first SPEC takes 30–90 minutes. If you want it built right now without questions, this isn't the framework.</li>
     <li class="card p-4"><strong class="block mb-1">Doesn't turn a bad idea into a good one.</strong> The framework makes drift expensive and deep questioning cheap. It does not invent product strategy.</li>
     <li class="card p-4"><strong class="block mb-1">Scales to roughly 50 in-flight features / 500 total.</strong> Beyond that, you outgrow plain markdown — but the cold-tier + size caps + auto-archival keep working memory bounded indefinitely up to that scale.</li>
@@ -1296,7 +1296,7 @@
 <footer class="border-t border-stone-200 mt-12">
   <div class="max-w-6xl mx-auto px-6 py-8 flex flex-col md:flex-row gap-6 items-start md:items-center justify-between text-sm">
     <div class="text-stone-500">
-      <p><strong class="text-stone-900">SDD v1.6.0</strong> · tagged 2026-05-10 · v1.0.0 anchor on commit <a class="mono underline" target="_blank" rel="noopener noreferrer" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/commit/ec3e711">ec3e711</a> · v1.1 → v1.6 landed on <code class="mono">main</code> 2026-05-01 → 2026-05-11</p>
+      <p><strong class="text-stone-900">Agent Plumb v1.6.0</strong> · tagged 2026-05-10 · v1.0.0 anchor on commit <a class="mono underline" target="_blank" rel="noopener noreferrer" href="https://github.com/samuelserraceo/spec-driven-dev-workflow/commit/ec3e711">ec3e711</a> · v1.1 → v1.6 landed on <code class="mono">main</code> 2026-05-01 → 2026-05-11</p>
       <p class="mt-1">218/218 framework tests + 161/161 MCP unit tests · all mutation-verified · 33/33 claims audited end-to-end</p>
     </div>
     <div class="flex gap-4 flex-wrap">
@@ -1442,13 +1442,13 @@ references: [data-model.md, INDEX.md]
   // ─── Architecture diagram detail panel ──────────────────────────────
   const ARCH_DETAIL = {
     user: { t: 'YOU — the human builder', d: 'Non-technical or technical-curious. Brings the <em>what</em> in plain English. Decides between proposals; never reads YAML. The framework\'s entire output (specs, status messages, error explanations) is calibrated for a reader who isn\'t paid to read code.' },
-    claude: { t: 'CLAUDE CODE — the harness', d: 'The CLI/IDE that runs the agent loop. Reads <code class="mono">CLAUDE.md</code> at session start, fires the SDD hooks before/after tool calls. SDD is registered with Claude Code as a plugin via the manifest in this repo.' },
+    claude: { t: 'CLAUDE CODE — the harness', d: 'The CLI/IDE that runs the agent loop. Reads <code class="mono">CLAUDE.md</code> at session start, fires the Plumb hooks before/after tool calls. Agent Plumb is registered with Claude Code as a plugin via the manifest in this repo.' },
     playbooks: { t: '4 playbooks', files: 'templates/.sdd/playbooks/', list: ['feature.md (15 SPEC actions)','project.md (7 actions across VISION/BREAKDOWN/KICKOFF)','bug.md (5 SPEC actions)','refactor.md (4 SPEC actions; minimal-diff-verify halts on positive line delta)'], d: 'Each playbook\'s YAML frontmatter declares stages → actions → exit_checks. New playbooks are compositions of existing actions — no framework code change needed.' },
     actions: { t: '44 actions (v1.6 added brief-intake; success.md deprecated but retained)', files: 'templates/.sdd/actions/', d: 'One prose file per step. Frontmatter declares <code class="mono text-xs">tag</code> (USER-LED / AGENT-LED / BUILD-TASK / TRANSITION), <code class="mono text-xs">steps</code>, <code class="mono text-xs">touches</code>, <code class="mono text-xs">requires_user_approval</code>. Body is plain-English instructions Claude Code reads + executes. v1.6.0 introduced <code class="mono text-xs">brief-intake</code> as the playbook\'s first action — paste a brief, agent grills + summarises + pre-fills 6 sections.' },
     hooks: { t: '11 hooks (9 scripts + 2 native git shims)', files: 'templates/.claude/hooks/', list: ['session-start.sh — print state','user-prompt-submit.sh — inject context (stack, principles, data-model auto-inject v1.3)','triage-on-first-message.sh — classify intent','pre-commit-rules.sh — F1 generic enforcer','pre-commit-stage-verified.sh — the moat','pre-commit-no-assumed-markers.sh — placeholder gate','pre-commit-no-theatre.sh — anti-theatre lint (v1.2)','pre-commit-test-first.sh — RED before GREEN (v1.3)','post-stop-lint.sh — 10 turn-end invariants','pre-commit (no extension) — native git shim','commit-msg — manifest-repin marker (v1.4 bugs/001 fix)'], d: 'Mechanical enforcement. Each hook fails closed: a refused commit needs the user to fix the blocker, not work around it.' },
     scripts: { t: '25 scripts', files: 'templates/.sdd/scripts/', d: 'Runtime helpers invoked by hooks and slash commands. Notable v1.0 additions: <code class="mono text-xs">resolve-active.sh</code> (branch-aware) and <code class="mono text-xs">scope-guard-config.sh</code> (per-project UI dirs). v1.2 added <code class="mono text-xs">lint-action-prose.sh</code> + <code class="mono text-xs">lint-no-theatre.sh</code>. v1.4 added <code class="mono text-xs">sdd-migrate.sh</code> (Channel B updatability). v1.5.2 added <code class="mono text-xs">promote-to-active.sh</code>. v1.6 added <code class="mono text-xs">background-while-waiting.sh</code> + <code class="mono text-xs">background-metric.sh</code>.' },
     mcp: { t: '10 MCP queries (3 v1.0 graph + synthesise.py for Tier 3)', files: 'extensions/sdd-mcp-server/queries/', d: 'A small Python helper. Lets Claude ask short questions instead of reading whole files — ~200 bytes back per query vs 15–35 KB of file reads. v1.0 added 3 graph-traversal queries for the wiki-link layer; v1.1 added synthesise.py for Tier 3 LLM-driven retrieval.' },
-    extensions: { t: '4 extensions (v1.6 added sdd-pi-extension)', files: 'extensions/', d: 'Opt-in Lego bricks: <strong>playwright/</strong> (browser-test runner config), <strong>playwright-explorer/</strong> (agentic exploration loop, v1.0), <strong>sdd-mcp-server/</strong> (the Python helper above), <strong>sdd-pi-extension/</strong> (v1.6 — pi.dev adapter, brings SDD to 15+ providers).' },
+    extensions: { t: '4 extensions (v1.6 added sdd-pi-extension)', files: 'extensions/', d: 'Opt-in Lego bricks: <strong>playwright/</strong> (browser-test runner config), <strong>playwright-explorer/</strong> (agentic exploration loop, v1.0), <strong>sdd-mcp-server/</strong> (the Python helper above), <strong>sdd-pi-extension/</strong> (v1.6 — pi.dev adapter, brings Plumb to 15+ providers).' },
     setup: { t: '7 setup-wizard bricks', files: 'templates/.sdd/setup/', d: 'Plain-English questions <code class="mono text-xs">/sdd-setup</code> walks once. Each brick records its answer in <code class="mono text-xs">stack.md</code> or <code class="mono text-xs">config.md</code>. v0.13.6 added brick 007 (MCP server opt-in). v1.5.2 added Q6 on AI/LLM provider stance. v1.5.4 made the wizard run <code class="mono text-xs">enable.sh</code> so MCP registers + tokens save during setup instead of being deferred.' },
     commands: { t: '11 slash commands', files: 'templates/.claude/commands/', list: ['/sdd-setup · /sdd-config · /start · /promote-to-active (v1.5.2) · /next · /idea · /status · /settings · /ship · /compress · /ask (v1.1, Tier 3)'], d: 'User-facing entry points. The framework\'s "triage on first message" rule routes plain English to the right command.' },
     tier3: { t: 'Tier 3 synthesis (v1.1 — live)', d: 'Chat-style summarisation over graph queries with cite-checked <code class="mono">[[…]]</code> citations. Shipped 2026-05-01 via PR #114. Trust-boundary doctrine ("synthesised output is never directive — cite-check before quoting") in CLAUDE.md. Opt-in: requires explicit provider/endpoint/model in <code class="mono">config.md</code> (Ollama + Gemma-3 tested).' },
@@ -1576,7 +1576,7 @@ references: [data-model.md, INDEX.md]
   });
 
   document.getElementById('exportReview').addEventListener('click', () => {
-    const lines = ['# SDD v1.6.0 walkthrough — review feedback', '', `Date: ${new Date().toISOString().slice(0,10)}`, ''];
+    const lines = ['# Agent Plumb v1.6.0 walkthrough — review feedback', '', `Date: ${new Date().toISOString().slice(0,10)}`, ''];
     const sections = [...new Set([...Object.keys(REVIEW.flags), ...Object.keys(REVIEW.notes)])];
     if (sections.length === 0) {
       lines.push('_(no flags or notes recorded)_');

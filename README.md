@@ -1,4 +1,15 @@
-# Spec-Driven Development Workflow (SDD)
+<div align="center">
+
+# Agent Plumb 🪡
+
+**Specs > vibes.**
+
+![specs over vibes](https://img.shields.io/badge/specs%20%3E%20vibes-B8FF00?style=for-the-badge&labelColor=0F1419)
+![Claude Code plugin](https://img.shields.io/badge/Claude_Code-plugin-0F1419?style=for-the-badge)
+![license MIT](https://img.shields.io/badge/license-MIT-FF3D00?style=for-the-badge&labelColor=0F1419)
+![bash + python](https://img.shields.io/badge/built_with-bash_%2B_python-3A3A3A?style=for-the-badge)
+
+</div>
 
 > A stupidly simple, agent-driven workflow for building real software with AI without the AI making stuff up.
 > **The state file is the program. The playbook is the questioning agent. The filesystem is the retrieval system.**
@@ -18,23 +29,23 @@ If you've used Claude Code, Cursor, Lovable, or any other AI coding tool, you've
 - Six months later you can't remember **why** the AI picked one tech over another.
 - Documentation drifted. Schema drifted. Tests skipped.
 
-SDD makes the wrong path **mechanically checked at every commit**, not just discouraged. With SDD configured (hooks active, manifest pinned, no `--no-verify` bypass), the agent cannot commit code that drifts from its spec — git pre-commit hooks refuse the commit. The "moat" hook re-runs your verification checks on every commit and blocks any "the agent claims it works" assertion that doesn't match what fresh tests actually report. (Honest caveat: a determined human with `--no-verify` or a misconfigured project can route around any check; the framework's discipline is "every committed atom is mechanically verified," not "physically impossible to drift.")
+Agent Plumb makes the wrong path **mechanically checked at every commit**, not just discouraged. With Agent Plumb configured (hooks active, manifest pinned, no `--no-verify` bypass), the agent cannot commit code that drifts from its spec — git pre-commit hooks refuse the commit. The "moat" hook re-runs your verification checks on every commit and blocks any "the agent claims it works" assertion that doesn't match what fresh tests actually report. (Honest caveat: a determined human with `--no-verify` or a misconfigured project can route around any check; the framework's discipline is "every committed atom is mechanically verified," not "physically impossible to drift.")
 
 You bring the *what* (in plain English). The agent proposes the *how* (with tradeoffs you can react to). Every decision is captured in markdown files you can read, share with an investor, hand to a future engineer, or rebuild in a different stack.
 
 ---
 
-## What SDD is — and isn't (explicit tradeoff)
+## What Agent Plumb is — and isn't (explicit tradeoff)
 
-SDD is opinionated. It optimises for some things and gives up others. Knowing the trade upfront prevents misunderstanding:
+Agent Plumb is opinionated. It optimises for some things and gives up others. Knowing the trade upfront prevents misunderstanding:
 
-**SDD optimises for:**
+**Agent Plumb optimises for:**
 - **Honest review over fast iteration.** Every step's content + commit shape is reviewable. Re-approval ceremony for changed approved sections. Append-only audit log. Mutation-verified tests.
 - **Plain English over technical precision.** Non-technical users drive specs; jargon gets translated on first use; status output reads in 30 seconds.
 - **Explicit over clever.** Each step declares its tag, its touches, its triggers. No magic. No discovery.
 - **Predictability over flexibility.** Same 4-step inner loop every iteration. Same commit shape. Customisation = adding rows in the standard format, not changing the format.
 
-**SDD explicitly gives up:**
+**Agent Plumb explicitly gives up:**
 - **Power-user ergonomics.** Engineer-comfortable shorthand isn't here.
 - **One-shot speed.** A SPEC takes 30–90 minutes the first time. The wrong choice for "I want it built right now."
 - **Technical-precision in prose.** Hook stderr says *"the database can't be reached so the form shows 'please try again'"* — not *"DB unreachable, returning 503."*
@@ -72,16 +83,16 @@ claude plugin marketplace add https://github.com/samuelserraceo/agent-plumb
 claude plugin install agent-plumb@agent-plumb
 
 # After install, slash commands and hooks are available immediately.
-# To set up SDD inside a project:
+# To set up Agent Plumb inside a project:
 /sdd-setup
 ```
 
 ### Companion: `agent-plumb-brief` 🪡 — write the brief BEFORE you build
 
-`agent-plumb-brief` is a **separate Claude plugin** that turns a 1–3 sentence pitch into the kind of tight 11-section brief Plumb's `brief-intake` action ingests during `/sdd-start`. The full pipeline becomes:
+`agent-plumb-brief` is a **separate Claude plugin** that turns a 1–3 sentence pitch into the kind of tight 11-section brief Plumb's `brief-intake` action ingests during `/start`. The full pipeline becomes:
 
 ```
-idea → /write-brief → /sdd-start "<brief>" → /sdd-next … → /sdd-ship
+idea → /write-brief → /start "<brief>" → /next … → /ship
 ```
 
 Install (Terminal):
@@ -104,13 +115,13 @@ The migrate tool keeps your `INDEX.md` / `decisions.md` / `patterns.md` / `data-
 
 ### Option B — manual clone + scaffold
 
-### 1. Clone SDD somewhere stable
+### 1. Clone Agent Plumb somewhere stable
 
 ```bash
 git clone https://github.com/samuelserraceo/agent-plumb ~/Projects/sdd
 ```
 
-### 2. Drop SDD into your project
+### 2. Drop Agent Plumb into your project
 
 Requires Python 3 with PyYAML (`pip install pyyaml`) — the framework's scripts and hooks parse YAML.
 
@@ -172,16 +183,16 @@ Pushes the branch, opens a PR, watches CI. On pass: marks shipped, distills the 
 
 The framework ships a minimal `.obsidian/` config so you can open the project root in [Obsidian](https://obsidian.md) and immediately see your project as a connected graph: features → decisions → patterns → data-model entries, colour-coded by type. No setup beyond opening the folder.
 
-If you also use **Copilot for Obsidian** or **Smart Connections** (Brian Petro's), they work normally over the `.sdd/` markdown content — useful for asking *"why did we pick Postgres on this project?"* and getting the right decision quoted back. The framework doesn't auto-configure those plugins; install + connect them yourself. Wiring SDD's MCP server semantic search to the same model is on the v1.x roadmap (closes that gap once an embedding model is settled on).
+If you also use **Copilot for Obsidian** or **Smart Connections** (Brian Petro's), they work normally over the `.sdd/` markdown content — useful for asking *"why did we pick Postgres on this project?"* and getting the right decision quoted back. The framework doesn't auto-configure those plugins; install + connect them yourself. Wiring Agent Plumb's MCP server semantic search to the same model is on the v1.x roadmap (closes that gap once an embedding model is settled on).
 
-### Dogfood — the framework runs SDD on itself
+### Dogfood — the framework runs Agent Plumb on itself
 
-From v1.0, the framework's own work-items walk SDD's SPEC → BUILD → SHIP loop. This repo has **two `.sdd/` paths**:
+From v1.0, the framework's own work-items walk Agent Plumb's SPEC → BUILD → SHIP loop. This repo has **two `.sdd/` paths**:
 
 - **`templates/.sdd/`** — the framework SOURCE that gets shipped to consumer projects. Editing here changes what every consumer gets on their next `scripts/init.sh` run.
 - **`.sdd/` at repo root** — the framework's OWN consumer state. `INDEX.md`, `decisions.md`, `data-model.md`, `patterns.md`, `stack.md`, plus a copy of the framework files (`playbooks/`, `actions/`, `scripts/`) so `/start` and `/next` work on the framework's own work-items.
 
-When you edit a framework file in `templates/.sdd/`, the in-sync test (T120 in `test/run-framework-test.sh`, headed `# T120 — SDD self-host parity`) reminds you to update the matching file in `.sdd/` too. The framework eats its own dog food: a fix that hurts to ship through SDD on this repo would hurt the same way for any consumer, and we feel it first.
+When you edit a framework file in `templates/.sdd/`, the in-sync test (T120 in `test/run-framework-test.sh`, headed `# T120 — SDD self-host parity`) reminds you to update the matching file in `.sdd/` too. The framework eats its own dog food: a fix that hurts to ship through Agent Plumb on this repo would hurt the same way for any consumer, and we feel it first.
 
 ---
 
@@ -189,7 +200,7 @@ When you edit a framework file in `templates/.sdd/`, the in-sync test (T120 in `
 
 | Command | What it does |
 |---|---|
-| `/sdd-setup` | First-session setup wizard. Walks plain-English questions and fills `stack.md` + `config.md`. Run **once** when bootstrapping a fresh SDD project, before your first `/start`. |
+| `/sdd-setup` | First-session setup wizard. Walks plain-English questions and fills `stack.md` + `config.md`. Run **once** when bootstrapping a fresh Agent Plumb project, before your first `/start`. |
 | `/sdd-config [<question-id>]` | Re-answer a single setup question without re-running the full wizard. Use when stack changes (new service, new reviewer, new hosting target). |
 | `/start <title>` | Scaffold a new work item. Pass `--extends=<id>` for evolution of an existing feature. |
 | `/next` | Advance the active work item by one step. Also handles inline skip / re-approve / bug-routing — see /next.md. |
@@ -238,7 +249,7 @@ Cognitive prep before the commit is free-form (multi-turn iteration allowed for 
 │   │   ├── decisions.md                     # append-only audit log
 │   │   ├── data-model.md                    # canonical schema, single source of truth
 │   │   ├── patterns.md                      # cross-feature learnings
-│   │   ├── CLAUDE.version                   # current SDD version
+│   │   ├── CLAUDE.version                   # current Agent Plumb version
 │   │   ├── .cache/manifest.json             # hash-pinned framework files (tamper detection)
 │   │   ├── archive/                         # frozen history (compressed patterns, old shipped)
 │   │   ├── ideas/                           # captured ideas, one file each
@@ -251,7 +262,7 @@ Cognitive prep before the commit is free-form (multi-turn iteration allowed for 
 │       └── commands/                        # /start /next /idea /status /ship /compress
 └── scripts/
     ├── init.sh                              # one-time install into a project
-    ├── update.sh                            # pull new SDD rules into existing projects
+    ├── update.sh                            # pull new Agent Plumb rules into existing projects
     ├── ralph.sh                             # headless BUILD loop
     ├── ship.sh                              # the actual /ship implementation
     └── bootstrap-uat.sh                     # set up a clean test project (for framework UAT)
@@ -327,7 +338,7 @@ As of v1.4.0, four doctrine playbooks ship: `feature` (single-feature work), `pr
 
 ---
 
-## Updating SDD on existing projects
+## Updating Agent Plumb on existing projects
 
 ```bash
 cd <your-project>
@@ -345,14 +356,14 @@ Your data is never touched: `INDEX.md`, `data-model.md`, `patterns.md`, `decisio
 
 ### Plugin install cache stuck on an old version? (closes #164 bug 2)
 
-If you installed SDD via `claude plugin install agent-plumb@agent-plumb` and the framework seems frozen on an old version even after `claude plugin marketplace update`, Claude Code caches the install in three places. Any one of them stale will hold the old bytes. Clear all three:
+If you installed Agent Plumb via `claude plugin install agent-plumb@agent-plumb` and the framework seems frozen on an old version even after `claude plugin marketplace update`, Claude Code caches the install in three places. Any one of them stale will hold the old bytes. Clear all three:
 
 ```bash
 # 1. The marketplace catalog (the index of what plugins exist):
-rm -rf ~/.claude/plugins/marketplaces/sdd-marketplace/
+rm -rf ~/.claude/plugins/marketplaces/agent-plumb/
 
-# 2. The plugin cache (the actual SDD files, per-version):
-rm -rf ~/.claude/plugins/cache/sdd-marketplace/
+# 2. The plugin cache (the actual Agent Plumb files, per-version):
+rm -rf ~/.claude/plugins/cache/agent-plumb/
 
 # 3. Per-install temp dirs (these accumulate and don't get auto-cleaned):
 rm -rf ~/.claude/plugins/cache/temp_local_*/
@@ -377,7 +388,7 @@ If you're not sure which version you're on, look at the `v1.x.y` line in the Ses
    (your stack, conventions, domain knowledge — yours forever)
 ```
 
-Add anything project-specific (your stack, your team's conventions, your domain language) below the END marker. SDD updates won't touch it.
+Add anything project-specific (your stack, your team's conventions, your domain language) below the END marker. Agent Plumb updates won't touch it.
 
 If you want to customize the workflow rules themselves, you can — but bump `CLAUDE.version` in the same commit to signal intent (otherwise the F1 enforcer's `managed_section` rule warns).
 
@@ -391,7 +402,7 @@ If you want to customize the workflow rules themselves, you can — but bump `CL
 - **Four playbooks shipped (`feature`, `project`, `bug`, `refactor`).** The multi-playbook engine carries the rest; adding `idea`, `question`, etc. is just dropping a new file in `templates/.sdd/playbooks/` (no code changes).
 - **Action prose still carries some JS-stack assumptions** (mentions of `tests/task-NNN.mjs`, Tailwind, `gh pr create`). The Playwright extension (`extensions/playwright/`) shows the Lego pattern for runner-specific scaffolding; non-JS adopters can fork the affected actions or write a sibling extension following the same shape.
 - **Hook error messages keep improving cycle by cycle.** v0.13.x rewrote the moat's "manifest repin refused" output for plain-English readability and added an in-band repair path; older hooks still vary in tone.
-- **Multi-feature parallelism: branch-derived active feature.** `INDEX.md`'s `## In flight` block holds multiple work items (one per branch is the typical pattern), and the active feature is now inferred from the current git branch — switching branches switches the active feature with no manual `**Active:**` edit. The `**Active:**` line is the fallback when you're not on an SDD branch (e.g., on `main`). Pipelogic-style 3-5-features-at-once is supported as a first-class flow.
+- **Multi-feature parallelism: branch-derived active feature.** `INDEX.md`'s `## In flight` block holds multiple work items (one per branch is the typical pattern), and the active feature is now inferred from the current git branch — switching branches switches the active feature with no manual `**Active:**` edit. The `**Active:**` line is the fallback when you're not on an Agent Plumb branch (e.g., on `main`). Pipelogic-style 3-5-features-at-once is supported as a first-class flow.
 - **This scales to roughly 50 in-flight features / 500 total.** Beyond that, you want real tooling. The cold-tier + size caps + auto-archival keep working memory bounded forever, but at some scale you'll outgrow plain markdown.
 - **Retrofitting onto an existing project still rough.** `scripts/init.sh` assumes a clean repo. The plugin install (v0.10) makes it easier, but a project with its own conventions (Husky / Drizzle migrations / existing PRDs) needs an "absorb existing" install mode that's still future work.
 - **MCP server semantic-search is wired (provider-agnostic).** Set `parameters.mcp.semantic_search.enabled: true` in config.md and declare your provider (`ollama`, `openai`, `anthropic`, etc.) — the framework calls the embedding endpoint on demand. Self-hosted Gemma via Ollama is a supported provider; no Anthropic/OpenAI assumption baked in. **Tier 3 LLM-driven synthesis is v1.1** (knowledge-graph queries return cited corpus chunks today; chat-based summarisation lands when there's enough corpus to be worth synthesising).
@@ -409,7 +420,7 @@ Currently at **v1.5.2** — knowledge-graph foundation + 4 doctrine playbooks (`
 - **v0.10.x** — plugin packaging (one-line install via Claude Code plugin manifest), code-quality doctrine (8 always-on rules), multi-feature parallel scaffold, UAT findings closed, two rounds of security hardening.
 - **v0.11.x** — project-level scoping playbook (multi-feature initiatives that aren't a single feature), plugin metadata hotfixes, foundation-3 design philosophy codified in CLAUDE.md.
 - **v0.12.0** — DRY fixes (next-action.sh reads stages from playbook frontmatter; run-mode prose deduplicated), mechanical triage hook for project-shaped one-liners.
-- **v0.13.0** — five Lego bricks landed together: adversarial review action, edge-case sweep action, `/sdd-setup` wizard, opt-in Playwright extension, SDD MCP server (40-60% across-session token saving).
+- **v0.13.0** — five Lego bricks landed together: adversarial review action, edge-case sweep action, `/sdd-setup` wizard, opt-in Playwright extension, Agent Plumb MCP server (40-60% across-session token saving).
 - **v0.13.1** — moat security hardening: manifest baseline trust (path-keyed walker, segment-scoped marker parse, fail-closed on malformed HEAD with in-band repair) and advance.sh lock PID liveness.
 - **v0.13.2** — chore cleanup pack (6 small fixes across `/start`, `/settings`, config.md, regression tests).
 - **v0.13.3** — setup wizard scaffolding hotfix: bricks 001/002/003/004 had `records_at` heading/key references that didn't exist in `stack.md` and `config.md` scaffolds, so 4 of 6 wizard questions would fail on first run. Added the missing scaffolds (`## Project shape`, `## Data store`, `## Testing` to `stack.md`; `parameters.review` block to `config.md`). T111 regression test locks in "every brick's `records_at` exists in its target."
