@@ -1318,6 +1318,18 @@
         </details>
 
         <details class="bg-stone-50 rounded-lg p-4">
+          <summary class="font-semibold">"pi.dev: pi shows a red error when it starts (or won't open)"</summary>
+          <div class="mt-2 text-stone-700 text-xs space-y-2">
+            <p>Don't worry about the technical wording — for pi, two fixes cover almost everything. Try them in order:</p>
+            <p><strong>1. Update pi to the latest.</strong> Most start-up errors are just an out-of-date pi. Paste this in Terminal, then start pi again:</p>
+            <code class="block bg-stone-900 text-emerald-200 mono px-3 py-2 rounded break-all">npm install -g @earendil-works/pi-coding-agent</code>
+            <p><strong>2. If the error names a specific add-on</strong> (like <code class="mono">pi-nvidia-nim</code>), that add-on is what's blocking pi from opening. Type <code class="mono">pi list</code> to see your add-ons and their exact names, then remove the one named in the error — pi opens again. Re-add it after step 1:</p>
+            <code class="block bg-stone-900 text-emerald-200 mono px-3 py-2 rounded break-all">pi remove &lt;name-from-the-list&gt;</code>
+            <p>Still red? Quit + reopen Terminal (clears path hiccups), then try again.</p>
+          </div>
+        </details>
+
+        <details class="bg-stone-50 rounded-lg p-4">
           <summary class="font-semibold">"pi.dev: Can I really use my ChatGPT Plus or Claude Pro subscription without an API key?"</summary>
           <p class="mt-2 text-stone-700 text-xs">Yes — pi's <code class="mono">/login</code> command supports OAuth for Claude Pro/Max, ChatGPT Plus/Pro (via the Codex endpoint), and GitHub Copilot. No API billing. <strong>Honest caveat:</strong> Anthropic has been less stable about supporting heavy autonomous use of Pro/Max with third-party agents — could throttle or stop working without notice. ChatGPT Plus/Pro and Copilot are more reliable today. If predictability matters more than cost, use Path B (API key).</p>
         </details>
