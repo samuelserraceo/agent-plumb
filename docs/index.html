@@ -439,13 +439,19 @@
         </div>
 
         <div class="bg-stone-50 rounded-xl p-4">
-          <div class="text-xs font-semibold text-stone-600 mb-2">Step 1 — Create your project folder, then start pi in it</div>
-          <p class="text-xs text-stone-700 mb-2"><strong>New product?</strong> Make a fresh folder and turn it into a git repo (Plumb's discipline runs on git commits). Swap <code class="mono">my-product</code> for your product's name. <em>Already have a project? Just <code class="mono">cd</code> into it and run <code class="mono">pi</code> instead.</em></p>
+          <div class="text-xs font-semibold text-stone-600 mb-2">Step 1 — Make a home folder for your product</div>
+          <p class="text-xs text-stone-700 mb-2">Every product lives in its own folder on your computer — just like a folder that holds your documents or photos. This one line makes that folder, opens it, and starts pi — all at once. Paste it into Terminal and press Enter:</p>
           <div class="flex flex-col sm:flex-row gap-2">
             <code class="flex-1 bg-stone-900 text-violet-200 mono text-sm px-3 py-2 rounded break-all">mkdir -p ~/Projects/my-product && cd ~/Projects/my-product && git init && pi</code>
             <button class="copy-btn bg-violet-500 hover:bg-violet-600 text-white font-semibold px-3 py-1 rounded whitespace-nowrap text-xs"
               onclick="copyAndCheck(this, 'mkdir -p ~/Projects/my-product &amp;&amp; cd ~/Projects/my-product &amp;&amp; git init &amp;&amp; pi')">📋</button>
           </div>
+          <ul class="text-xs text-stone-700 mt-3 space-y-1.5 list-disc list-inside">
+            <li><strong>Name it:</strong> before you press Enter, change <code class="mono">my-product</code> to a short name for your product — all lowercase, dashes instead of spaces (e.g. <code class="mono">recipe-tracker</code>). Not sure? Run it as-is and rename later — it still works.</li>
+            <li><strong>Where it goes:</strong> the <code class="mono">~</code> means your <em>home folder</em> (the one named after you). Your product lands at <strong>Home → Projects → my-product</strong> — you'll see it in Finder, like any other folder. You don't need to make the <code class="mono">Projects</code> folder first; this creates it for you.</li>
+            <li><strong>What you'll see:</strong> the folder is created and pi opens right inside it. (The <code class="mono">git init</code> bit just gets the folder ready to track your work, so Plumb can save your progress step by step.)</li>
+          </ul>
+          <p class="text-xs text-stone-500 mt-2"><em>Already have a folder for this project? In Terminal type <code class="mono">cd</code> then a space, drag the folder from Finder onto the Terminal window (it auto-fills the path), press Enter, then type <code class="mono">pi</code>.</em></p>
         </div>
 
         <div class="bg-stone-50 rounded-xl p-4">
@@ -673,12 +679,12 @@
     <p class="text-stone-600 mb-4">Now you'll answer 8 plain-English questions about your project. Each one is multi-choice with a "describe your own" escape — pick a number or type in your own words.</p>
 
     <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4 text-sm">
-      <strong>📁 First — be inside your project folder.</strong> Starting a new product? Create the folder + init git (Plumb runs on git commits), then open your tool inside it:
+      <strong>📁 First — be inside your product's folder.</strong> Haven't made one yet? It's just a folder on your computer (like a documents folder). This line creates it and opens it — change <code class="mono">my-product</code> to a short name for your product (lowercase, dashes for spaces):
       <div class="flex flex-col sm:flex-row gap-2 mt-2">
         <code class="flex-1 bg-stone-900 text-amber-200 mono text-xs px-3 py-2 rounded break-all">mkdir -p ~/Projects/my-product && cd ~/Projects/my-product && git init</code>
         <button class="copy-btn bg-amber-500 hover:bg-amber-600 text-white font-semibold px-3 py-1 rounded whitespace-nowrap text-xs" onclick="copyAndCheck(this, 'mkdir -p ~/Projects/my-product &amp;&amp; cd ~/Projects/my-product &amp;&amp; git init')">📋</button>
       </div>
-      <span class="text-xs text-stone-600 mt-1 inline-block">Then run <code class="mono">claude</code> (Claude Code) or <code class="mono">pi</code> (pi.dev) inside that folder — <em>then</em> <code class="mono">/sdd-setup</code>.</span>
+      <span class="text-xs text-stone-600 mt-1 inline-block">It lands at <strong>Home → Projects → my-product</strong> (visible in Finder). Then run <code class="mono">claude</code> or <code class="mono">pi</code> in that same Terminal window — <em>then</em> <code class="mono">/sdd-setup</code>.</span>
     </div>
 
     <div class="bg-white border border-stone-200 rounded-2xl p-5 mb-6">
