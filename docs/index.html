@@ -250,8 +250,8 @@
           <div class="font-semibold">Open Terminal + install pi on Mac</div>
           <ol class="text-sm text-stone-700 space-y-2 list-decimal list-inside">
             <li>Open Terminal: <kbd class="bg-stone-100 px-2 py-1 rounded text-xs mono">Cmd + Space</kbd>, type <span class="mono text-amber-700">terminal</span>, press Enter.</li>
-            <li>Paste ONE of the install commands below + press Enter.</li>
-            <li>Verify: type <code class="mono bg-stone-100 px-1 rounded text-xs">pi --version</code>, press Enter. You should see a version number.</li>
+            <li>Paste ONE of the install commands below + press Enter. <strong>The installer then walks you through the rest interactively</strong> — see "What you'll see" below.</li>
+            <li><strong>After the installer finishes</strong>, check it worked: type <code class="mono bg-stone-100 px-1 rounded text-xs">pi --version</code>, press Enter. You should see a version number.</li>
           </ol>
           <div>
             <div class="text-xs font-semibold text-stone-600 mb-2">Pick whichever works — easiest first:</div>
@@ -279,7 +279,17 @@
               </details>
             </div>
           </div>
-          <div class="text-xs text-stone-500 bg-stone-50 p-3 rounded">💡 The <code class="mono">curl</code> one is easiest — works without npm/Node already installed. Use <code class="mono">npm</code> if you already have Node.js for other projects.</div>
+          <div class="bg-violet-50 border border-violet-200 rounded-lg p-3 text-xs space-y-1.5">
+            <div class="font-semibold text-violet-900">What you'll see (the <code class="mono">curl</code> installer walks you through it):</div>
+            <ol class="list-decimal list-inside space-y-1 text-stone-700">
+              <li>A "<strong>Pi Installer</strong>" banner + a little logo animation.</li>
+              <li>It checks for <strong>Node.js 22.19+</strong>. Don't have it? The installer <strong>offers to install Node for you</strong> — just say yes (it uses Homebrew on Mac).</li>
+              <li>It asks what to do — pick <strong>Install</strong> and press Enter.</li>
+              <li>It prints <code class="mono bg-white px-1 rounded">Pi was installed successfully. Run it with: pi</code>.</li>
+              <li>If your next <code class="mono">pi</code> says "command not found", <strong>close + reopen Terminal</strong> (or paste the <code class="mono">export PATH=…</code> line the installer printed), then re-try <code class="mono">pi --version</code>.</li>
+            </ol>
+          </div>
+          <div class="text-xs text-stone-500 bg-stone-50 p-3 rounded">💡 The <code class="mono">curl</code> one is easiest — it installs Node for you if needed. Use <code class="mono">npm</code> only if you already have Node.js 22.19+ for other projects.</div>
         </div>
       </div>
       <div class="os-panel" data-os="win">
@@ -429,11 +439,12 @@
         </div>
 
         <div class="bg-stone-50 rounded-xl p-4">
-          <div class="text-xs font-semibold text-stone-600 mb-2">Step 1 — Start pi inside your project folder</div>
+          <div class="text-xs font-semibold text-stone-600 mb-2">Step 1 — Create your project folder, then start pi in it</div>
+          <p class="text-xs text-stone-700 mb-2"><strong>New product?</strong> Make a fresh folder and turn it into a git repo (Plumb's discipline runs on git commits). Swap <code class="mono">my-product</code> for your product's name. <em>Already have a project? Just <code class="mono">cd</code> into it and run <code class="mono">pi</code> instead.</em></p>
           <div class="flex flex-col sm:flex-row gap-2">
-            <code class="flex-1 bg-stone-900 text-violet-200 mono text-sm px-3 py-2 rounded">cd ~/my-project && pi</code>
+            <code class="flex-1 bg-stone-900 text-violet-200 mono text-sm px-3 py-2 rounded break-all">mkdir -p ~/Projects/my-product && cd ~/Projects/my-product && git init && pi</code>
             <button class="copy-btn bg-violet-500 hover:bg-violet-600 text-white font-semibold px-3 py-1 rounded whitespace-nowrap text-xs"
-              onclick="copyAndCheck(this, 'cd ~/my-project &amp;&amp; pi')">📋</button>
+              onclick="copyAndCheck(this, 'mkdir -p ~/Projects/my-product &amp;&amp; cd ~/Projects/my-product &amp;&amp; git init &amp;&amp; pi')">📋</button>
           </div>
         </div>
 
@@ -660,6 +671,15 @@
       <h2 class="display text-3xl font-bold">Run the setup wizard</h2>
     </div>
     <p class="text-stone-600 mb-4">Now you'll answer 8 plain-English questions about your project. Each one is multi-choice with a "describe your own" escape — pick a number or type in your own words.</p>
+
+    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4 text-sm">
+      <strong>📁 First — be inside your project folder.</strong> Starting a new product? Create the folder + init git (Plumb runs on git commits), then open your tool inside it:
+      <div class="flex flex-col sm:flex-row gap-2 mt-2">
+        <code class="flex-1 bg-stone-900 text-amber-200 mono text-xs px-3 py-2 rounded break-all">mkdir -p ~/Projects/my-product && cd ~/Projects/my-product && git init</code>
+        <button class="copy-btn bg-amber-500 hover:bg-amber-600 text-white font-semibold px-3 py-1 rounded whitespace-nowrap text-xs" onclick="copyAndCheck(this, 'mkdir -p ~/Projects/my-product &amp;&amp; cd ~/Projects/my-product &amp;&amp; git init')">📋</button>
+      </div>
+      <span class="text-xs text-stone-600 mt-1 inline-block">Then run <code class="mono">claude</code> (Claude Code) or <code class="mono">pi</code> (pi.dev) inside that folder — <em>then</em> <code class="mono">/sdd-setup</code>.</span>
+    </div>
 
     <div class="bg-white border border-stone-200 rounded-2xl p-5 mb-6">
       <div class="text-sm text-stone-500 mb-2">Type this in your chat / Terminal:</div>
